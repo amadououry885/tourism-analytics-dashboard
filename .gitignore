@@ -49,3 +49,18 @@ yarn-error.log*
 # Editor/OS
 .vscode/
 .DS_Store
+
+# Python
+**/__pycache__/
+*.py[cod]
+*.sqlite3
+backend/venv/
+
+# Node/React
+frontend/node_modules/
+frontend/build/
+
+# Env & secrets
+.env
+*.env
+venv/
