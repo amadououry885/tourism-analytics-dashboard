@@ -1,36 +1,40 @@
 """
-Django settings for tourism_api project.
-
-Works for:
-- Local dev / Docker (POSTGRES_* envs or defaults)
-- Elastic Beanstalk production (DB_* envs, *.elasticbeanstalk.com hosts)
+Django settings for tourism_api (cloud-ready).
+Works locally and on AWS Elastic Beanstalk.
 """
 
 from pathlib import Path
 import os
+import dj_database_url
 
 # ------------------------------------------------------------
-# Base
+# Helpers
 # ------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+def env_list(name: str, default: str = ""):
+    return [x.strip() for x in os.getenv(name, default).split(",") if x.strip()]
+
+# ------------------------------------------------------------
+# Core
+# ------------------------------------------------------------
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-please-change")
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 
-# ------------------------------------------------------------
-# Hosts / CSRF (env-driven; safe defaults for dev)
-# In EB, set env vars:
-#   ALLOWED_HOSTS=your-env.us-east-1.elasticbeanstalk.com,*.elasticbeanstalk.com
-#   CSRF_TRUSTED_ORIGINS=https://your-env.us-east-1.elasticbeanstalk.com,https://*.elasticbeanstalk.com
-# ------------------------------------------------------------
-_default_allowed = "localhost,127.0.0.1,backend"
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", _default_allowed).split(",") if h.strip()]
+# Hostnames
+APP_HOSTNAME = os.getenv("APP_HOSTNAME", "").strip()  # e.g. tourism-analytics-env.eba-xxxxx.ap-southeast-1.elasticbeanstalk.com
 
-_default_csrf = "http://localhost:3000,http://127.0.0.1:3000"
-CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.getenv("CSRF_TRUSTED_ORIGINS", _default_csrf).split(",") if u.strip()]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "backend",  # docker compose service (local)
+]
+if APP_HOSTNAME:
+    # Accept both bare host and its lowercase variant for safety
+    ALLOWED_HOSTS += [APP_HOSTNAME, APP_HOSTNAME.lower()]
 
 # ------------------------------------------------------------
-# Installed apps
+# Applications
 # ------------------------------------------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -49,14 +53,14 @@ INSTALLED_APPS = [
 ]
 
 # ------------------------------------------------------------
-# Middleware (CORS must be before Common/CSRF)
-# WhiteNoise is added for static files in EB
+# Middleware
 # ------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # serve static files in EB
+    # WhiteNoise serves collected static files on EB
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",       # keep high
+    "corsheaders.middleware.CorsMiddleware",   # keep high
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -85,25 +89,23 @@ WSGI_APPLICATION = "tourism_api.wsgi.application"
 
 # ------------------------------------------------------------
 # Database
-# - EB: expects DB_* vars
-# - Docker/dev: uses POSTGRES_* (or defaults)
+# Priority: DATABASE_URL (if present) → explicit DB_* env vars → local docker defaults
 # ------------------------------------------------------------
-DB_NAME = os.getenv("DB_NAME") or os.getenv("POSTGRES_DB", "tourism")
-DB_USER = os.getenv("DB_USER") or os.getenv("POSTGRES_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD") or os.getenv("POSTGRES_PASSWORD", "postgres")
-DB_HOST = os.getenv("DB_HOST") or os.getenv("POSTGRES_HOST", "db")  # 'db' is docker-compose service name
-DB_PORT = os.getenv("DB_PORT") or os.getenv("POSTGRES_PORT", "5432")
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": DB_NAME,
-        "USER": DB_USER,
-        "PASSWORD": DB_PASSWORD,
-        "HOST": DB_HOST,
-        "PORT": DB_PORT,
+        "NAME": os.getenv("DB_NAME", os.getenv("POSTGRES_DB", "tourism")),
+        "USER": os.getenv("DB_USER", os.getenv("POSTGRES_USER", "postgres")),
+        "PASSWORD": os.getenv("DB_PASSWORD", os.getenv("POSTGRES_PASSWORD", "postgres")),
+        "HOST": os.getenv("DB_HOST", os.getenv("POSTGRES_HOST", "db")),  # "db" == docker service name for local
+        "PORT": os.getenv("DB_PORT", os.getenv("POSTGRES_PORT", "5432")),
     }
 }
+
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+if DATABASE_URL:
+    # Allows easy override with a single URL; keeps persistent connections
+    DATABASES["default"] = dj_database_url.parse(DATABASE_URL, conn_max_age=60)
 
 # ------------------------------------------------------------
 # Password validation
@@ -124,20 +126,17 @@ USE_I18N = True
 USE_TZ = True
 
 # ------------------------------------------------------------
-# Static / Media
+# Static / Media (EB + WhiteNoise)
 # ------------------------------------------------------------
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
-# WhiteNoise production storage (hashed filenames)
-# Safe in dev too; remove if you prefer plain dev behavior.
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # ------------------------------------------------------------
-# DRF (dev-open; tighten later)
+# DRF
 # ------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
@@ -150,14 +149,37 @@ REST_FRAMEWORK = {
 }
 
 # ------------------------------------------------------------
-# CORS (CRA on :3000 by default)
+# CORS / CSRF
+# By default allow localhost:3000 (dev). You can add EB host via env:
+# CORS_ALLOWED_ORIGINS="http://<eb-host>,https://<eb-host>"
+# CSRF_TRUSTED_ORIGINS="http://<eb-host>,https://<eb-host>"
 # ------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = [
+default_cors = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+if APP_HOSTNAME:
+    default_cors += [f"http://{APP_HOSTNAME}", f"https://{APP_HOSTNAME}"]
+
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", ",".join(default_cors))
+CSRF_TRUSTED_ORIGINS = env_list(
+    "CSRF_TRUSTED_ORIGINS",
+    ",".join([origin for origin in default_cors if origin.startswith("http")]),
+)
+# If you need credentials later:
+# CORS_ALLOW_CREDENTIALS = True
 
 # ------------------------------------------------------------
 # Default primary key type
 # ------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ------------------------------------------------------------
+# Basic logging (handy on EB)
+# ------------------------------------------------------------
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
+}
