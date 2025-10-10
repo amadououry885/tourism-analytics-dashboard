@@ -16,8 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
+
+def healthz(_request):
+    return HttpResponse('ok', content_type='text/plain')
 
 urlpatterns = [
+    path('healthz', healthz),
     path('admin/', admin.site.urls),
-    path("api/", include("analytics.api_urls")),
+    path("api/", include("analytics.api_urls")),  # include all API routes from analytics app
 ]
