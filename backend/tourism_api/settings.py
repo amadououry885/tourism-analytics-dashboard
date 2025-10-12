@@ -9,7 +9,7 @@ DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
 # --- Hosts / CORS / CSRF ---
 # --- Hosts / CORS / CSRF ---
-ALLOWED_HOSTS = ["*"]  # TEMP to unblock (we’ll restrict later)
+ALLOWED_HOSTS = ["*"]
 
 
 # CORS / CSRF — allow local dev and EB host if provided
