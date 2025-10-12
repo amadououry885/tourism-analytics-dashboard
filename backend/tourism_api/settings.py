@@ -2,6 +2,7 @@
 from pathlib import Path
 import os
 
+# --- Paths ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- Security / Debug ---
@@ -13,13 +14,14 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
 # --- Hosts / CORS / CSRF ---
-# allow-list can be overridden via env: DJANGO_ALLOWED_HOSTS="a.com,b.com"
-ALLOWED_HOSTS = [h for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h] or ["*"]
+# You can set DJANGO_ALLOWED_HOSTS="example.com,.elasticbeanstalk.com" in EB.
+_allowed = os.getenv("DJANGO_ALLOWED_HOSTS", "*")
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",")] if _allowed else ["*"]
 
 # Optional: allow-all CORS via env flag (defaults to off)
 CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL", "0") == "1"
 
-# You can pass your EB CNAME or domain via env for stricter CORS/CSRF
+# You can pass your EB CNAME or domain via env for stricter CORS/CSRF later
 EB_HOST = os.getenv("EB_HOST", "").strip()  # e.g. Tourism-analytics-env.eba-xxxx.elasticbeanstalk.com
 FRONTEND_ORIGINS = [
     "http://localhost:3000", "http://127.0.0.1:3000",
@@ -57,7 +59,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # keep CorsMiddleware high, before CommonMiddleware
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -84,22 +86,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "tourism_api.wsgi.application"
 
-# --- Database (SQLite toggle) ---
+# --- Database (SQLite toggle for EB-friendly writable file) ---
 USE_SQLITE = os.getenv("USE_SQLITE", "0") == "1"
 
 if USE_SQLITE:
+    # /tmp is writable on Elastic Beanstalk instances
+    SQLITE_PATH = os.getenv("SQLITE_PATH", "/tmp/tourism.sqlite3")
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": SQLITE_PATH,
         }
     }
 else:
-    # Reads standard RDS envs: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+    # Standard RDS envs: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
     DB_NAME = os.getenv("DB_NAME", "tourism")
     DB_USER = os.getenv("DB_USER", "postgres")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-    DB_HOST = os.getenv("DB_HOST", "db")  # only valid in Docker; must be RDS host in EB
+    DB_HOST = os.getenv("DB_HOST", "db")  # local docker default
     DB_PORT = os.getenv("DB_PORT", "5432")
     DATABASES = {
         "default": {
