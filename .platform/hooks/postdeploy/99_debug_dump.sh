@@ -23,10 +23,10 @@ ss -ltnp | grep ':8000' || echo 'nothing listening on 8000'
 echo "--- Procfile content ---"
 sed -n '1,120p' /var/app/current/Procfile || true
 
-echo "--- environment (PORT, DJANGO_*, DB_*) ---"
+echo "--- environment (PORT, DJANGO_*, DB_*, RDS_*) ---"
 env | egrep '^(PORT=|DJANGO_|DB_|RDS_)' | sort || true
 
 echo "--- curl localhost:8000/healthz ---"
-curl -sS -i http://127.0.0.1:8000/healthz | sed -n '1,20p' || true
+curl -sS -i http://127.0.0.1:8000/healthz | sed -n '1,40p' || true
 
 echo "===== DEBUG DUMP END ====="
