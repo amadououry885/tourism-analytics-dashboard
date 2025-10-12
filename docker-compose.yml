@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgis/postgis:15-3.3
@@ -8,17 +6,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: tourism
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db_init:/docker-entrypoint-initdb.d
+    # If you do NOT need to connect from host tools (psql), comment out the next 2 lines:
+    # ports:
+    #   - "5432:5432"
+    restart: unless-stopped
 
   redis:
     image: redis:7
     container_name: tourism_redis
-    ports:
-      - "6379:6379"
+    # If you do NOT need to connect from host tools (redis-cli), comment out:
+    # ports:
+    #   - "6379:6379"
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -26,6 +28,15 @@ services:
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
+    environment:
+      POSTGRES_DB: tourism
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_SETTINGS_MODULE: tourism_api.settings
+      # ALLOWED_HOSTS: "*"   # uncomment in dev if needed
     volumes:
       - ./backend:/app
     ports:
@@ -33,19 +44,23 @@ services:
     depends_on:
       - db
       - redis
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
     container_name: tourism_frontend
     ports:
-      - "3000:3000"
+      - "3000:3000"            # 👈 host:container (moved host port to 3001)
     stdin_open: true
     tty: true
+    environment:
+      - CHOKIDAR_USEPOLLING=true   # helps file watching in some setups
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
       - backend
+    restart: unless-stopped
 
 volumes:
   db_data:

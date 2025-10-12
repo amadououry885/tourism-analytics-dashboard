@@ -1,7 +1,18 @@
-# --- runtime deps used by Elastic Beanstalk ---
-Django>=4.2,<5.0
-djangorestframework>=3.14
+# Django 5.x stack
+Django>=5.2,<5.3
+djangorestframework>=3.16
+django-cors-headers>=4.4
+
+# Gunicorn app server
 gunicorn>=21.2
-psycopg2-binary>=2.9
-django-cors-headers>=4.3
+
+# Postgres
+psycopg[binary]>=3.2
+# (optional alternative) psycopg2-binary>=2.9
+
+# Static files
+whitenoise>=6.7
+
+# Config helpers (optional)
 python-dotenv>=1.0
+dj-database-url>=2.2

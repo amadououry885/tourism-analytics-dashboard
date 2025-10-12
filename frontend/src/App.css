@@ -1,38 +1,137 @@
+/* Page */
+:root {
+  --maxw: 1180px;
+  --gap: 12px;
+  --card-bg: #fff;
+  --card-brd: #e5e7eb;
+  --text-sub: #6b7280;
+}
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: #f5f7fa; color: #111827; }
+
+/* Keep content centered and compact */
 .App {
+  max-width: var(--maxw);
+  margin: 12px auto 20px;
+  padding: 0 10px;
+}
+
+/* Headline + controls */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.header h1 {
+  width: 100%;
+  text-align: center;
+  margin: 4px 0 6px;
+  font-size: 24px;
+}
+
+/* Tiny buttons */
+.header button {
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--card-brd);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.header input[type="date"],
+.header input[type="text"] {
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--card-brd);
+  border-radius: 6px;
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-brd);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  padding: 12px;
+}
+.card-title {
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* KPI row */
+.kpi-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+.kpi-card .kpi-title { composes: card-title; }
+.kpi-title {
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+/* Dashboard grid (3 rows) */
+.grid-rows {
+  display: grid;
+  grid-template-rows: 1fr 1fr auto; /* chart row, map/word row, tabs/report row */
+  gap: var(--gap);
+  min-height: calc(100vh - 150px);
+}
+
+/* Row 1: chart + hidden gem */
+.row1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--gap);
+}
+.chart-card { height: 260px; }   /* fits without scroll */
+
+/* Row 2: map + word cloud */
+.row2 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--gap);
+}
+.map-card { height: 260px; }
+.word-card { height: 260px; overflow: auto; }
+
+/* Row 3: rankings + tabs + export arranged in one line */
+.row3 {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: var(--gap);
+}
+.rank-card { max-height: 220px; overflow: auto; }
+
+/* Small helpers */
+.center-subtle {
+  font-size: 12px;
+  color: var(--text-sub);
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Make it still usable on smaller widths */
+@media (max-width: 1024px) {
+  .row1, .row2, .row3 { grid-template-columns: 1fr; }
+  .chart-card, .map-card, .word-card { height: 240px; }
 }
