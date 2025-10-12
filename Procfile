@@ -1,4 +1,4 @@
-web: sh -lc '
+web: bash -lc '
   set -euxo pipefail
 
   echo "=== runtime info ==="
