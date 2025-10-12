@@ -1,1 +1,11 @@
-web: sh -lc 'cd backend && exec gunicorn tourism_api.wsgi:application --bind 127.0.0.1:8000 --workers 2 --threads 2 --timeout 60 --access-logfile - --error-logfile - --log-level info'
+web: sh -lc 'python - <<PY
+import http.server, socketserver, sys
+PORT=8000
+class H(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200); self.end_headers()
+        self.wfile.write(b"OK from http.server\\n")
+with socketserver.TCPServer(("127.0.0.1", PORT), H) as httpd:
+    print(f"Listening at: http://127.0.0.1:{PORT}", flush=True)
+    httpd.serve_forever()
+PY'
