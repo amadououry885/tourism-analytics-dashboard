@@ -1,4 +1,6 @@
+
 #!/usr/bin/env bash
+# Robust postdeploy that works whether or not sudo/runuser are present
 set -euo pipefail
 cd /var/app/current/backend
 
@@ -11,18 +13,34 @@ fi
 USE_SQLITE="${USE_SQLITE:-0}"
 SQLITE_PATH="${SQLITE_PATH:-/tmp/tourism.sqlite3}"
 
+# Helper: try to run as webapp if possible, else just run directly
+as_webapp() {
+  if command -v runuser >/dev/null 2>&1 && id webapp >/dev/null 2>&1; then
+    runuser -u webapp -- "$@"
+  elif command -v sudo >/dev/null 2>&1 && id webapp >/dev/null 2>&1; then
+    sudo -u webapp -H "$@"
+  else
+    # Fallback: run as current user (root in hooks). We'll fix ownership after.
+    "$@"
+  fi
+}
+
 if [[ "$USE_SQLITE" == "1" ]]; then
-  # Make sure the SQLite file exists and is writable by the webapp user
+  # Ensure DB file exists and is writable by webapp
   touch "$SQLITE_PATH"
-  chown webapp:webapp "$SQLITE_PATH"
-  chmod 664 "$SQLITE_PATH"
+  # Directory /tmp is writable; make sure file perms are generous the first time
+  chmod 666 "$SQLITE_PATH" || true
+  # If webapp user exists, make it owner (non-fatal if user/group missing)
+  if id webapp >/dev/null 2>&1; then
+    chown webapp:webapp "$SQLITE_PATH" || true
+  fi
 
-  # Run Django tasks as webapp so SQLite writes aren’t owned by root
-  sudo -u webapp -H python manage.py migrate --noinput || true
-  sudo -u webapp -H python manage.py collectstatic --noinput || true
+  # Run migrate/collectstatic (try as webapp; OK if it falls back)
+  as_webapp python manage.py migrate --noinput || true
+  as_webapp python manage.py collectstatic --noinput || true
 
-  # Optional: create admin if env vars are set (run as webapp)
-  sudo -u webapp -H python - <<'PY'
+  # Create superuser if env vars provided (same user strategy)
+  as_webapp python - <<'PY'
 import os, django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE","tourism_api.settings")
 django.setup()
@@ -41,8 +59,14 @@ else:
     print("[postdeploy] Superuser vars not set; skipping.")
 PY
 
+  # FINAL FIX: after migrations (which might have re-created the file), ensure ownership again
+  if id webapp >/dev/null 2>&1; then
+    chown webapp:webapp "$SQLITE_PATH" || true
+    chmod 664 "$SQLITE_PATH" || true
+  fi
+
 else
-  # Postgres path — running as root is fine
+  # Postgres path — just do the usual
   python manage.py migrate --noinput || true
   python manage.py collectstatic --noinput || true
 
