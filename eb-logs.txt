@@ -1,2 +1,4 @@
 Retrieving logs...
-ERROR: HTTPClientError - An HTTP Client raised an unhandled exception: Caught signal 2
+Logs were saved to /home/amadou-oury-diallo/tourism-analytics-dashboard/.elasticbeanstalk/logs/251013_052216
+Logs were saved to /home/amadou-oury-diallo/tourism-analytics-dashboard/.elasticbeanstalk/logs/251013_052216
+Updated symlink at /home/amadou-oury-diallo/tourism-analytics-dashboard/.elasticbeanstalk/logs/latest
