@@ -1,1 +1,1 @@
-web: bash -lc 'exec gunicorn --chdir backend tourism_api.wsgi:application --bind 127.0.0.1:8000 --workers 2 --threads 2 --timeout 60 --access-logfile - --error-logfile - --log-level info'
+web: bash -lc 'export DJANGO_SETTINGS_MODULE=tourism_api.settings; export PYTHONPATH=$PYTHONPATH:/var/app/current/backend; exec gunicorn --chdir backend tourism_api.wsgi:application --bind 127.0.0.1:8000 --workers 2 --threads 2 --timeout 60 --access-logfile - --error-logfile - --log-level info'
