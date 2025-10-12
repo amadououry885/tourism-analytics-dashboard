@@ -1,7 +1,7 @@
+# --- runtime deps used by Elastic Beanstalk ---
 Django>=4.2,<5.0
 djangorestframework>=3.14
 gunicorn>=21.2
 psycopg2-binary>=2.9
 django-cors-headers>=4.3
-# optional but nice on EB:
 python-dotenv>=1.0
