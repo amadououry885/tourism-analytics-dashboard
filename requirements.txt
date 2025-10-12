@@ -1,9 +1,7 @@
-Django>=5.2,<6.0
+Django>=4.2,<5.0
+djangorestframework>=3.14
 gunicorn>=21.2
 psycopg2-binary>=2.9
-dj-database-url>=2.2
-django-cors-headers>=4.4
-djangorestframework>=3.15
-whitenoise>=6.7
-# optional helpers
+django-cors-headers>=4.3
+# optional but nice on EB:
 python-dotenv>=1.0
