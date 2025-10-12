@@ -68,3 +68,10 @@ venv/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+aws/
+backend/venv/
+.env
+.env.*
+env/
+*.zip
+eb-logs.txt
