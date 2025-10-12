@@ -6,6 +6,7 @@ web: sh -lc '
   python -V || true
   pip show gunicorn || true
   ls -la || true
+
   echo "=== env skim ==="
   env | egrep "DJANGO|DB_|RDS_|ALLOWED|DEBUG|PORT" || true
 
@@ -17,8 +18,8 @@ web: sh -lc '
   echo "=== Django manage.py check ==="
   python - <<PY
 import os, sys
-os.environ.setdefault("DJANGO_SETTINGS_MODULE","tourism_api.settings")
 sys.path.insert(0, "backend")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE","tourism_api.settings")
 from django.core.management import execute_from_command_line
 execute_from_command_line(["manage.py","check"])
 PY
