@@ -6,8 +6,8 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- Security / Debug ---
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-please-change")
-DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-key-change-me")
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 # When behind Elastic Beanstalk's load balancer, trust X-Forwarded-* headers
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -147,6 +147,11 @@ REST_FRAMEWORK = {
     ],
 }
 
+if not DEBUG:
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [
+        "rest_framework.renderers.JSONRenderer",
+    ]
+    
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Prod cookie security (safe defaults) ---
