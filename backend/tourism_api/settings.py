@@ -1,41 +1,31 @@
-"""
-Django settings for tourism_api (cloud-ready).
-Works locally and on AWS Elastic Beanstalk.
-"""
-
 from pathlib import Path
 import os
-import dj_database_url
 
-# ------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-def env_list(name: str, default: str = ""):
-    return [x.strip() for x in os.getenv(name, default).split(",") if x.strip()]
-
-# ------------------------------------------------------------
-# Core
-# ------------------------------------------------------------
+# --- Security / Debug ---
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-please-change")
-DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
+DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
-# Hostnames
-APP_HOSTNAME = os.getenv("APP_HOSTNAME", "").strip()  # e.g. tourism-analytics-env.eba-xxxxx.ap-southeast-1.elasticbeanstalk.com
+# --- Hosts / CORS / CSRF ---
+# --- Hosts / CORS / CSRF ---
+ALLOWED_HOSTS = ["*"]  # TEMP to unblock (we’ll restrict later)
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "backend",  # docker compose service (local)
+
+# CORS / CSRF — allow local dev and EB host if provided
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000", "http://127.0.0.1:3000",
 ]
-if APP_HOSTNAME:
-    # Accept both bare host and its lowercase variant for safety
-    ALLOWED_HOSTS += [APP_HOSTNAME, APP_HOSTNAME.lower()]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000", "http://127.0.0.1:3000",
+]
+if EB_HOST:
+    CORS_ALLOWED_ORIGINS.append(f"http://{EB_HOST}")
+    CSRF_TRUSTED_ORIGINS.append(f"http://{EB_HOST}")
+    CORS_ALLOWED_ORIGINS.append(f"https://{EB_HOST}")
+    CSRF_TRUSTED_ORIGINS.append(f"https://{EB_HOST}")
 
-# ------------------------------------------------------------
-# Applications
-# ------------------------------------------------------------
+# --- Apps ---
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -44,23 +34,17 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    # Third-party
     "rest_framework",
     "corsheaders",
 
-    # Local apps
     "analytics",
 ]
 
-# ------------------------------------------------------------
-# Middleware
-# ------------------------------------------------------------
+# --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # WhiteNoise serves collected static files on EB
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",   # keep high
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -87,29 +71,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "tourism_api.wsgi.application"
 
-# ------------------------------------------------------------
-# Database
-# Priority: DATABASE_URL (if present) → explicit DB_* env vars → local docker defaults
-# ------------------------------------------------------------
+# --- Database ---
+# Reads standard RDS envs: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+DB_NAME = os.getenv("DB_NAME", "tourism")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+DB_HOST = os.getenv("DB_HOST", "db")  # local docker default
+DB_PORT = os.getenv("DB_PORT", "5432")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", os.getenv("POSTGRES_DB", "tourism")),
-        "USER": os.getenv("DB_USER", os.getenv("POSTGRES_USER", "postgres")),
-        "PASSWORD": os.getenv("DB_PASSWORD", os.getenv("POSTGRES_PASSWORD", "postgres")),
-        "HOST": os.getenv("DB_HOST", os.getenv("POSTGRES_HOST", "db")),  # "db" == docker service name for local
-        "PORT": os.getenv("DB_PORT", os.getenv("POSTGRES_PORT", "5432")),
+        "NAME": DB_NAME,
+        "USER": DB_USER,
+        "PASSWORD": DB_PASSWORD,
+        "HOST": DB_HOST,
+        "PORT": DB_PORT,
     }
 }
 
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
-if DATABASE_URL:
-    # Allows easy override with a single URL; keeps persistent connections
-    DATABASES["default"] = dj_database_url.parse(DATABASE_URL, conn_max_age=60)
-
-# ------------------------------------------------------------
-# Password validation
-# ------------------------------------------------------------
+# --- Passwords ---
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -117,69 +98,25 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# ------------------------------------------------------------
-# i18n / Timezone
-# ------------------------------------------------------------
+# --- i18n / tz ---
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kuala_Lumpur"
 USE_I18N = True
 USE_TZ = True
 
-# ------------------------------------------------------------
-# Static / Media (EB + WhiteNoise)
-# ------------------------------------------------------------
-STATIC_URL = "/static/"
+# --- Static / Media ---
+STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-MEDIA_URL = "/media/"
+MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# ------------------------------------------------------------
-# DRF
-# ------------------------------------------------------------
+# --- DRF ---
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
-    ],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
 
-# ------------------------------------------------------------
-# CORS / CSRF
-# By default allow localhost:3000 (dev). You can add EB host via env:
-# CORS_ALLOWED_ORIGINS="http://<eb-host>,https://<eb-host>"
-# CSRF_TRUSTED_ORIGINS="http://<eb-host>,https://<eb-host>"
-# ------------------------------------------------------------
-default_cors = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-if APP_HOSTNAME:
-    default_cors += [f"http://{APP_HOSTNAME}", f"https://{APP_HOSTNAME}"]
-
-CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", ",".join(default_cors))
-CSRF_TRUSTED_ORIGINS = env_list(
-    "CSRF_TRUSTED_ORIGINS",
-    ",".join([origin for origin in default_cors if origin.startswith("http")]),
-)
-# If you need credentials later:
-# CORS_ALLOW_CREDENTIALS = True
-
-# ------------------------------------------------------------
-# Default primary key type
-# ------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# ------------------------------------------------------------
-# Basic logging (handy on EB)
-# ------------------------------------------------------------
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "root": {"handlers": ["console"], "level": "INFO"},
-}
