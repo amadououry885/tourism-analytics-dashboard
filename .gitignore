@@ -75,3 +75,10 @@ backend/venv/
 env/
 *.zip
 eb-logs.txt
+aws/
+backend/venv/
+.env
+.env.*
+env/
+*.zip
+eb-logs.txt
