@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Remove any old HTTPS redirect snippets that may still be present on the box.
+# Remove any old HTTPS-redirect snippets that may be left from earlier deploys.
 for dir in \
   /etc/nginx/conf.d/elasticbeanstalk \
   /var/proxy/staging/nginx/conf.d/elasticbeanstalk \
@@ -9,7 +9,7 @@ for dir in \
 do
   if [ -d "$dir" ]; then
     sudo rm -f "$dir"/*https*redirect*.conf || true
-    sudo rm -f "$dir"/https_redirect.conf || true
+    sudo rm -f "$dir"/https_redirect.conf   || true
   fi
 done
 
