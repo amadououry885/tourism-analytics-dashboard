@@ -154,11 +154,15 @@ if DEBUG:
         "rest_framework.renderers.BrowsableAPIRenderer"
     )
 
-# ── HTTPS cookies in prod (safe defaults) ─────────────────────────────────────
-if os.environ.get("ENABLE_HTTPS", "0") == "1" or not DEBUG:
-    SESSION_COOKIE_SECURE = True
+# Only force secure cookies when we explicitly enable HTTPS at the load balancer
+if os.environ.get("ENABLE_HTTPS", "0") == "1":
     CSRF_COOKIE_SECURE = True
-    # If your environment enforces HTTPS, you can also turn on redirect:
-    # SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+else:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False
+
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
