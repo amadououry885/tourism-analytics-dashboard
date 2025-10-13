@@ -1,4 +1,3 @@
-
 # backend/analytics/views.py
 
 from collections import Counter
@@ -7,7 +6,7 @@ import csv
 from io import StringIO, BytesIO
 
 from django.http import HttpResponse
-from django.db.models import Count, F
+from django.db.models import Count, F, Case, When, IntegerField
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils.dateparse import parse_date
 
@@ -53,7 +52,7 @@ class SentimentTopicViewSet(viewsets.ReadOnlyModelViewSet):
         if p.get("date_from"):
             qs = qs.filter(date__gte=p["date_from"])
         if p.get("date_to"):
-            qs = qs.filter(date__lte=p["date_to"])
+          qs = qs.filter(date__lte=p["date_to"])
         return qs
 
 # ─────────────────────────────────────────────────────────────
@@ -88,6 +87,101 @@ def _simple_tokenize(s: str):
     if word:
         yield "".join(word)
 
+def _parse_days_or_dates(request):
+    """
+    Support both styles:
+      - ?range=7d
+      - ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD (falls back to parse_range)
+    Returns (start_date, end_date, days_span)
+    """
+    rng = (request.GET.get("range") or "").strip().lower()
+    if rng.endswith("d") and rng[:-1].isdigit():
+        days = max(1, int(rng[:-1]))
+        end = datetime.utcnow().date()
+        start = end - timedelta(days=days - 1)
+        return start, end, days
+    start, end = parse_range(request)
+    return start, end, (end - start).days + 1
+
+# ─────────────────────────────────────────────────────────────
+# Part 0 — Health + minimal dashboard APIs
+# ─────────────────────────────────────────────────────────────
+
+def healthz(_request):
+    """Lightweight liveness probe."""
+    return HttpResponse("OK", content_type="text/plain")
+
+class MetricsTotalsView(APIView):
+    """
+    GET /api/metrics/totals?range=7d
+    -> { range_days, total_posts, unique_authors }
+    """
+    def get(self, request):
+        start, end, days = _parse_days_or_dates(request)
+        try:
+            base = (
+                PostClean.objects
+                .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
+                .filter(ts__date__gte=start, ts__date__lte=end)
+            )
+            total_posts = base.count()
+
+            # Try to infer unique authors from PostRaw if available
+            try:
+                unique_authors = base.values("raw_post__author").distinct().count()
+                # If all authors are NULL normalize to 0
+                if unique_authors == 1 and base.filter(raw_post__author__isnull=True).count() == total_posts:
+                    unique_authors = 0
+            except Exception:
+                unique_authors = None
+
+            return Response({
+                "range_days": days,
+                "total_posts": total_posts,
+                "unique_authors": unique_authors,
+            })
+        except Exception:
+            return Response({"range_days": days, "total_posts": 0, "unique_authors": None})
+
+class SentimentTrendView(APIView):
+    """
+    GET /api/sentiment/trend?range=7d
+    -> { range_days, series: [{ date, pos, neu, neg }] }
+    """
+    def get(self, request):
+        start, end, days = _parse_days_or_dates(request)
+        try:
+            base = (
+                PostClean.objects
+                .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
+                .filter(ts__date__gte=start, ts__date__lte=end)
+            )
+            agg = (
+                base
+                .annotate(day=TruncDate("ts"))
+                .values("day")
+                .annotate(
+                    pos=Count(Case(When(sentiment__iexact="positive", then=1), output_field=IntegerField())),
+                    neu=Count(Case(When(sentiment__iexact="neutral",  then=1), output_field=IntegerField())),
+                    neg=Count(Case(When(sentiment__iexact="negative", then=1), output_field=IntegerField())),
+                )
+                .order_by("day")
+            )
+            by_day = {r["day"]: {"pos": r["pos"], "neu": r["neu"], "neg": r["neg"]} for r in agg}
+
+            series = []
+            d = start
+            while d <= end:
+                counts = by_day.get(d, {"pos": 0, "neu": 0, "neg": 0})
+                series.append({"date": d.isoformat(), **counts})
+                d += timedelta(days=1)
+
+            return Response({"range_days": days, "series": series})
+        except Exception:
+            # Return zeroed series so charts still render
+            series = [{"date": (start + timedelta(days=i)).isoformat(), "pos": 0, "neu": 0, "neg": 0} for i in range(days)]
+            return Response({"range_days": days, "series": series})
+
 # ─────────────────────────────────────────────────────────────
 # Part 3 — Map Heat, Word Cloud, Hidden Gem
 # ─────────────────────────────────────────────────────────────
@@ -114,16 +208,16 @@ class MapHeatView(APIView):
             qs = qs.filter(poi__category=category)
 
         aggregated = (
-          qs.values(
-           "poi_id",                           # use the real field name, not an alias
-           name=F("poi__name"),
-           category=F("poi__category"),
-           lat=F("poi__latitude"),
-           lon=F("poi__longitude"),
-    )
-    .annotate(count=Count("id"))
-    .order_by("-count")
-    )
+            qs.values(
+                "poi_id",
+                name=F("poi__name"),
+                category=F("poi__category"),
+                lat=F("poi__latitude"),
+                lon=F("poi__longitude"),
+            )
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
 
         return Response({"items": list(aggregated)})
 
@@ -240,6 +334,10 @@ class AttractionsListView(APIView):
             for r in aggregated
         ]
         return Response({"items": items})
+
+class TopAttractionsView(AttractionsListView):
+    """Alias so routes can reference TopAttractionsView consistently."""
+    pass
 
 class AttractionDetailView(APIView):
     """
