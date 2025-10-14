@@ -1,6 +1,6 @@
-/* Page */
+/* ===== Page ===== */
 :root {
-  --maxw: 1180px;
+  --maxw: 1180px;          /* overall content width; reduce if you want more right-side space */
   --gap: 12px;
   --card-bg: #fff;
   --card-brd: #e5e7eb;
@@ -10,30 +10,30 @@
 html, body, #root { height: 100%; }
 body { margin: 0; background: #f5f7fa; color: #111827; }
 
-/* Keep content centered and compact */
+/* Anchor content to the LEFT (big space on the right) */
 .App {
   max-width: var(--maxw);
-  margin: 12px auto 20px;
+  margin: 12px 0 20px 16px;   /* top right bottom left — left-anchored; tweak 0–24px as you like */
   padding: 0 10px;
 }
 
-/* Headline + controls */
+/* ===== Top toolbar ===== */
 .header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;   /* left-align */
   gap: 10px 12px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .header h1 {
   width: 100%;
-  text-align: center;
+  text-align: left;
   margin: 4px 0 6px;
   font-size: 24px;
 }
 
-/* Tiny buttons */
+/* Tiny buttons/inputs */
 .header button {
   font-size: 12px;
   padding: 6px 8px;
@@ -50,12 +50,12 @@ body { margin: 0; background: #f5f7fa; color: #111827; }
   border-radius: 6px;
 }
 
-/* Cards */
+/* ===== Cards ===== */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--card-brd);
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
   padding: 12px;
 }
 .card-title {
@@ -66,14 +66,22 @@ body { margin: 0; background: #f5f7fa; color: #111827; }
   margin-bottom: 6px;
 }
 
-/* KPI row */
+/* ===== Two-column dashboard grid (RIGHT column wider) ===== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;   /* LEFT smaller, RIGHT wider to host new KPIs/features */
+  gap: var(--gap);
+}
+.span-2 { grid-column: 1 / -1; }      /* span both columns */
+
+/* ===== KPI row (wrap nicely) ===== */
 .kpi-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--gap);
   margin-bottom: var(--gap);
 }
-.kpi-card .kpi-title { composes: card-title; }
+.kpi-card { display: grid; gap: 4px; }
 .kpi-title {
   font-size: 12px;
   letter-spacing: .04em;
@@ -82,7 +90,7 @@ body { margin: 0; background: #f5f7fa; color: #111827; }
   margin-bottom: 4px;
 }
 .kpi-value {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
 }
 .kpi-sub {
@@ -90,48 +98,56 @@ body { margin: 0; background: #f5f7fa; color: #111827; }
   color: var(--text-sub);
 }
 
-/* Dashboard grid (3 rows) */
+/* ===== Optional: right-side stacked mini KPIs (if you use <section class="card side-stack">) ===== */
+.side-stack {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.mini-kpi {
+  border: 1px solid var(--card-brd);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.mini-kpi-title {
+  font-size: 12px;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-bottom: 4px;
+}
+.mini-kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* ===== Legacy row classes (kept so nothing breaks) ===== */
 .grid-rows {
   display: grid;
-  grid-template-rows: 1fr 1fr auto; /* chart row, map/word row, tabs/report row */
+  grid-template-rows: 1fr 1fr auto;
   gap: var(--gap);
   min-height: calc(100vh - 150px);
 }
+.row1 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gap); }
+.row2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--gap); }
+.row3 { display: grid; grid-template-columns: 1fr 1.2fr; gap: var(--gap); }
 
-/* Row 1: chart + hidden gem */
-.row1 {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--gap);
-}
-.chart-card { height: 260px; }   /* fits without scroll */
-
-/* Row 2: map + word cloud */
-.row2 {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: var(--gap);
-}
+.chart-card { height: 260px; }
 .map-card { height: 260px; }
 .word-card { height: 260px; overflow: auto; }
-
-/* Row 3: rankings + tabs + export arranged in one line */
-.row3 {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: var(--gap);
-}
 .rank-card { max-height: 220px; overflow: auto; }
 
-/* Small helpers */
+/* ===== Helpers ===== */
 .center-subtle {
   font-size: 12px;
   color: var(--text-sub);
   text-align: center;
 }
 
-/* Make it still usable on smaller widths */
+/* ===== Responsive ===== */
 @media (max-width: 1024px) {
+  .dashboard-grid { grid-template-columns: 1fr; } /* collapse to one column */
   .row1, .row2, .row3 { grid-template-columns: 1fr; }
   .chart-card, .map-card, .word-card { height: 240px; }
 }

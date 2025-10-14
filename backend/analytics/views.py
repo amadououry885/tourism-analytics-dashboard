@@ -6,7 +6,7 @@ import csv
 from io import StringIO, BytesIO
 
 from django.http import HttpResponse
-from django.db.models import Count, F, Case, When, IntegerField
+from django.db.models import Count, F, Case, When, IntegerField, Sum  # ← added Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils.dateparse import parse_date
 
@@ -142,6 +142,39 @@ class MetricsTotalsView(APIView):
             })
         except Exception:
             return Response({"range_days": days, "total_posts": 0, "unique_authors": None})
+
+# ─────────────────────────────────────────────────────────────
+# NEW — Engagement totals (likes, comments, shares)
+# ─────────────────────────────────────────────────────────────
+class MetricsEngagementView(APIView):
+    """
+    GET /api/metrics/engagement?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD[&poi_id=123]
+    -> {"likes": 1234, "comments": 567, "shares": 321}
+    """
+    def get(self, request):
+        start, end = parse_range(request)
+        poi_id = request.GET.get("poi_id")
+
+        qs = (
+            PostClean.objects
+            .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
+            .filter(ts__date__gte=start, ts__date__lte=end)
+        )
+        if poi_id:
+            qs = qs.filter(poi_id=poi_id)
+
+        agg = qs.aggregate(
+            likes=Coalesce(Sum("likes"), 0),
+            comments=Coalesce(Sum("comments"), 0),
+            shares=Coalesce(Sum("shares"), 0),
+        )
+        # Ensure plain ints
+        out = {
+            "likes": int(agg.get("likes") or 0),
+            "comments": int(agg.get("comments") or 0),
+            "shares": int(agg.get("shares") or 0),
+        }
+        return Response(out)
 
 class SentimentTrendView(APIView):
     """

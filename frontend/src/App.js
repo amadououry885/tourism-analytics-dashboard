@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend,
 } from "recharts";
@@ -13,13 +13,43 @@ import Tabs from "./components/Tabs";
 import AttractionsTab from "./components/AttractionsTab";
 import VendorsTab from "./components/VendorsTab";
 import ReportExport from "./components/ReportExport";
+import DateRange from "./components/DateRange"; // stable single dropdown
 
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "/api";
 
-async function getJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
+// ---- tiny helper hook: cancel old requests + avoid duplicate fetches for same inputs
+function useFetchWithCancel(urlBuilder, deps) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const lastKeyRef = useRef("");
+
+  useEffect(() => {
+    const { url, key } = urlBuilder();
+    if (!url || key === "skip") return;      // no-op
+    if (key === lastKeyRef.current) return;  // prevent duplicate fetch for same params
+    lastKeyRef.current = key;
+
+    const ctrl = new AbortController();
+    setLoading(true);
+    setErr(null);
+
+    fetch(url, { signal: ctrl.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((json) => setData(json))
+      .catch((e) => {
+        if (e.name !== "AbortError") setErr(e);
+      })
+      .finally(() => setLoading(false));
+
+    return () => ctrl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+
+  return { data, err, loading };
 }
 
 export default function App() {
@@ -27,6 +57,11 @@ export default function App() {
   const [visitors, setVisitors] = useState(0);
   const [topAttraction, setTopAttraction] = useState({ name: "—", count: 0 });
   const [series, setSeries] = useState([]);
+
+  // NEW: engagement totals (likes, comments, shares)
+  const [likes, setLikes] = useState(0);
+  const [comments, setComments] = useState(0);
+  const [shares, setShares] = useState(0);
 
   // Rankings
   const [topList, setTopList] = useState([]);
@@ -36,80 +71,169 @@ export default function App() {
   const [activePoi, setActivePoi] = useState(null);
   const [activeTab, setActiveTab] = useState("attractions");
 
-  // UX
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+  // Date range (controlled by <DateRange/>)
+  const [range, setRange] = useState({ from: "", to: "" });
 
-  // ---- Date range (Last 7) ----
-  const today = useMemo(() => new Date(), []);
-  const start7 = useMemo(() => {
-    const d = new Date();
-    d.setDate(today.getDate() - 6);
-    return d;
-  }, [today]);
-  const [range, setRange] = useState({
-    from: start7.toISOString().slice(0, 10),
-    to: today.toISOString().slice(0, 10),
-  });
+  // Build a stable key fragment for POI (so changing/clearing it cancels in-flight)
+  const poiKey = activePoi ? `&poi_id=${activePoi.id}` : "";
+  const poiQuery = activePoi ? `&poi_id=${activePoi.id}` : "";
 
-  // Refresh KPIs, series, rankings on range/poi
+  // Guard against empty/invalid ranges
+  const validRange =
+    range?.from && range?.to && typeof range.from === "string" && typeof range.to === "string" && range.to >= range.from;
+
+  // ---- Fetches (each isolated + cancelable)
+  const mentionsReq = useFetchWithCancel(
+    () => {
+      if (!validRange) return { url: "", key: "skip" };
+      const url = `${API_BASE}/timeseries/mentions?date_from=${range.from}&date_to=${range.to}${poiQuery}`;
+      const key = `mentions:${range.from}->${range.to}${poiKey}`;
+      return { url, key };
+    },
+    [range?.from, range?.to, poiKey, API_BASE]
+  );
+
+  const visitorsReq = useFetchWithCancel(
+    () => {
+      if (!validRange) return { url: "", key: "skip" };
+      const url = `${API_BASE}/metrics/visitors?date_from=${range.from}&date_to=${range.to}${poiQuery}`;
+      const key = `visitors:${range.from}->${range.to}${poiKey}`;
+      return { url, key };
+    },
+    [range?.from, range?.to, poiKey, API_BASE]
+  );
+
+  const top1Req = useFetchWithCancel(
+    () => {
+      if (!validRange) return { url: "", key: "skip" };
+      const url = `${API_BASE}/metrics/top-attractions?date_from=${range.from}&date_to=${range.to}&limit=1`;
+      const key = `top1:${range.from}->${range.to}`;
+      return { url, key };
+    },
+    [range?.from, range?.to, API_BASE]
+  );
+
+  const topRankReq = useFetchWithCancel(
+    () => {
+      if (!validRange) return { url: "", key: "skip" };
+      const url = `${API_BASE}/rankings/top-pois?date_from=${range.from}&date_to=${range.to}&limit=5`;
+      const key = `top5:${range.from}->${range.to}`;
+      return { url, key };
+    },
+    [range?.from, range?.to, API_BASE]
+  );
+
+  const leastRankReq = useFetchWithCancel(
+    () => {
+      if (!validRange) return { url: "", key: "skip" };
+      const url = `${API_BASE}/rankings/least-pois?date_from=${range.from}&date_to=${range.to}&limit=5`;
+      const key = `least5:${range.from}->${range.to}`;
+      return { url, key };
+    },
+    [range?.from, range?.to, API_BASE]
+  );
+
+  // NEW: engagement (likes, comments, shares)
+  const engagementReq = useFetchWithCancel(
+    () => {
+      if (!validRange) return { url: "", key: "skip" };
+      const url = `${API_BASE}/metrics/engagement?date_from=${range.from}&date_to=${range.to}${poiQuery}`;
+      const key = `engagement:${range.from}->${range.to}${poiKey}`;
+      return { url, key };
+    },
+    [range?.from, range?.to, poiKey, API_BASE]
+  );
+
+  // ---- Map responses to UI state (pure)
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setErr("");
-      try {
-        const poiParam = activePoi ? `&poi_id=${activePoi.id}` : "";
+    // timeseries
+    if (mentionsReq.data?.items) {
+      const sorted = mentionsReq.data.items
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .map((d) => ({ ...d, dateLabel: d.date }));
+      setSeries(sorted);
+    }
+  }, [mentionsReq.data]);
 
-        const [visitorsR, topR, tsR, topRank, leastRank] = await Promise.all([
-          getJSON(`${API_BASE}/metrics/visitors?date_from=${range.from}&date_to=${range.to}${poiParam}`),
-          getJSON(`${API_BASE}/metrics/top-attractions?date_from=${range.from}&date_to=${range.to}&limit=1`),
-          getJSON(`${API_BASE}/timeseries/mentions?date_from=${range.from}&date_to=${range.to}${poiParam}`),
-          getJSON(`${API_BASE}/rankings/top-pois?date_from=${range.from}&date_to=${range.to}&limit=5`),
-          getJSON(`${API_BASE}/rankings/least-pois?date_from=${range.from}&date_to=${range.to}&limit=5`),
-        ]);
+  useEffect(() => {
+    // visitors
+    if (typeof visitorsReq.data?.total === "number") {
+      setVisitors(visitorsReq.data.total);
+    }
+  }, [visitorsReq.data]);
 
-        setVisitors(visitorsR?.total ?? 0);
-        const first = topR?.items?.[0] || { name: "—", count: 0 };
-        setTopAttraction({ name: first.name ?? "—", count: first.count ?? 0 });
+  useEffect(() => {
+    // top attraction
+    const first = top1Req.data?.items?.[0] || { name: "—", count: 0 };
+    setTopAttraction({ name: first.name ?? "—", count: first.count ?? 0 });
+  }, [top1Req.data]);
 
-        const sorted = (tsR.items || [])
-          .slice()
-          .sort((a, b) => a.date.localeCompare(b.date))
-          .map((d) => ({ ...d, dateLabel: d.date }));
-        setSeries(sorted);
+  useEffect(() => {
+    // rankings
+    setTopList(topRankReq.data?.items ?? []);
+  }, [topRankReq.data]);
 
-        setTopList(topRank?.items ?? []);
-        setLeastList(leastRank?.items ?? []);
-      } catch (e) {
-        setErr(String(e));
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [range, activePoi]);
+  useEffect(() => {
+    setLeastList(leastRankReq.data?.items ?? []);
+  }, [leastRankReq.data]);
 
-  // Presets + search
-  function setPreset(days) {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(end.getDate() - (days - 1));
-    setRange({
-      from: start.toISOString().slice(0, 10),
-      to: end.toISOString().slice(0, 10),
-    });
-  }
+  useEffect(() => {
+    // NEW: engagement totals
+    if (engagementReq.data) {
+      setLikes(engagementReq.data.likes ?? 0);
+      setComments(engagementReq.data.comments ?? 0);
+      setShares(engagementReq.data.shares ?? 0);
+    }
+  }, [engagementReq.data]);
+
+  // Simple search
   async function handleSearch(query) {
     const q = (query || "").trim();
     if (!q) return;
     try {
-      const res = await getJSON(`${API_BASE}/search/pois?q=${encodeURIComponent(q)}&limit=1`);
+      const url = `${API_BASE}/search/pois?q=${encodeURIComponent(q)}&limit=1`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const res = await r.json();
       const first = res?.items?.[0];
       if (first) setActivePoi(first);
-    } catch { /* ignore */ }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Combined loading & error view
+  const loading =
+    mentionsReq.loading ||
+    visitorsReq.loading ||
+    top1Req.loading ||
+    topRankReq.loading ||
+    leastRankReq.loading ||
+    engagementReq.loading; // NEW
+
+  const err =
+    mentionsReq.err ||
+    visitorsReq.err ||
+    top1Req.err ||
+    topRankReq.err ||
+    leastRankReq.err ||
+    engagementReq.err; // NEW
+
+  if (!validRange) {
+    return (
+      <div className="App">
+        <div className="header">
+          <h1>Tourism Analytics Dashboard</h1>
+          <DateRange value={range} onChange={setRange} />
+        </div>
+        <div className="center-subtle">Pick a date range to begin…</div>
+      </div>
+    );
   }
 
   if (loading) return <div className="App"><h2>Loading…</h2></div>;
-  if (err) return <div className="App"><h2 style={{color:"crimson"}}>Error: {err}</h2></div>;
+  if (err) return <div className="App"><h2 style={{ color: "crimson" }}>Error: {err.message || String(err)}</h2></div>;
 
   return (
     <div className="App">
@@ -117,25 +241,7 @@ export default function App() {
       <div className="header">
         <h1>Tourism Analytics Dashboard</h1>
 
-        <strong>Date range:</strong>
-        <button onClick={() => setPreset(7)}>Last 7</button>
-        <button onClick={() => setPreset(30)}>Last 30</button>
-        <button onClick={() => setPreset(90)}>Last 90</button>
-
-        <span>
-          from{" "}
-          <input
-            type="date"
-            value={range.from}
-            onChange={(e) => setRange({ from: e.target.value, to: range.to })}
-          />{" "}
-          to{" "}
-          <input
-            type="date"
-            value={range.to}
-            onChange={(e) => setRange({ from: range.from, to: e.target.value })}
-          />
-        </span>
+        <DateRange value={range} onChange={setRange} />
 
         <span>
           <input
@@ -164,13 +270,33 @@ export default function App() {
       <div className="kpi-row">
         <div className="card kpi-card">
           <div className="kpi-title">Total Visitors</div>
-          <div className="kpi-value">{visitors}</div>
+          <div className="kpi-value">{visitors.toLocaleString()}</div>
           <div className="kpi-sub">in selected range</div>
         </div>
+
         <div className="card kpi-card">
           <div className="kpi-title">Top Attraction</div>
           <div className="kpi-value">{topAttraction.name}</div>
           <div className="kpi-sub">{topAttraction.count} mentions</div>
+        </div>
+
+        {/* NEW: Likes / Comments / Shares */}
+        <div className="card kpi-card">
+          <div className="kpi-title">Likes</div>
+          <div className="kpi-value">{likes.toLocaleString()}</div>
+          <div className="kpi-sub">in selected range</div>
+        </div>
+
+        <div className="card kpi-card">
+          <div className="kpi-title">Comments</div>
+          <div className="kpi-value">{comments.toLocaleString()}</div>
+          <div className="kpi-sub">in selected range</div>
+        </div>
+
+        <div className="card kpi-card">
+          <div className="kpi-title">Shares</div>
+          <div className="kpi-value">{shares.toLocaleString()}</div>
+          <div className="kpi-sub">in selected range</div>
         </div>
       </div>
 
@@ -216,6 +342,7 @@ export default function App() {
           </section>
 
           <section className="card word-card">
+            <div className="card-title">Sentiment & Trends</div>
             <WordCloud dateFrom={range.from} dateTo={range.to} />
           </section>
         </div>

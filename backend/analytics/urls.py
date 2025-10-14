@@ -1,4 +1,3 @@
-
 # backend/analytics/urls.py
 from django.urls import path
 from . import views
@@ -26,6 +25,9 @@ urlpatterns = [
     path("rankings/least-pois", views.LeastPOIsView.as_view(), name="rankings-least-pois"),
     path("timeseries/mentions", views.MentionsTimeSeriesView.as_view(), name="timeseries-mentions"),
 
+    # ✅ NEW: Engagement totals (likes, comments, shares)
+    path("metrics/engagement", views.MetricsEngagementView.as_view(), name="metrics-engagement"),
+
     # ─────────────────────────────────────────
     # New endpoints (Part 3: Map + Trends) — originals
     # ─────────────────────────────────────────
@@ -44,28 +46,7 @@ urlpatterns = [
     path("api/map/heat", views.MapHeatView.as_view(), name="api-map-heat"),
     path("api/trends/wordcloud", views.WordCloudView.as_view(), name="api-trends-wordcloud"),
     path("api/trends/hidden-gem", views.HiddenGemView.as_view(), name="api-trends-hidden-gem"),
+
+    # ✅ NEW: API alias for Engagement totals
+    path("api/metrics/engagement", views.MetricsEngagementView.as_view(), name="api-metrics-engagement"),
 ]
-
-## backend/analytics/api_urls.py
-from django.urls import path
-from . import views
-
-urlpatterns = [
-    # Minimal dashboard APIs expected by your React app
-    path("metrics/totals", views.MetricsTotalsView.as_view(), name="api-metrics-totals"),
-    path("attractions/top", views.TopAttractionsView.as_view(), name="api-attractions-top"),
-    path("sentiment/trend", views.SentimentTrendView.as_view(), name="api-sentiment-trend"),
-
-    # Existing endpoints (Phase 1 + 2)
-    path("metrics/visitors", views.MetricsVisitorsView.as_view(), name="metrics-visitors"),
-    path("metrics/top-attractions", views.TopAttractionsView.as_view(), name="metrics-top-attractions"),
-    path("rankings/top-pois", views.TopPOIsView.as_view(), name="rankings-top-pois"),
-    path("rankings/least-pois", views.LeastPOIsView.as_view(), name="rankings-least-pois"),
-    path("timeseries/mentions", views.MentionsTimeSeriesView.as_view(), name="timeseries-mentions"),
-
-    # Map + Trends
-    path("map/heat", views.MapHeatView.as_view(), name="map-heat"),
-    path("trends/wordcloud", views.WordCloudView.as_view(), name="trends-wordcloud"),
-    path("trends/hidden-gem", views.HiddenGemView.as_view(), name="trends-hidden-gem"),
-]
-
