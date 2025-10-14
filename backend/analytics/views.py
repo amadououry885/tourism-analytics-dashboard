@@ -6,7 +6,7 @@ import csv
 from io import StringIO, BytesIO
 
 from django.http import HttpResponse
-from django.db.models import Count, F, Case, When, IntegerField, Sum  # ← added Sum
+from django.db.models import Count, F, Case, When, IntegerField, Sum  # Sum kept (harmless even if unused)
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils.dateparse import parse_date
 
@@ -52,7 +52,7 @@ class SentimentTopicViewSet(viewsets.ReadOnlyModelViewSet):
         if p.get("date_from"):
             qs = qs.filter(date__gte=p["date_from"])
         if p.get("date_to"):
-          qs = qs.filter(date__lte=p["date_to"])
+            qs = qs.filter(date__lte=p["date_to"])
         return qs
 
 # ─────────────────────────────────────────────────────────────
@@ -150,31 +150,46 @@ class MetricsEngagementView(APIView):
     """
     GET /api/metrics/engagement?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD[&poi_id=123]
     -> {"likes": 1234, "comments": 567, "shares": 321}
+    (Defensive: tolerates fields on PostClean OR PostRaw and missing columns.)
     """
     def get(self, request):
         start, end = parse_range(request)
         poi_id = request.GET.get("poi_id")
 
+        # Base queryset: pick posts within date range, with access to raw_post for fallbacks
         qs = (
             PostClean.objects
+            .select_related("raw_post")
             .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
             .filter(ts__date__gte=start, ts__date__lte=end)
         )
         if poi_id:
             qs = qs.filter(poi_id=poi_id)
 
-        agg = qs.aggregate(
-            likes=Coalesce(Sum("likes"), 0),
-            comments=Coalesce(Sum("comments"), 0),
-            shares=Coalesce(Sum("shares"), 0),
-        )
-        # Ensure plain ints
-        out = {
-            "likes": int(agg.get("likes") or 0),
-            "comments": int(agg.get("comments") or 0),
-            "shares": int(agg.get("shares") or 0),
-        }
-        return Response(out)
+        likes = comments = shares = 0
+
+        # Safe numeric extractor that checks multiple possible field names
+        def num(obj, *names):
+            for n in names:
+                try:
+                    v = getattr(obj, n)
+                except Exception:
+                    v = None
+                if isinstance(v, (int, float)) and v is not None:
+                    return int(v)
+            return 0
+
+        for pc in qs:
+            rp = getattr(pc, "raw_post", None)
+            # Prefer counts on PostClean; if 0/missing, fall back to PostRaw
+            likes    += (num(pc, "likes", "likes_count", "like_count")
+                         or (num(rp, "likes", "likes_count", "like_count") if rp else 0))
+            comments += (num(pc, "comments", "comments_count", "comment_count")
+                         or (num(rp, "comments", "comments_count", "comment_count") if rp else 0))
+            shares   += (num(pc, "shares", "shares_count", "share_count", "reposts")
+                         or (num(rp, "shares", "shares_count", "share_count", "reposts") if rp else 0))
+
+        return Response({"likes": likes, "comments": comments, "shares": shares})
 
 class SentimentTrendView(APIView):
     """
@@ -537,3 +552,108 @@ class ReportsExportView(APIView):
         resp = HttpResponse(pdf, content_type="application/pdf")
         resp["Content-Disposition"] = f"attachment; filename=report_{start}_{end}.pdf"
         return resp
+
+# ─────────────────────────────────────────────────────────────
+# Missing endpoints used by the frontend (minimal, safe versions)
+# ─────────────────────────────────────────────────────────────
+
+class MetricsVisitorsView(APIView):
+    """
+    GET /metrics/visitors?date_from=&date_to=&poi_id=
+    -> { "total": <int> }
+    """
+    def get(self, request):
+        start, end = parse_range(request)
+        poi_id = request.GET.get("poi_id")
+
+        qs = (
+            PostClean.objects
+            .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
+            .filter(ts__date__gte=start, ts__date__lte=end)
+        )
+        if poi_id:
+            qs = qs.filter(poi_id=poi_id)
+
+        return Response({"total": qs.count()})
+
+
+class MentionsTimeSeriesView(APIView):
+    """
+    GET /timeseries/mentions?date_from=&date_to=&poi_id=
+    -> { items: [{ date: "YYYY-MM-DD", count: <int> }, ...] }
+    """
+    def get(self, request):
+        start, end = parse_range(request)
+        poi_id = request.GET.get("poi_id")
+
+        base = (
+            PostClean.objects
+            .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
+            .filter(ts__date__gte=start, ts__date__lte=end)
+        )
+        if poi_id:
+            base = base.filter(poi_id=poi_id)
+
+        agg = (
+            base.annotate(day=TruncDate("ts"))
+                .values("day")
+                .annotate(count=Count("id"))
+                .order_by("day")
+        )
+
+        by_day = {r["day"]: r["count"] for r in agg}
+        items = []
+        d = start
+        while d <= end:
+            items.append({"date": d.isoformat(), "count": by_day.get(d, 0)})
+            d += timedelta(days=1)
+        return Response({"items": items})
+
+
+class TopPOIsView(APIView):
+    """
+    GET /rankings/top-pois?date_from=&date_to=&limit=5
+    -> { items: [{ poi_id, name, count }] }
+    """
+    def get(self, request):
+        start, end = parse_range(request)
+        limit = int(request.GET.get("limit", 5))
+
+        qs = (
+            PostClean.objects
+            .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
+            .filter(ts__date__gte=start, ts__date__lte=end)
+            .exclude(poi=None)
+        )
+        rows = (
+            qs.values("poi_id", "poi__name")
+              .annotate(count=Count("id"))
+              .order_by("-count")[:limit]
+        )
+        items = [{"poi_id": r["poi_id"], "name": r["poi__name"], "count": r["count"]} for r in rows]
+        return Response({"items": items})
+
+
+class LeastPOIsView(APIView):
+    """
+    GET /rankings/least-pois?date_from=&date_to=&limit=5
+    -> { items: [{ poi_id, name, count }] }
+    """
+    def get(self, request):
+        start, end = parse_range(request)
+        limit = int(request.GET.get("limit", 5))
+
+        qs = (
+            PostClean.objects
+            .annotate(ts=Coalesce(F("raw_post__created_at"), F("raw_post__fetched_at")))
+            .filter(ts__date__gte=start, ts__date__lte=end)
+            .exclude(poi=None)
+        )
+        # Order ascending and keep the first N
+        rows = (
+            qs.values("poi_id", "poi__name")
+              .annotate(count=Count("id"))
+              .order_by("count", "poi__name")[:limit]
+        )
+        items = [{"poi_id": r["poi_id"], "name": r["poi__name"], "count": r["count"]} for r in rows]
+        return Response({"items": items})

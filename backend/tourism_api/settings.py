@@ -128,11 +128,12 @@ if USE_SQLITE:
     # Use a persistent/writable path on EB. (Ownership fixed in a postdeploy hook.)
     SQLITE_PATH = os.getenv("SQLITE_PATH", "/var/app/data/tourism.sqlite3")
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": SQLITE_PATH,
-        }
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",   # creates/uses backend/db.sqlite3
     }
+}
+
 else:
     # RDS / Postgres (supply via eb setenv …)
     DATABASES = {
