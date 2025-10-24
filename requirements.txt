@@ -1,14 +1,16 @@
-# Django 5.x stack
-Django>=5.2,<5.3
-djangorestframework>=3.16
-django-cors-headers>=4.4
+# --- Core ---
+Django>=5.0,<5.3
 
-# Gunicorn app server
+# REST & CORS
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+
+# App server
 gunicorn>=21.2
 
-# Postgres
+# Database
 psycopg[binary]>=3.2
-# (optional alternative) psycopg2-binary>=2.9
+# (alternative) psycopg2-binary>=2.9
 
 # Static files
 whitenoise>=6.7
@@ -16,5 +18,3 @@ whitenoise>=6.7
 # Config helpers (optional)
 python-dotenv>=1.0
 dj-database-url>=2.2
-django-cors-headers==4.9.0
-djangorestframework==3.16.1
