@@ -134,15 +134,15 @@ TEMPLATES = [
 WSGI_APPLICATION = "tourism_api.wsgi.application"
 
 # ── Database ──────────────────────────────────────────────────────────────────
-# USE_SQLITE=1 for EB (no RDS). Uses a writable path with fixed perms via hook.
+# USE_SQLITE=1 for EB (no RDS). Persist DB in /var/app/data so deploys don't wipe it.
 USE_SQLITE = os.getenv("USE_SQLITE", "1") == "1"
 
 if USE_SQLITE:
-    # Local/simple default (backend/db.sqlite3)
+    SQLITE_PATH = os.getenv("SQLITE_PATH", "/var/app/data/tourism.sqlite3")
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": SQLITE_PATH,  # <-- persistent path on EB instances
         }
     }
 else:
