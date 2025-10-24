@@ -16,3 +16,5 @@ whitenoise>=6.7
 # Config helpers (optional)
 python-dotenv>=1.0
 dj-database-url>=2.2
+django-cors-headers==4.9.0
+djangorestframework==3.16.1

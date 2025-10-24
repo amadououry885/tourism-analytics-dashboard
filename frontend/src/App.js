@@ -14,6 +14,7 @@ import AttractionsTab from "./components/AttractionsTab";
 import VendorsTab from "./components/VendorsTab";
 import ReportExport from "./components/ReportExport";
 import DateRange from "./components/DateRange"; // stable single dropdown
+import LocationMap from "./components/LocationMap";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "/api";
 
@@ -261,6 +262,13 @@ export default function App() {
           <button onClick={() => setActivePoi(null)}>Clear</button>
         </span>
       </div>
+
+       <LocationMap
+        dateFrom={range.from}
+        dateTo={range.to}
+        poiName={activePoi?.name || null}
+        fallbackName={topAttraction?.name || null}
+       />
 
       {activePoi && (
         <div className="center-subtle">Active POI filter: {activePoi.name}</div>

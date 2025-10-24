@@ -27,7 +27,7 @@ _allowed = os.getenv("DJANGO_ALLOWED_HOSTS", "")
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()] or ["*"]
 
 # If you know your EB CNAME/URL, set it so we can add precise CORS/CSRF.
-# e.g. EB_HOST="tourism-analytics-env.eba-usvnptsq.ap-southeast-1.elasticbeanstalk.com"
+# e.g. EB_HOST="tourism-analytics-env.eba-xxxx.ap-southeast-1.elasticbeanstalk.com"
 EB_HOST = os.getenv("EB_HOST", "").strip()
 
 # Local dev frontends you use (includes 3001 for your React dev server)
@@ -55,7 +55,10 @@ if not CORS_ALLOW_ALL_ORIGINS:
         CORS_ALLOWED_ORIGINS += [f"http://{EB_HOST}", f"https://{EB_HOST}"]
 
     # Also merge any explicit env values (so eb setenv can override/extend)
-    CORS_ALLOWED_ORIGINS += [o for o in _split_env("CORS_ALLOWED_ORIGINS") if o not in CORS_ALLOWED_ORIGINS]
+    extra = _split_env("CORS_ALLOWED_ORIGINS")
+    for o in extra:
+        if o not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(o)
 
 # CSRF: Django 5 requires scheme+host entries
 CSRF_TRUSTED_ORIGINS = [
@@ -70,11 +73,15 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 if EB_HOST:
     CSRF_TRUSTED_ORIGINS += [f"https://{EB_HOST}", f"http://{EB_HOST}"]
+
 # Merge any explicit env
-CSRF_TRUSTED_ORIGINS += [o for o in _split_env("CSRF_TRUSTED_ORIGINS") if o not in CSRF_TRUSTED_ORIGINS]
+for o in _split_env("CSRF_TRUSTED_ORIGINS"):
+    if o not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(o)
 
 # ── Apps ───────────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
+    # Django core
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -82,10 +89,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    # Third-party
     "rest_framework",
     "corsheaders",
 
+    # Project apps
     "analytics",
+    "vendors",
+    "events",
+    "transport",
+    "stays",
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -125,15 +138,13 @@ WSGI_APPLICATION = "tourism_api.wsgi.application"
 USE_SQLITE = os.getenv("USE_SQLITE", "1") == "1"
 
 if USE_SQLITE:
-    # Use a persistent/writable path on EB. (Ownership fixed in a postdeploy hook.)
-    SQLITE_PATH = os.getenv("SQLITE_PATH", "/var/app/data/tourism.sqlite3")
+    # Local/simple default (backend/db.sqlite3)
     DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",   # creates/uses backend/db.sqlite3
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
-
 else:
     # RDS / Postgres (supply via eb setenv …)
     DATABASES = {
