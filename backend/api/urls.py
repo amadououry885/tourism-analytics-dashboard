@@ -1,3 +1,4 @@
+# backend/api/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
@@ -13,4 +14,6 @@ router.register(r'stays', StayViewSet, basename='stay')
 router.register(r'transport/places', PlaceViewSet, basename='place')
 router.register(r'transport/routes', RouteViewSet, basename='route')
 
-urlpatterns = [ path('', include(router.urls)) ]
+urlpatterns = [
+    path('', include(router.urls)),
+]
