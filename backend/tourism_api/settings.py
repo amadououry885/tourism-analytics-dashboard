@@ -99,6 +99,8 @@ INSTALLED_APPS = [
     "events",
     "transport",
     "stays",
+     "api",
+
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -185,7 +187,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
+
 if DEBUG:
     REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(
         "rest_framework.renderers.BrowsableAPIRenderer"

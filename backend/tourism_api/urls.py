@@ -1,26 +1,23 @@
-# backend/tourism_api/urls.py
-from django.contrib import admin
+# backend/api/urls.py
 from django.urls import path, include
-from django.http import HttpResponse
+from rest_framework.routers import DefaultRouter
 
-# Simple health check endpoint for AWS Elastic Beanstalk
-def healthz(_request):
-    return HttpResponse("ok", content_type="text/plain")
+# Import the viewsets from each app
+from vendors.views import VendorViewSet
+from events.views import EventViewSet
+from stays.views import StayViewSet
+from transport.views import PlaceViewSet, RouteViewSet
 
+router = DefaultRouter()
+# Top-level resources
+router.register(r'vendors', VendorViewSet, basename='vendor')     # /api/vendors/
+router.register(r'events', EventViewSet, basename='event')        # /api/events/
+router.register(r'stays', StayViewSet, basename='stay')           # /api/stays/
+
+# Transport sub-resources
+router.register(r'transport/places', PlaceViewSet, basename='place')   # /api/transport/places/
+router.register(r'transport/routes', RouteViewSet, basename='route')   # /api/transport/routes/
 
 urlpatterns = [
-    path("healthz", healthz),
-    path("admin/", admin.site.urls),
-
-    # ── API routes ─────────────────────────────────────────────
-    path("api/analytics/", include("analytics.urls")),
-    path("api/vendors/", include("vendors.urls")),
-    path("api/events/", include("events.urls")),
-    path("api/transport/", include("transport.urls")),
-    path("api/stays/", include("stays.urls")),
-]
-
-# Optional root-level include for analytics (for backward compatibility)
-urlpatterns += [
-    path("", include("analytics.urls")),
+    path('', include(router.urls)),
 ]

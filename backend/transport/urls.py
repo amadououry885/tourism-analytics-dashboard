@@ -1,8 +1,11 @@
-# urls.py (same content for vendors/events/transport/stays)
-from django.urls import path
-from django.http import JsonResponse
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import PlaceViewSet, RouteViewSet
 
-def placeholder(_):
-    return JsonResponse({"status": "ok", "app": __package__ or "app"})
+router = DefaultRouter()
+router.register(r"places", PlaceViewSet, basename="place")   # /api/transport/places/
+router.register(r"routes", RouteViewSet, basename="route")   # /api/transport/routes/
 
-urlpatterns = [ path("", placeholder) ]
+urlpatterns = [
+    path("", include(router.urls)),
+]

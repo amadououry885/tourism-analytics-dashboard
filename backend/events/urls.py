@@ -1,8 +1,10 @@
-# urls.py (same content for vendors/events/transport/stays)
-from django.urls import path
-from django.http import JsonResponse
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import EventViewSet
 
-def placeholder(_):
-    return JsonResponse({"status": "ok", "app": __package__ or "app"})
+router = DefaultRouter()
+router.register(r"", EventViewSet, basename="event")  # /api/events/
 
-urlpatterns = [ path("", placeholder) ]
+urlpatterns = [
+    path("", include(router.urls)),
+]
