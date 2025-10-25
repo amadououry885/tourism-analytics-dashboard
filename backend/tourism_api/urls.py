@@ -1,28 +1,12 @@
-# backend/api/urls.py
+# backend/tourism_api/urls.py
+from django.contrib import admin
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 
-# Import the viewsets from each app
-from vendors.views import VendorViewSet
-from events.views import EventViewSet
-from stays.views import StayViewSet
-from transport.views import PlaceViewSet, RouteViewSet
+def healthz(_request):
+    return HttpResponse("ok", content_type="text/plain")
 
-router = DefaultRouter()
-# Top-level resources
-router.register(r'vendors', VendorViewSet, basename='vendor')     # /api/vendors/
-router.register(r'events', EventViewSet, basename='event')        # /api/events/
-router.register(r'stays', StayViewSet, basename='stay')           # /api/stays/
-
-# Transport sub-resources
-router.register(r'transport/places', PlaceViewSet, basename='place')   # /api/transport/places/
-router.register(r'transport/routes', RouteViewSet, basename='route')   # /api/transport/routes/
-
-def api_root(request):
-    """
-    Simple API root for /api/ showing available endpoints.
-    """
+def root(_request):
     return JsonResponse({
         "status": "ok",
         "endpoints": {
@@ -30,11 +14,19 @@ def api_root(request):
             "events": "/api/events/",
             "stays": "/api/stays/",
             "transport_places": "/api/transport/places/",
-            "transport_routes": "/api/transport/routes/"
+            "transport_routes": "/api/transport/routes/",
         }
     })
 
 urlpatterns = [
-    path("", api_root, name="api-root"),
-    path("", include(router.urls)),
+    # System
+    path("healthz", healthz),
+    path("admin/", admin.site.urls),
+
+    # APIs
+    path("api/", include("api.urls")),
+    path("api/analytics/", include("analytics.urls")),
+
+    # Root (must NOT include analytics here)
+    path("", root),
 ]
