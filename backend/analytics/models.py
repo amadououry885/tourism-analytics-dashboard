@@ -1,4 +1,3 @@
-# ✅ make sure there is NO "from django.contrib.gis..." import at the top
 
 from django.db import models
 
