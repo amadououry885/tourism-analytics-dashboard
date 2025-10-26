@@ -1,6 +1,6 @@
 
 from django.db import models
-from django.contrib.gis.db import models as gis_models  # for future map support
+
 
 # ──────────────────────────────────────────────
 # 1️⃣ Place model — stores tourism places
