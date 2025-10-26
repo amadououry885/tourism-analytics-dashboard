@@ -1,4 +1,3 @@
-# backend/tourism_api/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse, JsonResponse
@@ -15,18 +14,25 @@ def root(_request):
             "stays": "/api/stays/",
             "transport_places": "/api/transport/places/",
             "transport_routes": "/api/transport/routes/",
+            "analytics_examples": [
+                "/api/ping",
+                "/api/metrics/visitors",
+                "/api/timeseries/mentions",
+                "/api/rankings/top-pois",
+                "/api/metrics/engagement",
+            ],
         }
     })
 
 urlpatterns = [
-    # System
     path("healthz", healthz),
     path("admin/", admin.site.urls),
 
-    # APIs
-    path("api/", include("api.urls")),
-    path("api/analytics/", include("analytics.urls")),
+    # 🔑 include analytics FIRST under /api/
+    path("api/", include("analytics.urls")),
 
-    # Root (must NOT include analytics here)
+    # then your existing DRF routes
+    path("api/", include("api.urls")),
+
     path("", root),
 ]
