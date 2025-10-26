@@ -1,58 +1,38 @@
+# ✅ make sure there is NO "from django.contrib.gis..." import at the top
 
 from django.db import models
 
-
-# ──────────────────────────────────────────────
-# 1️⃣ Place model — stores tourism places
-# ──────────────────────────────────────────────
 class Place(models.Model):
-    name = models.CharField(max_length=200, unique=True)
-    city = models.CharField(max_length=100, blank=True)
-    description = models.TextField(blank=True)
+    name = models.CharField(max_length=200)
+    category = models.CharField(max_length=100, blank=True, default="")
+    city = models.CharField(max_length=100, blank=True, default="")
+    state = models.CharField(max_length=100, blank=True, default="")
+    country = models.CharField(max_length=100, blank=True, default="")
+    is_free = models.BooleanField(default=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=10, blank=True, default="MYR")
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
-    category = models.CharField(max_length=100, blank=True)
-    price_cents = models.IntegerField(null=True, blank=True)
-    is_free = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    # ... (rest unchanged)
 
     def __str__(self):
         return self.name
 
-    @property
-    def price_display(self):
-        if self.is_free or not self.price_cents:
-            return "Free"
-        return f"RM {self.price_cents / 100:.2f}"
-
-
-# ──────────────────────────────────────────────
-# 2️⃣ SocialPost model — stores social data about those places
-# ──────────────────────────────────────────────
 class SocialPost(models.Model):
-    PLATFORM_CHOICES = [
-        ("x", "X / Twitter"),
-        ("ig", "Instagram"),
-        ("tt", "TikTok"),
-        ("fb", "Facebook"),
-    ]
-    platform = models.CharField(max_length=8, choices=PLATFORM_CHOICES)
-    external_id = models.CharField(max_length=128, unique=True)
-    text = models.TextField()
+    platform = models.CharField(max_length=50)
+    post_id = models.CharField(max_length=100, unique=True)
+    url = models.URLField(blank=True)
+    content = models.TextField()
     created_at = models.DateTimeField()
-    place = models.ForeignKey(Place, null=True, blank=True, on_delete=models.SET_NULL)
-    is_tourism_related = models.BooleanField(default=False)
-    sentiment = models.SmallIntegerField(default=0)  # -1, 0, 1
-    likes = models.IntegerField(default=0)
-    comments = models.IntegerField(default=0)
-    shares = models.IntegerField(default=0)
-    inserted_at = models.DateTimeField(auto_now_add=True)
+    fetched_at = models.DateTimeField(auto_now_add=True)
+    likes = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+    shares = models.PositiveIntegerField(default=0)
+    is_tourism = models.BooleanField(default=True)
+    place = models.ForeignKey(Place, null=True, blank=True,
+                              on_delete=models.SET_NULL, related_name="posts")
+    extra = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
-        return f"{self.platform.upper()} post {self.external_id}"
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["created_at"]),
-            models.Index(fields=["place", "created_at"]),
-        ]
+        place_name = self.place.name if self.place_id else "—"
+        return f"{self.platform}:{self.post_id} → {place_name}"
