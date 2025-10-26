@@ -1,8 +1,24 @@
+# backend/events/serializers.py
 from rest_framework import serializers
 from .models import Event
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = ["id", "title", "date", "location", "description",
-                  "category", "lat", "lon", "is_active", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "start_date",
+            "end_date",
+            "location_name",
+            "city",
+            "lat",
+            "lon",
+            "tags",
+            "is_published",
+        ]
+
+    def validate_tags(self, value):
+        # Normalize None -> []
+        return value or []
