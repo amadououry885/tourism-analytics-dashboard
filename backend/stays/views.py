@@ -4,25 +4,22 @@ from .models import Stay
 from .serializers import StaySerializer
 
 class StayViewSet(viewsets.ModelViewSet):
-    queryset = Stay.objects.all().order_by("priceNight")  # <- was price_per_night
+    queryset = Stay.objects.all().order_by("priceNight")
     serializer_class = StaySerializer
 
     def get_queryset(self):
         qs = super().get_queryset()
-        city = self.request.query_params.get("city")
+        district = self.request.query_params.get("district")
         typ = self.request.query_params.get("type")
         q = self.request.query_params.get("q")
 
-        # price/rating filters (params are numeric strings)
         min_price = self.request.query_params.get("min_price")
         max_price = self.request.query_params.get("max_price")
         min_rating = self.request.query_params.get("min_rating")
+        amenities = self.request.query_params.get("amenities")  # comma-separated
 
-        # amenities comma list, e.g. ?amenities=WiFi,Pool
-        amenities = self.request.query_params.get("amenities")
-
-        if city:
-            qs = qs.filter(district__iexact=city)
+        if district:
+            qs = qs.filter(district__iexact=district)
         if typ:
             qs = qs.filter(type__iexact=typ)
         if q:
@@ -36,9 +33,7 @@ class StayViewSet(viewsets.ModelViewSet):
             qs = qs.filter(rating__gte=min_rating)
 
         if amenities:
-            wanted = [a.strip() for a in amenities.split(",") if a.strip()]
-            # JSONField “contains” works for subset checks like [{"WiFi",...}]
-            for a in wanted:
+            for a in [x.strip() for x in amenities.split(",") if x.strip()]:
                 qs = qs.filter(amenities__contains=[a])
 
         return qs

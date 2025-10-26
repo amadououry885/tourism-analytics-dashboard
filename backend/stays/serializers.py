@@ -4,5 +4,18 @@ from .models import Stay
 class StaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Stay
-        fields = ["id", "name", "city", "price_per_night", "rating",
-                  "lat", "lon", "is_active", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "type",
+            "district",
+            "rating",
+            "priceNight",
+            "amenities",
+            "lat",
+            "lon",
+            "images",
+            "landmark",
+            "distanceKm",
+            "is_active",
+        ]
