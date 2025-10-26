@@ -1,4 +1,3 @@
-
 from django.db import models
 
 class Place(models.Model):
@@ -12,10 +11,14 @@ class Place(models.Model):
     currency = models.CharField(max_length=10, blank=True, default="MYR")
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
-    # ... (rest unchanged)
 
     def __str__(self):
-        return self.name
+        # extra defensive (shouldn’t be needed, but avoids surprises)
+        return self.name or f"Place #{self.pk}"
+
+    class Meta:
+        ordering = ("id",)   # safe default; admin won’t accidentally use a missing field
+
 
 class SocialPost(models.Model):
     platform = models.CharField(max_length=50)
@@ -33,5 +36,13 @@ class SocialPost(models.Model):
     extra = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
-        place_name = self.place.name if self.place_id else "—"
-        return f"{self.platform}:{self.post_id} → {place_name}"
+        try:
+            place_name = (self.place.name if self.place_id and self.place else "—")
+        except Exception:
+            place_name = "—"
+        # keep it short so admin lists don’t blow up rendering
+        snippet = (self.content[:30] + "…") if self.content and len(self.content) > 30 else (self.content or "")
+        return f"{self.platform}:{self.post_id} → {place_name} {snippet}".strip()
+
+    class Meta:
+        ordering = ("-id",)  # safe and cheap
