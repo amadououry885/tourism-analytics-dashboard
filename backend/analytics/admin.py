@@ -1,26 +1,14 @@
 from django.contrib import admin
-from .models import PostRaw, PostClean, POI, SentimentTopic
+from .models import Place, SocialPost
 
-@admin.register(PostRaw)
-class PostRawAdmin(admin.ModelAdmin):
-    list_display = ("platform", "post_id", "created_at", "fetched_at")
-    search_fields = ("platform", "post_id", "content")
-    list_filter = ("platform",)
+@admin.register(Place)
+class PlaceAdmin(admin.ModelAdmin):
+    list_display = ("name", "city", "category", "price_display", "is_free", "created_at")
+    search_fields = ("name", "city", "category")
+    list_filter = ("is_free", "category")
 
-@admin.register(PostClean)
-class PostCleanAdmin(admin.ModelAdmin):
-    list_display = ("raw_post", "sentiment", "poi")
-    search_fields = ("clean_content", "topics")
-    list_filter = ("sentiment",)
-
-@admin.register(POI)
-class POIAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "latitude", "longitude")
-    search_fields = ("name", "category")
-    list_filter = ("category",)
-
-@admin.register(SentimentTopic)
-class SentimentTopicAdmin(admin.ModelAdmin):
-    list_display = ("topic", "sentiment", "count", "date")
-    search_fields = ("topic",)
-    list_filter = ("sentiment", "date")
+@admin.register(SocialPost)
+class SocialPostAdmin(admin.ModelAdmin):
+    list_display = ("platform", "external_id", "place", "likes", "comments", "shares", "created_at")
+    search_fields = ("external_id", "text")
+    list_filter = ("platform", "is_tourism_related", "sentiment")

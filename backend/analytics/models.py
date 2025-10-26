@@ -1,46 +1,58 @@
+
 from django.db import models
+from django.contrib.gis.db import models as gis_models  # for future map support
 
-# Raw social posts (before cleaning)
-class PostRaw(models.Model):
-    platform = models.CharField(max_length=50)   # e.g., Twitter, Instagram
-    post_id = models.CharField(max_length=100, unique=True)
-    content = models.TextField()
-    created_at = models.DateTimeField()
-    fetched_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.platform} - {self.post_id}"
-
-
-# Cleaned/processed posts
-class PostClean(models.Model):
-    raw_post = models.OneToOneField(PostRaw, on_delete=models.CASCADE, related_name="cleaned")
-    clean_content = models.TextField()
-    sentiment = models.CharField(max_length=20)  # Positive, Negative, Neutral
-    topics = models.TextField(null=True, blank=True)  # comma-separated topics
-    poi = models.ForeignKey("POI", null=True, blank=True, on_delete=models.SET_NULL)
-
-    def __str__(self):
-        return f"Cleaned: {self.raw_post.post_id}"
-
-
-# Points of Interest (attractions, hotels, landmarks)
-class POI(models.Model):
-    name = models.CharField(max_length=200)
-    category = models.CharField(max_length=100)  # e.g., Beach, Museum
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+# ──────────────────────────────────────────────
+# 1️⃣ Place model — stores tourism places
+# ──────────────────────────────────────────────
+class Place(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    city = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    category = models.CharField(max_length=100, blank=True)
+    price_cents = models.IntegerField(null=True, blank=True)
+    is_free = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
 
+    @property
+    def price_display(self):
+        if self.is_free or not self.price_cents:
+            return "Free"
+        return f"RM {self.price_cents / 100:.2f}"
 
-# Sentiment / Topic trends
-class SentimentTopic(models.Model):
-    topic = models.CharField(max_length=100)
-    sentiment = models.CharField(max_length=20)
-    count = models.IntegerField(default=0)
-    date = models.DateField()
+
+# ──────────────────────────────────────────────
+# 2️⃣ SocialPost model — stores social data about those places
+# ──────────────────────────────────────────────
+class SocialPost(models.Model):
+    PLATFORM_CHOICES = [
+        ("x", "X / Twitter"),
+        ("ig", "Instagram"),
+        ("tt", "TikTok"),
+        ("fb", "Facebook"),
+    ]
+    platform = models.CharField(max_length=8, choices=PLATFORM_CHOICES)
+    external_id = models.CharField(max_length=128, unique=True)
+    text = models.TextField()
+    created_at = models.DateTimeField()
+    place = models.ForeignKey(Place, null=True, blank=True, on_delete=models.SET_NULL)
+    is_tourism_related = models.BooleanField(default=False)
+    sentiment = models.SmallIntegerField(default=0)  # -1, 0, 1
+    likes = models.IntegerField(default=0)
+    comments = models.IntegerField(default=0)
+    shares = models.IntegerField(default=0)
+    inserted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.topic} ({self.sentiment}) on {self.date}"
+        return f"{self.platform.upper()} post {self.external_id}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["place", "created_at"]),
+        ]
