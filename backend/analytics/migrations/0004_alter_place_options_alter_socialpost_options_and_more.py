@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             options={"ordering": ("-id",)},
         ),
 
-        # SAFER than RemoveIndex (works even if the index never existed)
+        # Index drops guarded (safe on SQLite/Postgres)
         migrations.RunSQL(
             sql='DROP INDEX IF EXISTS "analytics_s_created_017dca_idx";',
             reverse_sql=migrations.RunSQL.noop,
@@ -31,38 +31,22 @@ class Migration(migrations.Migration):
             reverse_sql=migrations.RunSQL.noop,
         ),
 
-        migrations.RemoveField(
-            model_name="place",
-            name="created_at",
+        # ---- STATE-ONLY removals (do NOT touch DB) ----
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.RemoveField(model_name="place", name="created_at"),
+                migrations.RemoveField(model_name="place", name="description"),
+                migrations.RemoveField(model_name="place", name="price_cents"),
+                migrations.RemoveField(model_name="socialpost", name="external_id"),
+                migrations.RemoveField(model_name="socialpost", name="inserted_at"),
+                migrations.RemoveField(model_name="socialpost", name="is_tourism_related"),
+                migrations.RemoveField(model_name="socialpost", name="sentiment"),
+                migrations.RemoveField(model_name="socialpost", name="text"),
+            ],
+            database_operations=[],
         ),
-        migrations.RemoveField(
-            model_name="place",
-            name="description",
-        ),
-        migrations.RemoveField(
-            model_name="place",
-            name="price_cents",
-        ),
-        migrations.RemoveField(
-            model_name="socialpost",
-            name="external_id",
-        ),
-        migrations.RemoveField(
-            model_name="socialpost",
-            name="inserted_at",
-        ),
-        migrations.RemoveField(
-            model_name="socialpost",
-            name="is_tourism_related",
-        ),
-        migrations.RemoveField(
-            model_name="socialpost",
-            name="sentiment",
-        ),
-        migrations.RemoveField(
-            model_name="socialpost",
-            name="text",
-        ),
+        # -----------------------------------------------
+
         migrations.AddField(
             model_name="place",
             name="country",
