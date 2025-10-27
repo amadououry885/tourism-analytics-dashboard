@@ -1,6 +1,11 @@
+// src/components/StayCard.jsx
 import React from "react";
 
 export default function StayCard({ stay }) {
+  const hasRating = stay.rating != null && stay.rating !== "";
+  const ratingText =
+    hasRating ? Number(stay.rating).toFixed(1) : "—";
+
   return (
     <div
       style={{
@@ -21,11 +26,12 @@ export default function StayCard({ stay }) {
 
         {stay.landmark && (
           <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-            {stay.distanceKm} km to {stay.landmark}
+            {stay.distanceKm != null ? `${stay.distanceKm} km` : ""} {stay.distanceKm != null ? "to " : ""}
+            {stay.landmark}
           </div>
         )}
 
-        {stay.amenities?.length > 0 && (
+        {Array.isArray(stay.amenities) && stay.amenities.length > 0 && (
           <div
             style={{
               display: "flex",
@@ -55,7 +61,7 @@ export default function StayCard({ stay }) {
       {/* Right price & rating */}
       <div style={{ textAlign: "right", minWidth: 120 }}>
         <div style={{ fontWeight: 700, fontSize: 15 }}>
-          RM {stay.priceNight}
+          {stay.priceNight != null ? `RM ${stay.priceNight}` : "—"}
         </div>
         <div style={{ fontSize: 12, color: "#6b7280" }}>/ night</div>
         <div
@@ -69,7 +75,7 @@ export default function StayCard({ stay }) {
             fontSize: 12,
           }}
         >
-          ⭐ {stay.rating.toFixed(1)}
+          ⭐ {ratingText}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 function minutesToText(m) {
   if (m == null) return "-";
@@ -22,8 +23,8 @@ export default function TransportResults({ result }) {
   const sorted = useMemo(() => {
     if (!result || !result.options) return [];
     const arr = [...result.options];
-    if (sortBy === "fastest") arr.sort((a, b) => (a.durationMin || 1e9) - (b.durationMin || 1e9));
-    else if (sortBy === "cheapest") arr.sort((a, b) => (a.priceMin || 1e9) - (b.priceMin || 1e9));
+    if (sortBy === "fastest") arr.sort((a, b) => (a.durationMin ?? 1e9) - (b.durationMin ?? 1e9));
+    else if (sortBy === "cheapest") arr.sort((a, b) => (a.priceMin ?? 1e9) - (b.priceMin ?? 1e9));
     return arr;
   }, [result, sortBy]);
 
@@ -119,6 +120,26 @@ export default function TransportResults({ result }) {
             ))}
           </tbody>
         </table>
+      )}
+
+      {/* ✅ "Go to Stays" button */}
+      {result.to && (
+        <div style={{ padding: "12px", textAlign: "right" }}>
+          <Link
+            to={`/stays?district=${encodeURIComponent(result.to)}`}
+            className="btn-mini"
+            style={{
+              background: "#111827",
+              color: "#fff",
+              padding: "6px 12px",
+              borderRadius: 8,
+              textDecoration: "none",
+              display: "inline-block"
+            }}
+          >
+            🛏️ View stays in {result.to}
+          </Link>
+        </div>
       )}
     </div>
   );

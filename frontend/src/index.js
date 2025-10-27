@@ -1,75 +1,25 @@
 // src/index.js
-import React, { useState } from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 
 import App from "./App";                    // dashboard page
 import Landing from "./Landing";            // landing page
 import Header from "./components/Header";   // header shown on all pages
-import VendorMap from "./components/VendorMap";
-import VendorFilters from "./components/VendorFilters";
+
+// ✅ use the dedicated Vendors page file (live API)
+import VendorsPage from "./pages/VendorsPage";
 
 import EventsPage from "./pages/EventsPage";         // Events page
-import KedahTransport from "./pages/KedahTransport"; // Transport Hub (replaces old Kedah page)
-import StaysPage from "./pages/StaysPage";           // ✅ New Stays directory page
+import KedahTransport from "./pages/KedahTransport"; // Transport Hub
+import StaysPage from "./pages/StaysPage";           // Stays directory
 
 import "./App.css";
 
-// ---- Vendors Page (frontend-only for now) ----
-function VendorsPage() {
-  const [vendors] = useState([
-    { id: 1, name: "Warung Kampung", city: "Alor Setar", cuisines: ["Nasi Lemak", "Mee Goreng"], lat: 6.120, lon: 100.370 },
-    { id: 2, name: "Kedah Kopitiam", city: "Alor Setar", cuisines: ["Roti Canai", "Nasi Lemak"], lat: 6.118, lon: 100.365 },
-    { id: 3, name: "Langkawi Seafood", city: "Langkawi", cuisines: ["Grilled Fish", "Seafood Curry"], lat: 6.350, lon: 99.800 },
-  ]);
+import "leaflet/dist/leaflet.css";
 
-  const [filtered, setFiltered] = useState([]);
 
-  function handleFilter({ place, food }) {
-    const p = place.trim().toLowerCase();
-    const f = food.trim().toLowerCase();
-    const results = vendors.filter(v =>
-      v.city.toLowerCase().includes(p) &&
-      (f === "" || v.cuisines.some(c => c.toLowerCase().includes(f)))
-    );
-    setFiltered(results);
-  }
-
-  return (
-    <div className="App" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <VendorFilters onFilter={handleFilter} vendors={vendors} />
-        <div style={listBox}>
-          <h2 style={{ marginTop: 0 }}>Vendors</h2>
-          {filtered.length === 0 ? (
-            <p style={{ color: "#6b7280" }}>No results yet — search above.</p>
-          ) : (
-            filtered.map(v => (
-              <div key={v.id} style={card}>
-                <strong>{v.name}</strong>
-                <p style={{ margin: "4px 0", color: "#4b5563" }}>{v.city}</p>
-                <p style={{ fontSize: 13, color: "#6b7280" }}>{v.cuisines.join(", ")}</p>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-      <VendorMap />
-    </div>
-  );
-}
-
-const listBox = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 12,
-  background: "#fff",
-  flex: 1,
-  overflowY: "auto",
-};
-const card = { borderBottom: "1px solid #f3f4f6", padding: "8px 0" };
-
-// ---- Other placeholder pages ----
+// ---- Simple placeholder pages ----
 function About()   { return <div className="App"><h2>About Us</h2><p>Coming soon…</p></div>; }
 function Contact() { return <div className="App"><h2>Contact</h2><p>Coming soon…</p></div>; }
 function Legal()   { return <div className="App"><h2>Privacy Policy and Terms of Use</h2><p>Coming soon…</p></div>; }
@@ -86,7 +36,6 @@ function Layout() {
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  // Tip: remove StrictMode in dev if double fetches bother you.
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
@@ -95,8 +44,8 @@ root.render(
           <Route path="/home" element={<Navigate to="/" replace />} />
           <Route path="/dashboard" element={<App />} />
           <Route path="/vendors" element={<VendorsPage />} />
-          <Route path="/kedah" element={<KedahTransport />} /> {/* Transport Hub */}
-          <Route path="/stays" element={<StaysPage />} />       {/* ✅ New route */}
+          <Route path="/kedah" element={<KedahTransport />} />
+          <Route path="/stays" element={<StaysPage />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
