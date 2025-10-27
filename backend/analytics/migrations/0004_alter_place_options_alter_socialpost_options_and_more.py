@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             options={"ordering": ("-id",)},
         ),
 
-        # Index drops guarded (safe on SQLite/Postgres)
+        # Index drops (safe on SQLite/Postgres)
         migrations.RunSQL(
             sql='DROP INDEX IF EXISTS "analytics_s_created_017dca_idx";',
             reverse_sql=migrations.RunSQL.noop,
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             reverse_sql=migrations.RunSQL.noop,
         ),
 
-        # ---- STATE-ONLY removals (do NOT touch DB) ----
+        # ---- STATE-ONLY removals (don’t touch DB) ----
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.RemoveField(model_name="place", name="created_at"),
@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
             ],
             database_operations=[],
         ),
-        # -----------------------------------------------
+        # ----------------------------------------------
 
         migrations.AddField(
             model_name="place",
