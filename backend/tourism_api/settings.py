@@ -6,8 +6,9 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent  # points to backend/
 
 # ── Security / Debug ───────────────────────────────────────────────────────────
-# In EB, set DJANGO_DEBUG=False (default). Locally you can set True.
-DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() == "true"
+# DJANGO_DEBUG may be "true"/"false" or "1"/"0"
+DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in {"1", "true", "yes"}
+DEBUG_PROPAGATE_EXCEPTIONS = DEBUG
 
 # Always load SECRET_KEY from env in prod. A fallback exists for local dev only.
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-key-change-me")
@@ -44,7 +45,7 @@ FRONTEND_ORIGINS = [
 ]
 
 # Allow-all only if explicitly enabled
-CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL", "0") == "1"
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL", "0") in {"1", "true", "yes"}
 
 if not CORS_ALLOW_ALL_ORIGINS:
     # Start with local dev origins
@@ -74,7 +75,7 @@ CSRF_TRUSTED_ORIGINS = [
 if EB_HOST:
     CSRF_TRUSTED_ORIGINS += [f"https://{EB_HOST}", f"http://{EB_HOST}"]
 
-# Merge any explicit env
+# Merge any explicit env additions
 for o in _split_env("CSRF_TRUSTED_ORIGINS"):
     if o not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(o)
@@ -99,8 +100,7 @@ INSTALLED_APPS = [
     "events",
     "transport",
     "stays",
-     "api",
-
+    "api",
 ]
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -135,29 +135,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "tourism_api.wsgi.application"
 
-# ── Database ──────────────────────────────────────────────────────────────────
-# USE_SQLITE=1 for EB (no RDS). Persist DB in /var/app/data so deploys don't wipe it.
-USE_SQLITE = os.getenv("USE_SQLITE", "1") == "1"
-
-if USE_SQLITE:
-    SQLITE_PATH = os.getenv("SQLITE_PATH", "/var/app/data/tourism.sqlite3")
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": SQLITE_PATH,  # <-- persistent path on EB instances
-        }
-    }
-else:
-    # RDS / Postgres (supply via eb setenv …)
+# ── Database (RDS first; local fallback if DB_HOST not set) ────────────────────
+DB_HOST = os.getenv("DB_HOST")
+if DB_HOST:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.getenv("DB_NAME", "tourism"),
             "USER": os.getenv("DB_USER", "postgres"),
             "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", "localhost"),
+            "HOST": DB_HOST,
             "PORT": os.getenv("DB_PORT", "5432"),
             "CONN_MAX_AGE": 60,
+            # Tip: uncomment if your RDS requires SSL
+            # "OPTIONS": {"sslmode": "require"},
+        }
+    }
+else:
+    # Local/dev fallback only
+    SQLITE_PATH = os.getenv("SQLITE_PATH", str(BASE_DIR / "data" / "db.sqlite3"))
+    os.makedirs(os.path.dirname(SQLITE_PATH), exist_ok=True)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": SQLITE_PATH,
         }
     }
 
@@ -179,6 +180,11 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Django 5 style (optional, fine to leave as-is with STATICFILES_STORAGE):
+# STORAGES = {
+#     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+#     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+# }
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -190,14 +196,13 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
-
 if DEBUG:
     REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(
         "rest_framework.renderers.BrowsableAPIRenderer"
     )
 
 # Only force secure cookies when we explicitly enable HTTPS at the load balancer
-if os.environ.get("ENABLE_HTTPS", "0") == "1":
+if os.environ.get("ENABLE_HTTPS", "0") in {"1", "true", "yes"}:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True
