@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
+echo "[postdeploy] Running Django migrations…"
 cd /var/app/current/backend
-source /var/app/venv/*/bin/activate
-python manage.py migrate --noinput
-if [[ -n "${DJANGO_SUPERUSER_USERNAME:-}" && -n "${DJANGO_SUPERUSER_EMAIL:-}" && -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]]; then
-  python manage.py createsuperuser --noinput || true
+
+# activate EB venv (matches 'staging-' or other)
+if compgen -G "/var/app/venv/*/bin/activate" > /dev/null; then
+  # shellcheck source=/dev/null
+  source /var/app/venv/*/bin/activate
+else
+  echo "[postdeploy] Could not find EB virtualenv" >&2
+  exit 1
 fi
-echo "[postdeploy] migrate + optional superuser done"
+
+python manage.py migrate --noinput
+echo "[postdeploy] Migrations complete."
