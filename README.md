@@ -104,7 +104,7 @@ The project supports **sustainable tourism development** by combining data-drive
 
 | Name | Role | Profile |
 |------|------|----------|
-| **Amadou Oury Diallo** | Backend | [GitHub](https://github.com/amadououry886) |
+| **Amadou Oury Diallo** | Backend | [GitHub](https://github.com/amadououry885) |
 | **Samia Hassan Haron Hamid** | Frontend | — |
 | **Hasibullah Naeim** | Data Analytics | — |
 | **ABU BAKAR NGAH:** Sir Abu Bakar Ngah| Project Supervisor | Albukhary International University |
