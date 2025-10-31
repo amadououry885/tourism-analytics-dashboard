@@ -21,100 +21,77 @@ export DJANGO_SETTINGS_MODULE=tourism_api.settings
 export PYTHONPATH="/var/app/current/backend:${PYTHONPATH:-}"
 
 python - <<'PY'
+import django
 from django.utils import timezone
 from datetime import timedelta
 from django.apps import apps
 
+# IMPORTANT: initialize Django app registry
+django.setup()
+
 Place = apps.get_model("analytics", "Place")
 SocialPost = apps.get_model("analytics", "SocialPost")
 
-# Build a set of REAL field names for safety
-place_field_names = {f.name for f in Place._meta.get_fields() if hasattr(f, "attname")}
-social_field_names = {f.name for f in SocialPost._meta.get_fields() if hasattr(f, "attname")}
+place_fields = {f.name for f in Place._meta.get_fields() if hasattr(f, "attname")}
+social_fields = {f.name for f in SocialPost._meta.get_fields() if hasattr(f, "attname")}
 
-def filter_defaults(model_fields, data: dict):
-    """Keep only keys that are real model fields."""
-    return {k: v for k, v in data.items() if k in model_fields}
+def filt(fields, d): return {k:v for k,v in d.items() if k in fields}
 
 def mk_place(**kwargs):
-    # Minimal required: name (and anything your model requires)
     name = kwargs["name"]
-    defaults = filter_defaults(place_field_names, kwargs)
-    defaults.pop("name", None)  # not a default
+    defaults = filt(place_fields, kwargs); defaults.pop("name", None)
     obj, created = Place.objects.get_or_create(name=name, defaults=defaults)
     if not created:
         changed = False
         for k, v in defaults.items():
             if getattr(obj, k, None) != v:
                 setattr(obj, k, v); changed = True
-        if changed:
-            obj.save()
+        if changed: obj.save()
     return obj
 
 def mk_post(place, **kwargs):
-    # Ensure required fields exist, compute posted_at if not given
     data = dict(kwargs)
-    if "posted_at" not in data and "posted_at" in social_field_names:
-        hours_ago = data.pop("hours_ago", 12)
-        data["posted_at"] = timezone.now() - timedelta(hours=hours_ago)
-    # Upsert by (platform, post_id) if those fields exist
+    if "posted_at" in social_fields and "posted_at" not in data:
+        data["posted_at"] = timezone.now() - timedelta(hours=data.pop("hours_ago", 12))
+
     lookup = {}
     for key in ("platform", "post_id"):
-        if key in social_field_names and key in data:
+        if key in social_fields and key in data:
             lookup[key] = data[key]
-    defaults = filter_defaults(social_field_names, data)
-    defaults["place"] = place
+
+    defaults = filt(social_fields, data); defaults["place"] = place
+
     if lookup:
         obj, created = SocialPost.objects.get_or_create(**lookup, defaults=defaults)
         if not created:
-            # update mutable fields safely
-            for k, v in defaults.items():
-                setattr(obj, k, v)
+            for k, v in defaults.items(): setattr(obj, k, v)
             obj.save()
+        return obj
     else:
-        # Fallback: create blindly if no unique lookup fields exist
-        obj = SocialPost.objects.create(**defaults)
-    return obj
+        return SocialPost.objects.create(**defaults)
 
-# ---- Seed data (these keys are safely filtered) ----
+# ---------- PLACES ----------
 P = {}
-P["Pantai Cenang"] = mk_place(
-    name="Pantai Cenang", city="Langkawi",
-    latitude=6.292, longitude=99.728,
-    description="Langkawi’s lively beach with cafes & watersports.",
-    category="Beach", is_in_kedah=True, state="Kedah", country="Malaysia", currency="MYR",
-)
-P["Langkawi Sky Bridge"] = mk_place(
-    name="Langkawi Sky Bridge", city="Langkawi",
-    latitude=6.384, longitude=99.665,
-    description="Curved pedestrian bridge with mountain & sea views.",
-    category="Landmark", is_in_kedah=True, state="Kedah", country="Malaysia",
-)
-P["Gunung Jerai"] = mk_place(
-    name="Gunung Jerai", city="Yan",
-    latitude=5.793, longitude=100.435,
-    description="Iconic mountain with cool highland scenery.",
-    category="Nature", is_in_kedah=True,
-)
-P["Alor Setar Tower"] = mk_place(
-    name="Alor Setar Tower", city="Alor Setar",
-    latitude=6.121, longitude=100.371,
-    description="Telecoms tower with an observation deck.",
-    category="Landmark", is_in_kedah=True,
-)
-P["Zahir Mosque"] = mk_place(
-    name="Zahir Mosque", city="Alor Setar",
-    latitude=6.1218, longitude=100.3663,
-    description="Historic mosque—symbol of Kedah’s heritage.",
-    category="Religious", is_in_kedah=True,
-)
-P["Tanjung Rhu Beach"] = mk_place(
-    name="Tanjung Rhu Beach", city="Langkawi",
-    latitude=6.467, longitude=99.817,
-    description="Calmer beach with scenic limestone formations.",
-    category="Beach", is_in_kedah=True,
-)
+P["Pantai Cenang"] = mk_place(name="Pantai Cenang", city="Langkawi",
+    latitude=6.292, longitude=99.728, description="Langkawi’s lively beach with cafes & watersports.",
+    category="Beach", is_in_kedah=True, state="Kedah", country="Malaysia", currency="MYR")
+P["Langkawi Sky Bridge"] = mk_place(name="Langkawi Sky Bridge", city="Langkawi",
+    latitude=6.384, longitude=99.665, description="Curved pedestrian bridge with mountain & sea views.",
+    category="Landmark", is_in_kedah=True, state="Kedah", country="Malaysia")
+P["Gunung Jerai"] = mk_place(name="Gunung Jerai", city="Yan",
+    latitude=5.793, longitude=100.435, description="Iconic mountain with cool highland scenery.",
+    category="Nature", is_in_kedah=True)
+P["Alor Setar Tower"] = mk_place(name="Alor Setar Tower", city="Alor Setar",
+    latitude=6.121, longitude=100.371, description="Telecoms tower with an observation deck.",
+    category="Landmark", is_in_kedah=True)
+P["Zahir Mosque"] = mk_place(name="Zahir Mosque", city="Alor Setar",
+    latitude=6.1218, longitude=100.3663, description="Historic mosque—symbol of Kedah’s heritage.",
+    category="Religious", is_in_kedah=True)
+P["Tanjung Rhu Beach"] = mk_place(name="Tanjung Rhu Beach", city="Langkawi",
+    latitude=6.467, longitude=99.817, description="Calmer beach with scenic limestone formations.",
+    category="Beach", is_in_kedah=True)
 
+# ---------- POSTS ----------
 mk_post(P["Pantai Cenang"], platform="demo", post_id="cenang-001",
         text="Sunset vibes at Pantai Cenang 🌅 #Langkawi",
         like_count=320, share_count=24, comment_count=18, hours_ago=6)
@@ -150,4 +127,3 @@ print("[seed] Done (model-aware).")
 PY
 
 echo "[seed] Completed."
-
