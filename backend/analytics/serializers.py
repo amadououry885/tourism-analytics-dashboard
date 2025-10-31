@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import POI, PostRaw, PostClean, SentimentTopic
+from .models_old import POI, PostRaw, PostClean, SentimentTopic
 
 class POISerializer(serializers.ModelSerializer):
     class Meta:

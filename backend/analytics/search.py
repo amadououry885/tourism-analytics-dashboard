@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from django.db.models import Q
 
-from .models import POI
+from .models_old import POI
 from .utils import int_param
 
 @api_view(["GET"])

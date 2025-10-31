@@ -4,7 +4,7 @@ from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 
-from .models import PostClean, POI
+from .models_old import PostClean, POI
 from .utils import get_date_range, int_param
 
 def _rank_counts(start, end):

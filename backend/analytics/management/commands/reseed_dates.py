@@ -4,7 +4,7 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 
-from analytics.models import PostRaw, PostClean, SentimentTopic
+from backend.analytics.models_old import PostRaw, PostClean, SentimentTopic
 
 class Command(BaseCommand):
     help = "Shift demo PostRaw/PostClean/SentimentTopic dates into the last 7 days"

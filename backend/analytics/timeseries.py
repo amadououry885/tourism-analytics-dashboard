@@ -4,7 +4,7 @@ from django.db.models.functions import TruncDate, Coalesce
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 
-from .models import PostClean
+from .models_old import PostClean
 from .utils import get_date_range
 
 @api_view(["GET"])
