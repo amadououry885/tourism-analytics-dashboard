@@ -1,17 +1,23 @@
 # backend/tourism_api/settings.py
 from pathlib import Path
 import os
+import logging
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent  # points to backend/
 
-# ── Security / Debug ───────────────────────────────────────────────────────────
+# ── Environment / Security / Debug ────────────────────────────────────────────
+# Set ENV=production on EB; keep ENV=development locally.
+ENV = os.getenv("ENV", "production").strip().lower()
+
 # DJANGO_DEBUG may be "true"/"false" or "1"/"0"
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in {"1", "true", "yes"}
 DEBUG_PROPAGATE_EXCEPTIONS = DEBUG
 
 # Always load SECRET_KEY from env in prod. A fallback exists for local dev only.
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-key-change-me")
+if ENV == "production" and SECRET_KEY == "dev-insecure-key-change-me":
+    raise RuntimeError("SECRET_KEY must be set in production.")
 
 # Behind EB's load balancer, trust X-Forwarded-* so Django knows it's HTTPS.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -25,7 +31,9 @@ def _split_env(name: str, default: str = ""):
 # ── Hosts / CORS / CSRF ────────────────────────────────────────────────────────
 # Example: DJANGO_ALLOWED_HOSTS="tourism-analytics-env.eba-xxxx.ap-southeast-1.elasticbeanstalk.com,localhost,127.0.0.1"
 _allowed = os.getenv("DJANGO_ALLOWED_HOSTS", "")
-ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()] or ["*"]
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(",") if h.strip()] or (["*"] if ENV != "production" else [])
+if ENV == "production" and not ALLOWED_HOSTS:
+    raise RuntimeError("DJANGO_ALLOWED_HOSTS must be set in production.")
 
 # If you know your EB CNAME/URL, set it so we can add precise CORS/CSRF.
 # e.g. EB_HOST="tourism-analytics-env.eba-xxxx.ap-southeast-1.elasticbeanstalk.com"
@@ -45,7 +53,7 @@ FRONTEND_ORIGINS = [
 ]
 
 # Allow-all only if explicitly enabled
-CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL", "0") in {"1", "true", "yes"}
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL", "0").lower() in {"1", "true", "yes"}
 
 if not CORS_ALLOW_ALL_ORIGINS:
     # Start with local dev origins
@@ -135,7 +143,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "tourism_api.wsgi.application"
 
-# ── Database (RDS first; local fallback if DB_HOST not set) ────────────────────
+# ── Database (RDS first; local fallback only in non-prod) ─────────────────────
 DB_HOST = os.getenv("DB_HOST")
 if DB_HOST:
     DATABASES = {
@@ -147,20 +155,15 @@ if DB_HOST:
             "HOST": DB_HOST,
             "PORT": os.getenv("DB_PORT", "5432"),
             "CONN_MAX_AGE": 60,
-            # Tip: uncomment if your RDS requires SSL
-            # "OPTIONS": {"sslmode": "require"},
+            # "OPTIONS": {"sslmode": "require"},  # uncomment if your RDS needs SSL
         }
     }
 else:
-    # Local/dev fallback only
+    if ENV == "production":
+        raise RuntimeError("DB_HOST is required in production (no SQLite fallback).")
     SQLITE_PATH = os.getenv("SQLITE_PATH", str(BASE_DIR / "data" / "db.sqlite3"))
     os.makedirs(os.path.dirname(SQLITE_PATH), exist_ok=True)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": SQLITE_PATH,
-        }
-    }
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": SQLITE_PATH}}
 
 # ── Passwords ─────────────────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
@@ -201,14 +204,37 @@ if DEBUG:
         "rest_framework.renderers.BrowsableAPIRenderer"
     )
 
-# Only force secure cookies when we explicitly enable HTTPS at the load balancer
-if os.environ.get("ENABLE_HTTPS", "0") in {"1", "true", "yes"}:
+# ── HTTPS / Cookies ───────────────────────────────────────────────────────────
+if os.environ.get("ENABLE_HTTPS", "0").lower() in {"1", "true", "yes"}:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SAMESITE = "Lax"   # use "None" only if you truly need cross-site cookies
 else:
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
     SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SAMESITE = "Lax"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ── Basic console logging + DB selection echo (handy on EB) ───────────────────
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
+}
+
+try:
+    _db = {
+        "ENGINE": DATABASES["default"].get("ENGINE"),
+        "HOST": DATABASES["default"].get("HOST"),
+        "NAME": DATABASES["default"].get("NAME"),
+        "USER": DATABASES["default"].get("USER"),
+    }
+    logging.getLogger(__name__).info(
+        "DB -> engine=%s host=%s name=%s user=%s", _db["ENGINE"], _db["HOST"], _db["NAME"], _db["USER"]
+    )
+except Exception:
+    pass
