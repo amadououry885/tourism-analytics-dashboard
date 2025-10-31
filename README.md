@@ -104,14 +104,15 @@ The project supports **sustainable tourism development** by combining data-drive
 
 | Name | Role | Profile |
 |------|------|----------|
-| **Amadou Oury Diallo** | Backend & Data Engineering | [GitHub](https://github.com/amadououry886) |
-| **[Teammate 2 Name]** | Frontend & UI Design | — |
-| **[Teammate 3 Name]** | Database & AWS Deployment | — |
-| **Supervisor:** Assoc. Prof. Dr. Umi Kalsom Yusof | Project Supervisor | Albukhary International University |
+| **Amadou Oury Diallo** | Backend | [GitHub](https://github.com/amadououry886) |
+| **[Teammate 2 Name]** | Frontend | — |
+| **[Teammate 3 Name]** | Data Analytics | — |
+| **Supervisor:** Sir Abu Bakar Ngah| Project Supervisor | Albukhary International University |
 
 <p align="center">
-  <img src="photo_5776343543105391375_y.jpg" alt="Contributors" width="500"/>
+  <img src="frontend/public/images/team.png" alt="Contributors" width="600"/>
 </p>
+
 
 ---
 
