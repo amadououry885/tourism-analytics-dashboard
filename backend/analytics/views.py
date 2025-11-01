@@ -657,3 +657,129 @@ class LeastPOIsView(APIView):
         )
         items = [{"poi_id": r["poi_id"], "name": r["poi__name"], "count": r["count"]} for r in rows]
         return Response({"items": items})
+
+
+from django.db.models import Count, Sum, F
+from django.db.models.functions import Coalesce, TruncDate
+from django.utils.dateparse import parse_date
+from datetime import date, timedelta
+from collections import Counter
+import re
+from django.http import JsonResponse
+from .models import Place, SocialPost
+
+STOPWORDS2 = set("""
+the a an and or for of in on to at is are was were be not no this that with from by about into as it its
+""".split())
+
+def _range_from_or_date_params(request):
+    fs = request.GET.get("from") or request.GET.get("date_from")
+    ts = request.GET.get("to") or request.GET.get("date_to")
+    today = date.today()
+    start = parse_date(fs) if fs else (today - timedelta(days=30))
+    end   = parse_date(ts) if ts else today
+    if not start or not end or start > end:
+        return None, None
+    return start, end
+
+def analytics_summary(request):
+    start, end = _range_from_or_date_params(request)
+    if not start or not end:
+        return JsonResponse({"detail": "Invalid date range"}, status=400)
+
+    place_q = (request.GET.get("place") or "").strip() or None
+    qs = SocialPost.objects.select_related("place").filter(
+        created_at__date__gte=start,
+        created_at__date__lte=end,
+    )
+    if place_q:
+        qs = qs.filter(place__name__icontains=place_q)
+
+    agg = qs.aggregate(
+        mentions=Count("id"),
+        likes=Coalesce(Sum("likes"), 0),
+        comments=Coalesce(Sum("comments"), 0),
+        shares=Coalesce(Sum("shares"), 0),
+    )
+    engagement = int(agg["likes"]) + int(agg["comments"]) + int(agg["shares"])
+
+    top = (qs.values("place_id", "place__name")
+             .annotate(mentions=Count("id"),
+                       engagement=Coalesce(Sum(F("likes")+F("comments")+F("shares")),0))
+             .order_by("-engagement", "-mentions")
+             .first())
+
+    hidden = (qs.values("place_id", "place__name")
+                .annotate(mentions=Count("id"),
+                          engagement=Coalesce(Sum(F("likes")+F("comments")+F("shares")),0))
+                .filter(mentions__lte=2, mentions__gte=1)
+                .annotate(avg_engagement=F("engagement")*1.0/F("mentions"))
+                .order_by("-avg_engagement")
+                .first())
+
+    texts = qs.values_list("content", flat=True)
+    counter = Counter()
+    for t in texts:
+        if not t: continue
+        tokens = re.findall(r"[A-Za-z]{3,}", t.lower())
+        counter.update(w for w in tokens if w not in STOPWORDS2)
+    keywords = [{"word": w, "count": c} for w, c in counter.most_common(15)]
+
+    return JsonResponse({
+        "range": {"from": str(start), "to": str(end)},
+        "totals": {**agg, "engagement": engagement},
+        "top_attraction": top,
+        "hidden_gem": hidden,
+        "keywords": keywords,
+    })
+
+def analytics_timeseries(request):
+    start, end = _range_from_or_date_params(request)
+    if not start or not end:
+        return JsonResponse({"detail": "Invalid date range"}, status=400)
+    place_q = (request.GET.get("place") or "").strip() or None
+    qs = SocialPost.objects.select_related("place").filter(
+        created_at__date__gte=start, created_at__date__lte=end
+    )
+    if place_q:
+        qs = qs.filter(place__name__icontains=place_q)
+
+    rows = (qs.annotate(d=TruncDate("created_at"))
+              .values("d")
+              .annotate(
+                  mentions=Count("id"),
+                  likes=Coalesce(Sum("likes"), 0),
+                  comments=Coalesce(Sum("comments"), 0),
+                  shares=Coalesce(Sum("shares"), 0),
+              )
+              .order_by("d"))
+    return JsonResponse(list(rows), safe=False)
+
+def analytics_heatmap(request):
+    start, end = _range_from_or_date_params(request)
+    if not start or not end:
+        return JsonResponse({"detail": "Invalid date range"}, status=400)
+    place_q = (request.GET.get("place") or "").strip() or None
+    qs = SocialPost.objects.select_related("place").filter(
+        created_at__date__gte=start, created_at__date__lte=end
+    )
+    if place_q:
+        qs = qs.filter(place__name__icontains=place_q)
+
+    rows = (qs.values("place_id", "place__name", "place__latitude", "place__longitude")
+              .annotate(
+                  mentions=Count("id"),
+                  engagement=Coalesce(Sum(F("likes")+F("comments")+F("shares")), 0),
+              )
+              .filter(place__latitude__isnull=False, place__longitude__isnull=False)
+              .order_by("-engagement"))
+
+    data = [{
+        "place_id": r["place_id"],
+        "name": r["place__name"],
+        "lat": r["place__latitude"],
+        "lon": r["place__longitude"],
+        "mentions": r["mentions"],
+        "engagement": r["engagement"],
+    } for r in rows]
+    return JsonResponse(data, safe=False)

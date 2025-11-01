@@ -1,26 +1,32 @@
+# backend/analytics/urls.py
 from django.urls import re_path
-from . import views_safe as v
+from . import views as v   # <-- use views, not views_safe
 
 urlpatterns = [
     # health
-    re_path(r"^ping/?$", v.ping, name="analytics-ping"),
-    re_path(r"^healthz/?$", v.ping, name="analytics-healthz"),
+    re_path(r"^ping/?$", v.healthz, name="analytics-ping"),
+    re_path(r"^healthz/?$", v.healthz, name="analytics-healthz"),
 
-    # core (already working)
-    re_path(r"^metrics/visitors/?$", v.visitors_metrics, name="metrics-visitors"),
-    re_path(r"^timeseries/mentions/?$", v.mentions_timeseries, name="timeseries-mentions"),
-    re_path(r"^rankings/top-pois/?$", v.top_pois, name="rankings-top-pois"),
-    re_path(r"^rankings/least-pois/?$", v.least_pois, name="rankings-least-pois"),
-    re_path(r"^metrics/engagement/?$", v.engagement_metrics, name="metrics-engagement"),
+    # core used by the Dashboard.jsx
+    re_path(r"^metrics/visitors/?$", v.MetricsVisitorsView.as_view(), name="metrics-visitors"),
+    re_path(r"^timeseries/mentions/?$", v.MentionsTimeSeriesView.as_view(), name="timeseries-mentions"),
+    re_path(r"^rankings/top-pois/?$", v.TopPOIsView.as_view(), name="rankings-top-pois"),
+    re_path(r"^rankings/least-pois/?$", v.LeastPOIsView.as_view(), name="rankings-least-pois"),
+    re_path(r"^metrics/engagement/?$", v.MetricsEngagementView.as_view(), name="metrics-engagement"),
 
-    # ✅ the four missing dashboard endpoints
-    re_path(r"^metrics/totals/?$", v.metrics_totals, name="api-metrics-totals"),
-    re_path(r"^attractions/top/?$", v.attractions_top, name="api-attractions-top"),
-    re_path(r"^sentiment/trend/?$", v.sentiment_trend, name="api-sentiment-trend"),
-    re_path(r"^metrics/top-attractions/?$", v.top_attractions, name="metrics-top-attractions"),
+    # additional dashboard endpoints
+    re_path(r"^metrics/totals/?$", v.MetricsTotalsView.as_view(), name="api-metrics-totals"),
+    re_path(r"^attractions/top/?$", v.TopAttractionsView.as_view(), name="api-attractions-top"),
+    re_path(r"^sentiment/trend/?$", v.SentimentTrendView.as_view(), name="api-sentiment-trend"),
+    re_path(r"^metrics/top-attractions/?$", v.TopAttractionsView.as_view(), name="metrics-top-attractions"),
 
-    # optional extras (safe empties)
-    re_path(r"^map/heat/?$", v.map_heat, name="map-heat"),
-    re_path(r"^trends/wordcloud/?$", v.wordcloud, name="trends-wordcloud"),
-    re_path(r"^trends/hidden-gem/?$", v.hidden_gem, name="trends-hidden-gem"),
+    # map/wordcloud/hidden-gem
+    re_path(r"^map/heat/?$", v.MapHeatView.as_view(), name="map-heat"),
+    re_path(r"^trends/wordcloud/?$", v.WordCloudView.as_view(), name="trends-wordcloud"),
+    re_path(r"^trends/hidden-gem/?$", v.HiddenGemView.as_view(), name="trends-hidden-gem"),
+
+    # new analytics (Place + SocialPost, function-based)
+    re_path(r"^analytics/summary/?$", v.analytics_summary, name="analytics-summary"),
+    re_path(r"^analytics/timeseries/?$", v.analytics_timeseries, name="analytics-timeseries"),
+    re_path(r"^analytics/heatmap/?$", v.analytics_heatmap, name="analytics-heatmap"),
 ]
