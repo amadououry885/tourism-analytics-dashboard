@@ -1,25 +1,47 @@
 # backend/analytics/search.py
 from django.http import JsonResponse
+from django.db.models import Q, Case, When, Value, IntegerField
 from rest_framework.decorators import api_view
-from django.db.models import Q
 
+# We’ll search your legacy POIs used by the analytics:
 from .models_old import POI
-from .utils import int_param
+
+def _limit(request, default=20, max_val=100):
+    try:
+        v = int(request.GET.get("limit", default))
+        return max(1, min(v, max_val))
+    except Exception:
+        return default
 
 @api_view(["GET"])
 def search_pois(request):
     """
-    GET /api/search/pois?q=&limit=10
-    -> { "items": [ { "id": int, "name": str, "category": str, "latitude": float, "longitude": float }, ... ] }
+    GET /api/search/pois?q=&limit=20
+    -> { "items": [ { "id", "name", "category", "latitude", "longitude" }, ... ] }
+
+    - Empty q returns first N alphabetically.
+    - With q: prioritize names that *start with* q, then fall back to contains.
+    - Auto-updates as DB changes (new places appear automatically).
     """
     q = (request.GET.get("q") or "").strip()
-    limit = int_param(request, "limit", default=10, min_val=1, max_val=50)
+    limit = _limit(request)
 
     qs = POI.objects.all()
+
     if q:
-        qs = qs.filter(Q(name__icontains=q) | Q(category__icontains=q))
+        qs = qs.annotate(
+            starts=Case(
+                When(name__istartswith=q, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        ).filter(
+            Q(name__icontains=q) | Q(category__icontains=q)
+        ).order_by("starts", "name")
+    else:
+        qs = qs.order_by("name")
 
     items = list(
-        qs.order_by("name")[:limit].values("id", "name", "category", "latitude", "longitude")
+        qs.values("id", "name", "category", "latitude", "longitude")[:limit]
     )
     return JsonResponse({"items": items})
