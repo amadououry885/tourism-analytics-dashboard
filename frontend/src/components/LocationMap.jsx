@@ -9,11 +9,10 @@ async function fetchTopLocation({ dateFrom, dateTo, poiName, fallbackName }) {
   if (dateFrom) params.set("date_from", dateFrom);
   if (dateTo) params.set("date_to", dateTo);
 
-  const res = await fetch(`/api/map/heat?${params.toString()}`);
+  const res = await fetch(`/api/analytics/heatmap?${params.toString()}`);
   if (!res.ok) return null;
   const json = await res.json();
-  const items = json?.items || [];
-
+  const items = Array.isArray(json) ? json : (json.items || []);
   // If POI filter is set, try to match it by name; otherwise use most-mentioned
   let chosen =
     (poiName && items.find((i) => i.name?.toLowerCase() === poiName.toLowerCase())) ||

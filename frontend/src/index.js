@@ -3,7 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 
-import App from "./App";                    // dashboard page
+import Dashboard from "./pages/Dashboard";                 // dashboard page
 import Landing from "./Landing";            // landing page
 import Header from "./components/Header";   // header shown on all pages
 
@@ -42,7 +42,7 @@ root.render(
         <Route element={<Layout />}>
           <Route path="/" element={<Landing />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
-          <Route path="/dashboard" element={<App />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/vendors" element={<VendorsPage />} />
           <Route path="/kedah" element={<KedahTransport />} />
           <Route path="/stays" element={<StaysPage />} />

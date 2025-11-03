@@ -1,7 +1,7 @@
 // frontend/src/components/HiddenGemCard.jsx
 import React, { useEffect, useState } from "react";
 
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8000/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "/api";
 
 // Format growth as “∞” for Infinity, otherwise “x.xx×”
 function formatGrowth(g) {

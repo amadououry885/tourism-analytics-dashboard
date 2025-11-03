@@ -1,56 +1,63 @@
 // src/pages/VendorsPage.jsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import VendorMap from "../components/VendorMap";
 import VendorFilters from "../components/VendorFilters";
 
 async function fetchAllVendors(base = "/api/vendors/", city = "") {
-  const vendors = [];
-  let url = base;
-  if (city && city.trim()) {
-    const q = new URLSearchParams({ city: city.trim() });
-    url = `${base}?${q.toString()}`;
+  // Guard: backend expects a city/place; avoid 400s
+  if (!city || !city.trim()) {
+    return { vendors: [], hint: "Choose a place/city then Search." };
   }
+
+  const vendors = [];
+  let url = `${base}?${new URLSearchParams({ city: city.trim() }).toString()}`;
+
   while (url) {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+    if (!res.ok) {
+      // surface backend error text to the UI
+      let msg;
+      try { msg = await res.text(); } catch { msg = `HTTP ${res.status}`; }
+      throw new Error(msg || `HTTP ${res.status}`);
+    }
     const data = await res.json();
     vendors.push(...(data.results || []));
     url = data.next; // follow DRF pagination if present
   }
-  return vendors;
+
+  return { vendors };
 }
 
 export default function VendorsPage() {
   const [vendors, setVendors] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
+  const [info, setInfo] = useState("Choose a place/city and click Search.");
   const [filterInput, setFilterInput] = useState({ place: "", food: "" });
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const all = await fetchAllVendors("/api/vendors/");
-        if (alive) setVendors(all);
-      } catch (e) {
-        if (alive) setErr(e.message || String(e));
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => { alive = false; };
-  }, []);
-
+  // Only fetch when user searches with a place/city
   const handleFilter = useCallback(async ({ place, food }) => {
     setFilterInput({ place, food });
+    setErr(null);
+    setInfo(null);
+
+    // Require a place/city to avoid 400s
+    const city = (place || "").trim();
+    if (!city) {
+      setVendors([]);
+      setInfo("Choose a place/city then Search.");
+      return;
+    }
+
     try {
       setLoading(true);
-      setErr(null);
-      const city = place || "";
-      const fromApi = await fetchAllVendors("/api/vendors/", city);
+      const { vendors: fromApi, hint } = await fetchAllVendors("/api/vendors/", city);
       setVendors(fromApi);
+      if (hint) setInfo(hint);
+      if (!fromApi.length) setInfo(`No vendors found in “${city}”. Try another place or cuisine.`);
     } catch (e) {
       setErr(e.message || String(e));
+      setVendors([]);
     } finally {
       setLoading(false);
     }
@@ -69,13 +76,12 @@ export default function VendorsPage() {
     <div className="App" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <VendorFilters onFilter={handleFilter} vendors={vendors} />
+
         <div style={listBox}>
           <h2 style={{ marginTop: 0 }}>Vendors</h2>
           {loading && <p style={{ color: "#6b7280" }}>Loading vendors…</p>}
+          {info && !loading && !err && <p style={{ color: "#6b7280" }}>{info}</p>}
           {err && <p style={{ color: "#b91c1c" }}>Error: {err}</p>}
-          {!loading && !err && filtered.length === 0 && (
-            <p style={{ color: "#6b7280" }}>No vendors found. Try a different city or cuisine.</p>
-          )}
           {!loading && !err && filtered.length > 0 && (
             filtered.map(v => (
               <div key={v.id} style={card}>
@@ -86,7 +92,7 @@ export default function VendorsPage() {
                 </p>
                 {v.lat != null && v.lon != null && (
                   <p style={{ fontSize: 12, color: "#9ca3af" }}>
-                    📍 {v.lat.toFixed(4)}, {v.lon.toFixed(4)}
+                    📍 {Number(v.lat).toFixed(4)}, {Number(v.lon).toFixed(4)}
                   </p>
                 )}
               </div>
@@ -94,7 +100,7 @@ export default function VendorsPage() {
           )}
         </div>
       </div>
-      {/* pass filtered vendors to the map */}
+
       <VendorMap vendors={filtered} />
     </div>
   );

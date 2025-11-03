@@ -60,3 +60,46 @@ export const api = {
 };
 
 export default api;
+
+
+// ---------------------- Analytics API ----------------------
+function q(obj) {
+  const p = new URLSearchParams();
+  Object.entries(obj || {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && String(v).trim() !== "") p.set(k, v);
+  });
+  return p.toString();
+}
+
+async function getJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    let msg;
+    try { msg = await res.text(); } catch { msg = `HTTP ${res.status}`; }
+    throw new Error(msg || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+export function lastNDaysRange(n = 30) {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(end.getDate() - (n - 1));
+  const iso = (d) => d.toISOString().slice(0, 10);
+  return { from: iso(start), to: iso(end) };
+}
+
+export async function fetchSummary({ from, to, place }) {
+  const qs = q({ from, to, place });
+  return getJSON(`/api/analytics/summary?${qs}`);
+}
+
+export async function fetchTimeseries({ from, to, place }) {
+  const qs = q({ from, to, place });
+  return getJSON(`/api/analytics/timeseries?${qs}`);
+}
+
+export async function fetchHeatmap({ from, to, place }) {
+  const qs = q({ from, to, place });
+  return getJSON(`/api/analytics/heatmap?${qs}`);
+}
