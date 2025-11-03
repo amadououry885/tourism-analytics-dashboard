@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.http import HttpResponse, JsonResponse
 
 def healthz(_request):
-    return HttpResponse("ok", content_type="text/plain")
+    return HttpResponse("OK", content_type="text/plain")
 
 def root(_request):
     return JsonResponse({
@@ -20,19 +20,23 @@ def root(_request):
                 "/api/timeseries/mentions",
                 "/api/rankings/top-pois",
                 "/api/metrics/engagement",
+                "/api/places/suggest?q=Zahir",
             ],
         }
-    })
+    }, content_type="application/json")
 
 urlpatterns = [
-    path("healthz", healthz),
+    # health check (use this for ALB/EB health check path)
+    path("healthz/", healthz),
+
     path("admin/", admin.site.urls),
 
-    # 🔑 include analytics FIRST under /api/
+    # Include analytics FIRST so its routes (e.g., /api/places/suggest) are found
     path("api/", include("analytics.urls")),
 
-    # then your existing DRF routes
+    # Then your existing app’s API routes (vendors/events/stays/transport, etc.)
     path("api/", include("api.urls")),
 
+    # Root: quick index of useful endpoints
     path("", root),
 ]

@@ -4,6 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 const API_BASE = process.env.REACT_APP_API_BASE || "/api";
 const DEBOUNCE_MS = 200;
 
+// Prefer the new backend route; fallback to the old one if needed.
+const ENDPOINT_PRIMARY = `${API_BASE}/places/suggest`;
+const ENDPOINT_FALLBACK = `${API_BASE}/search/pois`;
+
 export default function POISearch({ onSelect, onQuery }) {
   const [q, setQ] = useState("");
   const [items, setItems] = useState([]);
@@ -31,9 +35,15 @@ export default function POISearch({ onSelect, onQuery }) {
       setLoading(true);
       setErr("");
       try {
-        const res = await fetch(`${API_BASE}/search/pois?${params.toString()}`);
+        // 1) Try primary route
+        let res = await fetch(`${ENDPOINT_PRIMARY}?${params.toString()}`);
+        // 2) If 404/Not found (older backend), try fallback route
+        if (res.status === 404) {
+          res = await fetch(`${ENDPOINT_FALLBACK}?${params.toString()}`);
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
+        // both endpoints return { items: [...] }
         setItems(Array.isArray(json.items) ? json.items : []);
       } catch (e) {
         setErr(e.message || "Failed to load");
@@ -44,6 +54,11 @@ export default function POISearch({ onSelect, onQuery }) {
     },
     []
   );
+
+  // open dropdown as soon as user types
+  useEffect(() => {
+    if (!open && q) setOpen(true);
+  }, [q, open]);
 
   // debounce typing
   useEffect(() => {
@@ -63,8 +78,15 @@ export default function POISearch({ onSelect, onQuery }) {
   function choose(it) {
     setQ(it.name || "");
     setOpen(false);
-    if (onSelect) onSelect(it);
-    if (onQuery) onQuery(it.name || "");
+    onSelect?.(it);
+    onQuery?.(it.name || "");
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter") {
+      onQuery?.(q);
+      setOpen(false);
+    }
   }
 
   return (
@@ -75,6 +97,7 @@ export default function POISearch({ onSelect, onQuery }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={handleFocus}
+          onKeyDown={handleKeyDown}
           style={{ padding: "8px 10px", width: 260 }}
         />
         <button onClick={() => onQuery && onQuery(q)}>Search</button>
@@ -83,7 +106,7 @@ export default function POISearch({ onSelect, onQuery }) {
             setQ("");
             setItems([]);
             setOpen(false);
-            onSelect && onSelect(null);
+            onSelect?.(null);
           }}
         >
           Clear

@@ -1,7 +1,11 @@
+// src/components/POISearchAutosuggest.jsx
 import React, { useEffect, useRef, useState } from "react";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "/api";
 const DEBOUNCE_MS = 250;
+
+const ENDPOINT_PRIMARY = `${API_BASE}/places/suggest`;
+const ENDPOINT_FALLBACK = `${API_BASE}/search/pois`;
 
 export default function POISearchAutosuggest({ onSelect, placeholder = "Search POIs…" }) {
   const [q, setQ] = useState("");
@@ -9,22 +13,35 @@ export default function POISearchAutosuggest({ onSelect, placeholder = "Search P
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [index, setIndex] = useState(-1); // keyboard highlight
+  const [err, setErr] = useState("");
   const boxRef = useRef(null);
   const timerRef = useRef(null);
 
   // fetch suggestions (debounced)
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
+    timerRef.current = setTimeout(async () => {
       const params = new URLSearchParams();
       if (q) params.set("q", q);
       params.set("limit", "20");
+
       setLoading(true);
-      fetch(`${API_BASE}/search/pois?${params.toString()}`)
-        .then((r) => r.json())
-        .then((d) => setItems(d.items || []))
-        .catch(() => setItems([]))
-        .finally(() => setLoading(false));
+      setErr("");
+      try {
+        let res = await fetch(`${ENDPOINT_PRIMARY}?${params.toString()}`);
+        if (res.status === 404) {
+          // older backend route
+          res = await fetch(`${ENDPOINT_FALLBACK}?${params.toString()}`);
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setItems(Array.isArray(data.items) ? data.items : []);
+      } catch (e) {
+        setErr(e.message || "Failed to load");
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
     }, DEBOUNCE_MS);
     return () => clearTimeout(timerRef.current);
   }, [q]);
@@ -41,8 +58,8 @@ export default function POISearchAutosuggest({ onSelect, placeholder = "Search P
 
   function choose(it) {
     setOpen(false);
-    setQ(it.name);
-    onSelect?.(it);      // send full POI to parent
+    setQ(it.name || "");
+    onSelect?.(it); // send full POI to parent: {id,name,category,latitude,longitude}
   }
 
   function onKeyDown(e) {
@@ -71,7 +88,7 @@ export default function POISearchAutosuggest({ onSelect, placeholder = "Search P
       <input
         value={q}
         onChange={(e) => { setQ(e.target.value); setIndex(-1); }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => { setOpen(true); }}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         style={{ width: "100%", padding: "8px 10px" }}
@@ -95,6 +112,8 @@ export default function POISearchAutosuggest({ onSelect, placeholder = "Search P
         >
           {loading ? (
             <div style={{ padding: 10, color: "#6b7280", fontSize: 13 }}>Loading…</div>
+          ) : err ? (
+            <div style={{ padding: 10, color: "crimson", fontSize: 13 }}>{err}</div>
           ) : items.length === 0 ? (
             <div style={{ padding: 10, color: "#6b7280", fontSize: 13 }}>No results</div>
           ) : (
@@ -114,7 +133,9 @@ export default function POISearchAutosuggest({ onSelect, placeholder = "Search P
                 }}
               >
                 <span style={{ fontWeight: 600 }}>{it.name}</span>
-                <span style={{ fontSize: 12, color: "#6b7280" }}>{it.category || ""}</span>
+                <span style={{ fontSize: 12, color: "#6b7280" }}>
+                  {it.category || ""}
+                </span>
               </div>
             ))
           )}

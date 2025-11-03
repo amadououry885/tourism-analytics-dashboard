@@ -1,20 +1,26 @@
 # backend/analytics/views.py
 
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import csv
+import re
 from io import StringIO, BytesIO
 
-from django.http import HttpResponse
-from django.db.models import Count, F, Case, When, IntegerField, Sum  # Sum kept (harmless even if unused)
+from django.db.models import Q, Count, F, Case, When, IntegerField, Sum
 from django.db.models.functions import Coalesce, TruncDate
+from django.http import HttpResponse, JsonResponse
 from django.utils.dateparse import parse_date
 
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+# Legacy (analytics.models_old) — used by the read-only example endpoints
 from .models_old import POI, PostRaw, PostClean, SentimentTopic
+
+# New (analytics.models) — your live Place/SocialPost data powering the dashboard
+from .models import Place, SocialPost
+
 from .serializers import (
     POISerializer,
     PostRawSerializer,
@@ -23,7 +29,7 @@ from .serializers import (
 )
 
 # ─────────────────────────────────────────────────────────────
-# Existing read-only endpoints
+# Existing read-only endpoints (models_old)
 # ─────────────────────────────────────────────────────────────
 
 class POIViewSet(viewsets.ReadOnlyModelViewSet):
@@ -64,6 +70,9 @@ STOPWORDS = {
     "this","that","it","at","by","from","as","be","been","will","shall","can","could",
     "about","into","over","under","up","down","out","not","no","yes","you","your","we","our",
 }
+STOPWORDS2 = set("""
+the a an and or for of in on to at is are was were be not no this that with from by about into as it its
+""".split())
 
 def parse_range(request):
     df = request.GET.get("date_from")
@@ -83,7 +92,8 @@ def _simple_tokenize(s: str):
             word.append(ch)
         else:
             if word:
-                yield "".join(word); word = []
+                yield "".join(word)
+                word = []
     if word:
         yield "".join(word)
 
@@ -91,7 +101,7 @@ def _parse_days_or_dates(request):
     """
     Support both styles:
       - ?range=7d
-      - ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD (falls back to parse_range)
+      - ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
     Returns (start_date, end_date, days_span)
     """
     rng = (request.GET.get("range") or "").strip().lower()
@@ -102,6 +112,16 @@ def _parse_days_or_dates(request):
         return start, end, days
     start, end = parse_range(request)
     return start, end, (end - start).days + 1
+
+def _range_from_or_date_params(request):
+    fs = request.GET.get("from") or request.GET.get("date_from")
+    ts = request.GET.get("to") or request.GET.get("date_to")
+    today = date.today()
+    start = parse_date(fs) if fs else (today - timedelta(days=30))
+    end   = parse_date(ts) if ts else today
+    if not start or not end or start > end:
+        return None, None
+    return start, end
 
 # ─────────────────────────────────────────────────────────────
 # Part 0 — Health + minimal dashboard APIs
@@ -115,6 +135,7 @@ class MetricsTotalsView(APIView):
     """
     GET /api/metrics/totals?range=7d
     -> { range_days, total_posts, unique_authors }
+    (uses models_old.PostClean for demo compatibility)
     """
     def get(self, request):
         start, end, days = _parse_days_or_dates(request)
@@ -125,11 +146,8 @@ class MetricsTotalsView(APIView):
                 .filter(ts__date__gte=start, ts__date__lte=end)
             )
             total_posts = base.count()
-
-            # Try to infer unique authors from PostRaw if available
             try:
                 unique_authors = base.values("raw_post__author").distinct().count()
-                # If all authors are NULL normalize to 0
                 if unique_authors == 1 and base.filter(raw_post__author__isnull=True).count() == total_posts:
                     unique_authors = 0
             except Exception:
@@ -143,9 +161,6 @@ class MetricsTotalsView(APIView):
         except Exception:
             return Response({"range_days": days, "total_posts": 0, "unique_authors": None})
 
-# ─────────────────────────────────────────────────────────────
-# NEW — Engagement totals (likes, comments, shares)
-# ─────────────────────────────────────────────────────────────
 class MetricsEngagementView(APIView):
     """
     GET /api/metrics/engagement?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD[&poi_id=123]
@@ -156,7 +171,6 @@ class MetricsEngagementView(APIView):
         start, end = parse_range(request)
         poi_id = request.GET.get("poi_id")
 
-        # Base queryset: pick posts within date range, with access to raw_post for fallbacks
         qs = (
             PostClean.objects
             .select_related("raw_post")
@@ -168,7 +182,6 @@ class MetricsEngagementView(APIView):
 
         likes = comments = shares = 0
 
-        # Safe numeric extractor that checks multiple possible field names
         def num(obj, *names):
             for n in names:
                 try:
@@ -181,7 +194,6 @@ class MetricsEngagementView(APIView):
 
         for pc in qs:
             rp = getattr(pc, "raw_post", None)
-            # Prefer counts on PostClean; if 0/missing, fall back to PostRaw
             likes    += (num(pc, "likes", "likes_count", "like_count")
                          or (num(rp, "likes", "likes_count", "like_count") if rp else 0))
             comments += (num(pc, "comments", "comments_count", "comment_count")
@@ -226,12 +238,11 @@ class SentimentTrendView(APIView):
 
             return Response({"range_days": days, "series": series})
         except Exception:
-            # Return zeroed series so charts still render
             series = [{"date": (start + timedelta(days=i)).isoformat(), "pos": 0, "neu": 0, "neg": 0} for i in range(days)]
             return Response({"range_days": days, "series": series})
 
 # ─────────────────────────────────────────────────────────────
-# Part 3 — Map Heat, Word Cloud, Hidden Gem
+# Part 3 — Map Heat, Word Cloud, Hidden Gem (models_old)
 # ─────────────────────────────────────────────────────────────
 
 class MapHeatView(APIView):
@@ -359,7 +370,7 @@ class HiddenGemView(APIView):
         return Response({"items": items[:top_n]})
 
 # ─────────────────────────────────────────────────────────────
-# Part 4 — Tabs + Reports
+# Part 4 — Tabs + Reports (models_old)
 # ─────────────────────────────────────────────────────────────
 
 class AttractionsListView(APIView):
@@ -554,7 +565,7 @@ class ReportsExportView(APIView):
         return resp
 
 # ─────────────────────────────────────────────────────────────
-# Missing endpoints used by the frontend (minimal, safe versions)
+# Minimal endpoints used directly by the new Dashboard.jsx (models_old)
 # ─────────────────────────────────────────────────────────────
 
 class MetricsVisitorsView(APIView):
@@ -575,7 +586,6 @@ class MetricsVisitorsView(APIView):
             qs = qs.filter(poi_id=poi_id)
 
         return Response({"total": qs.count()})
-
 
 class MentionsTimeSeriesView(APIView):
     """
@@ -609,7 +619,6 @@ class MentionsTimeSeriesView(APIView):
             d += timedelta(days=1)
         return Response({"items": items})
 
-
 class TopPOIsView(APIView):
     """
     GET /rankings/top-pois?date_from=&date_to=&limit=5
@@ -633,7 +642,6 @@ class TopPOIsView(APIView):
         items = [{"poi_id": r["poi_id"], "name": r["poi__name"], "count": r["count"]} for r in rows]
         return Response({"items": items})
 
-
 class LeastPOIsView(APIView):
     """
     GET /rankings/least-pois?date_from=&date_to=&limit=5
@@ -649,7 +657,6 @@ class LeastPOIsView(APIView):
             .filter(ts__date__gte=start, ts__date__lte=end)
             .exclude(poi=None)
         )
-        # Order ascending and keep the first N
         rows = (
             qs.values("poi_id", "poi__name")
               .annotate(count=Count("id"))
@@ -658,29 +665,9 @@ class LeastPOIsView(APIView):
         items = [{"poi_id": r["poi_id"], "name": r["poi__name"], "count": r["count"]} for r in rows]
         return Response({"items": items})
 
-
-from django.db.models import Count, Sum, F
-from django.db.models.functions import Coalesce, TruncDate
-from django.utils.dateparse import parse_date
-from datetime import date, timedelta
-from collections import Counter
-import re
-from django.http import JsonResponse
-from .models import Place, SocialPost
-
-STOPWORDS2 = set("""
-the a an and or for of in on to at is are was were be not no this that with from by about into as it its
-""".split())
-
-def _range_from_or_date_params(request):
-    fs = request.GET.get("from") or request.GET.get("date_from")
-    ts = request.GET.get("to") or request.GET.get("date_to")
-    today = date.today()
-    start = parse_date(fs) if fs else (today - timedelta(days=30))
-    end   = parse_date(ts) if ts else today
-    if not start or not end or start > end:
-        return None, None
-    return start, end
+# ─────────────────────────────────────────────────────────────
+# New analytics backed by Place + SocialPost (your live data)
+# ─────────────────────────────────────────────────────────────
 
 def analytics_summary(request):
     start, end = _range_from_or_date_params(request)
@@ -705,22 +692,23 @@ def analytics_summary(request):
 
     top = (qs.values("place_id", "place__name")
              .annotate(mentions=Count("id"),
-                       engagement=Coalesce(Sum(F("likes")+F("comments")+F("shares")),0))
+                       engagement=Coalesce(Sum(F("likes")+F("comments")+F("shares")), 0))
              .order_by("-engagement", "-mentions")
              .first())
 
     hidden = (qs.values("place_id", "place__name")
                 .annotate(mentions=Count("id"),
-                          engagement=Coalesce(Sum(F("likes")+F("comments")+F("shares")),0))
+                          engagement=Coalesce(Sum(F("likes")+F("comments")+F("shares")), 0))
                 .filter(mentions__lte=2, mentions__gte=1)
-                .annotate(avg_engagement=F("engagement")*1.0/F("mentions"))
+                .annotate(avg_engagement=F("engagement") * 1.0 / F("mentions"))
                 .order_by("-avg_engagement")
                 .first())
 
     texts = qs.values_list("content", flat=True)
     counter = Counter()
     for t in texts:
-        if not t: continue
+        if not t:
+            continue
         tokens = re.findall(r"[A-Za-z]{3,}", t.lower())
         counter.update(w for w in tokens if w not in STOPWORDS2)
     keywords = [{"word": w, "count": c} for w, c in counter.most_common(15)]
@@ -738,6 +726,7 @@ def analytics_timeseries(request):
     if not start or not end:
         return JsonResponse({"detail": "Invalid date range"}, status=400)
     place_q = (request.GET.get("place") or "").strip() or None
+
     qs = SocialPost.objects.select_related("place").filter(
         created_at__date__gte=start, created_at__date__lte=end
     )
@@ -760,6 +749,7 @@ def analytics_heatmap(request):
     if not start or not end:
         return JsonResponse({"detail": "Invalid date range"}, status=400)
     place_q = (request.GET.get("place") or "").strip() or None
+
     qs = SocialPost.objects.select_related("place").filter(
         created_at__date__gte=start, created_at__date__lte=end
     )
@@ -783,3 +773,80 @@ def analytics_heatmap(request):
         "engagement": r["engagement"],
     } for r in rows]
     return JsonResponse(data, safe=False)
+
+# ─────────────────────────────────────────────────────────────
+# 🔍 POI search used by POISearchAutosuggest.jsx
+#   GET /api/search/pois?q=...&limit=20
+#   -> { items: [{id, name, category, latitude, longitude}, ...] }
+# ─────────────────────────────────────────────────────────────
+
+def search_pois(request):
+    q = (request.GET.get("q") or "").strip()
+    try:
+        limit = min(50, max(1, int(request.GET.get("limit", 20))))
+    except ValueError:
+        limit = 20
+
+    qs = Place.objects.all()
+    if q:
+        qs = qs.filter(
+            Q(name__icontains=q) |
+            Q(city__icontains=q) |
+            Q(category__icontains=q)
+        )
+
+    qs = qs.order_by("name")[:limit]
+    items = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "category": p.category or "",
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+        }
+        for p in qs
+    ]
+    return JsonResponse({"items": items})
+
+# --- shims so urls.py can call function views ---
+from django.views.decorators.http import require_GET
+
+@require_GET
+def search_pois(request):
+    """Shim for /api/search/pois -> class-based PlaceSuggestView"""
+    return PlaceSuggestView.as_view()(request)
+
+# Legacy alias kept for backward compatibility (/api/places/suggest)
+places_suggest = search_pois
+class PlaceSuggestView(APIView):
+    """
+    GET /api/search/pois?q=...&limit=20
+    -> { items: [{id, name, category, latitude, longitude}, ...] }
+    """
+    def get(self, request):
+        q = (request.GET.get("q") or "").strip()
+        try:
+            limit = min(50, max(1, int(request.GET.get("limit", 20))))
+        except ValueError:
+            limit = 20
+
+        qs = Place.objects.all()
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q) |
+                Q(city__icontains=q) |
+                Q(category__icontains=q)
+            )
+
+        qs = qs.order_by("name")[:limit]
+        items = [
+            {
+                "id": p.id,
+                "name": p.name,
+                "category": p.category or "",
+                "latitude": p.latitude,
+                "longitude": p.longitude,
+            }
+            for p in qs
+        ]
+        return JsonResponse({"items": items})

@@ -1,13 +1,13 @@
 # backend/analytics/urls.py
 from django.urls import re_path
-from . import views as v   # <-- use views, not views_safe
+from . import views as v
 
 urlpatterns = [
     # health
     re_path(r"^ping/?$", v.healthz, name="analytics-ping"),
     re_path(r"^healthz/?$", v.healthz, name="analytics-healthz"),
 
-    # core used by the Dashboard.jsx
+    # core used by the Dashboard.jsx (models_old-backed)
     re_path(r"^metrics/visitors/?$", v.MetricsVisitorsView.as_view(), name="metrics-visitors"),
     re_path(r"^timeseries/mentions/?$", v.MentionsTimeSeriesView.as_view(), name="timeseries-mentions"),
     re_path(r"^rankings/top-pois/?$", v.TopPOIsView.as_view(), name="rankings-top-pois"),
@@ -29,4 +29,10 @@ urlpatterns = [
     re_path(r"^analytics/summary/?$", v.analytics_summary, name="analytics-summary"),
     re_path(r"^analytics/timeseries/?$", v.analytics_timeseries, name="analytics-timeseries"),
     re_path(r"^analytics/heatmap/?$", v.analytics_heatmap, name="analytics-heatmap"),
+
+    # 🔎 POI search for POISearchAutosuggest.jsx
+    re_path(r"^search/pois/?$", v.search_pois, name="search-pois"),
+
+    # ✅ Legacy alias to avoid crashes if anything still calls /places/suggest
+    re_path(r"^places/suggest/?$", v.search_pois, name="places-suggest"),
 ]
