@@ -1,1 +1,1 @@
-web: bash -lc 'source /var/app/venv/*/bin/activate && cd backend && exec gunicorn tourism_api.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile - --log-level info'
+web: PYTHONPATH=backend /var/app/venv/*/bin/gunicorn --bind 127.0.0.1:8000 --workers 2 tourism_api.wsgi
