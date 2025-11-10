@@ -31,7 +31,7 @@ urlpatterns = [
 
     path("admin/", admin.site.urls),
 
-    # Include analytics FIRST so its routes (e.g., /api/places/suggest) are found
+    # Include analytics FIRST so its routes are found (e.g., /api/places/suggest)
     path("api/", include("analytics.urls")),
 
     # Then your existing app’s API routes (vendors/events/stays/transport, etc.)

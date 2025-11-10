@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "id": 1,
+      "name": "Nasi Lemak Royale",
+      "city": "langkawi",
+      "cuisine": "Malay",
+      "rating": 4.8,
+      "reviews": 2850,
+      "priceRange": "$$",
+      "image": "https://images.unsplash.com/photo-1754617438035-712ddf5500ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYWxheXNpYW4lMjBuYXNpJTIwbGVtYWt8ZW58MXx8fHwxNzYyMjk3MzYxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "specialty": "Nasi Lemak",
+      "visitors": 15200
+    },
+    {
+      "id": 2,
+      "name": "Laksa Paradise",
+      "city": "alor-setar",
+      "cuisine": "Local",
+      "rating": 4.7,
+      "reviews": 1950,
+      "priceRange": "$",
+      "image": "https://images.unsplash.com/photo-1632057153803-dece2e78310f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYWxheXNpYW4lMjBsYWtzYXxlbnwxfHx8fDE3NjIyOTc1OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "specialty": "Laksa Kedah",
+      "visitors": 12800
+    },
+    {
+      "id": 3,
+      "name": "Satay House",
+      "city": "langkawi",
+      "cuisine": "Malaysian",
+      "rating": 4.6,
+      "reviews": 1580,
+      "priceRange": "$",
+      "image": "https://images.unsplash.com/photo-1679256841172-75f1cef16400?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYWxheXNpYW4lMjBzYXRheXxlbnwxfHx8fDE3NjIyOTc2NzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "specialty": "Satay Ayam",
+      "visitors": 9800
+    }
+  ]
+}

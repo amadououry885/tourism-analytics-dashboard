@@ -18,6 +18,7 @@ class EventSerializer(serializers.ModelSerializer):
             "tags",
             "is_published",
         ]
+        
 
     def validate_tags(self, value):
         # Normalize None -> []
