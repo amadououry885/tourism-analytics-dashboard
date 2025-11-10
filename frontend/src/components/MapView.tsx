@@ -3,6 +3,7 @@ import { Badge } from './ui/badge';
 import { MapPin, Users, TrendingUp } from 'lucide-react';
 
 interface MapViewProps {
+  timeRange?: string;
   selectedCity: string;
 }
 
@@ -27,14 +28,14 @@ export function MapView({ selectedCity }: MapViewProps) {
   const mapUrl = `https://www.google.com/maps/embed/v1/view?key=YOUR_GOOGLE_MAPS_API_KEY&center=${kedahCenter.lat},${kedahCenter.lng}&zoom=9&maptype=roadmap`;
 
   return (
-    <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+    <Card className="bg-white border-gray-200 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-white">Kedah Map Overview</CardTitle>
-        <CardDescription className="text-blue-200/60">Regional visitor distribution</CardDescription>
+        <CardTitle className="text-gray-900">Kedah Map Overview</CardTitle>
+        <CardDescription className="text-gray-900">Regional visitor distribution</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Google Maps Embed */}
-        <div className="relative w-full h-[400px] bg-blue-900/20 rounded-lg border border-blue-800/20 overflow-hidden">
+        <div className="relative w-full h-[400px] bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
           <iframe
             width="100%"
             height="100%"
@@ -46,8 +47,8 @@ export function MapView({ selectedCity }: MapViewProps) {
             className="rounded-lg"
           />
           {/* Overlay with location info */}
-          <div className="absolute bottom-4 left-4 right-4 bg-[#0a1628]/90 backdrop-blur-sm rounded-lg p-3 border border-blue-800/30">
-            <div className="flex items-center gap-2 text-xs text-blue-200/80">
+          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 border border-gray-200 shadow-lg">
+            <div className="flex items-center gap-2 text-xs text-gray-700">
               <MapPin className="w-3 h-3" />
               <span>Kedah, Malaysia - Tourism Hotspots</span>
             </div>
@@ -59,17 +60,17 @@ export function MapView({ selectedCity }: MapViewProps) {
           {cities
             .filter(city => selectedCity === 'all' || selectedCity === city.id)
             .map((city) => (
-              <div key={city.id} className="flex items-center justify-between p-3 bg-blue-900/20 rounded-lg border border-blue-800/20 hover:border-blue-600/50 transition-colors cursor-pointer">
+              <div key={city.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-400 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div 
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: city.color }}
                   />
-                  <span className="text-white text-sm">{city.name}</span>
+                  <span className="text-gray-900 text-sm font-medium">{city.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-blue-200/60 text-sm">{city.visitors.toLocaleString()}</span>
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                  <span className="text-gray-900 text-sm">{city.visitors.toLocaleString()}</span>
+                  <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
                     {city.trend}
                   </Badge>
                 </div>
@@ -78,8 +79,8 @@ export function MapView({ selectedCity }: MapViewProps) {
         </div>
 
         {/* Legend */}
-        <div className="mt-4 p-3 bg-blue-900/20 rounded-lg border border-blue-800/20">
-          <div className="flex items-center gap-4 text-xs text-blue-200/60">
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-4 text-xs text-gray-900">
             <div className="flex items-center gap-2">
               <MapPin className="w-3 h-3" />
               <span>Tourist Hotspots</span>

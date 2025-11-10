@@ -7,10 +7,11 @@ import { Label } from './ui/label';
 import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Star, MapPin, Users, Wifi, Coffee, Utensils, Car, Calendar as CalendarIcon, Search, Bed, Bath } from 'lucide-react';
+import { Star, MapPin, Users, Wifi, Coffee, Utensils, Car, Calendar as CalendarIcon, Search, Bed, Bath, Plus, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface AccommodationBookingProps {
+  timeRange?: string;
   selectedCity: string;
 }
 
@@ -145,86 +146,73 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Find Your Perfect Stay in Kedah</CardTitle>
-          <CardDescription className="text-blue-200/60">Search and book accommodations across Kedah</CardDescription>
+          <CardTitle className="text-gray-900">Find Your Perfect Stay in Kedah</CardTitle>
+          <CardDescription className="text-gray-900">Search and book accommodations across Kedah</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Check-in Date */}
             <div>
-              <Label className="text-blue-200/60 mb-2 block">Check-in</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left bg-blue-900/20 border-blue-800/30 text-white hover:bg-blue-900/30"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {checkIn ? format(checkIn, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-blue-950 border-blue-800">
-                  <Calendar
-                    mode="single"
-                    selected={checkIn}
-                    onSelect={setCheckIn}
-                    initialFocus
-                    className="text-white"
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label className="text-gray-900 mb-2 block">Check-in</Label>
+              <Input
+                type="date"
+                value={checkIn ? format(checkIn, 'yyyy-MM-dd') : ''}
+                onChange={(e) => setCheckIn(e.target.value ? new Date(e.target.value) : undefined)}
+                min={format(new Date(), 'yyyy-MM-dd')}
+                className="w-full bg-white border-gray-300 text-gray-900 h-10"
+              />
             </div>
 
             {/* Check-out Date */}
             <div>
-              <Label className="text-blue-200/60 mb-2 block">Check-out</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left bg-blue-900/20 border-blue-800/30 text-white hover:bg-blue-900/30"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {checkOut ? format(checkOut, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-blue-950 border-blue-800">
-                  <Calendar
-                    mode="single"
-                    selected={checkOut}
-                    onSelect={setCheckOut}
-                    initialFocus
-                    className="text-white"
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label className="text-gray-900 mb-2 block">Check-out</Label>
+              <Input
+                type="date"
+                value={checkOut ? format(checkOut, 'yyyy-MM-dd') : ''}
+                onChange={(e) => setCheckOut(e.target.value ? new Date(e.target.value) : undefined)}
+                min={checkIn ? format(checkIn, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')}
+                className="w-full bg-white border-gray-300 text-gray-900 h-10"
+              />
             </div>
 
             {/* Guests */}
             <div>
-              <Label className="text-blue-200/60 mb-2 block">Guests</Label>
-              <Input
-                type="number"
-                min="1"
-                max="10"
-                value={guests}
-                onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                className="bg-blue-900/20 border-blue-800/30 text-white"
-              />
+              <Label className="text-gray-900 mb-2 block">Guests</Label>
+              <div className="flex items-center gap-2 h-10">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setGuests(Math.max(1, guests - 1))}
+                  className="h-10 w-10 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <div className="flex-1 h-10 flex items-center justify-center bg-white border border-gray-300 rounded-md">
+                  <span className="text-gray-900 font-medium">{guests} {guests === 1 ? 'Guest' : 'Guests'}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setGuests(Math.min(10, guests + 1))}
+                  className="h-10 w-10 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Search */}
             <div>
-              <Label className="text-blue-200/60 mb-2 block">Search</Label>
+              <Label className="text-gray-900 mb-2 block">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-900" />
                 <Input
                   placeholder="Hotel name or location..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-blue-900/20 border-blue-800/30 text-white placeholder:text-blue-200/40"
+                  className="pl-10 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
                 />
               </div>
             </div>
@@ -234,7 +222,7 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
           <div className="mt-6 space-y-4">
             {/* Accommodation Type */}
             <div>
-              <Label className="text-blue-200/60 mb-3 block">Accommodation Type</Label>
+              <Label className="text-gray-900 mb-3 block">Accommodation Type</Label>
               <div className="flex flex-wrap gap-2">
                 {accommodationTypes.map((type) => (
                   <button
@@ -243,7 +231,7 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                       selectedType === type
                         ? 'bg-blue-600 text-white'
-                        : 'bg-blue-900/20 text-blue-200/60 border border-blue-800/30 hover:border-blue-600/50'
+                        : 'bg-gray-50 text-gray-900 border border-gray-300 hover:border-blue-400'
                     }`}
                   >
                     {type}
@@ -254,7 +242,7 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
 
             {/* Price Range */}
             <div>
-              <Label className="text-blue-200/60 mb-2 block">
+              <Label className="text-gray-900 mb-2 block">
                 Price Range: RM {priceRange[0]} - RM {priceRange[1]} per night
               </Label>
               <input
@@ -273,7 +261,7 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
 
       {/* Results Count */}
       <div className="flex items-center justify-between">
-        <p className="text-blue-200/60">
+        <p className="text-gray-900">
           {filteredAccommodations.length} propert{filteredAccommodations.length !== 1 ? 'ies' : 'y'} found
         </p>
       </div>
@@ -281,7 +269,7 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
       {/* Accommodation Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredAccommodations.map((acc) => (
-          <Card key={acc.id} className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm overflow-hidden hover:border-blue-600/50 transition-colors">
+          <Card key={acc.id} className="bg-white border-gray-200 shadow-sm overflow-hidden hover:border-blue-400 transition-colors">
             <div className="relative h-48 overflow-hidden">
               <ImageWithFallback
                 src={acc.image}
@@ -298,21 +286,21 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
               <h3 className="text-white mb-2">{acc.name}</h3>
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  <Star className="w-4 h-4 text-yellow-700 fill-yellow-400" />
                   <span className="text-white text-sm">{acc.rating}</span>
                 </div>
-                <span className="text-blue-200/60 text-sm">({acc.reviews.toLocaleString()} reviews)</span>
+                <span className="text-gray-900 text-sm">({acc.reviews.toLocaleString()} reviews)</span>
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-blue-200/60 mb-3">
+              <div className="flex items-center gap-2 text-sm text-gray-900 mb-3">
                 <MapPin className="w-4 h-4" />
                 <span>{acc.location}</span>
               </div>
 
-              <p className="text-sm text-blue-200/60 mb-4 line-clamp-2">{acc.description}</p>
+              <p className="text-sm text-gray-900 mb-4 line-clamp-2">{acc.description}</p>
 
               {/* Room Details */}
-              <div className="flex items-center gap-4 mb-4 text-sm text-blue-200/60">
+              <div className="flex items-center gap-4 mb-4 text-sm text-gray-900">
                 <div className="flex items-center gap-1">
                   <Bed className="w-4 h-4" />
                   <span>{acc.beds} bed{acc.beds > 1 ? 's' : ''}</span>
@@ -332,7 +320,7 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
                 {acc.amenities.slice(0, 4).map((amenity) => {
                   const Icon = amenitiesIcons[amenity];
                   return (
-                    <div key={amenity} className="flex items-center gap-1 text-xs text-blue-200/60 bg-blue-900/20 px-2 py-1 rounded">
+                    <div key={amenity} className="flex items-center gap-1 text-xs text-gray-900 bg-gray-50 px-2 py-1 rounded">
                       {Icon && <Icon className="w-3 h-3" />}
                       <span>{amenity}</span>
                     </div>
@@ -343,7 +331,7 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
               <div className="flex items-center justify-between pt-4 border-t border-blue-800/30">
                 <div>
                   <p className="text-2xl text-white">RM {acc.price}</p>
-                  <p className="text-xs text-blue-200/60">per night</p>
+                  <p className="text-xs text-gray-900">per night</p>
                 </div>
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   Book Now
@@ -356,10 +344,10 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
 
       {/* No Results */}
       {filteredAccommodations.length === 0 && (
-        <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardContent className="p-12 text-center">
-            <p className="text-blue-200/60">No accommodations found matching your criteria</p>
-            <p className="text-sm text-blue-200/40 mt-2">Try adjusting your filters</p>
+            <p className="text-gray-900">No accommodations found matching your criteria</p>
+            <p className="text-sm text-gray-900 mt-2">Try adjusting your filters</p>
           </CardContent>
         </Card>
       )}

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Place, Route
+from .models import Place, Route, Schedule, RouteDelay, RouteOccupancy, MaintenanceSchedule
 
 
 class PlaceSerializer(serializers.ModelSerializer):
@@ -35,3 +35,38 @@ class RouteSerializer(serializers.ModelSerializer):
     def validate_options(self, value):
         # Normalize None -> []
         return value or []
+
+
+class ScheduleSerializer(serializers.ModelSerializer):
+    route = RouteSerializer(read_only=True)
+    route_id = serializers.PrimaryKeyRelatedField(
+        queryset=Route.objects.all(), write_only=True, source="route"
+    )
+
+    class Meta:
+        model = Schedule
+        fields = ['id', 'route', 'route_id', 'departure_time', 'arrival_time', 'capacity', 'price']
+
+
+class ScheduleBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Schedule
+        fields = ['id', 'departure_time', 'arrival_time', 'capacity', 'price']
+
+
+class RouteDelaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RouteDelay
+        fields = ['id', 'route', 'delay_minutes', 'reason', 'reported_at']
+
+
+class RouteOccupancySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RouteOccupancy
+        fields = ['id', 'route', 'occupancy_percentage', 'recorded_at']
+
+
+class MaintenanceScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaintenanceSchedule
+        fields = ['id', 'route', 'start_time', 'end_time', 'maintenance_type', 'description']

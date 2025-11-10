@@ -31,6 +31,7 @@ interface Restaurant {
 }
 
 interface RestaurantVendorsProps {
+  timeRange?: string;
   selectedCity: string;
 }
 
@@ -91,7 +92,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">Loading restaurants...</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Loading restaurants...</h2>
         </div>
       </div>
     );
@@ -101,30 +102,30 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">
+        <h2 className="text-2xl font-bold text-gray-900">
           Restaurants {selectedCity !== 'all' && ` in ${cityNames[selectedCity]}`}
           {error && <span className="text-sm text-red-500 ml-2">{error}</span>}
         </h2>
       </div>
 
       {/* Search and Filters */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-blue-400" />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-900" />
               <Input
                 type="text"
                 placeholder="Search by name, cuisine or specialty..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 bg-blue-900/20 border-blue-800/30 text-white placeholder:text-blue-200/40"
+                className="pl-8 bg-white border-gray-300 text-gray-900 placeholder:text-gray-500"
               />
             </div>
             <select
               value={selectedCuisine}
               onChange={(e) => setSelectedCuisine(e.target.value)}
-              className="p-2 bg-blue-900/20 text-white border border-blue-800/30 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Cuisines</option>
               {cuisineTypes.map(cuisine => (
@@ -138,7 +139,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       {/* Results */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredRestaurants.map((restaurant) => (
-          <Card key={restaurant.id} className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm overflow-hidden hover:border-blue-600/50 transition-colors">
+          <Card key={restaurant.id} className="bg-white border-gray-200 shadow-sm overflow-hidden hover:border-blue-400 transition-colors">
             <div className="aspect-video relative">
               <ImageWithFallback
                 src={restaurant.image}
@@ -153,32 +154,32 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                 </Badge>
               </div>
               <div className="absolute bottom-3 left-3">
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 backdrop-blur-sm">
+                <Badge className="bg-green-500/20 text-green-700 border-green-500/30 backdrop-blur-sm">
                   {restaurant.cuisine}
                 </Badge>
               </div>
             </div>
             <CardHeader>
-              <CardTitle className="text-white">{restaurant.name}</CardTitle>
+              <CardTitle className="text-gray-900">{restaurant.name}</CardTitle>
               <CardDescription>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-blue-400" />
-                  <span className="text-blue-200/60">{cityNames[restaurant.city]}</span>
+                  <MapPin className="h-4 w-4 text-gray-900" />
+                  <span className="text-gray-900">{cityNames[restaurant.city]}</span>
                 </div>
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="border-blue-800/30 text-blue-200/60">{restaurant.specialty}</Badge>
+                  <Badge variant="outline" className="border-blue-800/30 text-gray-900">{restaurant.specialty}</Badge>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-white">{restaurant.rating}</span>
-                    <span className="text-blue-200/60">({restaurant.reviews.toLocaleString()} reviews)</span>
+                    <Star className="h-4 w-4 text-yellow-700 fill-yellow-400" />
+                    <span className="text-gray-900">{restaurant.rating}</span>
+                    <span className="text-gray-900">({restaurant.reviews.toLocaleString()} reviews)</span>
                   </div>
-                  <div className="flex items-center gap-1 text-blue-200/60">
+                  <div className="flex items-center gap-1 text-gray-900">
                     <Users className="h-4 w-4" />
                     <span>{restaurant.visitors.toLocaleString()} visitors</span>
                   </div>
@@ -191,9 +192,9 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
 
       {/* No results */}
       {filteredRestaurants.length === 0 && (
-        <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardContent className="p-12 text-center">
-            <p className="text-blue-200/60">No restaurants found matching your criteria.</p>
+            <p className="text-gray-900">No restaurants found matching your criteria.</p>
           </CardContent>
         </Card>
       )}

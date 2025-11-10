@@ -20,6 +20,22 @@ from .views import (
     TopAttractionsView,  # class alias you already use
 )
 
+# Import new views
+from .views_new import (
+    CitiesListView,
+    SentimentSummaryView,
+    SentimentByCategoryView,
+    TopKeywordsView,
+    SocialMetricsView,
+    SocialPlatformsView,
+    SocialEngagementView,
+    PopularPlacesView,
+    TrendingPlacesView,
+    NearbyPlacesView,
+    OverviewMetricsView,
+    SocialEngagementTrendsView,
+)
+
 # Function-based analytics (existing)
 from .metrics import visitors_total, top_attractions
 from .rankings import top_pois, least_pois
@@ -35,6 +51,9 @@ router.register(r"sentiments", SentimentTopicViewSet, basename="sentiments")
 urlpatterns = [
     path("", include(router.urls)),
 
+    # ---- Cities List ----
+    path("cities/", CitiesListView.as_view(), name="api-cities-list"),
+
     # ---- Minimal dashboard APIs expected by the React app ----
     path("metrics/totals",  MetricsTotalsView.as_view(), name="api-metrics-totals"),
     path("metrics/totals/", MetricsTotalsView.as_view()),
@@ -42,6 +61,21 @@ urlpatterns = [
     path("attractions/top/", TopAttractionsView.as_view()),
     path("sentiment/trend",  SentimentTrendView.as_view(), name="api-sentiment-trend"),
     path("sentiment/trend/", SentimentTrendView.as_view()),
+    
+    # Sentiment Analysis Endpoints
+    path("sentiment/summary", SentimentSummaryView.as_view(), name="api-sentiment-summary"),
+    path("sentiment/by-category", SentimentByCategoryView.as_view(), name="api-sentiment-by-category"),
+    path("sentiment/keywords", TopKeywordsView.as_view(), name="api-sentiment-keywords"),
+    
+    # Social Media Analytics Endpoints
+    path("social/metrics", SocialMetricsView.as_view(), name="api-social-metrics"),
+    path("social/platforms", SocialPlatformsView.as_view(), name="api-social-platforms"),
+    path("social/engagement", SocialEngagementView.as_view(), name="api-social-engagement"),
+
+    # Popular Places and Rankings
+    path("places/popular", PopularPlacesView.as_view(), name="api-places-popular"),
+    path("places/trending", TrendingPlacesView.as_view(), name="api-places-trending"),
+    path("places/nearby", NearbyPlacesView.as_view(), name="api-places-nearby"),
 
     # ---- Phase 1 (existing, kept) ----
     path("metrics/visitors",        visitors_total,     name="metrics-visitors"),

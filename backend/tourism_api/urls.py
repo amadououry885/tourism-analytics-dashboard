@@ -34,8 +34,11 @@ urlpatterns = [
     # Include analytics FIRST so its routes are found (e.g., /api/places/suggest)
     path("api/", include("analytics.urls")),
 
-    # Then your existing app’s API routes (vendors/events/stays/transport, etc.)
+    # Then your existing app's API routes (vendors/events/stays/transport, etc.)
     path("api/", include("api.urls")),
+    
+    # Transport routes including analytics
+    path("api/transport/", include("transport.urls")),
 
     # Root: quick index of useful endpoints
     path("", root),

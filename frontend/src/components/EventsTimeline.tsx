@@ -5,6 +5,7 @@ import { Calendar, MapPin, Users, TrendingUp, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 interface EventsTimelineProps {
+  timeRange?: string;
   selectedCity: string;
 }
 
@@ -150,12 +151,12 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
   return (
     <div className="space-y-6">
       {/* Event Type Filter */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <Filter className="w-5 h-5 text-blue-400" />
+            <Filter className="w-5 h-5 text-gray-900" />
             <div className="flex-1">
-              <label className="text-sm text-blue-200/60 mb-2 block">Filter by Event Type</label>
+              <label className="text-sm text-gray-900 mb-2 block">Filter by Event Type</label>
               <div className="flex flex-wrap gap-2">
                 {eventTypes.map((type) => (
                   <button
@@ -164,7 +165,7 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                       selectedEventType === type.value
                         ? 'bg-blue-600 text-white'
-                        : 'bg-blue-900/20 text-blue-200/60 border border-blue-800/30 hover:border-blue-600/50'
+                        : 'bg-gray-50 text-gray-900 border border-blue-800/30 hover:border-blue-400'
                     }`}
                   >
                     {type.label}
@@ -173,30 +174,30 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
               </div>
             </div>
           </div>
-          <div className="mt-4 text-sm text-blue-200/60">
+          <div className="mt-4 text-sm text-gray-900">
             Showing {filteredUpcomingEvents.length} upcoming and {filteredPastEvents.length} past events
           </div>
         </CardContent>
       </Card>
 
       {/* Event Attendance Trend */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Event Attendance Trends</CardTitle>
-          <CardDescription className="text-blue-200/60">6-month visitor breakdown by event type</CardDescription>
+          <CardTitle className="text-gray-900">Event Attendance Trends</CardTitle>
+          <CardDescription className="text-gray-900">6-month visitor breakdown by event type</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={eventAttendance}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" opacity={0.3} />
-              <XAxis dataKey="month" stroke="#93c5fd" />
-              <YAxis stroke="#93c5fd" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+              <XAxis dataKey="month" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#0a1628', 
-                  border: '1px solid #1e3a8a',
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff'
+                  color: '#111827'
                 }} 
               />
               <Line type="monotone" dataKey="festivals" stroke="#ec4899" strokeWidth={2} name="Festivals" />
@@ -209,26 +210,26 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
       </Card>
 
       {/* Upcoming Events */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Upcoming Events</CardTitle>
-          <CardDescription className="text-blue-200/60">Major events scheduled for the coming months</CardDescription>
+          <CardTitle className="text-gray-900">Upcoming Events</CardTitle>
+          <CardDescription className="text-gray-900">Major events scheduled for the coming months</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredUpcomingEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredUpcomingEvents.map((event) => (
-                <div key={event.name} className="p-5 bg-blue-900/20 rounded-lg border border-blue-800/20">
+                <div key={event.name} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-start justify-between mb-3">
-                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                    <Badge className="bg-blue-500/20 text-gray-900 border-blue-500/30">
                       {event.category}
                     </Badge>
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    <Badge className="bg-green-500/20 text-green-700 border-green-500/30">
                       Upcoming
                     </Badge>
                   </div>
                   <h4 className="text-white mb-3">{event.name}</h4>
-                  <div className="space-y-2 text-sm text-blue-200/60">
+                  <div className="space-y-2 text-sm text-gray-900">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       <span>{event.date}</span>
@@ -250,7 +251,7 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-blue-200/60">
+            <div className="text-center py-8 text-gray-900">
               No upcoming events found for the selected filters
             </div>
           )}
@@ -258,20 +259,20 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
       </Card>
 
       {/* Past Events Performance */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Past Events Performance</CardTitle>
-          <CardDescription className="text-blue-200/60">Recent events and their impact metrics</CardDescription>
+          <CardTitle className="text-gray-900">Past Events Performance</CardTitle>
+          <CardDescription className="text-gray-900">Recent events and their impact metrics</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredPastEvents.length > 0 ? (
             <div className="space-y-4">
               {filteredPastEvents.map((event) => (
-                <div key={event.name} className="p-5 bg-blue-900/20 rounded-lg border border-blue-800/20">
+                <div key={event.name} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <h4 className="text-white mb-1">{event.name}</h4>
-                      <div className="flex items-center gap-2 text-sm text-blue-200/60">
+                      <div className="flex items-center gap-2 text-sm text-gray-900">
                         <Calendar className="w-4 h-4" />
                         <span>{event.date}</span>
                         <span>•</span>
@@ -279,33 +280,33 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
                         <span>{event.location}</span>
                       </div>
                     </div>
-                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                    <Badge className="bg-purple-500/20 text-purple-700 border-purple-500/30">
                       Completed
                     </Badge>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                     <div>
-                      <p className="text-sm text-blue-200/60 mb-1">Visitors</p>
+                      <p className="text-sm text-gray-900 mb-1">Visitors</p>
                       <p className="text-xl text-white">{event.actualVisitors.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-200/60 mb-1">Posts</p>
+                      <p className="text-sm text-gray-900 mb-1">Posts</p>
                       <p className="text-xl text-white">{event.posts.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-200/60 mb-1">Engagement</p>
+                      <p className="text-sm text-gray-900 mb-1">Engagement</p>
                       <p className="text-xl text-white">{event.engagement.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-blue-200/60 mb-1">Sentiment</p>
-                      <p className="text-xl text-green-400">{event.sentiment}%</p>
+                      <p className="text-sm text-gray-900 mb-1">Sentiment</p>
+                      <p className="text-xl text-green-700">{event.sentiment}%</p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-blue-200/60">
+            <div className="text-center py-8 text-gray-900">
               No past events found for the selected filters
             </div>
           )}

@@ -4,7 +4,6 @@ from django.utils.timezone import now
 from django.db.models import Q
 from .models import Event
 from .serializers import EventSerializer
-
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all().order_by("start_date")
     serializer_class = EventSerializer

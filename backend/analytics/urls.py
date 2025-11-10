@@ -1,55 +1,51 @@
 # backend/analytics/urls.py
-from django.urls import re_path
-from . import views as v
+from django.urls import path, include, re_path
+from rest_framework.routers import DefaultRouter
+from . import views_safe as vs
+from . import views_new as vn
+from . import views_crud as vc
+
+# Router for CRUD endpoints
+router = DefaultRouter()
+router.register(r'places', vc.PlaceViewSet, basename='place')
+router.register(r'posts', vc.SocialPostViewSet, basename='socialpost')
+# Add routers for legacy views that are now handled by new views
+router.register(r'pois', vc.PlaceViewSet, basename='poi')  # Legacy POI is now Place
+router.register(r'posts-raw', vc.SocialPostViewSet, basename='post-raw')  # Legacy PostRaw is now SocialPost
+router.register(r'posts-clean', vc.SocialPostViewSet, basename='post-clean')  # Legacy PostClean is now SocialPost
 
 urlpatterns = [
-    # health
-    re_path(r"^ping/?$", v.healthz, name="analytics-ping"),
-    re_path(r"^healthz/?$", v.healthz, name="analytics-healthz"),
+    # Include CRUD routes
+    path('', include(router.urls)),
 
-    # ---- minimal dashboard (models_old) ----
-    re_path(r"^metrics/visitors/?$", v.MetricsVisitorsView.as_view(), name="metrics-visitors"),
-    re_path(r"^timeseries/mentions/?$", v.MentionsTimeSeriesView.as_view(), name="timeseries-mentions"),
-    re_path(r"^rankings/top-pois/?$", v.TopPOIsView.as_view(), name="rankings-top-pois"),
-    re_path(r"^rankings/least-pois/?$", v.LeastPOIsView.as_view(), name="rankings-least-pois"),
-    re_path(r"^metrics/engagement/?$", v.MetricsEngagementView.as_view(), name="metrics-engagement"),
+    # Health checks
+    re_path(r'^ping/?$', vs.ping, name='analytics-ping'),
+    re_path(r'^healthz/?$', vs.ping, name='analytics-healthz'),
 
-    # ---- additional dashboard endpoints (models_old) ----
-    re_path(r"^metrics/totals/?$", v.MetricsTotalsView.as_view(), name="api-metrics-totals"),
-    re_path(r"^attractions/top/?$", v.TopAttractionsView.as_view(), name="api-attractions-top"),
-    re_path(r"^sentiment/trend/?$", v.SentimentTrendView.as_view(), name="api-sentiment-trend"),
-    re_path(r"^metrics/top-attractions/?$", v.TopAttractionsView.as_view(), name="metrics-top-attractions"),
+    # Basic metrics and rankings (function-based views)
+    re_path(r'^metrics/visitors/?$', vs.visitors_metrics, name='metrics-visitors'),
+    re_path(r'^metrics/engagement/?$', vs.engagement_metrics, name='metrics-engagement'),
+    re_path(r'^metrics/totals/?$', vs.metrics_totals, name='metrics-totals'),
+    re_path(r'^timeseries/mentions/?$', vs.mentions_timeseries, name='timeseries-mentions'),
+    re_path(r'^rankings/top-pois/?$', vs.top_pois, name='rankings-top-pois'),
+    re_path(r'^rankings/least-pois/?$', vs.least_pois, name='rankings-least-pois'),
+    re_path(r'^metrics/top-attractions/?$', vs.top_attractions, name='metrics-top-attractions'),
+    re_path(r'^map/heat/?$', vs.map_heat, name='map-heat'),
 
-    # ---- map / wordcloud / hidden-gem (models_old) ----
-    re_path(r"^map/heat/?$", v.MapHeatView.as_view(), name="map-heat"),
-    re_path(r"^trends/wordcloud/?$", v.WordCloudView.as_view(), name="trends-wordcloud"),
-    re_path(r"^trends/hidden-gem/?$", v.HiddenGemView.as_view(), name="trends-hidden-gem"),
+    # Modern analytics endpoints (from views_new.py)
+    path('analytics/overview-metrics/', vn.OverviewMetricsView.as_view(), name='analytics-overview-metrics'),
+    path('analytics/social-engagement/', vn.SocialEngagementTrendsView.as_view(), name='analytics-social-engagement-trends'),
+    path('analytics/sentiment/summary/', vn.SentimentSummaryView.as_view(), name='analytics-sentiment-summary'),
+    path('analytics/sentiment/categories/', vn.SentimentByCategoryView.as_view(), name='analytics-sentiment-categories'),
+    path('analytics/keywords/top/', vn.TopKeywordsView.as_view(), name='analytics-keywords-top'),
+    path('analytics/social/metrics/', vn.SocialMetricsView.as_view(), name='analytics-social-metrics'),
+    path('analytics/social/platforms/', vn.SocialPlatformsView.as_view(), name='analytics-social-platforms'),
+    path('analytics/social/engagement/', vn.SocialEngagementView.as_view(), name='analytics-social-engagement'),
+    path('analytics/places/popular/', vn.PopularPlacesView.as_view(), name='analytics-places-popular'),
+    path('analytics/places/trending/', vn.TrendingPlacesView.as_view(), name='analytics-places-trending'),
+    path('analytics/places/nearby/', vn.NearbyPlacesView.as_view(), name='analytics-places-nearby'),
 
-    # ---- new analytics (Place + SocialPost) ----
-    re_path(r"^analytics/summary/?$", v.analytics_summary, name="analytics-summary"),
-    re_path(r"^analytics/timeseries/?$", v.analytics_timeseries, name="analytics-timeseries"),
-    re_path(r"^analytics/heatmap/?$", v.analytics_heatmap, name="analytics-heatmap"),
-
-    # ---- search autosuggest ----
-    re_path(r"^search/pois/?$", v.search_pois, name="search-pois"),
-    re_path(r"^places/suggest/?$", v.search_pois, name="places-suggest"),  # legacy alias
-
-    # ---- OVERVIEW ----
-    re_path(r"^overview/metrics/?$", v.overview_metrics, name="overview-metrics"),
-
-    # ---- DESTINATIONS ----
-    re_path(r"^destinations/top/?$", v.destinations_top, name="destinations-top"),
-    re_path(r"^destinations/distribution/?$", v.destinations_distribution, name="destinations-distribution"),
-    re_path(r"^destinations/comparison/?$", v.destinations_comparison, name="destinations-comparison"),
-    re_path(r"^destinations/undervisited/?$", v.destinations_undervisited, name="destinations-undervisited"),
-
-    # ---- SOCIAL ----
-    re_path(r"^social/trends/?$", v.social_trends, name="social-trends"),
-    re_path(r"^social/platforms/?$", v.social_platforms, name="social-platforms"),
-    re_path(r"^social/sentiment/summary/?$", v.social_sentiment_summary, name="social-sentiment-summary"),
-    re_path(r"^social/sentiment/by-category/?$", v.social_sentiment_by_category, name="social-sentiment-by-category"),
-    re_path(r"^social/keywords/?$", v.social_keywords, name="social-keywords"),
-
-    # ---- direct alias expected by your frontend ----
-    re_path(r"^sentiment/summary/?$", v.social_sentiment_summary, name="sentiment-summary"),
+    # Optional legacy aliases for backward compatibility
+    re_path(r'^sentiment/summary/?$', vn.SentimentSummaryView.as_view(), name='sentiment-summary'),
+    re_path(r'^attractions/top/?$', vs.top_attractions, name='attractions-top'),
 ]

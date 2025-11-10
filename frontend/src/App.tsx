@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Badge } from './components/ui/badge';
@@ -27,37 +28,57 @@ import { RestaurantVendors } from './components/RestaurantVendors';
 import { MapView } from './components/MapView';
 import { AccommodationBooking } from './components/AccommodationBooking';
 
+interface City {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export default function App() {
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
+  const [cities, setCities] = useState<City[]>([]);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const response = await axios.get('http://localhost:8001/api/analytics/cities/');
+        setCities(response.data);
+      } catch (error) {
+        console.error('Error fetching cities:', error);
+      }
+    };
+    
+    fetchCities();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#0f2744] to-[#1a3a5c]">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-blue-900/50 bg-[#0a1628]/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-white mb-1">Kedah Tourism Analytics</h1>
-              <p className="text-blue-200/70 text-sm">Real-time insights and performance metrics</p>
+              <h1 className="text-gray-900 mb-1 text-2xl font-bold">Kedah Tourism Analytics</h1>
+              <p className="text-gray-600 text-sm">Real-time insights and performance metrics</p>
             </div>
             <div className="flex items-center gap-4">
               <select 
                 value={selectedCity} 
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="bg-blue-950/50 text-white border border-blue-800/50 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Cities</option>
-                <option value="langkawi">Langkawi</option>
-                <option value="alor-setar">Alor Setar</option>
-                <option value="sungai-petani">Sungai Petani</option>
-                <option value="kulim">Kulim</option>
-                <option value="jitra">Jitra</option>
+                {cities.map((city) => (
+                  <option key={city.id} value={city.slug}>
+                    {city.name}
+                  </option>
+                ))}
               </select>
               <select 
                 value={timeRange} 
                 onChange={(e) => setTimeRange(e.target.value)}
-                className="bg-blue-950/50 text-white border border-blue-800/50 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="week">Last 7 Days</option>
                 <option value="month">Last 30 Days</option>
@@ -73,58 +94,93 @@ export default function App() {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         {/* Overview Metrics */}
-        <OverviewMetrics selectedCity={selectedCity} />
+        <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
 
         {/* Main Analytics Tabs */}
         <Tabs defaultValue="overview" className="mt-8">
-          <TabsList className="bg-blue-950/50 border border-blue-800/30 p-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600">Overview</TabsTrigger>
-            <TabsTrigger value="destinations" className="data-[state=active]:bg-blue-600">Destinations</TabsTrigger>
-            <TabsTrigger value="restaurants" className="data-[state=active]:bg-blue-600">Restaurants</TabsTrigger>
-            <TabsTrigger value="accommodation" className="data-[state=active]:bg-blue-600">Book Stay</TabsTrigger>
-            <TabsTrigger value="social" className="data-[state=active]:bg-blue-600">Social Media</TabsTrigger>
-            <TabsTrigger value="transport" className="data-[state=active]:bg-blue-600">Transport</TabsTrigger>
-            <TabsTrigger value="events" className="data-[state=active]:bg-blue-600">Events</TabsTrigger>
+          <TabsList className="bg-transparent border-0 p-0 gap-3 flex-wrap justify-start">
+            <TabsTrigger 
+              value="overview" 
+              className="rounded-full border border-gray-300 bg-white px-6 py-2 text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 hover:border-blue-400 transition-all"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="destinations" 
+              className="rounded-full border border-gray-300 bg-white px-6 py-2 text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 hover:border-blue-400 transition-all"
+            >
+              Destinations
+            </TabsTrigger>
+            <TabsTrigger 
+              value="restaurants" 
+              className="rounded-full border border-gray-300 bg-white px-6 py-2 text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 hover:border-blue-400 transition-all"
+            >
+              Restaurants
+            </TabsTrigger>
+            <TabsTrigger 
+              value="accommodation" 
+              className="rounded-full border border-gray-300 bg-white px-6 py-2 text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 hover:border-blue-400 transition-all"
+            >
+              Book Stay
+            </TabsTrigger>
+            <TabsTrigger 
+              value="social" 
+              className="rounded-full border border-gray-300 bg-white px-6 py-2 text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 hover:border-blue-400 transition-all"
+            >
+              Social Media
+            </TabsTrigger>
+            <TabsTrigger 
+              value="transport" 
+              className="rounded-full border border-gray-300 bg-white px-6 py-2 text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 hover:border-blue-400 transition-all"
+            >
+              Transport
+            </TabsTrigger>
+            <TabsTrigger 
+              value="events" 
+              className="rounded-full border border-gray-300 bg-white px-6 py-2 text-gray-900 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:border-blue-600 hover:border-blue-400 transition-all"
+            >
+              Events
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <SocialMediaCharts />
-                  <SentimentAnalysis />
+                  <SocialMediaCharts selectedCity={selectedCity} timeRange={timeRange} />
+                  <SentimentAnalysis selectedCity={selectedCity} timeRange={timeRange} />
                 </div>
-                <AccommodationStats />
+                <AccommodationStats selectedCity={selectedCity} timeRange={timeRange} />
               </div>
-              <MapView selectedCity={selectedCity} />
+              <MapView selectedCity={selectedCity} timeRange={timeRange} />
             </div>
           </TabsContent>
 
           <TabsContent value="destinations" className="mt-6">
-            <PopularDestinations selectedCity={selectedCity} />
+            <PopularDestinations selectedCity={selectedCity} timeRange={timeRange} />
           </TabsContent>
 
           <TabsContent value="restaurants" className="mt-6">
-            <RestaurantVendors selectedCity={selectedCity} />
+            <RestaurantVendors selectedCity={selectedCity} timeRange={timeRange} />
           </TabsContent>
 
           <TabsContent value="accommodation" className="mt-6">
-            <AccommodationBooking selectedCity={selectedCity} />
+            <AccommodationBooking selectedCity={selectedCity} timeRange={timeRange} />
           </TabsContent>
 
           <TabsContent value="social" className="mt-6">
             <div className="grid grid-cols-1 gap-6">
-              <SocialMediaCharts detailed />
-              <SentimentAnalysis detailed />
+              <SocialMediaCharts detailed selectedCity={selectedCity} timeRange={timeRange} />
+              <SentimentAnalysis detailed selectedCity={selectedCity} timeRange={timeRange} />
             </div>
           </TabsContent>
 
           <TabsContent value="transport" className="mt-6">
-            <TransportAnalytics selectedCity={selectedCity} />
+            <TransportAnalytics selectedCity={selectedCity} timeRange={timeRange} />
           </TabsContent>
 
           <TabsContent value="events" className="mt-6">
-            <EventsTimeline selectedCity={selectedCity} />
+            <EventsTimeline selectedCity={selectedCity} timeRange={timeRange} />
           </TabsContent>
         </Tabs>
       </main>

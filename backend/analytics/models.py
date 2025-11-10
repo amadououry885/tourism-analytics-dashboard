@@ -4,7 +4,7 @@ from django.db import models
 class Place(models.Model):
     # Core identity
     name = models.CharField(max_length=200)
-    description = models.TextField(blank=True, default="")  # ✅ added
+    description = models.TextField(blank=True, default="")
 
     # Classification / location
     category = models.CharField(max_length=100, blank=True, default="")
@@ -91,4 +91,58 @@ class SocialPost(models.Model):
         indexes = [
             models.Index(fields=["place", "created_at"]),  # common range queries
             models.Index(fields=["created_at"]),
+        ]
+
+
+class PostRaw(models.Model):
+    """Raw social media posts before processing"""
+    post = models.ForeignKey(SocialPost, on_delete=models.CASCADE, related_name='raw_posts')
+    content = models.TextField()
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+
+class PostClean(models.Model):
+    """Processed and cleaned social media posts"""
+    raw_post = models.OneToOneField(PostRaw, on_delete=models.CASCADE, related_name='cleaned_post')
+    content = models.TextField()
+    sentiment = models.CharField(max_length=20, choices=[
+        ('positive', 'Positive'),
+        ('neutral', 'Neutral'),
+        ('negative', 'Negative')
+    ])
+    keywords = models.JSONField(default=list)
+    poi = models.ForeignKey(Place, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["sentiment"]),
+            models.Index(fields=["poi"]),
+        ]
+
+
+class SentimentTopic(models.Model):
+    """Topics extracted from posts with their sentiment analysis"""
+    topic = models.CharField(max_length=100)
+    sentiment = models.CharField(max_length=20, choices=[
+        ('positive', 'Positive'),
+        ('neutral', 'Neutral'),
+        ('negative', 'Negative')
+    ])
+    count = models.PositiveIntegerField(default=0)
+    category = models.CharField(max_length=100, blank=True)  # e.g., 'Attractions', 'Food', 'Transport'
+    date = models.DateField()
+    
+    class Meta:
+        ordering = ("-date", "-count")
+        indexes = [
+            models.Index(fields=["topic"]),
+            models.Index(fields=["sentiment"]),
+            models.Index(fields=["category"]),
+            models.Index(fields=["date"]),
         ]

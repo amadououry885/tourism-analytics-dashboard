@@ -1,15 +1,61 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Car, Train, Plane, Ship, Bike, Bus, ArrowRight, Clock, DollarSign } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import { Car, Train, Plane, Ship, Bike, Bus, ArrowRight, Clock, DollarSign, Calendar, MapPin } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import axios from 'axios';
 
-interface TransportAnalyticsProps {
-  selectedCity: string;
-}
+// Types and Interfaces
+type TransportMode = {
+  name: string;
+  value: number;
+  percentage: number;
+  icon: LucideIcon;
+  color: string;
+  growth: string;
+};
 
-const transportModes = [
+type MonthlyUsage = {
+  month: string;
+  flight: number;
+  car: number;
+  bus: number;
+  ferry: number;
+};
+
+type PopularRoute = {
+  route: string;
+  trips: number;
+  avgDuration: string;
+  mode: string;
+};
+
+type RouteOption = {
+  id: number;
+  provider: string;
+  transport_mode: string;
+  departure_time: string;
+  arrival_time: string;
+  price: number;
+  currency: string;
+  duration?: string;
+};
+
+type RouteSearchResult = {
+  from: string;
+  to: string;
+  route_type: string;
+  options: RouteOption[];
+};
+
+type TransportAnalyticsProps = {
+  selectedCity?: string;
+};
+
+// Initial Data
+const initialTransportModes: TransportMode[] = [
   { name: 'Flight', value: 385000, percentage: 38.5, icon: Plane, color: '#3b82f6', growth: '+12.3%' },
   { name: 'Car/Taxi', value: 295000, percentage: 29.5, icon: Car, color: '#10b981', growth: '+8.7%' },
   { name: 'Bus', value: 145000, percentage: 14.5, icon: Bus, color: '#f59e0b', growth: '+5.2%' },
@@ -18,7 +64,7 @@ const transportModes = [
   { name: 'Motorcycle', value: 25000, percentage: 2.5, icon: Bike, color: '#06b6d4', growth: '+6.4%' },
 ];
 
-const monthlyTransport = [
+const initialMonthlyUsage: MonthlyUsage[] = [
   { month: 'Jan', flight: 32000, car: 24000, bus: 12000, ferry: 8000 },
   { month: 'Feb', flight: 35000, car: 26000, bus: 13000, ferry: 8500 },
   { month: 'Mar', flight: 38000, car: 28000, bus: 14000, ferry: 9000 },
@@ -27,7 +73,7 @@ const monthlyTransport = [
   { month: 'Jun', flight: 48000, car: 35000, bus: 17000, ferry: 12000 },
 ];
 
-const routePopularity = [
+const initialPopularRoutes: PopularRoute[] = [
   { route: 'KL → Langkawi', trips: 125000, avgDuration: '1h 15m', mode: 'Flight' },
   { route: 'Penang → Langkawi', trips: 87000, avgDuration: '2h 45m', mode: 'Ferry' },
   { route: 'Alor Setar → Langkawi', trips: 65000, avgDuration: '1h 30m', mode: 'Car' },
@@ -35,161 +81,293 @@ const routePopularity = [
   { route: 'Sungai Petani → Langkawi', trips: 38000, avgDuration: '2h 15m', mode: 'Bus' },
 ];
 
-const locations = [
-  'Kuala Lumpur',
-  'Langkawi',
-  'Alor Setar',
-  'Sungai Petani',
-  'Penang',
-  'Kulim',
-  'Jitra',
-  'Butterworth',
-  'Kuala Kedah',
+// Kedah places
+const kedahPlaces = [
+  'Langkawi', 'Alor Setar', 'Sungai Petani', 'Kulim', 'Jitra', 
+  'Kuala Kedah', 'Pendang', 'Baling', 'Padang Serai'
 ];
 
-interface RouteOption {
-  mode: string;
-  icon: any;
-  duration: string;
-  price: number;
-  frequency: string;
-  color: string;
-  provider?: string;
-}
+// Outside Kedah places
+const outsidePlaces = [
+  'Kuala Lumpur', 'Penang', 'Ipoh', 'Johor Bahru', 'Singapore',
+  'Butterworth', 'Georgetown', 'Hat Yai', 'Bangkok'
+];
 
-const getRouteOptions = (from: string, to: string): RouteOption[] => {
-  const routes: Record<string, RouteOption[]> = {
-    'Kuala Lumpur-Langkawi': [
-      { mode: 'Flight', icon: Plane, duration: '1h 15m', price: 280, frequency: '6 flights/day', color: '#3b82f6', provider: 'AirAsia, Malaysia Airlines' },
-      { mode: 'Car + Ferry', icon: Car, duration: '7h 30m', price: 180, frequency: 'On demand', color: '#10b981', provider: 'Private/Rental' },
-    ],
-    'Penang-Langkawi': [
-      { mode: 'Ferry', icon: Ship, duration: '2h 45m', price: 65, frequency: '4 trips/day', color: '#8b5cf6', provider: 'Langkawi Ferry Services' },
-      { mode: 'Flight', icon: Plane, duration: '35m', price: 120, frequency: '3 flights/day', color: '#3b82f6', provider: 'Firefly' },
-    ],
-    'Alor Setar-Langkawi': [
-      { mode: 'Car/Taxi', icon: Car, duration: '1h 30m', price: 80, frequency: 'On demand', color: '#10b981', provider: 'Grab, Private Taxi' },
-      { mode: 'Bus', icon: Bus, duration: '2h 15m', price: 25, frequency: 'Hourly', color: '#f59e0b', provider: 'Kedah Express' },
-    ],
-    'Butterworth-Alor Setar': [
-      { mode: 'Train', icon: Train, duration: '1h 45m', price: 18, frequency: '8 trains/day', color: '#ec4899', provider: 'KTM ETS' },
-      { mode: 'Bus', icon: Bus, duration: '2h 30m', price: 12, frequency: 'Every 30min', color: '#f59e0b', provider: 'Plusliner' },
-      { mode: 'Car/Taxi', icon: Car, duration: '1h 30m', price: 95, frequency: 'On demand', color: '#10b981', provider: 'Grab' },
-    ],
-    'Sungai Petani-Langkawi': [
-      { mode: 'Bus + Ferry', icon: Bus, duration: '3h 45m', price: 45, frequency: '3 trips/day', color: '#f59e0b', provider: 'Combined Service' },
-      { mode: 'Car + Ferry', icon: Car, duration: '3h 15m', price: 110, frequency: 'On demand', color: '#10b981', provider: 'Private' },
-    ],
-  };
+const allPlaces = [...kedahPlaces, ...outsidePlaces].sort();
 
-  const key = `${from}-${to}`;
-  const reverseKey = `${to}-${from}`;
-  
-  return routes[key] || routes[reverseKey] || [
-    { mode: 'Car/Taxi', icon: Car, duration: '2h 30m', price: 120, frequency: 'On demand', color: '#10b981', provider: 'Grab, Private Taxi' },
-    { mode: 'Bus', icon: Bus, duration: '3h 15m', price: 35, frequency: 'Daily', color: '#f59e0b', provider: 'Local Bus Services' },
-  ];
+const routeTypeLabels = {
+  'intra_kedah': { label: 'Intra-Kedah', color: 'bg-blue-500', description: 'Travel within Kedah' },
+  'coming_to_kedah': { label: 'Coming to Kedah', color: 'bg-green-500', description: 'From outside to Kedah' },
+  'leaving_kedah': { label: 'Leaving Kedah', color: 'bg-orange-500', description: 'From Kedah to outside' },
 };
 
-export function TransportAnalytics({ selectedCity }: TransportAnalyticsProps) {
-  const [fromLocation, setFromLocation] = useState('Kuala Lumpur');
-  const [toLocation, setToLocation] = useState('Langkawi');
-  const [showRoutes, setShowRoutes] = useState(false);
+const getTransportIcon = (mode: string): LucideIcon => {
+  const lowerMode = mode.toLowerCase();
+  if (lowerMode.includes('flight') || lowerMode.includes('plane')) return Plane;
+  if (lowerMode.includes('train')) return Train;
+  if (lowerMode.includes('bus')) return Bus;
+  if (lowerMode.includes('ferry') || lowerMode.includes('boat')) return Ship;
+  if (lowerMode.includes('bike') || lowerMode.includes('motorcycle')) return Bike;
+  return Car; // default for taxi, car, grab
+};
 
-  const routeOptions = getRouteOptions(fromLocation, toLocation);
+const getTransportColor = (mode: string): string => {
+  const lowerMode = mode.toLowerCase();
+  if (lowerMode.includes('flight') || lowerMode.includes('plane')) return '#3b82f6';
+  if (lowerMode.includes('train')) return '#ec4899';
+  if (lowerMode.includes('bus')) return '#f59e0b';
+  if (lowerMode.includes('ferry') || lowerMode.includes('boat')) return '#8b5cf6';
+  if (lowerMode.includes('bike') || lowerMode.includes('motorcycle')) return '#06b6d4';
+  return '#10b981'; // default for taxi, car, grab
+};
 
-  const handlePlanRoute = () => {
-    setShowRoutes(true);
+export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selectedCity }) => {
+  const [transportModes, setTransportModes] = useState<TransportMode[]>(initialTransportModes);
+  const [monthlyUsage, setMonthlyUsage] = useState<MonthlyUsage[]>(initialMonthlyUsage);
+  const [popularRoutes, setPopularRoutes] = useState<PopularRoute[]>(initialPopularRoutes);
+  const [loading, setLoading] = useState(false);
+
+  // Route search states
+  const [fromPlace, setFromPlace] = useState('');
+  const [toPlace, setToPlace] = useState('');
+  const [travelDate, setTravelDate] = useState(new Date().toISOString().split('T')[0]);
+  const [routeTypeFilter, setRouteTypeFilter] = useState('all');
+  const [searchResults, setSearchResults] = useState<RouteOption[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [detectedRouteType, setDetectedRouteType] = useState<string>('');
+  const [showResults, setShowResults] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [modesRes, monthlyRes, routesRes] = await Promise.all([
+          axios.get('/api/transport/analytics/transport-modes/'),
+          axios.get('/api/transport/analytics/monthly-usage/'),
+          axios.get('/api/transport/analytics/popular-routes/')
+        ]);
+        console.log('Transport API data:', { modesRes, monthlyRes, routesRes });
+      } catch (err) {
+        console.error('Error fetching transport data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [selectedCity]);
+
+  // Detect route type based on selected places
+  useEffect(() => {
+    if (fromPlace && toPlace) {
+      const fromInKedah = kedahPlaces.includes(fromPlace);
+      const toInKedah = kedahPlaces.includes(toPlace);
+
+      if (fromInKedah && toInKedah) {
+        setDetectedRouteType('intra_kedah');
+      } else if (!fromInKedah && toInKedah) {
+        setDetectedRouteType('coming_to_kedah');
+      } else if (fromInKedah && !toInKedah) {
+        setDetectedRouteType('leaving_kedah');
+      } else {
+        setDetectedRouteType('');
+      }
+    }
+  }, [fromPlace, toPlace]);
+
+  const handleSearch = async () => {
+    if (!fromPlace || !toPlace) {
+      alert('Please select both origin and destination');
+      return;
+    }
+
+    if (fromPlace === toPlace) {
+      alert('Origin and destination cannot be the same');
+      return;
+    }
+
+    try {
+      setSearching(true);
+      setShowResults(true);
+      
+      const response = await axios.get('/api/transport/search/', {
+        params: {
+          from: fromPlace,
+          to: toPlace,
+          date: travelDate,
+        }
+      });
+
+      setSearchResults(response.data);
+    } catch (err) {
+      console.error('Error searching routes:', err);
+      // For demo, show empty results
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
   };
+
+  const renderIcon = (IconComponent: LucideIcon) => (
+    <div className="p-2 rounded-lg bg-muted">
+      <IconComponent className="w-4 h-4" />
+    </div>
+  );
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-[400px]">Loading transport analytics...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Route Planner */}
-      <Card className="bg-card/80 border-primary/20 shadow-lg backdrop-blur-md">
+      {/* Route Search Section */}
+      <Card className="border-primary/20 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-foreground">Route Planner</CardTitle>
-          <CardDescription className="text-muted-foreground">Find the best transport options for your journey</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            Route Planner & Search
+          </CardTitle>
+          <CardDescription>Find the best transport options for your journey</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label className="text-sm text-muted-foreground mb-2 block">From</label>
+        <CardContent className="space-y-4">
+          {/* Search Form */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* From */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">From</label>
               <select
-                value={fromLocation}
-                onChange={handleFromChange}
-                className="w-full bg-secondary/60 text-foreground border border-primary/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/70"
+                value={fromPlace}
+                onChange={(e) => setFromPlace(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                {locations.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
+                <option value="">Select origin</option>
+                {allPlaces.map(place => (
+                  <option key={place} value={place}>
+                    {place} {kedahPlaces.includes(place) ? '(Kedah)' : ''}
+                  </option>
                 ))}
               </select>
-            </div>
-            
-            <div className="flex items-end justify-center">
-              <ArrowRight className="w-6 h-6 text-primary/80 mb-2" />
             </div>
 
-            <div>
-              <label className="text-sm text-muted-foreground mb-2 block">To</label>
+            {/* Arrow */}
+            <div className="flex items-end justify-center pb-2">
+              <ArrowRight className="w-6 h-6 text-primary" />
+            </div>
+
+            {/* To */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">To</label>
               <select
-                value={toLocation}
-                onChange={handleToChange}
-                className="w-full bg-secondary/60 text-foreground border border-primary/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/70"
+                value={toPlace}
+                onChange={(e) => setToPlace(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                {locations.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
+                <option value="">Select destination</option>
+                {allPlaces.map(place => (
+                  <option key={place} value={place}>
+                    {place} {kedahPlaces.includes(place) ? '(Kedah)' : ''}
+                  </option>
                 ))}
               </select>
+            </div>
+
+            {/* Date */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Travel Date</label>
+              <input
+                type="date"
+                value={travelDate}
+                onChange={(e) => setTravelDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* Search Button */}
+            <div className="flex items-end">
+              <Button 
+                onClick={handleSearch}
+                disabled={searching || !fromPlace || !toPlace}
+                className="w-full"
+              >
+                {searching ? 'Searching...' : 'Search Routes'}
+              </Button>
             </div>
           </div>
 
-          <Button 
-            onClick={handlePlanRoute}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-          >
-            Find Transport Options
-          </Button>
+          {/* Route Type Badge */}
+          {detectedRouteType && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Route Type:</span>
+              <Badge className={`${routeTypeLabels[detectedRouteType as keyof typeof routeTypeLabels].color} text-white`}>
+                {routeTypeLabels[detectedRouteType as keyof typeof routeTypeLabels].label}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {routeTypeLabels[detectedRouteType as keyof typeof routeTypeLabels].description}
+              </span>
+            </div>
+          )}
 
-          {/* Route Results */}
-          {showRoutes && (
+          {/* Search Results */}
+          {showResults && (
             <div className="mt-6 space-y-3">
-              <h4 className="text-white mb-3">Available Options ({fromLocation} → {toLocation})</h4>
-              {routeOptions.map((option, index) => {
-                const Icon = option.icon;
+              <h3 className="font-semibold">
+                {searchResults.length > 0 
+                  ? `Available Options (${fromPlace} → ${toPlace})`
+                  : 'No routes found'
+                }
+              </h3>
+              
+              {searchResults.length === 0 && !searching && (
+                <p className="text-sm text-muted-foreground">
+                  No transport options available for this route. Try different locations or dates.
+                </p>
+              )}
+
+              {searchResults.map((option, index) => {
+                const Icon = getTransportIcon(option.transport_mode);
+                const color = getTransportColor(option.transport_mode);
+                
                 return (
-                  <div key={index} className="p-4 bg-secondary/40 rounded-lg border border-primary/20 hover:border-primary/50 transition-all shadow-sm hover:shadow-md">
+                  <div 
+                    key={index}
+                    className="p-4 border rounded-lg hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
+                  >
                     <div className="flex items-start gap-4">
                       <div 
                         className="p-3 rounded-lg flex-shrink-0"
-                        style={{ backgroundColor: `${option.color}30` }}
+                        style={{ backgroundColor: `${color}30` }}
                       >
-                        <Icon className="w-6 h-6" style={{ color: option.color }} />
+                        <Icon className="w-6 h-6" style={{ color }} />
                       </div>
                       
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <h5 className="text-white mb-1">{option.mode}</h5>
-                            {option.provider && (
-                              <p className="text-xs text-blue-200/60">{option.provider}</p>
-                            )}
+                            <h4 className="font-medium capitalize">{option.transport_mode}</h4>
+                            <p className="text-sm text-muted-foreground">{option.provider}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-white text-xl">RM {option.price}</p>
-                            <p className="text-xs text-blue-200/60">per person</p>
+                            <p className="text-lg font-semibold">
+                              {option.currency} {option.price}
+                            </p>
+                            <p className="text-xs text-muted-foreground">per person</p>
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 mt-3">
-                          <div className="flex items-center gap-2 text-sm text-blue-200/60">
-                            <Clock className="w-4 h-4" />
-                            <span>{option.duration}</span>
+                        <div className="grid grid-cols-3 gap-4 mt-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <span>{option.departure_time}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-blue-200/60">
-                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
-                              {option.frequency}
-                            </Badge>
+                          <div className="flex items-center gap-2">
+                            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                            <span>{option.arrival_time}</span>
                           </div>
+                          {option.duration && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{option.duration}</Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -201,127 +379,113 @@ export function TransportAnalytics({ selectedCity }: TransportAnalyticsProps) {
         </CardContent>
       </Card>
 
-      {/* Transport Mode Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {transportModes.map((transport) => {
-          const Icon = transport.icon;
-          return (
-            <Card key={transport.name} className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: `${transport.color}30` }}>
-                    <Icon className="w-6 h-6" style={{ color: transport.color }} />
-                  </div>
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    {transport.growth}
-                  </Badge>
-                </div>
-                <h3 className="text-white mb-1">{transport.name}</h3>
-                <p className="text-2xl text-white mb-1">{transport.value.toLocaleString()}</p>
-                <p className="text-sm text-blue-200/60">{transport.percentage}% of total</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      {/* Analytics Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Transport Mode Distribution */}
+        <Card className="col-span-1 row-span-2">
           <CardHeader>
-            <CardTitle className="text-white">Transport Mode Distribution</CardTitle>
-            <CardDescription className="text-blue-200/60">Usage breakdown by transport type</CardDescription>
+            <CardTitle>Transport Mode Distribution</CardTitle>
+            <CardDescription>Share of different transport modes</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={transportModes}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percentage }) => `${name} ${percentage}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={transportModes}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percentage }) => `${name} ${percentage}%`}
+                  >
+                    {transportModes.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-6 space-y-4">
+              {transportModes.map((mode) => (
+                <div key={mode.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {renderIcon(mode.icon)}
+                    <span className="font-medium">{mode.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{mode.percentage}%</Badge>
+                    <span className="text-sm text-green-600">{mode.growth}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Usage */}
+        <Card className="col-span-1 row-span-2">
+          <CardHeader>
+            <CardTitle>Monthly Usage Trends</CardTitle>
+            <CardDescription>Usage patterns over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyUsage}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="flight" stroke="#3b82f6" />
+                  <Line type="monotone" dataKey="car" stroke="#10b981" />
+                  <Line type="monotone" dataKey="bus" stroke="#f59e0b" />
+                  <Line type="monotone" dataKey="ferry" stroke="#8b5cf6" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Popular Routes */}
+        <Card className="col-span-1 md:col-span-2">
+          <CardHeader>
+            <CardTitle>Popular Routes</CardTitle>
+            <CardDescription>Most traveled routes and their metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {popularRoutes.map((route) => (
+                <div
+                  key={route.route}
+                  className="p-4 border rounded-lg space-y-3"
                 >
-                  {transportModes.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#0a1628', 
-                    border: '1px solid #1e3a8a',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }} 
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-white">Monthly Transport Trends</CardTitle>
-            <CardDescription className="text-blue-200/60">6-month comparison by transport mode</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyTransport}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" opacity={0.3} />
-                <XAxis dataKey="month" stroke="#93c5fd" />
-                <YAxis stroke="#93c5fd" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#0a1628', 
-                    border: '1px solid #1e3a8a',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }} 
-                />
-                <Legend />
-                <Line type="monotone" dataKey="flight" stroke="#3b82f6" strokeWidth={2} />
-                <Line type="monotone" dataKey="car" stroke="#10b981" strokeWidth={2} />
-                <Line type="monotone" dataKey="bus" stroke="#f59e0b" strokeWidth={2} />
-                <Line type="monotone" dataKey="ferry" stroke="#8b5cf6" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">{route.route}</h3>
+                    <Badge>{route.mode}</Badge>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <ArrowRight className="w-4 h-4" />
+                      <span>{route.trips.toLocaleString()} trips</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>{route.avgDuration}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Popular Routes */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="text-white">Most Popular Routes</CardTitle>
-          <CardDescription className="text-blue-200/60">Top travel routes to Kedah destinations</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {routePopularity.map((route, index) => (
-              <div key={route.route} className="flex items-center gap-4 p-4 bg-blue-900/20 rounded-lg border border-blue-800/20">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 text-blue-400">
-                  {index + 1}
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-white mb-1">{route.route}</h4>
-                  <div className="flex items-center gap-4 text-sm text-blue-200/60">
-                    <span>{route.trips.toLocaleString()} trips</span>
-                    <span>•</span>
-                    <span>Avg. {route.avgDuration}</span>
-                    <span>•</span>
-                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                      {route.mode}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
-}
+};
+
+export default TransportAnalytics;

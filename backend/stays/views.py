@@ -2,7 +2,6 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Stay
 from .serializers import StaySerializer
-
 class StayViewSet(viewsets.ModelViewSet):
     queryset = Stay.objects.all().order_by("priceNight")
     serializer_class = StaySerializer

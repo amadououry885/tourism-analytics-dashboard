@@ -19,27 +19,32 @@ const topStays = [
   { name: 'The Westin Langkawi', rating: 4.7, reviews: 5500, occupancy: 87, price: 520, location: 'Langkawi' },
 ];
 
-export function AccommodationStats() {
+interface AccommodationStatsProps {
+  selectedCity?: string;
+  timeRange?: string;
+}
+
+export function AccommodationStats({ selectedCity, timeRange }: AccommodationStatsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Accommodation Overview Chart */}
-      <Card className="lg:col-span-2 bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="lg:col-span-2 bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Accommodation Statistics</CardTitle>
-          <CardDescription className="text-blue-200/60">Occupancy rates and average ratings by type</CardDescription>
+          <CardTitle className="text-gray-900">Accommodation Statistics</CardTitle>
+          <CardDescription className="text-gray-900">Occupancy rates and average ratings by type</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={accommodationData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" opacity={0.3} />
-              <XAxis dataKey="type" stroke="#93c5fd" />
-              <YAxis stroke="#93c5fd" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+              <XAxis dataKey="type" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#0a1628', 
-                  border: '1px solid #1e3a8a',
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff'
+                  color: '#111827'
                 }} 
               />
               <Legend />
@@ -50,10 +55,10 @@ export function AccommodationStats() {
           
           <div className="grid grid-cols-5 gap-3 mt-6">
             {accommodationData.map((item) => (
-              <div key={item.type} className="text-center p-3 bg-blue-900/20 rounded-lg border border-blue-800/20">
-                <p className="text-sm text-blue-200/60 mb-1">{item.type}</p>
+              <div key={item.type} className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-900 mb-1">{item.type}</p>
                 <p className="text-white mb-1">RM {item.avgPrice}</p>
-                <div className="flex items-center justify-center gap-1 text-xs text-yellow-400">
+                <div className="flex items-center justify-center gap-1 text-xs text-yellow-700">
                   <Star className="w-3 h-3 fill-yellow-400" />
                   <span>{item.avgRating}</span>
                 </div>
@@ -64,35 +69,35 @@ export function AccommodationStats() {
       </Card>
 
       {/* Top Rated Stays */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Top Rated Stays</CardTitle>
-          <CardDescription className="text-blue-200/60">Most popular accommodations</CardDescription>
+          <CardTitle className="text-gray-900">Top Rated Stays</CardTitle>
+          <CardDescription className="text-gray-900">Most popular accommodations</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {topStays.slice(0, 5).map((stay, index) => (
-              <div key={stay.name} className="p-3 bg-blue-900/20 rounded-lg border border-blue-800/20">
+              <div key={stay.name} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-start gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex-shrink-0">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 text-gray-900 flex-shrink-0">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h5 className="text-white text-sm mb-1 truncate">{stay.name}</h5>
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="flex items-center gap-1 text-xs text-yellow-400">
+                      <div className="flex items-center gap-1 text-xs text-yellow-700">
                         <Star className="w-3 h-3 fill-yellow-400" />
                         <span>{stay.rating}</span>
                       </div>
-                      <span className="text-xs text-blue-200/60">
+                      <span className="text-xs text-gray-900">
                         {stay.reviews.toLocaleString()} reviews
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                      <Badge className="bg-green-500/20 text-green-700 border-green-500/30 text-xs">
                         {stay.occupancy}% occupied
                       </Badge>
-                      <span className="text-blue-200/60">RM {stay.price}/night</span>
+                      <span className="text-gray-900">RM {stay.price}/night</span>
                     </div>
                   </div>
                 </div>

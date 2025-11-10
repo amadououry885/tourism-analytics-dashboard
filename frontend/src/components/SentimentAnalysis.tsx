@@ -28,24 +28,24 @@ const categorysentiment = [
   { category: 'Service', positive: 70, neutral: 22, negative: 8 },
 ];
 
-export function SentimentAnalysis({ detailed = false }: { detailed?: boolean }) {
+export function SentimentAnalysis({ detailed = false }: { detailed?: boolean; selectedCity?: string; timeRange?: string }) {
   return (
     <>
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Sentiment Analysis</CardTitle>
-          <CardDescription className="text-blue-200/60">Overall visitor sentiment from social media</CardDescription>
+          <CardTitle className="text-gray-900">Sentiment Analysis</CardTitle>
+          <CardDescription className="text-gray-900">Overall visitor sentiment from social media</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4 mb-6">
             {sentimentData.map((item) => {
               const Icon = item.name === 'Positive' ? Smile : item.name === 'Neutral' ? Meh : Frown;
               return (
-                <div key={item.name} className="text-center p-4 bg-blue-900/20 rounded-lg border border-blue-800/20">
+                <div key={item.name} className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <Icon className="w-8 h-8 mx-auto mb-2" style={{ color: item.color }} />
                   <p className="text-2xl text-white mb-1">{item.value}%</p>
-                  <p className="text-sm text-blue-200/60">{item.name}</p>
-                  <p className="text-xs text-blue-200/40 mt-1">{item.count.toLocaleString()} mentions</p>
+                  <p className="text-sm text-gray-900">{item.name}</p>
+                  <p className="text-xs text-gray-900 mt-1">{item.count.toLocaleString()} mentions</p>
                 </div>
               );
             })}
@@ -69,10 +69,10 @@ export function SentimentAnalysis({ detailed = false }: { detailed?: boolean }) 
               </Pie>
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#0a1628', 
-                  border: '1px solid #1e3a8a',
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff'
+                  color: '#111827'
                 }} 
               />
             </PieChart>
@@ -82,23 +82,23 @@ export function SentimentAnalysis({ detailed = false }: { detailed?: boolean }) 
 
       {detailed && (
         <>
-          <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-white">Sentiment by Category</CardTitle>
-              <CardDescription className="text-blue-200/60">Breakdown across different tourism aspects</CardDescription>
+              <CardTitle className="text-gray-900">Sentiment by Category</CardTitle>
+              <CardDescription className="text-gray-900">Breakdown across different tourism aspects</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={categorysentiment}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" opacity={0.3} />
-                  <XAxis dataKey="category" stroke="#93c5fd" />
-                  <YAxis stroke="#93c5fd" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+                  <XAxis dataKey="category" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#0a1628', 
-                      border: '1px solid #1e3a8a',
+                      backgroundColor: '#ffffff', 
+                      border: '1px solid #e5e7eb',
                       borderRadius: '8px',
-                      color: '#fff'
+                      color: '#111827'
                     }} 
                   />
                   <Legend />
@@ -110,25 +110,25 @@ export function SentimentAnalysis({ detailed = false }: { detailed?: boolean }) 
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+          <Card className="bg-white border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-white">Top Keywords & Phrases</CardTitle>
-              <CardDescription className="text-blue-200/60">Most mentioned terms in reviews and posts</CardDescription>
+              <CardTitle className="text-gray-900">Top Keywords & Phrases</CardTitle>
+              <CardDescription className="text-gray-900">Most mentioned terms in reviews and posts</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {topKeywords.map((keyword) => (
-                  <div key={keyword.word} className="flex items-center justify-between p-3 bg-blue-900/20 rounded-lg border border-blue-800/20">
+                  <div key={keyword.word} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-3">
-                      <MessageSquare className="w-4 h-4 text-blue-400" />
-                      <span className="text-white">{keyword.word}</span>
+                      <MessageSquare className="w-4 h-4 text-gray-900" />
+                      <span className="text-gray-900">{keyword.word}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-blue-200/60">{keyword.count.toLocaleString()} mentions</span>
+                      <span className="text-gray-900">{keyword.count.toLocaleString()} mentions</span>
                       <Badge className={
                         keyword.sentiment === 'positive' 
-                          ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                          : 'bg-red-500/20 text-red-400 border-red-500/30'
+                          ? 'bg-green-500/20 text-green-700 border-green-500/30'
+                          : 'bg-red-500/20 text-red-700 border-red-500/30'
                       }>
                         {keyword.sentiment}
                       </Badge>

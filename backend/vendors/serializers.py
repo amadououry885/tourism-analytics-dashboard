@@ -1,11 +1,103 @@
 # backend/vendors/serializers.py
+from datetime import datetime
+from django.db.models import Avg
 from rest_framework import serializers
-from .models import Vendor
+from .models import Vendor, MenuItem, OpeningHours, Review, Promotion, Reservation
 
-class VendorSerializer(serializers.ModelSerializer):
+
+class MenuItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MenuItem
+        fields = "__all__"
+
+
+class OpeningHoursSerializer(serializers.ModelSerializer):
+    day_name = serializers.CharField(source='get_day_name', read_only=True)
+
+    class Meta:
+        model = OpeningHours
+        fields = "__all__"
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = "__all__"
+
+
+class PromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Promotion
+        fields = "__all__"
+
+
+class ReservationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reservation
+        fields = "__all__"
+
+
+class VendorDetailSerializer(serializers.ModelSerializer):
+    menu_items = MenuItemSerializer(many=True, read_only=True)
+    opening_hours = OpeningHoursSerializer(many=True, read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+    active_promotions = serializers.SerializerMethodField()
+    rating_summary = serializers.SerializerMethodField()
+
     class Meta:
         model = Vendor
         fields = [
             "id", "name", "city", "cuisines", "lat", "lon", "is_active",
-            "created_at", "updated_at",
+            "created_at", "updated_at", "menu_items", "opening_hours",
+            "reviews", "active_promotions", "rating_summary"
         ]
+
+    def get_active_promotions(self, obj):
+        promotions = obj.promotions.filter(
+            is_active=True,
+            start_date__lte=datetime.now().date(),
+            end_date__gte=datetime.now().date()
+        )
+        return PromotionSerializer(promotions, many=True).data
+
+    def get_rating_summary(self, obj):
+        reviews = obj.reviews.all()
+        if not reviews:
+            return {
+                'average_rating': 0,
+                'total_reviews': 0,
+                'rating_distribution': {
+                    '5': 0, '4': 0, '3': 0, '2': 0, '1': 0
+                }
+            }
+        
+        total = reviews.count()
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+        distribution = {
+            str(i): reviews.filter(rating=i).count()
+            for i in range(1, 6)
+        }
+        
+        return {
+            'average_rating': round(avg_rating, 1),
+            'total_reviews': total,
+            'rating_distribution': distribution
+        }
+
+
+class VendorListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for list views"""
+    rating_average = serializers.SerializerMethodField()
+    total_reviews = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Vendor
+        fields = ['id', 'name', 'city', 'cuisines', 'lat', 'lon', 
+                 'rating_average', 'total_reviews', 'is_active']
+    
+    def get_rating_average(self, obj):
+        avg = obj.reviews.aggregate(Avg('rating'))['rating__avg']
+        return round(avg, 1) if avg else 0
+    
+    def get_total_reviews(self, obj):
+        return obj.reviews.count()

@@ -4,6 +4,7 @@ import { MapPin, TrendingUp, TrendingDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 interface PopularDestinationsProps {
+  timeRange?: string;
   selectedCity: string;
 }
 
@@ -77,34 +78,34 @@ export function PopularDestinations({ selectedCity }: PopularDestinationsProps) 
     <div className="space-y-6">
       {/* Top Destinations Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-white">Top 5 Most Popular Destinations</CardTitle>
-            <CardDescription className="text-blue-200/60">Based on visitor count and social engagement</CardDescription>
+            <CardTitle className="text-gray-900">Top 5 Most Popular Destinations</CardTitle>
+            <CardDescription className="text-gray-900">Based on visitor count and social engagement</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {topDestinations.map((destination, index) => {
               const TrendIcon = destination.trend === 'up' ? TrendingUp : TrendingDown;
               return (
-                <div key={destination.name} className="flex items-center gap-4 p-4 bg-blue-900/20 rounded-lg border border-blue-800/20">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/20 text-blue-400">
+                <div key={destination.name} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/20 text-gray-900">
                     {index + 1}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-white">{destination.name}</h4>
-                      <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                      <h4 className="text-gray-900">{destination.name}</h4>
+                      <Badge className="bg-yellow-500/20 text-yellow-700 border-yellow-500/30">
                         ⭐ {destination.rating}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-blue-200/60">
+                    <div className="flex items-center gap-4 text-sm text-gray-900">
                       <span>{destination.visitors.toLocaleString()} visitors</span>
                       <span>•</span>
                       <span>{destination.posts.toLocaleString()} posts</span>
                     </div>
                   </div>
                   <div className={`flex items-center gap-1 ${
-                    destination.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                    destination.trend === 'up' ? 'text-green-700' : 'text-red-700'
                   }`}>
                     <TrendIcon className="w-4 h-4" />
                     <span className="text-sm">{destination.change}</span>
@@ -115,10 +116,10 @@ export function PopularDestinations({ selectedCity }: PopularDestinationsProps) 
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+        <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-white">Visitor Distribution</CardTitle>
-            <CardDescription className="text-blue-200/60">Percentage breakdown by destination</CardDescription>
+            <CardTitle className="text-gray-900">Visitor Distribution</CardTitle>
+            <CardDescription className="text-gray-900">Percentage breakdown by destination</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -139,10 +140,10 @@ export function PopularDestinations({ selectedCity }: PopularDestinationsProps) 
                 </Pie>
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#0a1628', 
-                    border: '1px solid #1e3a8a',
+                    backgroundColor: '#ffffff', 
+                    border: '1px solid #e5e7eb',
                     borderRadius: '8px',
-                    color: '#fff'
+                    color: '#111827'
                   }} 
                 />
               </PieChart>
@@ -152,23 +153,23 @@ export function PopularDestinations({ selectedCity }: PopularDestinationsProps) 
       </div>
 
       {/* Comparison Chart */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Visitor Comparison</CardTitle>
-          <CardDescription className="text-blue-200/60">Monthly visitor counts across top destinations</CardDescription>
+          <CardTitle className="text-gray-900">Visitor Comparison</CardTitle>
+          <CardDescription className="text-gray-900">Monthly visitor counts across top destinations</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={topDestinations}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" opacity={0.3} />
-              <XAxis dataKey="name" stroke="#93c5fd" />
-              <YAxis stroke="#93c5fd" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+              <XAxis dataKey="name" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#0a1628', 
-                  border: '1px solid #1e3a8a',
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff'
+                  color: '#111827'
                 }} 
               />
               <Legend />
@@ -180,28 +181,28 @@ export function PopularDestinations({ selectedCity }: PopularDestinationsProps) 
       </Card>
 
       {/* Least Visited Destinations */}
-      <Card className="bg-blue-950/30 border-blue-800/30 backdrop-blur-sm">
+      <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Emerging & Under-visited Destinations</CardTitle>
-          <CardDescription className="text-blue-200/60">Hidden gems with growth potential</CardDescription>
+          <CardTitle className="text-gray-900">Emerging & Under-visited Destinations</CardTitle>
+          <CardDescription className="text-gray-900">Hidden gems with growth potential</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {leastVisited.map((destination) => {
               const TrendIcon = destination.trend === 'up' ? TrendingUp : TrendingDown;
               return (
-                <div key={destination.name} className="p-4 bg-blue-900/20 rounded-lg border border-blue-800/20">
+                <div key={destination.name} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-start justify-between mb-3">
-                    <MapPin className="w-5 h-5 text-blue-400" />
+                    <MapPin className="w-5 h-5 text-gray-900" />
                     <div className={`flex items-center gap-1 text-xs ${
-                      destination.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                      destination.trend === 'up' ? 'text-green-700' : 'text-red-700'
                     }`}>
                       <TrendIcon className="w-3 h-3" />
                       <span>{destination.change}</span>
                     </div>
                   </div>
                   <h4 className="text-white mb-2">{destination.name}</h4>
-                  <div className="space-y-1 text-sm text-blue-200/60">
+                  <div className="space-y-1 text-sm text-gray-900">
                     <p>{destination.visitors.toLocaleString()} visitors</p>
                     <p>{destination.posts} posts</p>
                   </div>

@@ -1,39 +1,43 @@
 # backend/analytics/views_safe.py
 
 from datetime import date, timedelta
-from collections import Counter
-import re
-
 from django.http import JsonResponse, HttpResponse
-from django.db.models import Count, Sum, F
+from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_GET
 
-# 👉 use your current models
+# Your current models
 from .models import Place, SocialPost
 
 
-# ───────────────────────── helpers ─────────────────────────
+# ────────────────────────── Helpers ──────────────────────────
 
+@require_GET
 def ping(_req):
+    """Lightweight health check used by /api/ping and /api/healthz"""
     return HttpResponse("OK", content_type="text/plain")
 
+
 def _range_from_request(request):
-    """Accepts ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
-       If missing, default to last 30 days."""
+    """
+    Accepts ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+    Defaults to last 30 days if missing.
+    Returns (start_date, end_date) or (None, None) if invalid.
+    """
     fs = request.GET.get("date_from")
     ts = request.GET.get("date_to")
     today = date.today()
     start = parse_date(fs) if fs else (today - timedelta(days=30))
-    end   = parse_date(ts) if ts else today
+    end = parse_date(ts) if ts else today
     if not start or not end or start > end:
-        # return a 400 so caller sees it's a bad range
         return None, None
     return start, end
 
 
-# ───────────────── metrics used by UI ─────────────────
+# ───────────────────── Metrics used by UI ─────────────────────
 
+@require_GET
 def visitors_metrics(request):
     """
     GET /api/metrics/visitors?date_from=&date_to=&poi_id=
@@ -52,6 +56,7 @@ def visitors_metrics(request):
     return JsonResponse({"total": qs.count()})
 
 
+@require_GET
 def engagement_metrics(request):
     """
     GET /api/metrics/engagement?date_from=&date_to=&poi_id=
@@ -72,7 +77,6 @@ def engagement_metrics(request):
         comments=Coalesce(Sum("comments"), 0),
         shares=Coalesce(Sum("shares"), 0),
     )
-    # cast to int in case DB returns Decimal
     return JsonResponse({
         "likes": int(agg["likes"]),
         "comments": int(agg["comments"]),
@@ -80,6 +84,7 @@ def engagement_metrics(request):
     })
 
 
+@require_GET
 def mentions_timeseries(request):
     """
     GET /api/timeseries/mentions?date_from=&date_to=&poi_id=
@@ -111,6 +116,7 @@ def mentions_timeseries(request):
     return JsonResponse({"items": items})
 
 
+@require_GET
 def top_pois(request):
     """
     GET /api/rankings/top-pois?date_from=&date_to=&limit=5
@@ -133,6 +139,7 @@ def top_pois(request):
     return JsonResponse({"items": items})
 
 
+@require_GET
 def least_pois(request):
     """
     GET /api/rankings/least-pois?date_from=&date_to=&limit=5
@@ -155,6 +162,7 @@ def least_pois(request):
     return JsonResponse({"items": items})
 
 
+@require_GET
 def top_attractions(request):
     """
     GET /api/metrics/top-attractions?date_from=&date_to=&limit=1
@@ -175,11 +183,12 @@ def top_attractions(request):
     return JsonResponse({"items": items})
 
 
+@require_GET
 def metrics_totals(request):
     """
     GET /api/metrics/totals?date_from=&date_to=
     -> {"range_days":N,"total_posts":int,"unique_authors":null}
-    (unique_authors unknown in SocialPost, return null)
+       (unique_authors unknown in SocialPost, so null)
     """
     start, end = _range_from_request(request)
     if not start:
@@ -191,8 +200,9 @@ def metrics_totals(request):
     return JsonResponse({"range_days": days, "total_posts": qs.count(), "unique_authors": None})
 
 
-# ───────────────── map & trends (UI cards) ─────────────────
+# ───────────────────── Map & Trends (UI cards) ─────────────────────
 
+@require_GET
 def map_heat(request):
     """
     GET /api/map/heat?date_from=&date_to=
@@ -229,17 +239,24 @@ def map_heat(request):
     return JsonResponse({"items": items})
 
 
-# Optional light stubs so UI won’t crash if called
+# ───────────── Optional light stubs so UI won’t crash if called ─────────────
+
+@require_GET
 def sentiment_trend(_request):
     return JsonResponse({"range_days": 0, "series": []})
 
+
+@require_GET
 def wordcloud(_request):
     return JsonResponse({"items": []})
 
+
+@require_GET
 def hidden_gem(_request):
     return JsonResponse({"items": []})
 
 
-# Alias to match older URL name expected by urls.py
+# Alias to match older naming (kept for compatibility)
+@require_GET
 def attractions_top(request):
     return top_attractions(request)
