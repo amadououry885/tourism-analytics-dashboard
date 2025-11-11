@@ -1,12 +1,24 @@
 # backend/events/views.py
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.utils.timezone import now
 from django.db.models import Q
 from .models import Event
 from .serializers import EventSerializer
+from common.permissions import AdminOrReadOnly
+
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all().order_by("start_date")
     serializer_class = EventSerializer
+    permission_classes = [AdminOrReadOnly]
+
+    def perform_create(self, serializer):
+        """Automatically set created_by to current user"""
+        serializer.save(created_by=self.request.user)
+    
+    def perform_update(self, serializer):
+        """Keep original created_by on updates"""
+        serializer.save()
 
     def get_queryset(self):
         qs = super().get_queryset()

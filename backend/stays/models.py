@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Stay(models.Model):
     TYPE_CHOICES = [
@@ -19,6 +20,16 @@ class Stay(models.Model):
     landmark = models.CharField(max_length=200, blank=True)
     distanceKm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    
+    # Ownership tracking (nullable for existing records)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='owned_stays',
+        help_text="Stay owner user who owns this property"
+    )
 
     class Meta:
         ordering = ["district", "name"]

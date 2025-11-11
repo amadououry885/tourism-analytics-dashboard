@@ -43,14 +43,16 @@ class VendorDetailSerializer(serializers.ModelSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)
     active_promotions = serializers.SerializerMethodField()
     rating_summary = serializers.SerializerMethodField()
+    owner_username = serializers.ReadOnlyField(source='owner.username')
 
     class Meta:
         model = Vendor
         fields = [
             "id", "name", "city", "cuisines", "lat", "lon", "is_active",
             "created_at", "updated_at", "menu_items", "opening_hours",
-            "reviews", "active_promotions", "rating_summary"
+            "reviews", "active_promotions", "rating_summary", "owner", "owner_username"
         ]
+        read_only_fields = ['owner', 'owner_username', 'created_at', 'updated_at']
 
     def get_active_promotions(self, obj):
         promotions = obj.promotions.filter(
@@ -89,11 +91,13 @@ class VendorListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views"""
     rating_average = serializers.SerializerMethodField()
     total_reviews = serializers.SerializerMethodField()
+    owner_username = serializers.ReadOnlyField(source='owner.username')
     
     class Meta:
         model = Vendor
         fields = ['id', 'name', 'city', 'cuisines', 'lat', 'lon', 
-                 'rating_average', 'total_reviews', 'is_active']
+                 'rating_average', 'total_reviews', 'is_active', 'owner', 'owner_username']
+        read_only_fields = ['owner', 'owner_username']
     
     def get_rating_average(self, obj):
         avg = obj.reviews.aggregate(Avg('rating'))['rating__avg']

@@ -2,12 +2,33 @@ from rest_framework import viewsets
 from django.db.models import Q
 from .models import Stay
 from .serializers import StaySerializer
+from common.permissions import IsStayOwnerOrReadOnly
+
 class StayViewSet(viewsets.ModelViewSet):
     queryset = Stay.objects.all().order_by("priceNight")
     serializer_class = StaySerializer
+    permission_classes = [IsStayOwnerOrReadOnly]
+
+    def perform_create(self, serializer):
+        """Automatically set owner to current user"""
+        serializer.save(owner=self.request.user)
+    
+    def perform_update(self, serializer):
+        """Keep original owner on updates"""
+        serializer.save()
 
     def get_queryset(self):
+        """Filter stays - owners see their own, others see all active"""
         qs = super().get_queryset()
+        user = self.request.user
+        
+        # If user is authenticated stay_owner, show their own stays
+        if user.is_authenticated and user.role == 'stay_owner':
+            qs = qs.filter(owner=user)
+        else:
+            # Others see only active stays
+            qs = qs.filter(is_active=True)
+        
         district = self.request.query_params.get("district")
         typ = self.request.query_params.get("type")
         q = self.request.query_params.get("q")

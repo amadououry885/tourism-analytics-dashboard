@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Place(models.Model):
@@ -34,6 +35,16 @@ class Route(models.Model):
 
     # Optional path preview: [[lat, lng], ...]
     polyline = models.JSONField(null=True, blank=True)
+    
+    # Ownership tracking
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_routes',
+        help_text="Admin user who created this route"
+    )
 
     class Meta:
         # allow multiple route types between the same pair

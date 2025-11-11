@@ -20,6 +20,8 @@ class RouteSerializer(serializers.ModelSerializer):
     to_place_id = serializers.PrimaryKeyRelatedField(
         queryset=Place.objects.all(), write_only=True, source="to_place"
     )
+    
+    created_by_username = serializers.ReadOnlyField(source='created_by.username')
 
     class Meta:
         model = Route
@@ -30,7 +32,10 @@ class RouteSerializer(serializers.ModelSerializer):
             "route_type",
             "polyline",
             "options",
+            "created_by",
+            "created_by_username",
         ]
+        read_only_fields = ['created_by', 'created_by_username']
 
     def validate_options(self, value):
         # Normalize None -> []

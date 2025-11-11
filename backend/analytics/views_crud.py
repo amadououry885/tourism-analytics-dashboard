@@ -2,6 +2,8 @@ from django.db.models import Q
 from rest_framework import viewsets, filters
 from rest_framework.pagination import PageNumberPagination
 
+from common.permissions import AdminOrReadOnly
+
 from .models import Place, SocialPost
 from .serializers import PlaceSerializer, SocialPostSerializer
 
@@ -23,6 +25,15 @@ class PlaceViewSet(viewsets.ModelViewSet):
     pagination_class = StandardPagination
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["name", "city", "state", "country"]
+    permission_classes = [AdminOrReadOnly]
+
+    def perform_create(self, serializer):
+        """Automatically set created_by to current user"""
+        serializer.save(created_by=self.request.user)
+    
+    def perform_update(self, serializer):
+        """Keep original created_by on updates"""
+        serializer.save()
 
     def get_queryset(self):
         qs = super().get_queryset()

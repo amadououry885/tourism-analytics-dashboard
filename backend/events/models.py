@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
@@ -15,6 +16,16 @@ class Event(models.Model):
     # Attendance tracking
     expected_attendance = models.IntegerField(null=True, blank=True, help_text="Expected number of attendees")
     actual_attendance = models.IntegerField(null=True, blank=True, help_text="Actual number of attendees (for past events)")
+    
+    # Ownership tracking
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_events',
+        help_text="Admin user who created this event"
+    )
 
     class Meta:
         ordering = ["-start_date"]

@@ -5,6 +5,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.permissions import AdminOrReadOnly
+
 from .models import Place, Route, Schedule, RouteDelay, RouteOccupancy, MaintenanceSchedule
 from .serializers import (
     PlaceSerializer, RouteSerializer, ScheduleSerializer, RouteDelaySerializer,
@@ -22,9 +24,18 @@ class PlaceViewSet(viewsets.ReadOnlyModelViewSet):
         routes = Route.objects.filter(Q(from_place=place) | Q(to_place=place))
         return Response(RouteSerializer(routes, many=True).data)
 
-class RouteViewSet(viewsets.ReadOnlyModelViewSet):
+class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
     serializer_class = RouteSerializer
+    permission_classes = [AdminOrReadOnly]
+    
+    def perform_create(self, serializer):
+        """Automatically set created_by to current user"""
+        serializer.save(created_by=self.request.user)
+    
+    def perform_update(self, serializer):
+        """Keep original created_by on updates"""
+        serializer.save()
     
     @action(detail=True)
     def schedules(self, request, pk=None):

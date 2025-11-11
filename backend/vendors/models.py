@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Vendor(models.Model):
     name = models.CharField(max_length=200)
@@ -9,6 +10,16 @@ class Vendor(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)   # ✅ auto timestamp
     updated_at = models.DateTimeField(auto_now=True)       # ✅ auto update timestamp
+    
+    # Ownership tracking (nullable for existing records)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='owned_vendors',
+        help_text="Vendor user who owns this vendor profile"
+    )
 
     class Meta:
         ordering = ["city", "name"]

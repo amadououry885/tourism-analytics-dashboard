@@ -3,6 +3,8 @@ from rest_framework import serializers
 from .models import Event
 
 class EventSerializer(serializers.ModelSerializer):
+    created_by_username = serializers.ReadOnlyField(source='created_by.username')
+    
     class Meta:
         model = Event
         fields = [
@@ -19,7 +21,10 @@ class EventSerializer(serializers.ModelSerializer):
             "is_published",
             "expected_attendance",
             "actual_attendance",
+            "created_by",
+            "created_by_username",
         ]
+        read_only_fields = ['created_by', 'created_by_username']
         
 
     def validate_tags(self, value):

@@ -51,24 +51,24 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
         const response = await axios.get('http://localhost:8001/api/vendors/');
         const vendors = response.data.results || [];
         
-        // If backend has data, use it; otherwise keep demo data
-        if (vendors.length > 0) {
-          // Transform vendor data to restaurant format
-          const restaurantData = vendors.map((vendor: any) => ({
-            id: vendor.id,
-            name: vendor.name,
-            cuisine: vendor.category || 'General',
-            rating: vendor.rating || 4.0,
-            reviews: Math.floor(Math.random() * 5000) + 500,
-            priceRange: vendor.price_range || '$$',
-            specialty: vendor.description || 'Local cuisine',
-            location: vendor.district || 'Kedah',
-            city: vendor.district?.toLowerCase().replace(' ', '-') || 'kedah'
-          }));
-          
-          setRestaurants(restaurantData);
-        }
-        // Keep demo data if no backend data
+        // Transform vendor data to restaurant format
+        const backendRestaurants = vendors.map((vendor: any) => ({
+          id: vendor.id + 1000, // Offset IDs to avoid conflicts with demo data
+          name: vendor.name,
+          cuisine: vendor.cuisines?.[0] || 'General',
+          rating: vendor.rating_average || 4.0,
+          reviews: vendor.total_reviews || 0,
+          priceRange: '$$', // Default price range since it's not in API
+          specialty: vendor.cuisines?.join(', ') || 'Local cuisine',
+          location: vendor.city || 'Kedah',
+          city: vendor.city?.toLowerCase().replace(/\s+/g, '-') || 'kedah',
+          image: `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`, // Default image
+          visitors: Math.floor(Math.random() * 20000) + 1000 // Generate random visitor count
+        }));
+        
+        // Merge backend data with demo data to keep all cities represented
+        const allRestaurants = [...demoData.results, ...backendRestaurants];
+        setRestaurants(allRestaurants);
       } catch (err) {
         console.error('Error fetching vendors:', err);
         // Keep demo data on error

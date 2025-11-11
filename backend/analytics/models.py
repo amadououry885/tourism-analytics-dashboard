@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Place(models.Model):
@@ -20,6 +21,16 @@ class Place(models.Model):
     # Geo
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    
+    # Ownership tracking
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_places',
+        help_text="Admin user who created this place"
+    )
 
     def __str__(self):
         # Extra defensive (avoids admin rendering surprises)

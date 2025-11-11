@@ -9,6 +9,12 @@ def root(_request):
     return JsonResponse({
         "status": "ok",
         "endpoints": {
+            "auth": {
+                "register": "/api/auth/register/",
+                "login": "/api/auth/login/",
+                "refresh": "/api/auth/token/refresh/",
+                "me": "/api/auth/me/",
+            },
             "vendors": "/api/vendors/",
             "events": "/api/events/",
             "stays": "/api/stays/",
@@ -30,6 +36,9 @@ urlpatterns = [
     path("healthz/", healthz),
 
     path("admin/", admin.site.urls),
+
+    # Authentication & User Management
+    path("api/auth/", include("users.urls")),
 
     # Include analytics FIRST so its routes are found (e.g., /api/places/suggest)
     path("api/", include("analytics.urls")),

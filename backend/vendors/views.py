@@ -6,6 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.permissions import IsVendorOwnerOrReadOnly
+
 from .models import Vendor, MenuItem, OpeningHours, Review, Promotion, Reservation
 from .serializers import (
     VendorDetailSerializer, VendorListSerializer, MenuItemSerializer,
@@ -15,14 +17,33 @@ from .serializers import (
 
 class VendorViewSet(viewsets.ModelViewSet):
     queryset = Vendor.objects.all().order_by("city", "name")
+    permission_classes = [IsVendorOwnerOrReadOnly]
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return VendorDetailSerializer
         return VendorListSerializer
-
+    
+    def perform_create(self, serializer):
+        """Automatically set owner to current user"""
+        serializer.save(owner=self.request.user)
+    
+    def perform_update(self, serializer):
+        """Keep original owner on updates"""
+        serializer.save()
+    
     def get_queryset(self):
+        """Filter vendors - owners see their own, others see all active"""
         qs = super().get_queryset()
+        user = self.request.user
+        
+        # If user is authenticated vendor, show their own vendors
+        if user.is_authenticated and user.role == 'vendor':
+            qs = qs.filter(owner=user)
+        else:
+            # Others see only active vendors
+            qs = qs.filter(is_active=True)
+        
         city = self.request.query_params.get("city")
         q = self.request.query_params.get("q")
         cuisine = self.request.query_params.get("cuisine")
