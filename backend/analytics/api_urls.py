@@ -20,9 +20,9 @@ from .views import (
     TopAttractionsView,  # class alias you already use
 )
 
-# Import new views
+# Import from views_new
 from .views_new import (
-    CitiesListView,
+    PlacesListView,
     SentimentSummaryView,
     SentimentByCategoryView,
     TopKeywordsView,
@@ -51,9 +51,6 @@ router.register(r"sentiments", SentimentTopicViewSet, basename="sentiments")
 urlpatterns = [
     path("", include(router.urls)),
 
-    # ---- Cities List ----
-    path("cities/", CitiesListView.as_view(), name="api-cities-list"),
-
     # ---- Minimal dashboard APIs expected by the React app ----
     path("metrics/totals",  MetricsTotalsView.as_view(), name="api-metrics-totals"),
     path("metrics/totals/", MetricsTotalsView.as_view()),
@@ -61,6 +58,10 @@ urlpatterns = [
     path("attractions/top/", TopAttractionsView.as_view()),
     path("sentiment/trend",  SentimentTrendView.as_view(), name="api-sentiment-trend"),
     path("sentiment/trend/", SentimentTrendView.as_view()),
+    
+    # Places/Cities List
+    path("places/list", PlacesListView.as_view(), name="api-places-list"),
+    path("places/list/", PlacesListView.as_view()),
     
     # Sentiment Analysis Endpoints
     path("sentiment/summary", SentimentSummaryView.as_view(), name="api-sentiment-summary"),

@@ -1,34 +1,65 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Smile, Meh, Frown, MessageSquare } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
-const sentimentData = [
+const defaultSentimentData = [
   { name: 'Positive', value: 68, count: 312000, color: '#10b981' },
   { name: 'Neutral', value: 23, count: 105000, color: '#f59e0b' },
   { name: 'Negative', value: 9, count: 41000, color: '#ef4444' },
 ];
 
-const topKeywords = [
-  { word: 'Beautiful', count: 45200, sentiment: 'positive' },
-  { word: 'Amazing', count: 38900, sentiment: 'positive' },
-  { word: 'Relaxing', count: 32100, sentiment: 'positive' },
-  { word: 'Stunning Views', count: 28500, sentiment: 'positive' },
-  { word: 'Friendly Staff', count: 24800, sentiment: 'positive' },
-  { word: 'Expensive', count: 8900, sentiment: 'negative' },
-  { word: 'Crowded', count: 6700, sentiment: 'negative' },
-  { word: 'Limited Options', count: 4200, sentiment: 'negative' },
-];
+interface SentimentAnalysisProps {
+  detailed?: boolean;
+  selectedCity?: string;
+  timeRange?: string;
+}
 
-const categorysentiment = [
-  { category: 'Attractions', positive: 72, neutral: 20, negative: 8 },
-  { category: 'Accommodation', positive: 68, neutral: 24, negative: 8 },
-  { category: 'Food', positive: 75, neutral: 18, negative: 7 },
-  { category: 'Transport', positive: 58, neutral: 28, negative: 14 },
-  { category: 'Service', positive: 70, neutral: 22, negative: 8 },
-];
+export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }: SentimentAnalysisProps) {
+  const [sentimentData, setSentimentData] = useState(defaultSentimentData);
+  const [loading, setLoading] = useState(false);
 
-export function SentimentAnalysis({ detailed = false }: { detailed?: boolean; selectedCity?: string; timeRange?: string }) {
+  useEffect(() => {
+    const fetchSentiment = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (timeRange) params.append('range', timeRange === 'week' ? '7d' : '30d');
+        
+        const response = await axios.get(`http://localhost:8001/api/sentiment/summary/?${params.toString()}`);
+        
+        if (response.data) {
+          setSentimentData([
+            { name: 'Positive', value: response.data.positive_pct || 0, count: response.data.positive || 0, color: '#10b981' },
+            { name: 'Neutral', value: response.data.neutral_pct || 0, count: response.data.neutral || 0, color: '#f59e0b' },
+            { name: 'Negative', value: response.data.negative_pct || 0, count: response.data.negative || 0, color: '#ef4444' },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching sentiment data:', error);
+        // Keep default data
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSentiment();
+  }, [selectedCity, timeRange]);
+
+  // Mock data for detailed view (to be replaced with API later)
+  const topKeywords = [
+    { word: 'Beautiful', count: 45200, sentiment: 'positive' },
+    { word: 'Amazing', count: 38900, sentiment: 'positive' },
+    { word: 'Relaxing', count: 32100, sentiment: 'positive' },
+  ];
+
+  const categorysentiment = [
+    { category: 'Attractions', positive: 72, neutral: 20, negative: 8 },
+    { category: 'Accommodation', positive: 68, neutral: 24, negative: 8 },
+  ];
+
   return (
     <>
       <Card className="bg-white border-gray-200 shadow-sm">

@@ -1,30 +1,115 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Building2, Star, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-const accommodationData = [
-  { type: 'Hotels', total: 245, occupancy: 78, avgRating: 4.3, avgPrice: 250 },
-  { type: 'Resorts', total: 89, occupancy: 85, avgRating: 4.6, avgPrice: 450 },
-  { type: 'Guesthouses', total: 156, occupancy: 72, avgRating: 4.1, avgPrice: 120 },
-  { type: 'Homestays', total: 328, occupancy: 68, avgRating: 4.4, avgPrice: 80 },
-  { type: 'Apartments', total: 112, occupancy: 65, avgRating: 4.2, avgPrice: 180 },
-];
-
-const topStays = [
-  { name: 'The Datai Langkawi', rating: 4.9, reviews: 8500, occupancy: 92, price: 850, location: 'Langkawi' },
-  { name: 'Berjaya Langkawi Resort', rating: 4.7, reviews: 6200, occupancy: 88, price: 420, location: 'Langkawi' },
-  { name: 'Alila Langkawi', rating: 4.8, reviews: 5800, occupancy: 90, price: 680, location: 'Langkawi' },
-  { name: 'Four Points by Sheraton', rating: 4.6, reviews: 4100, occupancy: 85, price: 280, location: 'Langkawi' },
-  { name: 'The Westin Langkawi', rating: 4.7, reviews: 5500, occupancy: 87, price: 520, location: 'Langkawi' },
-];
+interface Stay {
+  id: number;
+  name: string;
+  type: string;
+  district: string;
+  rating: number | null;
+  priceNight: string;
+  amenities: string[];
+}
 
 interface AccommodationStatsProps {
   selectedCity?: string;
   timeRange?: string;
 }
 
+// Default demo data for presentation
+const defaultStays: Stay[] = [
+  { id: 1, name: 'Langkawi Lagoon Resort', type: 'Hotel', district: 'Langkawi', rating: 4.8, priceNight: '450', amenities: ['Pool', 'Spa', 'Restaurant'] },
+  { id: 2, name: 'The Danna Langkawi', type: 'Resort', district: 'Langkawi', rating: 4.9, priceNight: '850', amenities: ['Beach', 'Spa', 'Fine Dining'] },
+  { id: 3, name: 'Alor Setar Tower Hotel', type: 'Hotel', district: 'Alor Setar', rating: 4.3, priceNight: '200', amenities: ['Pool', 'Gym'] },
+  { id: 4, name: 'Pedu Lake Resort', type: 'Resort', district: 'Pedu Lake', rating: 4.2, priceNight: '300', amenities: ['Lake View', 'Restaurant'] },
+  { id: 5, name: 'Langkawi Beach Villa', type: 'Guesthouse', district: 'Langkawi', rating: 4.5, priceNight: '180', amenities: ['Beach', 'WiFi'] },
+  { id: 6, name: 'Kedah Homestay', type: 'Guesthouse', district: 'Alor Setar', rating: 4.0, priceNight: '80', amenities: ['WiFi', 'Kitchen'] },
+  { id: 7, name: 'Meritus Pelangi Beach Resort', type: 'Resort', district: 'Langkawi', rating: 4.7, priceNight: '600', amenities: ['Beach', 'Spa', 'Pool'] },
+  { id: 8, name: 'Grand Alora Hotel', type: 'Hotel', district: 'Alor Setar', rating: 4.4, priceNight: '250', amenities: ['Restaurant', 'Gym'] },
+];
+
 export function AccommodationStats({ selectedCity, timeRange }: AccommodationStatsProps) {
+  const [stays, setStays] = useState<Stay[]>(defaultStays); // Initialize with demo data
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStays = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams();
+        if (selectedCity && selectedCity !== 'all') {
+          params.append('district', selectedCity);
+        }
+        
+        const response = await axios.get(`http://localhost:8001/api/stays/?${params.toString()}`);
+        const backendStays = response.data.results || [];
+        
+        // If backend has data, use it; otherwise keep demo data
+        if (backendStays.length > 0) {
+          setStays(backendStays);
+        }
+      } catch (error) {
+        console.error('Error fetching stays:', error);
+        // Keep demo data on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStays();
+  }, [selectedCity, timeRange]);
+
+  // Group stays by type and calculate stats
+  const accommodationData = stays.reduce((acc: any[], stay) => {
+    const existing = acc.find(item => item.type === stay.type);
+    if (existing) {
+      existing.total += 1;
+      if (stay.rating) {
+        existing.totalRating += stay.rating;
+        existing.ratingCount += 1;
+      }
+      existing.totalPrice += parseFloat(stay.priceNight);
+    } else {
+      acc.push({
+        type: stay.type,
+        total: 1,
+        occupancy: Math.floor(Math.random() * 30) + 60, // Mock occupancy
+        avgRating: stay.rating || 0,
+        totalRating: stay.rating || 0,
+        ratingCount: stay.rating ? 1 : 0,
+        avgPrice: parseFloat(stay.priceNight),
+        totalPrice: parseFloat(stay.priceNight)
+      });
+    }
+    return acc;
+  }, []).map(item => ({
+    ...item,
+    avgRating: item.ratingCount > 0 ? (item.totalRating / item.ratingCount).toFixed(1) : 0,
+    avgPrice: Math.round(item.totalPrice / item.total)
+  }));
+
+  // Top 5 stays by rating
+  const topStays = stays
+    .filter(s => s.rating)
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, 5)
+    .map(stay => ({
+      name: stay.name,
+      rating: stay.rating || 0,
+      reviews: Math.floor(Math.random() * 8000) + 1000, // Mock reviews
+      occupancy: Math.floor(Math.random() * 30) + 70, // Mock occupancy
+      price: Math.round(parseFloat(stay.priceNight)),
+      location: stay.district
+    }));
+
+  if (loading) {
+    return <div className="text-gray-900">Loading accommodation data...</div>;
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Accommodation Overview Chart */}

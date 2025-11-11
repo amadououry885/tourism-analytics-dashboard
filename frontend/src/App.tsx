@@ -42,13 +42,12 @@ export default function App() {
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        const response = await axios.get('http://localhost:8001/api/analytics/cities/');
+        const response = await axios.get('http://localhost:8001/api/analytics/places/list/');
         setCities(response.data);
       } catch (error) {
         console.error('Error fetching cities:', error);
       }
     };
-    
     fetchCities();
   }, []);
 

@@ -5,22 +5,24 @@ from rest_framework.response import Response
 from datetime import datetime, timedelta
 from .models import Place, SocialPost, PostRaw, PostClean, SentimentTopic
 from .serializers import PlaceSerializer, SocialPostSerializer, PostCleanSerializer, SentimentTopicSerializer
+from events.models import Event
+
+class PlacesListView(APIView):
+    """Get all places/cities"""
+    def get(self, request):
+        places = Place.objects.all().order_by('name')
+        return Response([{
+            'id': p.id,
+            'name': p.name,
+            'slug': p.name.lower().replace(' ', '-')
+        } for p in places])
+
 def parse_range(request):
     """Helper to parse date range from request"""
     days = int(request.GET.get('range', '7').rstrip('d'))
     end = datetime.now().date()
     start = end - timedelta(days=days)
     return start, end
-
-class CitiesListView(APIView):
-    """Get list of all cities/places"""
-    def get(self, request):
-        places = Place.objects.all().order_by('name')
-        return Response([{
-            'id': place.id,
-            'name': place.name,
-            'slug': place.name.lower().replace(' ', '-')
-        } for place in places])
 
 class SentimentSummaryView(APIView):
     """Get overall sentiment distribution and totals"""
@@ -356,3 +358,85 @@ class SocialEngagementTrendsView(APIView):
             })
         
         return Response(chart_data)
+
+
+class LeastVisitedDestinationsView(APIView):
+    """Get least visited destinations based on social post count"""
+    def get(self, request):
+        start, end = parse_range(request)
+        limit = int(request.GET.get('limit', '5'))
+        
+        # Get places with their post counts in the date range
+        places_with_counts = Place.objects.annotate(
+            post_count=Count(
+                'posts',
+                filter=Q(posts__created_at__date__range=[start, end])
+            )
+        ).filter(
+            post_count__gt=0  # Only include places with at least some posts
+        ).order_by('post_count')[:limit]
+        
+        result = []
+        for place in places_with_counts:
+            # Calculate engagement metrics
+            posts = SocialPost.objects.filter(
+                place=place,
+                created_at__date__range=[start, end]
+            )
+            
+            total_engagement = posts.aggregate(
+                total_likes=Sum('likes'),
+                total_comments=Sum('comments'),
+                total_shares=Sum('shares')
+            )
+            
+            result.append({
+                'id': place.id,
+                'name': place.name,
+                'posts': place.post_count,
+                'visitors': place.post_count * 150,  # Estimate based on posts
+                'engagement': (
+                    (total_engagement['total_likes'] or 0) +
+                    (total_engagement['total_comments'] or 0) +
+                    (total_engagement['total_shares'] or 0)
+                ),
+                'rating': 3.5 + (place.post_count / 100),  # Simple rating estimate
+                'city': place.city or 'Kedah'
+            })
+        
+        return Response(result)
+
+
+class EventAttendanceTrendView(APIView):
+    """Get event attendance trends over time"""
+    def get(self, request):
+        from django.utils import timezone
+        
+        # Get all past events with actual attendance (no date range limit)
+        events = Event.objects.filter(
+            start_date__lt=timezone.now(),
+            actual_attendance__isnull=False
+        ).order_by('start_date')
+        
+        # Group by month for trend chart
+        from collections import defaultdict
+        monthly_data = defaultdict(lambda: {'expected': 0, 'actual': 0, 'events': 0})
+        
+        for event in events:
+            month_key = event.start_date.strftime('%Y-%m')
+            monthly_data[month_key]['expected'] += event.expected_attendance or 0
+            monthly_data[month_key]['actual'] += event.actual_attendance or 0
+            monthly_data[month_key]['events'] += 1
+        
+        # Format for chart
+        result = []
+        for month, data in sorted(monthly_data.items()):
+            result.append({
+                'month': month,
+                'expected': data['expected'],
+                'actual': data['actual'],
+                'events': data['events'],
+                'variance': data['actual'] - data['expected'] if data['expected'] > 0 else 0
+            })
+        
+        return Response(result)

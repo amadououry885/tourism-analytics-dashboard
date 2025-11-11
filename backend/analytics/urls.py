@@ -33,6 +33,7 @@ urlpatterns = [
     re_path(r'^map/heat/?$', vs.map_heat, name='map-heat'),
 
     # Modern analytics endpoints (from views_new.py)
+    path('analytics/places/list/', vn.PlacesListView.as_view(), name='analytics-places-list'),
     path('analytics/overview-metrics/', vn.OverviewMetricsView.as_view(), name='analytics-overview-metrics'),
     path('analytics/social-engagement/', vn.SocialEngagementTrendsView.as_view(), name='analytics-social-engagement-trends'),
     path('analytics/sentiment/summary/', vn.SentimentSummaryView.as_view(), name='analytics-sentiment-summary'),
@@ -44,6 +45,10 @@ urlpatterns = [
     path('analytics/places/popular/', vn.PopularPlacesView.as_view(), name='analytics-places-popular'),
     path('analytics/places/trending/', vn.TrendingPlacesView.as_view(), name='analytics-places-trending'),
     path('analytics/places/nearby/', vn.NearbyPlacesView.as_view(), name='analytics-places-nearby'),
+    
+    # New analytics endpoints
+    path('analytics/places/least-visited/', vn.LeastVisitedDestinationsView.as_view(), name='analytics-places-least-visited'),
+    path('analytics/events/attendance-trend/', vn.EventAttendanceTrendView.as_view(), name='analytics-events-attendance-trend'),
 
     # Optional legacy aliases for backward compatibility
     re_path(r'^sentiment/summary/?$', vn.SentimentSummaryView.as_view(), name='sentiment-summary'),

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Calendar, MapPin, Users, TrendingUp, Filter } from 'lucide-react';
@@ -9,123 +10,21 @@ interface EventsTimelineProps {
   selectedCity: string;
 }
 
-const upcomingEvents = [
-  {
-    name: 'Langkawi International Maritime & Aerospace Exhibition',
-    date: 'May 20-24, 2025',
-    location: 'Langkawi',
-    city: 'langkawi',
-    expectedVisitors: 85000,
-    posts: 12500,
-    status: 'upcoming',
-    category: 'Exhibition',
-    type: 'business'
-  },
-  {
-    name: 'Kedah Paddy Festival',
-    date: 'Jun 15-18, 2025',
-    location: 'Alor Setar',
-    city: 'alor-setar',
-    expectedVisitors: 45000,
-    posts: 8900,
-    status: 'upcoming',
-    category: 'Cultural',
-    type: 'festival'
-  },
-  {
-    name: 'Langkawi Food Festival',
-    date: 'Jul 5-10, 2025',
-    location: 'Langkawi',
-    city: 'langkawi',
-    expectedVisitors: 32000,
-    posts: 6500,
-    status: 'upcoming',
-    category: 'Food',
-    type: 'food'
-  },
-  {
-    name: 'Alor Setar Heritage Walk',
-    date: 'Aug 12-13, 2025',
-    location: 'Alor Setar',
-    city: 'alor-setar',
-    expectedVisitors: 15000,
-    posts: 3200,
-    status: 'upcoming',
-    category: 'Heritage',
-    type: 'cultural'
-  },
-  {
-    name: 'Langkawi International Marathon',
-    date: 'Sep 8, 2025',
-    location: 'Langkawi',
-    city: 'langkawi',
-    expectedVisitors: 12000,
-    posts: 4500,
-    status: 'upcoming',
-    category: 'Sports',
-    type: 'sports'
-  },
-  {
-    name: 'Kedah Traditional Music Concert',
-    date: 'Oct 15-16, 2025',
-    location: 'Sungai Petani',
-    city: 'sungai-petani',
-    expectedVisitors: 8000,
-    posts: 2100,
-    status: 'upcoming',
-    category: 'Entertainment',
-    type: 'entertainment'
-  },
-];
-
-const pastEvents = [
-  {
-    name: 'Langkawi International Regatta',
-    date: 'Jan 10-15, 2025',
-    location: 'Langkawi',
-    city: 'langkawi',
-    actualVisitors: 52000,
-    posts: 18500,
-    engagement: 145000,
-    sentiment: 92,
-    type: 'sports'
-  },
-  {
-    name: 'Chinese New Year Celebrations',
-    date: 'Feb 1-3, 2025',
-    location: 'Various',
-    city: 'all',
-    actualVisitors: 78000,
-    posts: 24800,
-    engagement: 198000,
-    sentiment: 88,
-    type: 'festival'
-  },
-  {
-    name: 'Kedah Arts & Crafts Fair',
-    date: 'Mar 20-25, 2025',
-    location: 'Sungai Petani',
-    city: 'sungai-petani',
-    actualVisitors: 28000,
-    posts: 9200,
-    engagement: 65000,
-    sentiment: 85,
-    type: 'cultural'
-  },
-];
-
-const eventAttendance = [
-  { month: 'Jan', festivals: 52000, exhibitions: 35000, cultural: 28000, sports: 22000 },
-  { month: 'Feb', festivals: 78000, exhibitions: 42000, cultural: 38000, sports: 18000 },
-  { month: 'Mar', festivals: 65000, exhibitions: 38000, cultural: 28000, sports: 25000 },
-  { month: 'Apr', festivals: 45000, exhibitions: 52000, cultural: 32000, sports: 30000 },
-  { month: 'May', festivals: 58000, exhibitions: 85000, cultural: 45000, sports: 28000 },
-  { month: 'Jun', festivals: 72000, exhibitions: 48000, cultural: 52000, sports: 35000 },
-];
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  location_name?: string;
+  city?: string;
+  tags: string[];
+  is_published?: boolean;
+}
 
 const eventTypes = [
   { value: 'all', label: 'All Events' },
-  { value: 'sports', label: 'Sports' },
+  { value: 'sport', label: 'Sports' },
   { value: 'food', label: 'Food' },
   { value: 'festival', label: 'Festival' },
   { value: 'cultural', label: 'Cultural' },
@@ -133,18 +32,129 @@ const eventTypes = [
   { value: 'entertainment', label: 'Entertainment' },
 ];
 
-export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
+// Default demo events for presentation
+const defaultEvents: Event[] = [
+  {
+    id: 1,
+    title: 'Langkawi International Maritime and Aerospace Exhibition',
+    start_date: '2025-03-15',
+    end_date: '2025-03-19',
+    location_name: 'Mahsuri International Exhibition Centre',
+    city: 'Langkawi',
+    description: 'Biennial event showcasing maritime and aerospace technology',
+    tags: ['business', 'exhibition'],
+    is_published: true
+  },
+  {
+    id: 2,
+    title: 'Alor Setar Heritage Festival',
+    start_date: '2025-04-05',
+    end_date: '2025-04-07',
+    location_name: 'Dataran Alor Setar',
+    city: 'Alor Setar',
+    description: 'Celebration of local culture and historical heritage',
+    tags: ['cultural', 'festival'],
+    is_published: true
+  },
+  {
+    id: 3,
+    title: 'Kedah Paddy Harvest Festival',
+    start_date: '2025-05-10',
+    end_date: '2025-05-12',
+    location_name: 'Yan Rice Fields',
+    city: 'Yan',
+    description: 'Traditional celebration of rice harvest season',
+    tags: ['cultural', 'festival'],
+    is_published: true
+  },
+  {
+    id: 4,
+    title: 'Langkawi Food Festival 2024',
+    start_date: '2024-01-15',
+    end_date: '2024-01-20',
+    location_name: 'Pantai Cenang',
+    city: 'Langkawi',
+    description: 'Week-long celebration of local and international cuisine',
+    tags: ['food', 'festival'],
+    is_published: true
+  },
+  {
+    id: 5,
+    title: 'Kedah Tourism Expo',
+    start_date: '2024-11-20',
+    end_date: '2024-11-25',
+    location_name: 'Aman Central',
+    city: 'Alor Setar',
+    description: 'Showcase of tourism attractions across Kedah',
+    tags: ['business', 'entertainment'],
+    is_published: true
+  }
+];
+
+export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps) {
   const [selectedEventType, setSelectedEventType] = useState('all');
+  const [events, setEvents] = useState<Event[]>(defaultEvents); // Initialize with demo data
+  const [attendanceTrend, setAttendanceTrend] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch events
+        const response = await axios.get('http://localhost:8001/api/events/');
+        const backendEvents = response.data.results || response.data || [];
+        
+        // Fetch attendance trend data
+        const trendResponse = await axios.get('http://localhost:8001/api/analytics/events/attendance-trend/?range=365d');
+        const trendData = trendResponse.data || [];
+        
+        // If backend has data, use it; otherwise keep demo data
+        if (backendEvents.length > 0) {
+          setEvents(backendEvents);
+        }
+        
+        // Update attendance trend if we have data
+        if (trendData.length > 0) {
+          setAttendanceTrend(trendData);
+        }
+        // Keep default demo events if no backend data
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        // Keep demo events on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [selectedCity, timeRange]);
+
+  // Filter events by type
+  const filteredEvents = events.filter(event => {
+    if (selectedEventType === 'all') return true;
+    return event.tags.includes(selectedEventType);
+  });
+
+  // Separate upcoming and past events based on start_date
+  const now = new Date();
+  const upcomingEvents = filteredEvents.filter(e => new Date(e.start_date) > now);
+  const pastEvents = filteredEvents.filter(e => new Date(e.start_date) <= now);
+
+  if (loading) {
+    return <div className="text-gray-900">Loading events...</div>;
+  }
 
   const filteredUpcomingEvents = upcomingEvents.filter(event => {
     const matchesCity = selectedCity === 'all' || event.city === selectedCity;
-    const matchesType = selectedEventType === 'all' || event.type === selectedEventType;
+    const matchesType = selectedEventType === 'all' || event.tags.some(tag => tag.toLowerCase() === selectedEventType.toLowerCase());
     return matchesCity && matchesType;
   });
 
   const filteredPastEvents = pastEvents.filter(event => {
-    const matchesCity = selectedCity === 'all' || event.city === selectedCity || event.city === 'all';
-    const matchesType = selectedEventType === 'all' || event.type === selectedEventType;
+    const matchesCity = selectedCity === 'all' || event.city === selectedCity;
+    const matchesType = selectedEventType === 'all' || event.tags.some(tag => tag.toLowerCase() === selectedEventType.toLowerCase());
     return matchesCity && matchesType;
   });
 
@@ -180,35 +190,6 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
         </CardContent>
       </Card>
 
-      {/* Event Attendance Trend */}
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-gray-900">Event Attendance Trends</CardTitle>
-          <CardDescription className="text-gray-900">6-month visitor breakdown by event type</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={eventAttendance}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis dataKey="month" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  color: '#111827'
-                }} 
-              />
-              <Line type="monotone" dataKey="festivals" stroke="#ec4899" strokeWidth={2} name="Festivals" />
-              <Line type="monotone" dataKey="exhibitions" stroke="#3b82f6" strokeWidth={2} name="Exhibitions" />
-              <Line type="monotone" dataKey="cultural" stroke="#10b981" strokeWidth={2} name="Cultural Events" />
-              <Line type="monotone" dataKey="sports" stroke="#f59e0b" strokeWidth={2} name="Sports" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
       {/* Upcoming Events */}
       <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
@@ -216,35 +197,31 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
           <CardDescription className="text-gray-900">Major events scheduled for the coming months</CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredUpcomingEvents.length > 0 ? (
+          {upcomingEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredUpcomingEvents.map((event) => (
-                <div key={event.name} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
+              {upcomingEvents.map((event) => (
+                <div key={event.id} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-start justify-between mb-3">
                     <Badge className="bg-blue-500/20 text-gray-900 border-blue-500/30">
-                      {event.category}
+                      {event.tags && event.tags[0] ? event.tags[0] : 'Event'}
                     </Badge>
                     <Badge className="bg-green-500/20 text-green-700 border-green-500/30">
                       Upcoming
                     </Badge>
                   </div>
-                  <h4 className="text-white mb-3">{event.name}</h4>
+                  <h4 className="text-gray-900 font-semibold mb-3">{event.title}</h4>
                   <div className="space-y-2 text-sm text-gray-900">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      <span>{event.date}</span>
+                      <span>{new Date(event.start_date).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      <span>{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      <span>{event.expectedVisitors.toLocaleString()} expected visitors</span>
+                      <span>{event.location_name || 'Kedah'}, {event.city || 'Malaysia'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" />
-                      <span>{event.posts.toLocaleString()} social posts</span>
+                      <span className="text-xs">{event.description.substring(0, 80)}...</span>
                     </div>
                   </div>
                 </div>
@@ -265,42 +242,27 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
           <CardDescription className="text-gray-900">Recent events and their impact metrics</CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredPastEvents.length > 0 ? (
+          {pastEvents.length > 0 ? (
             <div className="space-y-4">
-              {filteredPastEvents.map((event) => (
-                <div key={event.name} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
+              {pastEvents.map((event) => (
+                <div key={event.id} className="p-5 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h4 className="text-white mb-1">{event.name}</h4>
+                      <h4 className="text-gray-900 font-semibold mb-1">{event.title}</h4>
                       <div className="flex items-center gap-2 text-sm text-gray-900">
                         <Calendar className="w-4 h-4" />
-                        <span>{event.date}</span>
+                        <span>{new Date(event.start_date).toLocaleDateString()}</span>
                         <span>•</span>
                         <MapPin className="w-4 h-4" />
-                        <span>{event.location}</span>
+                        <span>{event.location_name}</span>
                       </div>
                     </div>
                     <Badge className="bg-purple-500/20 text-purple-700 border-purple-500/30">
                       Completed
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                    <div>
-                      <p className="text-sm text-gray-900 mb-1">Visitors</p>
-                      <p className="text-xl text-white">{event.actualVisitors.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-900 mb-1">Posts</p>
-                      <p className="text-xl text-white">{event.posts.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-900 mb-1">Engagement</p>
-                      <p className="text-xl text-white">{event.engagement.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-900 mb-1">Sentiment</p>
-                      <p className="text-xl text-green-700">{event.sentiment}%</p>
-                    </div>
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-900">{event.description}</p>
                   </div>
                 </div>
               ))}
@@ -312,6 +274,69 @@ export function EventsTimeline({ selectedCity }: EventsTimelineProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Event Attendance Trend */}
+      {attendanceTrend.length > 0 && (
+        <Card className="bg-white border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-gray-900">Event Attendance Trends</CardTitle>
+            <CardDescription className="text-gray-900">Expected vs Actual attendance over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={attendanceTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+                <XAxis dataKey="month" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#ffffff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    color: '#111827'
+                  }} 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="expected" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  name="Expected"
+                  dot={{ fill: '#3b82f6', r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="actual" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  name="Actual"
+                  dot={{ fill: '#10b981', r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+              {attendanceTrend.slice(-1).map((data) => (
+                <>
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="text-sm text-gray-900">Expected</div>
+                    <div className="text-xl font-bold text-blue-600">{data.expected.toLocaleString()}</div>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="text-sm text-gray-900">Actual</div>
+                    <div className="text-xl font-bold text-green-600">{data.actual.toLocaleString()}</div>
+                  </div>
+                  <div className="p-3 bg-purple-50 rounded-lg">
+                    <div className="text-sm text-gray-900">Variance</div>
+                    <div className={`text-xl font-bold ${data.variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {data.variance > 0 ? '+' : ''}{data.variance.toLocaleString()}
+                    </div>
+                  </div>
+                </>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

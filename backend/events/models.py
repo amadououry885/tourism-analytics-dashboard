@@ -11,6 +11,10 @@ class Event(models.Model):
     lon = models.FloatField(null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)  # ["festival","music"]
     is_published = models.BooleanField(default=True)
+    
+    # Attendance tracking
+    expected_attendance = models.IntegerField(null=True, blank=True, help_text="Expected number of attendees")
+    actual_attendance = models.IntegerField(null=True, blank=True, help_text="Actual number of attendees (for past events)")
 
     class Meta:
         ordering = ["-start_date"]

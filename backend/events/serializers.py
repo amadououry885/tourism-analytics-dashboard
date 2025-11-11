@@ -17,6 +17,8 @@ class EventSerializer(serializers.ModelSerializer):
             "lon",
             "tags",
             "is_published",
+            "expected_attendance",
+            "actual_attendance",
         ]
         
 
