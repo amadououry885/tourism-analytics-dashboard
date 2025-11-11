@@ -304,7 +304,19 @@ python populate_attendance.py
 
 ---
 
-## 🔮 Future Enhancements
+## 👥 Contributors
+
+### Development Team
+- **Amadou Oury Diallo** - Backend Developer
+- **Samia Hassan Haron Hamid** - Frontend Developer
+- **Hasibullah Naeim** - Data Analyst
+
+### Supervisor
+- **Sir Abu Bakar Ngah** - Project Supervisor
+
+---
+
+## �🔮 Future Enhancements
 
 ### Completed (November 2025) ✅
 - ✅ **Tourism Analytics Dashboard** with charts and KPIs
