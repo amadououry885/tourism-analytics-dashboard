@@ -25,7 +25,7 @@ const Home: React.FC = () => {
             </div>
             <div className="flex items-center gap-4">
               <Link
-                to="/sign-in"
+                to="/login"
                 className="px-6 py-2.5 text-gray-700 hover:text-indigo-600 font-semibold transition-colors relative group"
               >
                 <span className="relative z-10">Sign In</span>
@@ -168,7 +168,7 @@ const Home: React.FC = () => {
             </div>
 
             <Link
-              to="/sign-in"
+              to="/login"
               className="inline-flex items-center justify-center px-8 py-4 bg-white text-indigo-600 border-2 border-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-all shadow-lg text-lg"
             >
               Already have an account? Sign In

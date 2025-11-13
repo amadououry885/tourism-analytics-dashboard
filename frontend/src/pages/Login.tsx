@@ -18,18 +18,19 @@ const Login: React.FC = () => {
   }, [user]);
 
   const redirectToDashboard = (role: string) => {
+    console.log('Redirecting user with role:', role);
     switch (role) {
       case 'admin':
-        navigate('/admin/dashboard');
+        navigate('/admin/dashboard', { replace: true });
         break;
       case 'vendor':
-        navigate('/vendor/my-restaurants');
+        navigate('/vendor/dashboard', { replace: true }); // Changed from /vendor/my-restaurants
         break;
       case 'stay_owner':
-        navigate('/stays/my-stays');
+        navigate('/stay-owner/dashboard', { replace: true }); // Changed from /stays/my-stays
         break;
       default:
-        navigate('/');
+        navigate('/', { replace: true });
     }
   };
 

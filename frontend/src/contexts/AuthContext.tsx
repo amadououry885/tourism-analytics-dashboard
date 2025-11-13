@@ -13,7 +13,7 @@ interface User {
 }
 
 interface JWTPayload {
-  user_id: number;
+  user_id: number | string; // Backend might send string
   username: string;
   email: string;
   role: string;
@@ -27,10 +27,11 @@ interface AuthContextType {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<User>; // Return User
   logout: () => void;
   register: (data: RegisterData) => Promise<{ requiresApproval: boolean; message: string }>;
   refreshAccessToken: () => Promise<void>;
+  apiCall: (endpoint: string, options?: RequestInit) => Promise<any>; // New helper
 }
 
 interface RegisterData {
@@ -43,49 +44,29 @@ interface RegisterData {
   last_name?: string;
 }
 
+interface LoginResponse {
+  access: string;
+  refresh: string;
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    role: string;
+    is_approved: boolean;
+    is_active: boolean;
+  };
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = 'http://localhost:8000/api';
+// Change this if your backend runs on a different port
+const API_BASE_URL = 'http://localhost:8000/api'; // or http://127.0.0.1:8000/api
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Load tokens from localStorage on mount
-  useEffect(() => {
-    const storedAccessToken = localStorage.getItem('accessToken');
-    const storedRefreshToken = localStorage.getItem('refreshToken');
-
-    if (storedAccessToken && storedRefreshToken) {
-      try {
-        const decoded = jwtDecode<JWTPayload>(storedAccessToken);
-        
-        // Check if token is expired
-        if (decoded.exp * 1000 < Date.now()) {
-          // Token expired, try to refresh
-          refreshAccessTokenInternal(storedRefreshToken);
-        } else {
-          // Token still valid
-          setAccessToken(storedAccessToken);
-          setRefreshToken(storedRefreshToken);
-          setUser({
-            id: decoded.user_id,
-            username: decoded.username,
-            email: decoded.email,
-            role: decoded.role as 'admin' | 'vendor' | 'stay_owner',
-            is_approved: decoded.is_approved,
-            is_active: true,
-          });
-        }
-      } catch (error) {
-        console.error('Invalid token:', error);
-        clearAuth();
-      }
-    }
-    setIsLoading(false);
-  }, []);
 
   const clearAuth = () => {
     setUser(null);
@@ -112,9 +93,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setAccessToken(data.access);
       localStorage.setItem('accessToken', data.access);
+      
+      // Update refresh token if provided
+      if (data.refresh) {
+        setRefreshToken(data.refresh);
+        localStorage.setItem('refreshToken', data.refresh);
+      }
 
       setUser({
-        id: decoded.user_id,
+        id: typeof decoded.user_id === 'string' ? parseInt(decoded.user_id) : decoded.user_id,
         username: decoded.username,
         email: decoded.email,
         role: decoded.role as 'admin' | 'vendor' | 'stay_owner',
@@ -124,10 +111,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Token refresh failed:', error);
       clearAuth();
+      throw error;
     }
   };
 
-  const login = async (username: string, password: string) => {
+  // Load tokens from localStorage on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      const storedAccessToken = localStorage.getItem('accessToken');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
+
+      if (storedAccessToken && storedRefreshToken) {
+        try {
+          const decoded = jwtDecode<JWTPayload>(storedAccessToken);
+          
+          // Check if token is expired
+          if (decoded.exp * 1000 < Date.now()) {
+            // Token expired, try to refresh
+            await refreshAccessTokenInternal(storedRefreshToken);
+          } else {
+            // Token still valid
+            setAccessToken(storedAccessToken);
+            setRefreshToken(storedRefreshToken);
+            setUser({
+              id: typeof decoded.user_id === 'string' ? parseInt(decoded.user_id) : decoded.user_id,
+              username: decoded.username,
+              email: decoded.email,
+              role: decoded.role as 'admin' | 'vendor' | 'stay_owner',
+              is_approved: decoded.is_approved,
+              is_active: true,
+            });
+          }
+        } catch (error) {
+          console.error('Invalid token:', error);
+          clearAuth();
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
+  }, []); // Empty dependency array is correct here
+
+  const login = async (username: string, password: string): Promise<User> => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login/`, {
         method: 'POST',
@@ -137,11 +163,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || 'Login failed');
+        throw new Error(error.detail || error.error || JSON.stringify(error) || 'Login failed');
       }
 
-      const data = await response.json();
-      const decoded = jwtDecode<JWTPayload>(data.access);
+      const data: LoginResponse = await response.json();
 
       // Store tokens
       localStorage.setItem('accessToken', data.access);
@@ -149,15 +174,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setAccessToken(data.access);
       setRefreshToken(data.refresh);
 
-      // Set user from decoded token
-      setUser({
-        id: decoded.user_id,
-        username: decoded.username,
-        email: decoded.email,
-        role: decoded.role as 'admin' | 'vendor' | 'stay_owner',
-        is_approved: decoded.is_approved,
-        is_active: true,
-      });
+      let loggedInUser: User;
+
+      // If backend sends user data directly, use it
+      if (data.user) {
+        loggedInUser = {
+          id: data.user.id,
+          username: data.user.username,
+          email: data.user.email,
+          role: data.user.role as 'admin' | 'vendor' | 'stay_owner',
+          is_approved: data.user.is_approved,
+          is_active: data.user.is_active,
+        };
+      } else {
+        // Otherwise try to decode from token
+        const decoded = jwtDecode<any>(data.access);
+        
+        loggedInUser = {
+          id: typeof decoded.user_id === 'string' ? parseInt(decoded.user_id) : decoded.user_id,
+          username: decoded.username || username,
+          email: decoded.email || '',
+          role: (decoded.role || 'admin') as 'admin' | 'vendor' | 'stay_owner',
+          is_approved: decoded.is_approved !== false,
+          is_active: true,
+        };
+      }
+
+      setUser(loggedInUser);
+      return loggedInUser; // Return the user object
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -205,6 +249,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Helper function for making authenticated API calls
+  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...options.headers,
+    };
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    if (response.status === 401) {
+      // Token expired, try to refresh
+      if (refreshToken) {
+        await refreshAccessTokenInternal(refreshToken);
+        // Retry the request with new token
+        return apiCall(endpoint, options);
+      }
+      throw new Error('Authentication required');
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || error.message || 'Request failed');
+    }
+
+    return response.json();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -217,6 +292,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         register,
         refreshAccessToken,
+        apiCall,
       }}
     >
       {children}

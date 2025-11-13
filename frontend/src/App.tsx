@@ -27,11 +27,23 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/register" element={<Register />} />
+            
+            {/* Admin Routes */}
             <Route
               path="/admin/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Vendor Routes */}
+            <Route
+              path="/vendor/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['vendor']} requireApproval={true}>
+                  <VendorDashboard />
                 </ProtectedRoute>
               }
             />
@@ -43,6 +55,16 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            
+            {/* Stay Owner Routes */}
+            <Route
+              path="/stay-owner/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['stay_owner']} requireApproval={true}>
+                  <StayOwnerDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/stays/my-stays"
               element={
@@ -51,6 +73,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <ToastContainer
