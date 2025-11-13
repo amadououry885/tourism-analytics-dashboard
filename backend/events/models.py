@@ -7,7 +7,7 @@ class Event(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
     location_name = models.CharField(max_length=200, blank=True)
-    city = models.CharField(max_length=120, blank=True)
+    city = models.CharField(max_length=120, blank=True, db_index=True)  # ✅ Added db_index for filtering
     lat = models.FloatField(null=True, blank=True)
     lon = models.FloatField(null=True, blank=True)
     tags = models.JSONField(default=list, blank=True)  # ["festival","music"]
@@ -29,6 +29,7 @@ class Event(models.Model):
 
     class Meta:
         ordering = ["-start_date"]
+        indexes = [models.Index(fields=["city"])]  # ✅ Index for city filtering
 
     def __str__(self):
         return self.title

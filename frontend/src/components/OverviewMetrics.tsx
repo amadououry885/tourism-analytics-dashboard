@@ -1,185 +1,251 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from './ui/card';
-import { TrendingUp, TrendingDown, Users, MessageSquare, Heart, Share2, Eye } from 'lucide-react';
 import axios from 'axios';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { TrendingUp, TrendingDown, Eye, Heart, Share2, MessageCircle } from 'lucide-react';
 
 interface OverviewMetricsProps {
   selectedCity: string;
   timeRange: string;
 }
 
-interface MetricData {
-  title: string;
-  value: string;
-  change: string;
-  trend: 'up' | 'down';
-  icon: any;
-  color: string;
+interface Metrics {
+  totalVisitors: number;
+  socialEngagement: number;
+  totalPosts: number;
+  shares: number;
+  pageViews: number;
+  visitorsTrend: number;
+  engagementTrend: number;
+  postsTrend: number;
+  sharesTrend: number;
+  viewsTrend: number;
 }
 
-const defaultMetrics: MetricData[] = [
-  {
-    title: 'Total Visitors',
-    value: '1.2M',
-    change: '+12.5%',
-    trend: 'up',
-    icon: Users,
-    color: 'blue'
-  },
-  {
-    title: 'Social Engagement',
-    value: '458K',
-    change: '+23.1%',
-    trend: 'up',
-    icon: Heart,
-    color: 'pink'
-  },
-  {
-    title: 'Total Posts',
-    value: '89.5K',
-    change: '+8.3%',
-    trend: 'up',
-    icon: MessageSquare,
-    color: 'green'
-  },
-  {
-    title: 'Shares',
-    value: '34.2K',
-    change: '-3.2%',
-    trend: 'down',
-    icon: Share2,
-    color: 'purple'
-  },
-  {
-    title: 'Page Views',
-    value: '2.8M',
-    change: '+18.7%',
-    trend: 'up',
-    icon: Eye,
-    color: 'orange'
-  }
-];
-
-const colorMap = {
-  blue: 'bg-blue-500/20 text-gray-900',
-  pink: 'bg-pink-500/20 text-pink-700',
-  green: 'bg-green-500/20 text-green-700',
-  purple: 'bg-purple-500/20 text-purple-700',
-  orange: 'bg-orange-500/20 text-orange-700'
+// Default demo data for when API fails
+const defaultMetrics: Metrics = {
+  totalVisitors: 1200000,
+  socialEngagement: 458000,
+  totalPosts: 89500,
+  shares: 34200,
+  pageViews: 2800000,
+  visitorsTrend: 15.2,
+  engagementTrend: 12.8,
+  postsTrend: 8.5,
+  sharesTrend: 6.3,
+  viewsTrend: 18.9,
 };
 
 export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProps) {
-  const [metrics, setMetrics] = useState<MetricData[]>(defaultMetrics);
-  const [loading, setLoading] = useState(false);
+  const [metrics, setMetrics] = useState<Metrics>(defaultMetrics);
+  const [loading, setLoading] = useState(true);
 
+  // ✅ FETCH METRICS WHENEVER CITY OR TIME RANGE CHANGES
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        // Build API URL with filters
-        const params = new URLSearchParams();
-        if (selectedCity) {
-          params.append('city', selectedCity);
-        }
-        if (timeRange) {
-          params.append('period', timeRange);
-        }
 
-        const response = await axios.get(`http://localhost:8001/api/analytics/overview-metrics/?${params.toString()}`);
+        // ✅ BUILD QUERY PARAMETERS FOR FILTERING
+        const cityParam = selectedCity && selectedCity !== 'all' ? selectedCity : '';
+        const periodMap: Record<string, string> = {
+          'week': 'week',
+          'month': 'month',
+          'quarter': 'quarter',
+          'year': 'year',
+        };
+        const period = periodMap[timeRange] || 'month';
+
+        // ✅ BUILD API URL WITH CITY AND TIME RANGE FILTERS
+        const queryParams = new URLSearchParams();
+        if (cityParam) queryParams.append('city', cityParam);
+        queryParams.append('period', period);
+
+        const url = `http://localhost:8000/api/analytics/overview-metrics/?${queryParams.toString()}`;
         
-        // Transform API response to metrics format
-        if (response.data) {
-          setMetrics([
-            {
-              title: 'Total Visitors',
-              value: formatNumber(response.data.total_visitors || 0),
-              change: response.data.visitors_change || '+0%',
-              trend: (response.data.visitors_change || '').startsWith('-') ? 'down' : 'up',
-              icon: Users,
-              color: 'blue'
-            },
-            {
-              title: 'Social Engagement',
-              value: formatNumber(response.data.social_engagement || 0),
-              change: response.data.engagement_change || '+0%',
-              trend: (response.data.engagement_change || '').startsWith('-') ? 'down' : 'up',
-              icon: Heart,
-              color: 'pink'
-            },
-            {
-              title: 'Total Posts',
-              value: formatNumber(response.data.total_posts || 0),
-              change: response.data.posts_change || '+0%',
-              trend: (response.data.posts_change || '').startsWith('-') ? 'down' : 'up',
-              icon: MessageSquare,
-              color: 'green'
-            },
-            {
-              title: 'Shares',
-              value: formatNumber(response.data.shares || 0),
-              change: response.data.shares_change || '+0%',
-              trend: (response.data.shares_change || '').startsWith('-') ? 'down' : 'up',
-              icon: Share2,
-              color: 'purple'
-            },
-            {
-              title: 'Page Views',
-              value: formatNumber(response.data.page_views || 0),
-              change: response.data.views_change || '+0%',
-              trend: (response.data.views_change || '').startsWith('-') ? 'down' : 'up',
-              icon: Eye,
-              color: 'orange'
-            }
-          ]);
-        }
+        console.log('📊 Fetching metrics from:', url);
+        console.log('🏙️ City:', selectedCity, '⏱️ Time Range:', timeRange);
+
+        const response = await axios.get(url);
+        const data = response.data;
+
+        // ✅ TRANSFORM BACKEND DATA TO MATCH COMPONENT STRUCTURE
+        const fetchedMetrics: Metrics = {
+          totalVisitors: data.total_visitors || defaultMetrics.totalVisitors,
+          socialEngagement: data.social_engagement || defaultMetrics.socialEngagement,
+          totalPosts: data.total_posts || defaultMetrics.totalPosts,
+          shares: data.shares || defaultMetrics.shares,
+          pageViews: data.page_views || defaultMetrics.pageViews,
+          visitorsTrend: data.visitors_trend || defaultMetrics.visitorsTrend,
+          engagementTrend: data.engagement_trend || defaultMetrics.engagementTrend,
+          postsTrend: data.posts_trend || defaultMetrics.postsTrend,
+          sharesTrend: data.shares_trend || defaultMetrics.sharesTrend,
+          viewsTrend: data.views_trend || defaultMetrics.viewsTrend,
+        };
+
+        console.log('✅ Metrics loaded:', fetchedMetrics);
+        setMetrics(fetchedMetrics);
       } catch (error) {
-        console.log('Using default metrics data');
-        // Keep default metrics if API fails
+        console.error('❌ Error fetching metrics:', error);
+        // Keep default metrics on error
+        setMetrics(defaultMetrics);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMetrics();
-  }, [selectedCity, timeRange]); // Re-fetch when filters change
+  }, [selectedCity, timeRange]); // ✅ RE-FETCH WHEN CITY OR TIME RANGE CHANGES
 
-  // Helper function to format large numbers
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  };
+  if (loading) {
+    return <div className="text-gray-900">⏳ Loading metrics...</div>;
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      {metrics.map((metric) => {
-        const Icon = metric.icon;
-        const TrendIcon = metric.trend === 'up' ? TrendingUp : TrendingDown;
-        
-        return (
-          <Card key={metric.title} className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-lg ${colorMap[metric.color as keyof typeof colorMap]}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className={`flex items-center gap-1 text-xs font-medium ${
-                  metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  <TrendIcon className="w-3 h-3" />
-                  <span>{metric.change}</span>
-                </div>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 mb-1">{metric.value}</p>
-                <p className="text-sm text-gray-900">{metric.title}</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Total Visitors Card */}
+      <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+            <span>👥 Total Visitors</span>
+            <Eye className="w-4 h-4 text-blue-600" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-gray-900">
+            {(metrics.totalVisitors / 1000000).toFixed(1)}M
+          </div>
+          <div className="flex items-center gap-1 mt-2 text-sm">
+            {metrics.visitorsTrend >= 0 ? (
+              <>
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <span className="text-green-600 font-semibold">+{metrics.visitorsTrend.toFixed(1)}%</span>
+              </>
+            ) : (
+              <>
+                <TrendingDown className="w-4 h-4 text-red-600" />
+                <span className="text-red-600 font-semibold">{metrics.visitorsTrend.toFixed(1)}%</span>
+              </>
+            )}
+            <span className="text-gray-500">vs last period</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Social Engagement Card */}
+      <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+            <span>❤️ Social Engagement</span>
+            <Heart className="w-4 h-4 text-red-600" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-gray-900">
+            {(metrics.socialEngagement / 1000).toFixed(0)}K
+          </div>
+          <div className="flex items-center gap-1 mt-2 text-sm">
+            {metrics.engagementTrend >= 0 ? (
+              <>
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <span className="text-green-600 font-semibold">+{metrics.engagementTrend.toFixed(1)}%</span>
+              </>
+            ) : (
+              <>
+                <TrendingDown className="w-4 h-4 text-red-600" />
+                <span className="text-red-600 font-semibold">{metrics.engagementTrend.toFixed(1)}%</span>
+              </>
+            )}
+            <span className="text-gray-500">vs last period</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Total Posts Card */}
+      <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+            <span>💬 Total Posts</span>
+            <MessageCircle className="w-4 h-4 text-purple-600" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-gray-900">
+            {(metrics.totalPosts / 1000).toFixed(1)}K
+          </div>
+          <div className="flex items-center gap-1 mt-2 text-sm">
+            {metrics.postsTrend >= 0 ? (
+              <>
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <span className="text-green-600 font-semibold">+{metrics.postsTrend.toFixed(1)}%</span>
+              </>
+            ) : (
+              <>
+                <TrendingDown className="w-4 h-4 text-red-600" />
+                <span className="text-red-600 font-semibold">{metrics.postsTrend.toFixed(1)}%</span>
+              </>
+            )}
+            <span className="text-gray-500">vs last period</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Shares Card */}
+      <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+            <span>📤 Shares</span>
+            <Share2 className="w-4 h-4 text-blue-500" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-gray-900">
+            {(metrics.shares / 1000).toFixed(1)}K
+          </div>
+          <div className="flex items-center gap-1 mt-2 text-sm">
+            {metrics.sharesTrend >= 0 ? (
+              <>
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <span className="text-green-600 font-semibold">+{metrics.sharesTrend.toFixed(1)}%</span>
+              </>
+            ) : (
+              <>
+                <TrendingDown className="w-4 h-4 text-red-600" />
+                <span className="text-red-600 font-semibold">{metrics.sharesTrend.toFixed(1)}%</span>
+              </>
+            )}
+            <span className="text-gray-500">vs last period</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Page Views Card */}
+      <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-gray-600 flex items-center justify-between">
+            <span>👁️ Page Views</span>
+            <Eye className="w-4 h-4 text-orange-600" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-gray-900">
+            {(metrics.pageViews / 1000000).toFixed(1)}M
+          </div>
+          <div className="flex items-center gap-1 mt-2 text-sm">
+            {metrics.viewsTrend >= 0 ? (
+              <>
+                <TrendingUp className="w-4 h-4 text-green-600" />
+                <span className="text-green-600 font-semibold">+{metrics.viewsTrend.toFixed(1)}%</span>
+              </>
+            ) : (
+              <>
+                <TrendingDown className="w-4 h-4 text-red-600" />
+                <span className="text-red-600 font-semibold">{metrics.viewsTrend.toFixed(1)}%</span>
+              </>
+            )}
+            <span className="text-gray-500">vs last period</span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

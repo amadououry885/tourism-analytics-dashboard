@@ -50,12 +50,15 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       try {
         setLoading(true);
         
-        // Fetch popular destinations
-        const response = await axios.get('http://localhost:8001/api/places/');
+        // ✅ BUILD CITY FILTER PARAMETER
+        const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
+        
+        // Fetch popular destinations - WITH CITY FILTER
+        const response = await axios.get(`http://localhost:8000/api/places/${cityParam}`);
         const places = response.data.results || [];
         
-        // Fetch least visited destinations
-        const leastResponse = await axios.get('http://localhost:8001/api/analytics/places/least-visited/?limit=3');
+        // Fetch least visited destinations - WITH CITY FILTER - ✅ CHANGED FROM 8001 TO 8000
+        const leastResponse = await axios.get(`http://localhost:8000/api/analytics/places/least-visited/${cityParam}`);
         const leastPlaces = leastResponse.data || [];
         
         // Only update if we have data from backend
@@ -107,7 +110,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     };
 
     fetchDestinations();
-  }, [selectedCity, timeRange]);
+  }, [selectedCity, timeRange]); // ✅ TRIGGER WHEN CITY CHANGES
 
   if (loading) {
     return <div className="text-gray-900">Loading destinations...</div>;

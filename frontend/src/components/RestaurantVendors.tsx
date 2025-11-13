@@ -44,11 +44,15 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
 
   // Fetch data from API
   useEffect(() => {
-    const fetchRestaurants = async () => {
-      setIsLoading(true);
-      
+    const fetchVendors = async () => {
       try {
-        const response = await axios.get('http://localhost:8001/api/vendors/');
+        setIsLoading(true);
+        
+        // ✅ BUILD CITY FILTER PARAMETER
+        const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
+        
+        // Fetch vendors - WITH CITY FILTER
+        const response = await axios.get(`http://localhost:8000/api/vendors/${cityParam}`);
         const vendors = response.data.results || [];
         
         // Transform vendor data to restaurant format
@@ -77,7 +81,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       }
     };
 
-    fetchRestaurants();
+    fetchVendors();
   }, [selectedCity]);
 
   // Filter and search logic
@@ -89,7 +93,11 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
     const matchesCuisine = selectedCuisine === 'all' || 
       restaurant.cuisine.toLowerCase() === selectedCuisine.toLowerCase();
     
-    return matchesSearch && matchesCuisine;
+    // ✅ ADD CITY FILTER
+    const matchesCity = selectedCity === 'all' || 
+      restaurant.city === selectedCity;
+    
+    return matchesSearch && matchesCuisine && matchesCity;
   });
 
   // Get unique cuisines for the filter

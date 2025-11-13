@@ -76,6 +76,7 @@ const AdminDashboard: React.FC = () => {
     start_date: '',
     end_date: '',
     category: '',
+    city: '',  // ✅ ADD CITY FIELD
   });
 
   const [transportForm, setTransportForm] = useState({
@@ -85,6 +86,7 @@ const AdminDashboard: React.FC = () => {
     arrival_location: '',
     duration_minutes: '',
     price: '',
+    city: '',  // ✅ ADD CITY FIELD
   });
 
   const eventCategories = [
@@ -103,6 +105,14 @@ const AdminDashboard: React.FC = () => {
     { value: 'Ferry', label: '⛴️ Ferry' },
     { value: 'Taxi', label: '🚕 Taxi' },
     { value: 'Shuttle', label: '🚐 Shuttle' },
+  ];
+
+  const cityOptions = [
+    { value: 'Alor Setar', label: '🏛️ Alor Setar' },
+    { value: 'Langkawi', label: '🏝️ Langkawi' },
+    { value: 'Sungai Petani', label: '🌳 Sungai Petani' },
+    { value: 'Kedah Darul Aman Negara', label: '👑 Kedah Darul Aman Negara' },
+    { value: 'Kuah', label: '⛵ Kuah' },
   ];
 
   useEffect(() => {
@@ -256,6 +266,7 @@ const AdminDashboard: React.FC = () => {
       start_date: '',
       end_date: '',
       category: '',
+      city: '',  // ✅ RESET CITY
     });
     setEditingEvent(null);
     setShowEventModal(false);
@@ -269,6 +280,7 @@ const AdminDashboard: React.FC = () => {
       arrival_location: '',
       duration_minutes: '',
       price: '',
+      city: '',  // ✅ RESET CITY
     });
     setEditingTransport(null);
     setShowTransportModal(false);
@@ -524,6 +536,7 @@ const AdminDashboard: React.FC = () => {
                             start_date: event.start_date,
                             end_date: event.end_date,
                             category: event.category,
+                            city: event.city || '',  // ✅ ADD CITY FIELD WHEN EDITING
                           });
                           setShowEventModal(true);
                         }}
@@ -625,6 +638,7 @@ const AdminDashboard: React.FC = () => {
                             arrival_location: route.arrival_location,
                             duration_minutes: route.duration_minutes.toString(),
                             price: route.price.toString(),
+                            city: route.city || '',  // ✅ ADD CITY FIELD WHEN EDITING
                           });
                           setShowTransportModal(true);
                         }}
@@ -706,6 +720,21 @@ const AdminDashboard: React.FC = () => {
                   required
                   icon={<MapPin className="w-5 h-5" />}
                   hint="Include the venue name and city"
+                />
+
+                <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                  <h3 className="font-bold text-purple-900 mb-1">📍 City</h3>
+                  <p className="text-sm text-purple-700">Which city is this event in?</p>
+                </div>
+
+                <FormSelect
+                  label="📍 City"
+                  name="city"
+                  value={eventForm.city}
+                  onChange={(e) => setEventForm({...eventForm, city: e.target.value})}
+                  options={cityOptions}
+                  required
+                  hint="Select the city where the event will take place"
                 />
 
                 <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
@@ -853,6 +882,23 @@ const AdminDashboard: React.FC = () => {
                       options={transportTypes}
                       required
                       hint="💡 Choose the vehicle type tourists will use"
+                    />
+                  </div>
+
+                  <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                    <h3 className="font-bold text-purple-900 mb-1">📍 City</h3>
+                    <p className="text-sm text-purple-700">Which city is this route in?</p>
+                  </div>
+
+                  <div className="pl-4">
+                    <FormSelect
+                      label="📍 City"
+                      name="city"
+                      value={transportForm.city}
+                      onChange={(e) => setTransportForm({...transportForm, city: e.target.value})}
+                      options={cityOptions}
+                      required
+                      hint="Select the city where this transport route operates"
                     />
                   </div>
 
