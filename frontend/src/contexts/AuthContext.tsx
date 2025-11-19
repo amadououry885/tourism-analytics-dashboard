@@ -60,7 +60,7 @@ interface LoginResponse {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Change this if your backend runs on a different port
-const API_BASE_URL = 'http://localhost:8000/api'; // or http://127.0.0.1:8000/api
+const API_BASE_URL = 'http://127.0.0.1:8000/api'; // Updated to match actual backend port
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);

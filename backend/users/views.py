@@ -4,6 +4,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import User
 from .serializers import UserSerializer, UserRegistrationSerializer, UserApprovalSerializer
+from .emails import send_approval_email, send_rejection_email
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -97,9 +101,17 @@ def approve_user(request, user_id):
         user.is_active = True
         user.save(update_fields=['is_approved', 'is_active'])
         
+        # Send approval email notification
+        email_sent = send_approval_email(user)
+        if email_sent:
+            logger.info(f"Approval email sent to {user.email}")
+        else:
+            logger.warning(f"Failed to send approval email to {user.email}, but user was approved")
+        
         return Response({
             'message': f'User {user.username} approved successfully',
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user).data,
+            'email_sent': email_sent
         }, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response(
@@ -115,6 +127,11 @@ def reject_user(request, user_id):
     Admin rejects/deactivates a user (admin only).
     Only vendor and stay_owner accounts can be rejected.
     Admin accounts and tourists are not subject to rejection.
+    
+    Request body (optional):
+        {
+            "reason": "Optional explanation for rejection"
+        }
     """
     # Check if user is admin
     if request.user.role != 'admin':
@@ -133,12 +150,23 @@ def reject_user(request, user_id):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Get optional rejection reason from request body
+        reason = request.data.get('reason', None) if request.data else None
+        
         user.is_active = False
         user.is_approved = False
         user.save(update_fields=['is_active', 'is_approved'])
         
+        # Send rejection email notification with reason
+        email_sent = send_rejection_email(user, reason=reason)
+        if email_sent:
+            logger.info(f"Rejection email sent to {user.email}")
+        else:
+            logger.warning(f"Failed to send rejection email to {user.email}, but user was rejected")
+        
         return Response({
-            'message': f'User {user.username} rejected/deactivated successfully'
+            'message': f'User {user.username} rejected/deactivated successfully',
+            'email_sent': email_sent
         }, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response(

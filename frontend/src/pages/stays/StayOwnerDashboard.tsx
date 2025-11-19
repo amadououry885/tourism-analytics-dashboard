@@ -38,6 +38,9 @@ interface Stay {
   is_active: boolean;
   owner?: number;
   owner_username?: string;
+  booking_com_url?: string;
+  agoda_url?: string;
+  booking_provider?: string;
 }
 
 const StayOwnerDashboard: React.FC = () => {
@@ -57,6 +60,9 @@ const StayOwnerDashboard: React.FC = () => {
     landmark: '',
     lat: '',
     lon: '',
+    booking_com_url: '',
+    agoda_url: '',
+    booking_provider: 'booking.com',
   });
 
   const stayTypes = [
@@ -168,6 +174,9 @@ const StayOwnerDashboard: React.FC = () => {
       landmark: stay.landmark || '',
       lat: stay.lat?.toString() || '',
       lon: stay.lon?.toString() || '',
+      booking_com_url: stay.booking_com_url || '',
+      agoda_url: stay.agoda_url || '',
+      booking_provider: stay.booking_provider || 'booking.com',
     });
     setShowAddModal(true);
   };
@@ -182,6 +191,9 @@ const StayOwnerDashboard: React.FC = () => {
       landmark: '',
       lat: '',
       lon: '',
+      booking_com_url: '',
+      agoda_url: '',
+      booking_provider: 'booking.com',
     });
     setEditingStay(null);
     setShowAddModal(false);
@@ -487,6 +499,58 @@ const StayOwnerDashboard: React.FC = () => {
                   hint="You can skip this"
                 />
               </div>
+
+              {/* Step 6: Booking Platform Integration */}
+              <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded">
+                <h3 className="font-bold text-indigo-900 mb-1">🔗 Step 6: Online Booking Links</h3>
+                <p className="text-sm text-indigo-700">Add links to your property on Booking.com or Agoda</p>
+              </div>
+
+              <FormSelect
+                label="Booking Provider"
+                name="booking_provider"
+                value={formData.booking_provider}
+                onChange={(e) => setFormData({...formData, booking_provider: e.target.value})}
+                options={[
+                  { value: 'booking.com', label: '🔵 Booking.com' },
+                  { value: 'agoda', label: '🟣 Agoda' },
+                  { value: 'both', label: '🎯 Both Platforms' },
+                  { value: 'direct', label: '📞 Direct Booking Only' },
+                ]}
+                hint="Where can guests book your property online?"
+              />
+
+              {(formData.booking_provider === 'booking.com' || formData.booking_provider === 'both') && (
+                <FormInput
+                  label="Booking.com Property URL"
+                  name="booking_com_url"
+                  type="url"
+                  value={formData.booking_com_url}
+                  onChange={(e) => setFormData({...formData, booking_com_url: e.target.value})}
+                  placeholder="https://www.booking.com/hotel/my/your-property.html"
+                  hint="Copy the full URL from your Booking.com property page"
+                />
+              )}
+
+              {(formData.booking_provider === 'agoda' || formData.booking_provider === 'both') && (
+                <FormInput
+                  label="Agoda Property URL"
+                  name="agoda_url"
+                  type="url"
+                  value={formData.agoda_url}
+                  onChange={(e) => setFormData({...formData, agoda_url: e.target.value})}
+                  placeholder="https://www.agoda.com/your-property"
+                  hint="Copy the full URL from your Agoda property page"
+                />
+              )}
+
+              {formData.booking_provider === 'direct' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>💡 Direct Booking:</strong> Guests will be able to search for your property on Booking.com using your property name and location.
+                  </p>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-6 border-t">

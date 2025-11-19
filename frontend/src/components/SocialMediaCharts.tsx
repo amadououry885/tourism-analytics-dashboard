@@ -9,35 +9,20 @@ interface SocialMediaChartsProps {
   timeRange?: string;
 }
 
-const defaultEngagementData = [
-  { date: 'Jan', likes: 45000, comments: 12000, shares: 8000 },
-  { date: 'Feb', likes: 52000, comments: 15000, shares: 9500 },
-  { date: 'Mar', likes: 48000, comments: 13500, shares: 8700 },
-  { date: 'Apr', likes: 61000, comments: 18000, shares: 11200 },
-  { date: 'May', likes: 55000, comments: 16500, shares: 10100 },
-  { date: 'Jun', likes: 67000, comments: 19800, shares: 12800 },
-  { date: 'Jul', likes: 72000, comments: 21000, shares: 14500 },
-];
-
-const defaultPlatformData = [
-  { platform: 'Instagram', engagement: 145000 },
-  { platform: 'Facebook', engagement: 98000 },
-  { platform: 'TikTok', engagement: 87000 },
-  { platform: 'Twitter', engagement: 56000 },
-  { platform: 'YouTube', engagement: 72000 },
-];
-
 export function SocialMediaCharts({ detailed = false, selectedCity = 'all', timeRange = 'month' }: SocialMediaChartsProps) {
-  const [engagementData, setEngagementData] = useState(defaultEngagementData);
-  const [platformData, setPlatformData] = useState(defaultPlatformData);
-  const [loading, setLoading] = useState(false);
+  const [engagementData, setEngagementData] = useState<any[]>([]);
+  const [platformData, setPlatformData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSocialMediaData = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         const params = new URLSearchParams();
-        if (selectedCity) {
+        if (selectedCity && selectedCity !== 'all') {
           params.append('city', selectedCity);
         }
         if (timeRange) {
@@ -45,28 +30,59 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         }
 
         // Fetch engagement trends
-        const engagementResponse = await axios.get(`http://localhost:8001/api/analytics/social-engagement/?${params.toString()}`);
-        if (engagementResponse.data && engagementResponse.data.length > 0) {
-          setEngagementData(engagementResponse.data);
-        }
+        const engagementResponse = await axios.get(`/api/analytics/social-engagement/?${params.toString()}`);
+        setEngagementData(engagementResponse.data || []);
 
         // Fetch platform data if in detailed view
         if (detailed) {
-          const platformResponse = await axios.get(`http://localhost:8001/api/analytics/platform-performance/?${params.toString()}`);
-          if (platformResponse.data && platformResponse.data.length > 0) {
-            setPlatformData(platformResponse.data);
-          }
+          const platformResponse = await axios.get(`/api/analytics/social-platforms/?${params.toString()}`);
+          setPlatformData(platformResponse.data || []);
         }
       } catch (error) {
-        console.log('Using default social media data');
-        // Keep default data if API fails
+        console.error('Error fetching social media data:', error);
+        setError('Failed to load social media data');
       } finally {
         setLoading(false);
       }
     };
 
     fetchSocialMediaData();
-  }, [selectedCity, timeRange, detailed]); // Re-fetch when filters change
+  }, [selectedCity, timeRange, detailed]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-gray-50 border-gray-200 animate-pulse">
+          <CardHeader>
+            <div className="h-6 bg-gray-200 rounded w-48"></div>
+            <div className="h-4 bg-gray-200 rounded w-64 mt-2"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] bg-gray-200 rounded"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-800 font-semibold">⚠️ {error}</p>
+        <p className="text-sm text-red-600 mt-2">Please check your connection or try again later.</p>
+      </div>
+    );
+  }
+
+  if (engagementData.length === 0) {
+    return (
+      <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-yellow-800 font-semibold">📊 No social media data available yet</p>
+        <p className="text-sm text-yellow-600 mt-2">Data will be collected automatically every 2 hours.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <Card className="bg-white border-gray-200 shadow-sm">

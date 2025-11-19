@@ -21,6 +21,32 @@ class Stay(models.Model):
     distanceKm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     
+    # External booking integration
+    booking_com_url = models.URLField(
+        max_length=500, 
+        blank=True, 
+        null=True, 
+        help_text="Direct link to this property on Booking.com"
+    )
+    agoda_url = models.URLField(
+        max_length=500, 
+        blank=True, 
+        null=True, 
+        help_text="Direct link to this property on Agoda"
+    )
+    booking_provider = models.CharField(
+        max_length=50, 
+        blank=True, 
+        choices=[
+            ('booking.com', 'Booking.com'),
+            ('agoda', 'Agoda'),
+            ('both', 'Both Platforms'),
+            ('direct', 'Direct Booking'),
+        ], 
+        default='booking.com',
+        help_text="Primary booking platform for this property"
+    )
+    
     # Ownership tracking (nullable for existing records)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,

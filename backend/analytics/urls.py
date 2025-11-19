@@ -42,6 +42,11 @@ urlpatterns = [
     path('analytics/social/metrics/', vn.SocialMetricsView.as_view(), name='analytics-social-metrics'),
     path('analytics/social/platforms/', vn.SocialPlatformsView.as_view(), name='analytics-social-platforms'),
     path('analytics/social/engagement/', vn.SocialEngagementView.as_view(), name='analytics-social-engagement'),
+    
+    # URL aliases with hyphens (for frontend compatibility)
+    path('analytics/social-platforms/', vn.SocialPlatformsView.as_view(), name='analytics-social-platforms-alt'),
+    path('analytics/sentiment/keywords/', vn.TopKeywordsView.as_view(), name='analytics-sentiment-keywords'),
+    
     path('analytics/places/popular/', vn.PopularPlacesView.as_view(), name='analytics-places-popular'),
     path('analytics/places/trending/', vn.TrendingPlacesView.as_view(), name='analytics-places-trending'),
     path('analytics/places/nearby/', vn.NearbyPlacesView.as_view(), name='analytics-places-nearby'),
@@ -53,4 +58,7 @@ urlpatterns = [
     # Optional legacy aliases for backward compatibility
     re_path(r'^sentiment/summary/?$', vn.SentimentSummaryView.as_view(), name='sentiment-summary'),
     re_path(r'^attractions/top/?$', vs.top_attractions, name='attractions-top'),
+    
+    # Overview metrics endpoint (for dashboard) - move from views.py to views_safe.py
+    path('overview-metrics/', vs.overview_metrics, name='overview-metrics'),
 ]

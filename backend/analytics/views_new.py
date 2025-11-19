@@ -162,7 +162,7 @@ class PopularPlacesView(APIView):
         places = (
             Place.objects
             .annotate(
-                posts=Count('posts', filter=Q(
+                posts_count=Count('posts', filter=Q(
                     posts__created_at__date__range=[start, end]
                 )),
                 total_engagement=Sum(
@@ -170,11 +170,22 @@ class PopularPlacesView(APIView):
                     filter=Q(posts__created_at__date__range=[start, end])
                 )
             )
-            .filter(posts__gt=0)
+            .filter(posts_count__gt=0)
             .order_by('-total_engagement')[:10]
         )
         
-        return Response(PlaceSerializer(places, many=True).data)
+        results = []
+        for p in places:
+            results.append({
+                'id': p.id,
+                'name': p.name,
+                'slug': p.name.lower().replace(' ', '-'),
+                'posts': getattr(p, 'posts_count', 0),
+                'engagement': getattr(p, 'total_engagement', 0) or 0,
+                'category': p.category or 'Uncategorized'
+            })
+        
+        return Response(results)
 
 class TrendingPlacesView(APIView):
     """Get places with rising engagement"""
@@ -286,22 +297,17 @@ class OverviewMetricsView(APIView):
             total_shares=Sum('shares')
         )
         
-        # Calculate total visitors (approximation based on engagement)
-        total_visitors = (metrics['total_likes'] or 0) + (metrics['total_comments'] or 0)
-        social_engagement = (metrics['total_likes'] or 0) + (metrics['total_comments'] or 0) + (metrics['total_shares'] or 0)
+        # Calculate total visitors (now just comments count)
+        total_visitors = (metrics['total_comments'] or 0)
+        social_engagement = (metrics['total_likes'] or 0)  # Now just likes
         page_views = total_visitors * 2  # Rough estimation
         
         return Response({
-            'total_visitors': total_visitors,
-            'visitors_change': '+12.5%',
-            'social_engagement': social_engagement,
-            'engagement_change': '+23.1%',
+            'total_visitors': total_visitors,  # This is Comments count
+            'social_engagement': social_engagement,  # This is Likes count
             'total_posts': metrics['total_posts'] or 0,
-            'posts_change': '+8.3%',
             'shares': metrics['total_shares'] or 0,
-            'shares_change': '-3.2%',
-            'page_views': page_views,
-            'views_change': '+18.7%'
+            'page_views': page_views
         })
 
 

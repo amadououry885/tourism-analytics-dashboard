@@ -1,8 +1,16 @@
+import React from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { MapPin, Users, TrendingUp } from 'lucide-react';
 
+type MarkerItem = { id?: string | number; position: [number, number]; title?: string };
+
 interface MapViewProps {
+  center?: [number, number];
+  zoom?: number;
+  markers?: MarkerItem[];
   timeRange?: string;
   selectedCity: string;
 }
@@ -15,17 +23,22 @@ const cities = [
   { id: 'jitra', name: 'Jitra', visitors: 52000, trend: '+9.8%', color: '#ec4899', lat: 6.2683, lng: 100.4225 },
 ];
 
-export function MapView({ selectedCity }: MapViewProps) {
-  // Center of Kedah for the map
-  const kedahCenter = { lat: 6.1184, lng: 100.3685 };
-  
+function SetViewOnChange({ center, zoom }: { center?: [number, number]; zoom?: number }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (!center) return;
+    // smooth animate to new center/zoom
+    map.setView(center, zoom ?? map.getZoom(), { animate: true });
+  }, [center, zoom, map]);
+  return null;
+}
+
+const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3667], zoom = 8 }) => {
   // Create markers parameter for Google Maps
   const markers = cities
     .filter(city => selectedCity === 'all' || selectedCity === city.id)
-    .map(city => `markers=color:${encodeURIComponent(city.color.replace('#', '0x'))}%7Clabel:${city.name.charAt(0)}%7C${city.lat},${city.lng}`)
-    .join('&');
-
-  const mapUrl = `https://www.google.com/maps/embed/v1/view?key=YOUR_GOOGLE_MAPS_API_KEY&center=${kedahCenter.lat},${kedahCenter.lng}&zoom=9&maptype=roadmap`;
+    .map(city => ({ position: [city.lat, city.lng], title: city.name }))
+    .slice(0, 5); // Limit to 5 markers for performance
 
   return (
     <Card className="bg-white border-gray-200 shadow-sm">
@@ -36,16 +49,24 @@ export function MapView({ selectedCity }: MapViewProps) {
       <CardContent>
         {/* Google Maps Embed */}
         <div className="relative w-full h-[400px] bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-          <iframe
-            width="100%"
-            height="100%"
-            style={{ border: 0 }}
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-            src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1015565.4743935394!2d99.80959905!3d6.1184!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x304b614c6b7c8c85%3A0x3039d80b2b75c60!2sKedah%2C%20Malaysia!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s`}
-            className="rounded-lg"
-          />
+          <MapContainer 
+            center={center} 
+            zoom={zoom} 
+            scrollWheelZoom={false} 
+            style={{ height: '100%', width: '100%' }}
+            key={`map-${center[0]}-${center[1]}`}
+          >
+            {center && <SetViewOnChange center={center} zoom={zoom} />}
+            <TileLayer
+              attribution='&copy; OpenStreetMap contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {markers.map((m, index) => (
+              <Marker key={`marker-${index}-${m.position[0]}-${m.position[1]}`} position={m.position}>
+                <Popup>{m.title}</Popup>
+              </Marker>
+            ))}
+          </MapContainer>
           {/* Overlay with location info */}
           <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 border border-gray-200 shadow-lg">
             <div className="flex items-center gap-2 text-xs text-gray-700">
@@ -98,4 +119,6 @@ export function MapView({ selectedCity }: MapViewProps) {
       </CardContent>
     </Card>
   );
-}
+};
+
+export default MapView;

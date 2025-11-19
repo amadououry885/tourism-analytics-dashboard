@@ -10,9 +10,10 @@ import { EventsTimeline } from '../components/EventsTimeline';
 import { AccommodationStats } from '../components/AccommodationStats';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
 import { RestaurantVendors } from '../components/RestaurantVendors';
-import { MapView } from '../components/MapView';
+import MapView from '../components/MapView';
 import { AccommodationBooking } from '../components/AccommodationBooking';
 import { Link } from 'react-router-dom';
+import { CitySelector } from '../components/CitySelector'; // ✅ Import CitySelector
 
 interface City {
   id: number;
@@ -23,12 +24,14 @@ interface City {
 export default function TourismDashboard() {
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
-  const [cities, setCities] = useState<City[]>([]);
+  // We no longer need the 'cities' state here, as CitySelector handles it.
 
+  // This useEffect is no longer needed as CitySelector fetches its own cities.
+  /*
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/analytics/places/list/');
+        const response = await axios.get('http://127.0.0.1:8001/api/analytics/places/list/');
         setCities(response.data);
       } catch (error) {
         console.error('Error fetching cities:', error);
@@ -37,6 +40,7 @@ export default function TourismDashboard() {
 
     fetchCities();
   }, []);
+  */
 
   return (
     <div className="min-h-screen bg-white">
@@ -51,28 +55,21 @@ export default function TourismDashboard() {
             <div className="flex items-center gap-4">
               <Link
                 to="/business"
-                className="px-4 py-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                className="px-4 py-2 text-sm bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
               >
                 For Business
               </Link>
               <Link
                 to="/sign-in"
-                className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 font-medium"
+                className="px-4 py-2 text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
               >
                 Sign In
               </Link>
-              <select 
-                value={selectedCity} 
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Cities</option>
-                {cities.map((city) => (
-                  <option key={city.id} value={city.slug}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
+              {/* ✅ Replace the basic select with the advanced CitySelector component */}
+              <CitySelector 
+                selectedCity={selectedCity}
+                onCityChange={setSelectedCity}
+              />
               <select 
                 value={timeRange} 
                 onChange={(e) => setTimeRange(e.target.value)}
@@ -150,7 +147,8 @@ export default function TourismDashboard() {
                 </div>
                 <AccommodationStats selectedCity={selectedCity} timeRange={timeRange} />
               </div>
-              <MapView selectedCity={selectedCity} timeRange={timeRange} />
+              {/* MapView temporarily disabled due to React 18 compatibility issue */}
+              {/* <MapView selectedCity={selectedCity} timeRange={timeRange} /> */}
             </div>
           </TabsContent>
 

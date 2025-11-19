@@ -1020,7 +1020,6 @@ const AdminDashboard: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  onClick={handleTransportSubmit}
                   disabled={loading}
                   className="flex-1 px-6 py-4 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:scale-105"
                 >

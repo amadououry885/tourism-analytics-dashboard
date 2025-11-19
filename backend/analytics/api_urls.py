@@ -65,18 +65,39 @@ urlpatterns = [
     
     # Sentiment Analysis Endpoints
     path("sentiment/summary", SentimentSummaryView.as_view(), name="api-sentiment-summary"),
+    path("sentiment/summary/", SentimentSummaryView.as_view()),
     path("sentiment/by-category", SentimentByCategoryView.as_view(), name="api-sentiment-by-category"),
+    path("sentiment/by-category/", SentimentByCategoryView.as_view()),
     path("sentiment/keywords", TopKeywordsView.as_view(), name="api-sentiment-keywords"),
+    path("sentiment/keywords/", TopKeywordsView.as_view()),
     
     # Social Media Analytics Endpoints
     path("social/metrics", SocialMetricsView.as_view(), name="api-social-metrics"),
+    path("social/metrics/", SocialMetricsView.as_view()),
     path("social/platforms", SocialPlatformsView.as_view(), name="api-social-platforms"),
+    path("social/platforms/", SocialPlatformsView.as_view()),
     path("social/engagement", SocialEngagementView.as_view(), name="api-social-engagement"),
+    path("social/engagement/", SocialEngagementView.as_view()),
+    
+    # URL aliases with hyphens (for frontend compatibility)
+    path("social-platforms", SocialPlatformsView.as_view()),
+    path("social-platforms/", SocialPlatformsView.as_view()),
+    path("social-engagement", SocialEngagementView.as_view()),
+    path("social-engagement/", SocialEngagementView.as_view()),
+    path("social-metrics", SocialMetricsView.as_view()),
+    path("social-metrics/", SocialMetricsView.as_view()),
+    
+    # Overview/Dashboard Metrics
+    path("overview-metrics", OverviewMetricsView.as_view(), name="api-overview-metrics"),
+    path("overview-metrics/", OverviewMetricsView.as_view()),
 
     # Popular Places and Rankings
     path("places/popular", PopularPlacesView.as_view(), name="api-places-popular"),
+    path("places/popular/", PopularPlacesView.as_view()),
     path("places/trending", TrendingPlacesView.as_view(), name="api-places-trending"),
+    path("places/trending/", TrendingPlacesView.as_view()),
     path("places/nearby", NearbyPlacesView.as_view(), name="api-places-nearby"),
+    path("places/nearby/", NearbyPlacesView.as_view()),
 
     # ---- Phase 1 (existing, kept) ----
     path("metrics/visitors",        visitors_total,     name="metrics-visitors"),

@@ -6,6 +6,8 @@ from django.db.models import Count, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 # Your current models
 from .models import Place, SocialPost
@@ -260,3 +262,62 @@ def hidden_gem(_request):
 @require_GET
 def attractions_top(request):
     return top_attractions(request)
+
+
+# ─────────────────────────────────────────────────────────────
+# Helper function from views.py
+# ─────────────────────────────────────────────────────────────
+
+def _range_from_or_date_params(request):
+    """Helper function to parse date range parameters from request"""
+    fs = request.GET.get("from") or request.GET.get("date_from")
+    ts = request.GET.get("to") or request.GET.get("date_to")
+    today = date.today()
+    start = parse_date(fs) if fs else (today - timedelta(days=30))
+    end = parse_date(ts) if ts else today
+    if not start or not end or start > end:
+        return None, None
+    return start, end
+
+
+# ─────────────────────────────────────────────────────────────
+# Overview metrics endpoint
+# ─────────────────────────────────────────────────────────────
+
+@api_view(["GET"])
+def overview_metrics(request):
+    """
+    GET /api/overview-metrics?from=&to=&city=
+    -> {
+         "totals": {"visitors", "engagement", "posts", "shares", "page_views"},
+         "changes": {"visitors_pct": null, ...}
+       }
+    """
+    start, end = _range_from_or_date_params(request)
+    if not start or not end:
+        return Response({"detail": "Invalid date range"}, status=400)
+
+    city = (request.GET.get("city") or "").strip() or None
+
+    qs = SocialPost.objects.filter(created_at__date__gte=start, created_at__date__lte=end)
+    if city:
+        qs = qs.filter(place__city__iexact=city)
+
+    agg = qs.aggregate(
+        posts=Count("id"),
+        engagement=Coalesce(Sum("likes"), 0) + Coalesce(Sum("comments"), 0) + Coalesce(Sum("shares"), 0),
+        likes=Coalesce(Sum("likes"), 0),
+        comments=Coalesce(Sum("comments"), 0),
+        shares=Coalesce(Sum("shares"), 0),
+    )
+
+    totals = {
+        "visitors": int(agg["posts"]),        # proxy for now
+        "engagement": int(agg["engagement"]),
+        "posts": int(agg["posts"]),
+        "shares": int(agg["shares"]),
+        "page_views": None,                   # not tracked yet
+    }
+    return Response({"totals": totals, "changes": {
+        "visitors_pct": None, "engagement_pct": None, "posts_pct": None, "shares_pct": None, "page_views_pct": None
+    }})

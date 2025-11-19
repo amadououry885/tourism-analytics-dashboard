@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place, SocialPost
+from .models import Place, SocialPost, PostRaw, PostClean, SentimentTopic
 
 
 # ---------- Inline: show posts inside a Place page ----------
@@ -80,3 +80,24 @@ class SocialPostAdmin(admin.ModelAdmin):
         updated = queryset.update(is_tourism=False)
         self.message_user(request, f"Marked {updated} posts as NOT tourism.")
     mark_as_non_tourism.short_description = "Mark selected as NOT tourism ❌"
+
+
+@admin.register(PostRaw)
+class PostRawAdmin(admin.ModelAdmin):
+    list_display = ('post', 'created_at')
+    date_hierarchy = 'created_at'
+
+
+@admin.register(PostClean)
+class PostCleanAdmin(admin.ModelAdmin):
+    list_display = ('raw_post', 'sentiment', 'poi', 'created_at')
+    list_filter = ('sentiment', 'poi')
+    date_hierarchy = 'created_at'
+
+
+@admin.register(SentimentTopic)
+class SentimentTopicAdmin(admin.ModelAdmin):
+    list_display = ('topic', 'sentiment', 'count', 'category', 'date')
+    list_filter = ('sentiment', 'category', 'date')
+    search_fields = ('topic',)
+    date_hierarchy = 'date'

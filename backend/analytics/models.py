@@ -62,6 +62,7 @@ class SocialPost(models.Model):
     likes = models.PositiveIntegerField(default=0)
     comments = models.PositiveIntegerField(default=0)
     shares = models.PositiveIntegerField(default=0)
+    views = models.PositiveIntegerField(default=0)  # ✅ ADDED: To store post views
 
     # Filtering + linkage
     is_tourism = models.BooleanField(default=True)

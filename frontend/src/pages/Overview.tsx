@@ -1,0 +1,101 @@
+import React, { useState, useEffect } from 'react';
+import { CitySelector } from '../components/CitySelector';
+import { HeaderNavTabs } from '../components/HeaderNavTabs';
+import { PopularDestinations } from '../components/PopularDestinations';
+import { KedahMap } from '../components/KedahMap'; // Import the Leaflet map component
+import axios from 'axios';
+
+const Overview: React.FC = () => {
+  const [selectedCity, setSelectedCity] = useState<string>('all');
+  const [cities, setCities] = useState<string[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // ✅ FETCH ALL CITIES FROM PLACES API
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        setLoading(true);
+        
+        console.log('🔍 Fetching cities from Places API...');
+
+        // ✅ Use the main Places API to get all cities
+        const response = await axios.get('/api/analytics/places/list/');
+        const places = response.data;
+        
+        console.log('🏙️ Fetched places from analytics API:', places);
+        
+        // Extract city names from places
+        const cityNames = places.map((place: any) => place.name).sort();
+        
+        console.log(`✅ Total cities found: ${cityNames.length}`, cityNames);
+        setCities(cityNames);
+        
+      } catch (error) {
+        console.error('❌ Error fetching cities:', error);
+        // Fallback to default cities
+        setCities(['Alor Setar', 'Jitra', 'Kulim', 'Langkawi', 'Sungai Petani']);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCities();
+  }, []);
+
+  // ✅ FILTER CITIES BASED ON SEARCH TERM
+  const filteredCities = cities.filter(city =>
+    city.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header Section with Navigation */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Kedah Tourism Analytics</h1>
+          <p className="text-gray-600">Real-time insights and performance metrics</p>
+        </div>
+        <HeaderNavTabs />
+      </div>
+
+      {/* Controls Row */}
+      <div className="flex flex-wrap items-center justify-between mb-8 gap-4">
+        <div></div>
+        <CitySelector selectedCity={selectedCity} onCityChange={setSelectedCity} />
+        <div className="flex items-center gap-2">
+          <select className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm">
+            <option>Last 30 Days</option>
+            <option>Last 7 Days</option>
+            <option>Last 90 Days</option>
+          </select>
+          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm">
+            <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+            Live
+          </button>
+        </div>
+      </div>
+
+      {/* Social Metrics Bar - Placeholder */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-8 text-center text-gray-400">
+        Social Metrics Bar
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left side - Main content */}
+        <div className="lg:col-span-2">
+          <PopularDestinations selectedCity={selectedCity} />
+        </div>
+        
+        {/* Right side - Map */}
+        <div className="lg:col-span-1">
+          <KedahMap selectedCity={selectedCity} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Overview;

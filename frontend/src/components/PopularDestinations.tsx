@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { MapPin, TrendingUp, TrendingDown } from 'lucide-react';
@@ -10,110 +9,242 @@ interface PopularDestinationsProps {
   selectedCity: string;
 }
 
+// Define destination type
 interface Destination {
+  id?: number;
   name: string;
-  visitors: number;
-  posts: number;
-  rating: number;
-  change: string;
-  trend: string;
-  color: string;
+  visitors?: number;
+  image?: string | null;
+  description?: string | null;
 }
-
-// Default/Demo data for presentation
-const defaultTopDestinations: Destination[] = [
-  { name: 'Langkawi Island', visitors: 425000, posts: 28500, rating: 4.8, change: '+15.2%', trend: 'up', color: '#3b82f6' },
-  { name: 'Alor Setar Tower', visitors: 198000, posts: 15200, rating: 4.5, change: '+8.7%', trend: 'up', color: '#10b981' },
-  { name: 'Paddy Museum', visitors: 145000, posts: 9800, rating: 4.3, change: '+12.3%', trend: 'up', color: '#f59e0b' },
-  { name: 'Pedu Lake', visitors: 132000, posts: 8900, rating: 4.6, change: '+5.1%', trend: 'up', color: '#8b5cf6' },
-  { name: 'Zahir Mosque', visitors: 118000, posts: 11200, rating: 4.7, change: '+9.8%', trend: 'up', color: '#ec4899' },
-];
-
-const defaultVisitorDistribution = [
-  { name: 'Langkawi', value: 425000, percentage: 38.5 },
-  { name: 'Alor Setar', value: 198000, percentage: 17.9 },
-  { name: 'Paddy Museum', value: 145000, percentage: 13.1 },
-  { name: 'Pedu Lake', value: 132000, percentage: 11.9 },
-  { name: 'Others', value: 205000, percentage: 18.6 },
-];
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'];
 
 export function PopularDestinations({ selectedCity, timeRange }: PopularDestinationsProps) {
-  const [topDestinations, setTopDestinations] = useState<Destination[]>(defaultTopDestinations);
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [topDestinations, setTopDestinations] = useState<Destination[]>([]);
   const [leastVisited, setLeastVisited] = useState<Destination[]>([]);
-  const [visitorDistribution, setVisitorDistribution] = useState<any[]>(defaultVisitorDistribution);
+  const [postDistribution, setPostDistribution] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDestinations = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Use relative path so Vite proxy forwards to backend (avoid hard-coded ports)
+      const res = await fetch('/api/analytics/places/popular/');
+      if (!res.ok) {
+        throw new Error(`Server responded with ${res.status}`);
+      }
+      const data = await res.json();
+
+      // Expect an array; guard against unexpected shapes
+      if (Array.isArray(data)) {
+        setDestinations(data);
+      } else if (data && Array.isArray(data.results)) {
+        setDestinations(data.results);
+      } else {
+        // fallback: empty array
+        setDestinations([]);
+        console.warn('Unexpected popular places response shape:', data);
+      }
+    } catch (err) {
+      // normalize error to string
+      const msg = err instanceof Error ? err.message : String(err);
+      // If the fetch failed locally, give a helpful hint to the developer/user
+      const hint =
+        msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
+          ? `Unable to reach backend at ${process.env.VITE_BACKEND_URL || 'http://localhost:8000'}. Is the Django server running? Try: cd backend && python manage.py runserver 8000`
+          : '';
+      setError(msg + (hint ? ` — ${hint}` : ''));
+      console.error('Error fetching popular destinations:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchDestinations = async () => {
+    fetchDestinations();
+  }, [fetchDestinations]);
+
+  useEffect(() => {
+    const fetchTopDestinations = async () => {
       try {
         setLoading(true);
-        
-        // ✅ BUILD CITY FILTER PARAMETER
+        setError(null);
+
+        console.log('🔍 Fetching top destinations for city:', selectedCity);
+
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
-        
-        // Fetch popular destinations - WITH CITY FILTER
-        const response = await axios.get(`http://localhost:8000/api/places/${cityParam}`);
-        const places = response.data.results || [];
-        
-        // Fetch least visited destinations - WITH CITY FILTER - ✅ CHANGED FROM 8001 TO 8000
-        const leastResponse = await axios.get(`http://localhost:8000/api/analytics/places/least-visited/${cityParam}`);
-        const leastPlaces = leastResponse.data || [];
-        
-        // Only update if we have data from backend
-        if (places.length > 0) {
-          // Transform places data to match our component structure
+
+        // ✅ Try the analytics places endpoint first
+        let response;
+        try {
+          response = await fetch(`/api/analytics/places/${cityParam}`);
+          if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+          }
+          const data = await response.json();
+          console.log('✅ Response from analytics/places:', data);
+
+          // Handle different response formats
+          const places = data.results || data || [];
+          console.log('📊 Parsed places:', places);
+
+          // Set destinations data
           const destinations = places.slice(0, 5).map((place: any, index: number) => ({
-            name: place.name,
-            visitors: Math.floor(Math.random() * 400000) + 50000,
-            posts: Math.floor(Math.random() * 20000) + 1000,
-            rating: parseFloat((Math.random() * 1.5 + 3.5).toFixed(1)),
-            change: `+${(Math.random() * 15 + 5).toFixed(1)}%`,
-            trend: 'up',
-            color: COLORS[index % COLORS.length]
-          }));
-          
-          setTopDestinations(destinations);
-          
-          // Set distribution data
-          const total = destinations.reduce((sum: number, d: Destination) => sum + d.visitors, 0);
-          const distribution = destinations.map((d: Destination) => ({
-            name: d.name,
-            value: d.visitors,
-            percentage: parseFloat(((d.visitors / total) * 100).toFixed(1))
-          }));
-          setVisitorDistribution(distribution);
-        }
-        
-        // Update least visited if we have backend data
-        if (leastPlaces.length > 0) {
-          const leastDest = leastPlaces.map((place: any, index: number) => ({
-            name: place.name,
-            visitors: place.visitors || 0,
-            posts: place.posts || 0,
-            rating: place.rating || 3.5,
-            change: `-${(Math.random() * 10 + 2).toFixed(1)}%`,
+            name: place.place_name || 'Unknown',
+            posts: place.posts || place.post_count || 0,
+            rating: place.rating || place.average_rating || 0,
+            change: place.change || place.growth_rate || '-0%',
             trend: 'down',
             color: COLORS[index % COLORS.length]
           }));
-          setLeastVisited(leastDest);
+          setTopDestinations(destinations);
+
+          // Set distribution data based on posts
+          const total = destinations.reduce((sum: number, d: Destination) => sum + d.posts, 0);
+          if (total > 0) {
+            const distribution = destinations.map((d: Destination) => ({
+              name: d.name,
+              value: d.posts,
+              percentage: parseFloat(((d.posts / total) * 100).toFixed(1))
+            }));
+            setPostDistribution(distribution);
+          } else {
+            setPostDistribution([]);
+          }
+        } catch (apiError) {
+          console.log('⚠️ analytics/places failed, trying places endpoint...');
+          // Fallback to places endpoint
+          response = await fetch(`/api/places/${cityParam}`);
+          if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+          }
+          const data = await response.json();
+          console.log('✅ Response from places:', data);
+
+          const places = data.results || data || [];
+          const destinations = places.slice(0, 5).map((place: any, index: number) => ({
+            name: place.place_name || 'Unknown',
+            posts: place.posts || place.post_count || 0,
+            rating: place.rating || place.average_rating || 0,
+            change: place.change || place.growth_rate || '-0%',
+            trend: 'down',
+            color: COLORS[index % COLORS.length]
+          }));
+          setTopDestinations(destinations);
+
+          const total = destinations.reduce((sum: number, d: Destination) => sum + d.posts, 0);
+          if (total > 0) {
+            const distribution = destinations.map((d: Destination) => ({
+              name: d.name,
+              value: d.posts,
+              percentage: parseFloat(((d.posts / total) * 100).toFixed(1))
+            }));
+            setPostDistribution(distribution);
+          } else {
+            setPostDistribution([]);
+          }
         }
-        
-        // If no data from backend, keep the default demo data
-      } catch (error) {
-        console.error('Error fetching destinations:', error);
-        // Keep default demo data on error
+
+        // Fetch least visited destinations
+        try {
+          const leastResponse = await fetch(`/api/analytics/places/least-visited/${cityParam}`);
+          if (!leastResponse.ok) {
+            throw new Error(`Server responded with ${leastResponse.status}`);
+          }
+          const leastData = await leastResponse.json();
+          console.log('✅ Response from analytics/places/least-visited:', leastData);
+          const leastPlaces = leastData.results || leastData || [];
+          if (leastPlaces.length > 0) {
+            const leastDest = leastPlaces.map((place: any, index: number) => ({
+              name: place.name,
+              posts: place.posts || 0,
+              rating: place.rating || 0,
+              change: place.change || '-0%',
+              trend: 'down',
+              color: COLORS[index % COLORS.length]
+            }));
+            setLeastVisited(leastDest);
+          } else {
+            setLeastVisited([]);
+          }
+        } catch (error) {
+          console.error('Error fetching least visited destinations:', error);
+          setError('Failed to load least visited destinations');
+          setLeastVisited([]);
+        }
+      } catch (err) {
+        // normalize error to string
+        const msg = err instanceof Error ? err.message : String(err);
+        // If the fetch failed locally, give a helpful hint to the developer/user
+        const hint =
+          msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
+            ? `Unable to reach backend at ${process.env.VITE_BACKEND_URL || 'http://localhost:8000'}. Is the Django server running? Try: cd backend && python manage.py runserver 8000`
+            : '';
+        setError(msg + (hint ? ` — ${hint}` : ''));
+        console.error('Error fetching popular destinations:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDestinations();
-  }, [selectedCity, timeRange]); // ✅ TRIGGER WHEN CITY CHANGES
+    fetchTopDestinations();
+  }, [selectedCity, timeRange]);
 
   if (loading) {
-    return <div className="text-gray-900">Loading destinations...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="space-y-2">
+                  <div className="h-3 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="w-full h-64 bg-gray-200 rounded"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full text-center py-8">
+        <div className="text-red-600 font-medium mb-2">Network Error</div>
+        <div className="text-sm text-gray-600 mb-4">
+          {error}
+        </div>
+        <button
+          onClick={fetchDestinations}
+          className="px-4 py-2 rounded bg-blue-600 text-white"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (destinations.length === 0) {
+    return (
+      <div className="w-full text-center py-8 text-gray-600">
+        No popular destinations available.
+      </div>
+    );
   }
 
   return (
@@ -123,7 +254,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-gray-900">Top 5 Most Popular Destinations</CardTitle>
-            <CardDescription className="text-gray-900">Based on visitor count and social engagement</CardDescription>
+            <CardDescription className="text-gray-900">Based on social engagement</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {topDestinations.map((destination, index) => {
@@ -141,14 +272,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-900">
-                      <span>{destination.visitors.toLocaleString()} visitors</span>
-                      <span>•</span>
                       <span>{destination.posts.toLocaleString()} posts</span>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-1 ${
-                    destination.trend === 'up' ? 'text-green-700' : 'text-red-700'
-                  }`}>
+                  <div className={`flex items-center gap-1 ${destination.trend === 'up' ? 'text-green-700' : 'text-red-700'}`}>
                     <TrendIcon className="w-4 h-4" />
                     <span className="text-sm">{destination.change}</span>
                   </div>
@@ -160,14 +287,14 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-gray-900">Visitor Distribution</CardTitle>
-            <CardDescription className="text-gray-900">Percentage breakdown by destination</CardDescription>
+            <CardTitle className="text-gray-900">Post Distribution</CardTitle>
+            <CardDescription className="text-gray-900">Social engagement breakdown by destination</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={visitorDistribution}
+                  data={postDistribution}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -176,17 +303,17 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {visitorDistribution.map((entry, index) => (
+                  {postDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#ffffff', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                     color: '#111827'
-                  }} 
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -197,8 +324,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       {/* Comparison Chart */}
       <Card className="bg-white border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-gray-900">Visitor Comparison</CardTitle>
-          <CardDescription className="text-gray-900">Monthly visitor counts across top destinations</CardDescription>
+          <CardTitle className="text-gray-900">Social Engagement Comparison</CardTitle>
+          <CardDescription className="text-gray-900">Post counts across top destinations</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={350}>
@@ -206,16 +333,15 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
               <XAxis dataKey="name" stroke="#6b7280" />
               <YAxis stroke="#6b7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#ffffff',
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                   color: '#111827'
-                }} 
+                }}
               />
               <Legend />
-              <Bar dataKey="visitors" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Visitors" />
               <Bar dataKey="posts" fill="#10b981" radius={[8, 8, 0, 0]} name="Social Posts" />
             </BarChart>
           </ResponsiveContainer>
@@ -226,8 +352,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       {leastVisited.length > 0 && (
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-gray-900">Hidden Gems - Least Visited</CardTitle>
-            <CardDescription className="text-gray-900">Underrated destinations worth exploring</CardDescription>
+            <CardTitle className="text-gray-900">Hidden Gems - Least Posted</CardTitle>
+            <CardDescription className="text-gray-900">Destinations with low social engagement</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -240,10 +366,6 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                     </Badge>
                   </div>
                   <div className="space-y-1 text-sm text-gray-900">
-                    <div className="flex items-center justify-between">
-                      <span>Visitors:</span>
-                      <span className="font-medium">{destination.visitors.toLocaleString()}</span>
-                    </div>
                     <div className="flex items-center justify-between">
                       <span>Posts:</span>
                       <span className="font-medium">{destination.posts.toLocaleString()}</span>

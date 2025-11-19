@@ -27,7 +27,7 @@ def transport_modes_summary(request):
     ).values(
         'schedule__transport_mode'
     ).annotate(
-        total_passengers=Sum('current_occupancy')
+        total_passengers=Sum('seats_taken')
     )
     
     last_month_stats = RouteOccupancy.objects.filter(
@@ -35,7 +35,7 @@ def transport_modes_summary(request):
     ).values(
         'schedule__transport_mode'
     ).annotate(
-        total_passengers=Sum('current_occupancy')
+        total_passengers=Sum('seats_taken')
     )
 
     # Calculate growth percentages
@@ -95,7 +95,7 @@ def monthly_transport_usage(request):
         'month',
         'schedule__transport_mode'
     ).annotate(
-        passengers=Sum('current_occupancy')
+        passengers=Sum('seats_taken')
     ).order_by('month')
 
     # Transform into required format

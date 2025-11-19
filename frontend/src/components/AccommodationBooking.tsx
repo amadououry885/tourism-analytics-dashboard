@@ -7,8 +7,9 @@ import { Label } from './ui/label';
 import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { Star, MapPin, Users, Wifi, Coffee, Utensils, Car, Calendar as CalendarIcon, Search, Bed, Bath, Plus, Minus } from 'lucide-react';
+import { Star, MapPin, Users, Wifi, Coffee, Utensils, Car, Calendar as CalendarIcon, Search, Bed, Bath, Plus, Minus, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import { generateBookingComUrl, generateAgodaUrl, openBookingUrl } from '../lib/bookingUtils';
 
 interface AccommodationBookingProps {
   timeRange?: string;
@@ -30,7 +31,10 @@ const accommodations = [
     beds: 2,
     baths: 2,
     occupancy: 4,
-    description: 'Luxury 5-star resort nestled in ancient rainforest'
+    description: 'Luxury 5-star resort nestled in ancient rainforest',
+    bookingComUrl: 'https://www.booking.com/hotel/my/the-datai-langkawi.html',
+    agodaUrl: 'https://www.agoda.com/the-datai-langkawi',
+    bookingProvider: 'both' as const
   },
   {
     id: 2,
@@ -46,7 +50,9 @@ const accommodations = [
     beds: 1,
     baths: 1,
     occupancy: 2,
-    description: 'Beautiful beachfront resort with stunning ocean views'
+    description: 'Beautiful beachfront resort with stunning ocean views',
+    bookingComUrl: 'https://www.booking.com/hotel/my/berjaya-langkawi-resort.html',
+    bookingProvider: 'booking.com' as const
   },
   {
     id: 3,
@@ -62,7 +68,9 @@ const accommodations = [
     beds: 2,
     baths: 1,
     occupancy: 3,
-    description: 'Modern hotel in the heart of Alor Setar'
+    description: 'Modern hotel in the heart of Alor Setar',
+    agodaUrl: 'https://www.agoda.com/alor-setar-grand-hotel',
+    bookingProvider: 'agoda' as const
   },
   {
     id: 4,
@@ -78,7 +86,8 @@ const accommodations = [
     beds: 1,
     baths: 1,
     occupancy: 2,
-    description: 'Cozy and affordable guesthouse with local charm'
+    description: 'Cozy and affordable guesthouse with local charm',
+    bookingProvider: 'direct' as const
   },
   {
     id: 5,
@@ -94,7 +103,9 @@ const accommodations = [
     beds: 2,
     baths: 1,
     occupancy: 4,
-    description: 'Authentic Malaysian homestay experience with local family'
+    description: 'Authentic Malaysian homestay experience with local family',
+    bookingComUrl: 'https://www.booking.com/hotel/my/kedah-traditional-homestay.html',
+    bookingProvider: 'booking.com' as const
   },
   {
     id: 6,
@@ -110,7 +121,9 @@ const accommodations = [
     beds: 2,
     baths: 2,
     occupancy: 4,
-    description: 'Modern serviced apartment with full facilities'
+    description: 'Modern serviced apartment with full facilities',
+    agodaUrl: 'https://www.agoda.com/kulim-serviced-apartment',
+    bookingProvider: 'agoda' as const
   },
 ];
 
@@ -333,9 +346,49 @@ export function AccommodationBooking({ selectedCity }: AccommodationBookingProps
                   <p className="text-2xl text-white">RM {acc.price}</p>
                   <p className="text-xs text-gray-900">per night</p>
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Book Now
-                </Button>
+                <div className="flex flex-col gap-2">
+                  {/* Booking.com button */}
+                  {(acc.bookingProvider === 'booking.com' || acc.bookingProvider === 'both') && acc.bookingComUrl && (
+                    <Button
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                      onClick={() => openBookingUrl(acc.bookingComUrl!)}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Book on Booking.com
+                    </Button>
+                  )}
+                  
+                  {/* Agoda button */}
+                  {(acc.bookingProvider === 'agoda' || acc.bookingProvider === 'both') && acc.agodaUrl && (
+                    <Button
+                      className="bg-purple-600 hover:bg-purple-700 text-white text-sm"
+                      onClick={() => openBookingUrl(acc.agodaUrl!)}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Book on Agoda
+                    </Button>
+                  )}
+                  
+                  {/* Fallback search button for properties without direct links */}
+                  {acc.bookingProvider === 'direct' && (
+                    <Button
+                      className="bg-green-600 hover:bg-green-700 text-white text-sm"
+                      onClick={() => {
+                        const searchUrl = generateBookingComUrl({
+                          location: acc.location,
+                          checkIn: checkIn,
+                          checkOut: checkOut,
+                          guests: guests,
+                          propertyName: acc.name
+                        });
+                        openBookingUrl(searchUrl);
+                      }}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Search on Booking.com
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

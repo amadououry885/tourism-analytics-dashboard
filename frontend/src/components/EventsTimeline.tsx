@@ -103,11 +103,11 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         setLoading(true);
         
         // Fetch events
-        const response = await axios.get('http://localhost:8001/api/events/');
+        const response = await axios.get('/api/events/');
         const backendEvents = response.data.results || response.data || [];
         
         // Fetch attendance trend data
-        const trendResponse = await axios.get('http://localhost:8001/api/analytics/events/attendance-trend/?range=365d');
+        const trendResponse = await axios.get('/api/analytics/events/attendance-trend/?range=365d');
         const trendData = trendResponse.data || [];
         
         // If backend has data, use it; otherwise keep demo data

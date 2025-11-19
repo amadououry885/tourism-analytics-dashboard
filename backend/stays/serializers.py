@@ -20,6 +20,9 @@ class StaySerializer(serializers.ModelSerializer):
             "landmark",
             "distanceKm",
             "is_active",
+            "booking_com_url",
+            "agoda_url",
+            "booking_provider",
             "owner",
             "owner_username",
         ]
