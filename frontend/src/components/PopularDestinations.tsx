@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { MapPin, TrendingUp, TrendingDown } from 'lucide-react';
+import { MapPin, TrendingUp, TrendingDown, Filter, Search, SortAsc, SortDesc } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { DestinationCard } from './DestinationCard';
+import { DestinationModal } from './DestinationModal';
 
 interface PopularDestinationsProps {
   timeRange?: string;
@@ -15,7 +17,21 @@ interface Destination {
   name: string;
   visitors?: number;
   image?: string | null;
+  image_url?: string;
   description?: string | null;
+  posts?: number;
+  engagement?: number;
+  rating?: number;
+  change?: string;
+  trend?: 'up' | 'down';
+  color?: string;
+  category?: string;
+  city?: string;
+  is_free?: boolean;
+  price?: number;
+  currency?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'];
@@ -27,6 +43,14 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   const [postDistribution, setPostDistribution] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // New state for filtering and sorting
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [sortBy, setSortBy] = useState<'popularity' | 'name' | 'rating'>('popularity');
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
+  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchDestinations = useCallback(async () => {
     setLoading(true);
@@ -56,7 +80,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       // If the fetch failed locally, give a helpful hint to the developer/user
       const hint =
         msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
-          ? `Unable to reach backend at ${process.env.VITE_BACKEND_URL || 'http://localhost:8000'}. Is the Django server running? Try: cd backend && python manage.py runserver 8000`
+          ? 'Unable to reach backend at http://localhost:8000. Is the Django server running? Try: cd backend && python manage.py runserver 8000'
           : '';
       setError(msg + (hint ? ` — ${hint}` : ''));
       console.error('Error fetching popular destinations:', err);
@@ -79,10 +103,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
 
-        // ✅ Try the analytics places endpoint first
+        // ✅ Use the popular places endpoint
         let response;
         try {
-          response = await fetch(`/api/analytics/places/${cityParam}`);
+          response = await fetch(`/api/analytics/places/popular/${cityParam}`);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
@@ -93,24 +117,30 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
           const places = data.results || data || [];
           console.log('📊 Parsed places:', places);
 
-          // Set destinations data
-          const destinations = places.slice(0, 5).map((place: any, index: number) => ({
-            name: place.place_name || 'Unknown',
+          // Set ALL destinations data (not just top 5) - ranked by posts
+          const destinations = places.map((place: any, index: number) => ({
+            name: place.place_name || place.name || 'Unknown',
             posts: place.posts || place.post_count || 0,
             rating: place.rating || place.average_rating || 0,
             change: place.change || place.growth_rate || '-0%',
-            trend: 'down',
-            color: COLORS[index % COLORS.length]
+            trend: 'down' as const,
+            color: COLORS[index % COLORS.length],
+            category: place.category || '',
+            city: place.city || '',
+            image_url: place.image_url || ''
           }));
+          
+          // Sort by posts (highest first)
+          destinations.sort((a: Destination, b: Destination) => (b.posts || 0) - (a.posts || 0));
+          
           setTopDestinations(destinations);
 
-          // Set distribution data based on posts
-          const total = destinations.reduce((sum: number, d: Destination) => sum + d.posts, 0);
-          if (total > 0) {
+          const totalPosts = destinations.reduce((sum: number, d: Destination) => sum + (d.posts || 0), 0);
+          if (totalPosts > 0) {
             const distribution = destinations.map((d: Destination) => ({
               name: d.name,
-              value: d.posts,
-              percentage: parseFloat(((d.posts / total) * 100).toFixed(1))
+              value: d.posts || 0,
+              percentage: parseFloat((((d.posts || 0) / totalPosts) * 100).toFixed(1))
             }));
             setPostDistribution(distribution);
           } else {
@@ -137,12 +167,12 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
           }));
           setTopDestinations(destinations);
 
-          const total = destinations.reduce((sum: number, d: Destination) => sum + d.posts, 0);
+          const total = destinations.reduce((sum: number, d: Destination) => sum + (d.posts || 0), 0);
           if (total > 0) {
             const distribution = destinations.map((d: Destination) => ({
               name: d.name,
-              value: d.posts,
-              percentage: parseFloat(((d.posts / total) * 100).toFixed(1))
+              value: d.posts || 0,
+              percentage: parseFloat((((d.posts || 0) / total) * 100).toFixed(1))
             }));
             setPostDistribution(distribution);
           } else {
@@ -183,7 +213,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         // If the fetch failed locally, give a helpful hint to the developer/user
         const hint =
           msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
-            ? `Unable to reach backend at ${process.env.VITE_BACKEND_URL || 'http://localhost:8000'}. Is the Django server running? Try: cd backend && python manage.py runserver 8000`
+            ? 'Unable to reach backend at http://localhost:8000. Is the Django server running? Try: cd backend && python manage.py runserver 8000'
             : '';
         setError(msg + (hint ? ` — ${hint}` : ''));
         console.error('Error fetching popular destinations:', err);
@@ -247,51 +277,172 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     );
   }
 
+  // Filtering and sorting logic
+  const filteredDestinations = topDestinations
+    .filter(dest => {
+      // Search filter
+      if (searchTerm && !dest.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      // Category filter
+      if (selectedCategory !== 'All' && dest.category !== selectedCategory) {
+        return false;
+      }
+      // Free only filter
+      if (showFreeOnly && !dest.is_free) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'rating':
+          return (b.rating || 0) - (a.rating || 0);
+        case 'popularity':
+        default:
+          return (b.posts || 0) - (a.posts || 0);
+      }
+    });
+
+  // Get unique categories (case-insensitive to avoid duplicates like "city" and "City")
+  const uniqueCategories = Array.from(
+    new Set(
+      topDestinations
+        .map(d => d.category)
+        .filter(Boolean)
+        .map(cat => cat!.charAt(0).toUpperCase() + cat!.slice(1).toLowerCase())
+    )
+  ).sort();
+  const categories = ['All', ...uniqueCategories];
+
+  const handleViewDetails = (destination: Destination) => {
+    setSelectedDestination(destination);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Top Destinations Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900">Top 5 Most Popular Destinations</CardTitle>
-            <CardDescription className="text-gray-900">Based on social engagement</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {topDestinations.map((destination, index) => {
-              const TrendIcon = destination.trend === 'up' ? TrendingUp : TrendingDown;
-              return (
-                <div key={destination.name} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/20 text-gray-900">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-gray-900">{destination.name}</h4>
-                      <Badge className="bg-yellow-500/20 text-yellow-700 border-yellow-500/30">
-                        ⭐ {destination.rating}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-900">
-                      <span>{destination.posts.toLocaleString()} posts</span>
-                    </div>
-                  </div>
-                  <div className={`flex items-center gap-1 ${destination.trend === 'up' ? 'text-green-700' : 'text-red-700'}`}>
-                    <TrendIcon className="w-4 h-4" />
-                    <span className="text-sm">{destination.change}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+      {/* Filters and Search */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search destinations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
 
+            {/* Filter Buttons Row */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Category Filter */}
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">Category:</span>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat || 'All')}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                        selectedCategory === cat
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-sm font-medium text-gray-700">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="popularity">🔥 Popularity</option>
+                  <option value="name">🔤 Name</option>
+                  <option value="rating">⭐ Rating</option>
+                </select>
+              </div>
+
+              {/* Free Only Toggle */}
+              <label className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={showFreeOnly}
+                  onChange={(e) => setShowFreeOnly(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">🎟️ Free Only</span>
+              </label>
+            </div>
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-600">
+              Showing <span className="font-bold text-blue-600">{filteredDestinations.length}</span> of {topDestinations.length} destinations
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Destinations Grid - Single Scrollable Card */}
+      <Card className="bg-white border-gray-200 shadow-lg">
+        <CardContent className="p-6">
+          {filteredDestinations.length === 0 ? (
+            <div className="py-16">
+              <div className="text-center text-gray-500">
+                <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-xl font-bold text-gray-700 mb-2">No destinations found</h3>
+                <p>Try adjusting your filters or search term</p>
+              </div>
+            </div>
+          ) : (
+            <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredDestinations.map((destination, index) => (
+                  <DestinationCard
+                    key={`${destination.name}-${index}`}
+                    destination={destination}
+                    rank={index + 1}
+                    isTrending={index < 3} // Top 3 are trending
+                    isNew={index === filteredDestinations.length - 1} // Last one is new
+                    onViewDetails={handleViewDetails}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Destination Detail Modal */}
+      <DestinationModal
+        destination={selectedDestination}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* Post Distribution Pie Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-gray-900">Post Distribution</CardTitle>
             <CardDescription className="text-gray-900">Social engagement breakdown by destination</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
                   data={postDistribution}
@@ -299,7 +450,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   cy="50%"
                   labelLine={false}
                   label={({ name, percentage }) => `${name} ${percentage}%`}
-                  outerRadius={100}
+                  outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -362,13 +513,13 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-gray-900 font-medium">{destination.name}</h4>
                     <Badge className="bg-orange-500/20 text-orange-700 border-orange-500/30">
-                      ⭐ {destination.rating.toFixed(1)}
+                      ⭐ {destination.rating?.toFixed(1) || '0.0'}
                     </Badge>
                   </div>
                   <div className="space-y-1 text-sm text-gray-900">
                     <div className="flex items-center justify-between">
                       <span>Posts:</span>
-                      <span className="font-medium">{destination.posts.toLocaleString()}</span>
+                      <span className="font-medium">{destination.posts?.toLocaleString() || '0'}</span>
                     </div>
                     <div className="flex items-center gap-1 text-orange-700 mt-2">
                       <TrendingDown className="w-4 h-4" />

@@ -18,6 +18,7 @@ class EventSerializer(serializers.ModelSerializer):
             "lat",
             "lon",
             "tags",
+            "image_url",
             "is_published",
             "expected_attendance",
             "actual_attendance",

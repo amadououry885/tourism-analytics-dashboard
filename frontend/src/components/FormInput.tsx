@@ -5,6 +5,7 @@ interface FormInputProps {
   label: string;
   name: string;
   type?: string;
+  step?: string | number;
   value: string | number;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   placeholder?: string;
@@ -21,6 +22,7 @@ export const FormInput: React.FC<FormInputProps> = ({
   label,
   name,
   type = 'text',
+  step,
   value,
   onChange,
   placeholder,
@@ -51,6 +53,7 @@ export const FormInput: React.FC<FormInputProps> = ({
         <InputComponent
           name={name}
           type={type}
+          step={step}
           value={value}
           onChange={onChange}
           placeholder={placeholder}

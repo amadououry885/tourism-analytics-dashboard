@@ -22,6 +22,9 @@ class Place(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     
+    # Image (supports both URLs and base64 data URLs)
+    image_url = models.TextField(blank=True, default="", help_text="URL or base64 data URL for place image")
+    
     # Ownership tracking
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

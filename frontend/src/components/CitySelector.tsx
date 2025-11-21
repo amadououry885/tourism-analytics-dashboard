@@ -21,17 +21,23 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
         
         console.log('🔍 Fetching cities from Places API...');
 
-        // ✅ Use the main Places API to get all cities
-        const response = await axios.get('/api/places/');
+        // ✅ Use the correct Places API endpoint (with trailing slash)
+        const response = await axios.get('/api/analytics/places/list/');
         const places = response.data;
         
         console.log('🏙️ Fetched places from analytics API:', places);
         
-        // Extract city names from places
-        const cityNames = places.map((place: any) => place.name).sort();
+        // Extract UNIQUE city names from places (not place names!)
+        const allCities = places
+          .map((place: any) => place.city)
+          .filter((city: string) => city && city.trim() !== ''); // Remove empty/null cities
         
-        console.log(`✅ Total cities found: ${cityNames.length}`, cityNames);
-        setCities(cityNames);
+        // Remove duplicates using Set, then sort
+        const uniqueCities = Array.from(new Set(allCities)) as string[];
+        uniqueCities.sort();
+        
+        console.log(`✅ Total unique cities found: ${uniqueCities.length}`, uniqueCities);
+        setCities(uniqueCities);
         
       } catch (error) {
         console.error('❌ Error fetching cities:', error);

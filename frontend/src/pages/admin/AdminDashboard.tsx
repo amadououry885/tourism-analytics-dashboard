@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Shield, 
   Users, 
@@ -17,12 +17,14 @@ import {
   UserCheck,
   Store,
   Building2,
-  DollarSign
+  DollarSign,
+  Home
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { FormInput } from '../../components/FormInput';
 import { FormSelect } from '../../components/FormSelect';
+import PlacesManagement from './PlacesManagement';
 
 interface PendingUser {
   id: number;
@@ -36,12 +38,16 @@ interface PendingUser {
 
 interface Event {
   id: number;
-  name: string;
+  title: string;
   description: string;
-  location: string;
+  location_name: string;
   start_date: string;
   end_date: string;
-  category: string;
+  tags: string[];
+  city?: string;
+  image_url?: string;
+  expected_attendance?: number;
+  actual_attendance?: number;
 }
 
 interface TransportRoute {
@@ -52,6 +58,7 @@ interface TransportRoute {
   arrival_location: string;
   duration_minutes: number;
   price: number;
+  city?: string;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -59,7 +66,19 @@ const AdminDashboard: React.FC = () => {
   const { request, loading } = useApi();
   const navigate = useNavigate();
   
-  const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'transport'>('approvals');
+  // Empty form template
+  const emptyEventForm = {
+    title: '',
+    description: '',
+    location_name: '',
+    start_date: '',
+    end_date: '',
+    tags: [] as string[],
+    city: '',
+    image_url: '',
+  };
+  
+  const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'transport' | 'places'>('approvals');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [transportRoutes, setTransportRoutes] = useState<TransportRoute[]>([]);
@@ -69,15 +88,10 @@ const AdminDashboard: React.FC = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [editingTransport, setEditingTransport] = useState<TransportRoute | null>(null);
 
-  const [eventForm, setEventForm] = useState({
-    name: '',
-    description: '',
-    location: '',
-    start_date: '',
-    end_date: '',
-    category: '',
-    city: '',  // ✅ ADD CITY FIELD
-  });
+  const [eventForm, setEventForm] = useState(emptyEventForm);
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   const [transportForm, setTransportForm] = useState({
     route_name: '',
@@ -143,9 +157,19 @@ const AdminDashboard: React.FC = () => {
   const fetchEvents = async () => {
     try {
       console.log('Fetching events...');
-      const data = await request('/events/');
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      const data = await request(`/events/?page_size=100&_t=${timestamp}`);
       console.log('Events data:', data);
-      setEvents(data.results || data);
+      console.log('Number of events:', data.results?.length || data.length);
+      // Log which events have images
+      const eventsArray = data.results || data;
+      eventsArray.forEach((event: Event) => {
+        if (event.image_url && event.image_url.trim() !== '') {
+          console.log(`Event "${event.title}" (ID: ${event.id}) has image (${event.image_url.substring(0, 30)}...)`);
+        }
+      });
+      setEvents(eventsArray);
     } catch (error) {
       console.error('Failed to fetch events:', error);
     }
@@ -206,7 +230,9 @@ const AdminDashboard: React.FC = () => {
           '✅ Event added successfully!'
         );
       }
-      fetchEvents();
+      // Small delay to ensure backend has processed the update
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await fetchEvents();
       resetEventForm();
     } catch (error) {
       console.error('Failed to save event:', error);
@@ -259,17 +285,32 @@ const AdminDashboard: React.FC = () => {
   };
 
   const resetEventForm = () => {
-    setEventForm({
-      name: '',
-      description: '',
-      location: '',
-      start_date: '',
-      end_date: '',
-      category: '',
-      city: '',  // ✅ RESET CITY
-    });
+    setEventForm(emptyEventForm);
     setEditingEvent(null);
     setShowEventModal(false);
+    setImageFile(null);
+    setImagePreview('');
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Please select an image smaller than 5MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setEventForm({ ...eventForm, image_url: base64 });
+      setImagePreview(base64);
+      setImageFile(file);
+    };
+    reader.readAsDataURL(file);
   };
 
   const resetTransportForm = () => {
@@ -304,13 +345,22 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm text-gray-600">Welcome back, {user?.username}! 👋</p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/"
+                className="px-6 py-2.5 bg-white border-2 border-gray-900 hover:bg-gray-100 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
+              >
+                <Home className="w-5 h-5 text-gray-900" />
+                <span className="text-gray-900 font-bold text-base">Dashboard</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -361,6 +411,19 @@ const AdminDashboard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Bus className="w-5 h-5" />
                 <span>🚌 Transport Routes</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('places')}
+              className={`px-6 py-4 font-semibold border-b-4 transition-all ${
+                activeTab === 'places'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                <span>📍 Tourism Places</span>
               </div>
             </button>
           </div>
@@ -461,100 +524,234 @@ const AdminDashboard: React.FC = () => {
         {/* Events Tab */}
         {activeTab === 'events' && (
           <div>
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl shadow-lg p-6 mb-8 text-white">
+            {/* Header with Add Button */}
+            <div className="bg-white rounded-xl shadow-md p-6 mb-6 border-2 border-gray-200">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">🎉 Tourism Events</h2>
-                  <p className="text-purple-100">
-                    Manage festivals, concerts, and tourist attractions
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">🎉 Tourism Events Manager</h2>
+                  <p className="text-gray-600 text-lg">
+                    Create and manage festivals, concerts, and tourist attractions
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowEventModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-semibold shadow-lg whitespace-nowrap"
+                  onClick={() => {
+                    setEventForm(emptyEventForm);
+                    setImagePreview('');
+                    setImageFile(null);
+                    setEditingEvent(null);
+                    setShowEventModal(true);
+                  }}
+                  className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-xl hover:from-black hover:to-gray-800 transition-all font-bold text-lg shadow-xl transform hover:scale-105 whitespace-nowrap border-4 border-yellow-400"
                 >
-                  <Plus className="w-5 h-5" />
-                  Add Event
+                  <Plus className="w-6 h-6" />
+                  ➕ ADD NEW EVENT
                 </button>
               </div>
             </div>
 
             {events.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-xl shadow-sm">
-                <Calendar className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">No Events Yet</h3>
-                <p className="text-gray-600 text-lg mb-2">Start by adding tourism events! 🎪</p>
+              <div className="text-center py-20 bg-white rounded-xl shadow-md border-2 border-dashed border-gray-300">
+                <Calendar className="w-32 h-32 text-gray-300 mx-auto mb-6" />
+                <h3 className="text-3xl font-bold text-gray-900 mb-3">No Events Yet</h3>
+                <p className="text-gray-600 text-xl mb-2">Start by adding your first tourism event! 🎪</p>
                 <p className="text-gray-500 max-w-md mx-auto mb-8">
                   Add festivals, concerts, exhibitions, and other events to attract tourists
                 </p>
                 <button
-                  onClick={() => setShowEventModal(true)}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 font-bold text-lg shadow-xl"
+                  onClick={() => {
+                    setEventForm(emptyEventForm);
+                    setImagePreview('');
+                    setImageFile(null);
+                    setEditingEvent(null);
+                    setShowEventModal(true);
+                  }}
+                  className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-110 font-bold text-xl shadow-2xl border-4 border-purple-300"
                 >
-                  <Plus className="w-6 h-6" />
-                  Add First Event
+                  <Plus className="w-7 h-7" />
+                  🎉 Add First Event
                 </button>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {events.map((event) => (
-                  <div key={event.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all p-6 border-2 border-transparent hover:border-purple-200">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{event.name}</h3>
-                        <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
-                          {event.category}
-                        </span>
-                      </div>
-                    </div>
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-200">
+                {/* Single Scrollable Card Container */}
+                <div className="max-h-[800px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+                  {(() => {
+                    const now = new Date();
+                    const upcomingEvents = events.filter(event => new Date(event.end_date) >= now);
+                    const pastEvents = events.filter(event => new Date(event.end_date) < now);
 
-                    <div className="space-y-2 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-purple-600" />
-                        <span>{event.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-purple-600" />
-                        <span className="text-xs">
-                          {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
+                    return (
+                      <div className="space-y-8">
+                        {/* Upcoming Events Section */}
+                        {upcomingEvents.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-3 mb-4 sticky top-0 bg-white py-2 z-10">
+                              <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-lg">
+                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                <h3 className="text-xl font-bold text-green-900">🔥 ACTIVE & UPCOMING EVENTS</h3>
+                              </div>
+                              <span className="text-gray-500 text-lg">({upcomingEvents.length} event{upcomingEvents.length !== 1 ? 's' : ''})</span>
+                            </div>
+                          <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {upcomingEvents.map((event) => (
+                              <div key={event.id} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all p-3 border border-green-200 hover:border-green-400 relative overflow-hidden">
+                                {/* Event Image */}
+                                {event.image_url && event.image_url.trim() !== '' ? (
+                                  <div className="mb-2 -mx-3 -mt-3 bg-gray-100">
+                                    <img 
+                                      key={`event-img-${event.id}-${Date.now()}`}
+                                      src={event.image_url} 
+                                      alt={event.title}
+                                      className="w-full h-24 object-cover"
+                                      onLoad={() => console.log(`✅ Image loaded for event ${event.id}: ${event.title}`)}
+                                      onError={(e) => {
+                                        console.error('❌ Image failed to load for event:', event.id, event.title);
+                                        console.error('Image URL length:', event.image_url?.length);
+                                        console.error('Image URL start:', event.image_url?.substring(0, 50));
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="mb-2 -mx-3 -mt-3 bg-gradient-to-br from-purple-100 to-blue-100 h-24 flex items-center justify-center">
+                                    <Calendar className="w-8 h-8 text-purple-400" />
+                                  </div>
+                                )}
+                                
+                                {/* Active Badge */}
+                                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow">
+                                  ✓ ACTIVE
+                                </div>
 
-                    {event.description && (
-                      <p className="mt-4 text-sm text-gray-600 line-clamp-3 mb-4">{event.description}</p>
-                    )}
+                                <div className="mb-2">
+                                  <h3 className="text-sm font-bold text-gray-900 mb-1 pr-12 line-clamp-2">{event.title}</h3>
+                                  <span className="inline-block px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-semibold rounded-full">
+                                    {event.tags && event.tags.length > 0 ? event.tags[0] : 'Event'}
+                                  </span>
+                                </div>
 
-                    <div className="flex gap-2 pt-4 border-t">
-                      <button
-                        onClick={() => {
-                          setEditingEvent(event);
-                          setEventForm({
-                            name: event.name,
-                            description: event.description,
-                            location: event.location,
-                            start_date: event.start_date,
-                            end_date: event.end_date,
-                            category: event.category,
-                            city: event.city || '',  // ✅ ADD CITY FIELD WHEN EDITING
-                          });
-                          setShowEventModal(true);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                                <div className="space-y-1 text-xs text-gray-600 mb-2">
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 text-green-600 flex-shrink-0" />
+                                    <span className="font-medium truncate">{event.location_name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3 text-green-600 flex-shrink-0" />
+                                    <span className="text-[10px] font-semibold truncate">
+                                      {new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} → {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-1 pt-2 border-t border-gray-100">
+                                  <button
+                                    onClick={() => {
+                                      setEditingEvent(event);
+                                      setEventForm({
+                                        title: event.title,
+                                        description: event.description,
+                                        location_name: event.location_name,
+                                        start_date: event.start_date.split('T')[0],
+                                        end_date: event.end_date.split('T')[0],
+                                        tags: event.tags || [],
+                                        city: event.city || '',
+                                        image_url: event.image_url || '',
+                                      });
+                                      setImagePreview(event.image_url || '');
+                                      setShowEventModal(true);
+                                    }}
+                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors font-bold shadow-sm"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEvent(event.id)}
+                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors font-bold shadow-sm"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Past Events Section */}
+                      {pastEvents.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-3 mb-4 mt-8">
+                            <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
+                              <Clock className="w-5 h-5 text-gray-600" />
+                              <h3 className="text-xl font-bold text-gray-700">PAST EVENTS (Read-Only)</h3>
+                            </div>
+                            <span className="text-gray-500 text-lg">({pastEvents.length} event{pastEvents.length !== 1 ? 's' : ''})</span>
+                          </div>
+                          <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {pastEvents.map((event) => (
+                              <div key={event.id} className="bg-gray-50 rounded-lg shadow-sm p-3 border border-gray-200 opacity-75 relative">
+                                {/* Event Image (grayscale for past events) */}
+                                {event.image_url && event.image_url.trim() !== '' ? (
+                                  <div className="mb-2 -mx-3 -mt-3 bg-gray-200">
+                                    <img 
+                                      key={`past-event-img-${event.id}-${Date.now()}`}
+                                      src={event.image_url} 
+                                      alt={event.title}
+                                      className="w-full h-24 object-cover grayscale"
+                                      onLoad={() => console.log(`✅ Past event image loaded for ${event.id}: ${event.title}`)}
+                                      onError={(e) => {
+                                        console.error('❌ Image failed to load for past event:', event.id, event.title);
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="mb-2 -mx-3 -mt-3 bg-gradient-to-br from-gray-200 to-gray-300 h-24 flex items-center justify-center">
+                                    <Calendar className="w-8 h-8 text-gray-400" />
+                                  </div>
+                                )}
+                                
+                                {/* Past Badge */}
+                                <div className="absolute top-2 right-2 bg-gray-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                  ✓ ENDED
+                                </div>
+
+                                <div className="mb-2">
+                                  <h3 className="text-sm font-bold text-gray-700 mb-1 pr-12 line-clamp-2">{event.title}</h3>
+                                  <span className="inline-block px-2 py-0.5 bg-gray-200 text-gray-700 text-[10px] font-semibold rounded-full">
+                                    {event.tags && event.tags.length > 0 ? event.tags[0] : 'Event'}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-1 text-xs text-gray-500 mb-2">
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate">{event.location_name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3 flex-shrink-0" />
+                                    <span className="text-[10px] truncate">
+                                      {new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="pt-2 border-t border-gray-200">
+                                  <div className="text-center text-gray-500 italic text-[10px] py-1">
+                                    📅 Event ended
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             )}
           </div>
@@ -662,6 +859,11 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Places Tab */}
+        {activeTab === 'places' && (
+          <PlacesManagement />
+        )}
+
         {/* Event Modal */}
         {showEventModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -683,9 +885,9 @@ const AdminDashboard: React.FC = () => {
 
                 <FormInput
                   label="Event Name"
-                  name="name"
-                  value={eventForm.name}
-                  onChange={(e) => setEventForm({...eventForm, name: e.target.value})}
+                  name="title"
+                  value={eventForm.title}
+                  onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
                   placeholder="e.g., Langkawi International Maritime & Aerospace Exhibition"
                   required
                   hint="Give your event a clear, attractive name"
@@ -698,9 +900,9 @@ const AdminDashboard: React.FC = () => {
 
                 <FormSelect
                   label="Event Category"
-                  name="category"
-                  value={eventForm.category}
-                  onChange={(e) => setEventForm({...eventForm, category: e.target.value})}
+                  name="tags"
+                  value={eventForm.tags && eventForm.tags.length > 0 ? eventForm.tags[0] : ''}
+                  onChange={(e) => setEventForm({...eventForm, tags: e.target.value ? [e.target.value] : []})}
                   options={eventCategories}
                   required
                   hint="This helps tourists find events they're interested in"
@@ -713,9 +915,9 @@ const AdminDashboard: React.FC = () => {
 
                 <FormInput
                   label="Event Location"
-                  name="location"
-                  value={eventForm.location}
-                  onChange={(e) => setEventForm({...eventForm, location: e.target.value})}
+                  name="location_name"
+                  value={eventForm.location_name}
+                  onChange={(e) => setEventForm({...eventForm, location_name: e.target.value})}
                   placeholder="e.g., Mahsuri International Exhibition Centre, Langkawi"
                   required
                   icon={<MapPin className="w-5 h-5" />}
@@ -789,6 +991,27 @@ const AdminDashboard: React.FC = () => {
                   rows={4}
                   hint="You can skip this if you want"
                 />
+
+                {/* Image upload for event (optional) */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Event Image (optional)</label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="text-sm text-gray-700"
+                    />
+                    {imagePreview ? (
+                      <div className="w-28 h-20 rounded overflow-hidden border">
+                        <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-28 h-20 rounded border flex items-center justify-center text-gray-400">No image</div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">Tip: Upload a poster or hero image (max 5MB). We accept JPG, PNG.</p>
+                </div>
 
                 <div className="flex gap-3 pt-6 border-t-2">
                   <button

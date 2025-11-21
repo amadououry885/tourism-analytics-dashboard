@@ -16,6 +16,8 @@ class Event(models.Model):
     # Attendance tracking
     expected_attendance = models.IntegerField(null=True, blank=True, help_text="Expected number of attendees")
     actual_attendance = models.IntegerField(null=True, blank=True, help_text="Actual number of attendees (for past events)")
+    # Image for the event — supports external URLs or base64 data URLs (for inline uploads)
+    image_url = models.TextField(blank=True, default="", help_text="URL or base64 data URL for event image")
     
     # Ownership tracking
     created_by = models.ForeignKey(

@@ -14,7 +14,10 @@ class PlacesListView(APIView):
         return Response([{
             'id': p.id,
             'name': p.name,
-            'slug': p.name.lower().replace(' ', '-')
+            'city': p.city,
+            'category': p.category,
+            'slug': p.name.lower().replace(' ', '-'),
+            'image_url': p.image_url or ''
         } for p in places])
 
 def parse_range(request):
@@ -159,8 +162,15 @@ class PopularPlacesView(APIView):
     def get(self, request):
         start, end = parse_range(request)
         
+        # Support city filtering via query parameter
+        city_filter = request.GET.get('city', None)
+        
+        places_qs = Place.objects
+        if city_filter:
+            places_qs = places_qs.filter(city__icontains=city_filter)
+        
         places = (
-            Place.objects
+            places_qs
             .annotate(
                 posts_count=Count('posts', filter=Q(
                     posts__created_at__date__range=[start, end]
@@ -182,7 +192,9 @@ class PopularPlacesView(APIView):
                 'slug': p.name.lower().replace(' ', '-'),
                 'posts': getattr(p, 'posts_count', 0),
                 'engagement': getattr(p, 'total_engagement', 0) or 0,
-                'category': p.category or 'Uncategorized'
+                'category': p.category or 'Uncategorized',
+                'city': p.city or '',
+                'image_url': p.image_url or ''
             })
         
         return Response(results)

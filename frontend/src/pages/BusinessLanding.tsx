@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle, Users, TrendingUp, Shield, HelpCircle, Phone, Mail, Clock, Star, Award, ChevronDown, ChevronUp, Utensils, Building2 } from 'lucide-react';
+import { ArrowRight, CheckCircle, Users, TrendingUp, Shield, HelpCircle, Phone, Mail, Clock, Star, Award, ChevronDown, ChevronUp, Utensils, Building2, Home as HomeIcon } from 'lucide-react';
 import { NavigationTabs } from '../components/NavigationTabs';
 
 const Home: React.FC = () => {
@@ -44,7 +44,16 @@ const Home: React.FC = () => {
                 </div>
               </Link>
             </div>
-            <NavigationTabs />
+            <div className="flex items-center gap-3">
+              <Link
+                to="/"
+                className="px-6 py-2.5 bg-white border-2 border-gray-900 hover:bg-gray-100 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
+              >
+                <HomeIcon className="w-5 h-5 text-gray-900" />
+                <span className="text-gray-900 font-bold text-base">Dashboard</span>
+              </Link>
+              <NavigationTabs />
+            </div>
           </div>
         </div>
       </header>

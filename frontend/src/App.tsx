@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import SignIn from './pages/SignIn';
 import Register from './pages/Register';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import PlacesManagement from './pages/admin/PlacesManagement';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import StayOwnerDashboard from './pages/stays/StayOwnerDashboard';
 
@@ -34,6 +35,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/places"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <PlacesManagement />
                 </ProtectedRoute>
               }
             />
