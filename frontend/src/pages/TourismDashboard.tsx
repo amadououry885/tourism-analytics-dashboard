@@ -11,7 +11,7 @@ import { AccommodationStats } from '../components/AccommodationStats';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
 import { RestaurantVendors } from '../components/RestaurantVendors';
 import MapView from '../components/MapView';
-import { AccommodationBooking } from '../components/AccommodationBooking';
+import AccommodationSearch from '../pages/accommodation/AccommodationSearch';
 import { Link } from 'react-router-dom';
 import { CitySelector } from '../components/CitySelector'; // ✅ Import CitySelector
 
@@ -170,7 +170,7 @@ export default function TourismDashboard() {
           </TabsContent>
 
           <TabsContent value="accommodation" className="mt-6">
-            <AccommodationBooking selectedCity={selectedCity} timeRange={timeRange} />
+            <AccommodationSearch />
           </TabsContent>
 
           <TabsContent value="social" className="mt-6">

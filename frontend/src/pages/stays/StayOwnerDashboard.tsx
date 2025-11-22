@@ -64,6 +64,9 @@ const StayOwnerDashboard: React.FC = () => {
     booking_com_url: '',
     agoda_url: '',
     booking_provider: 'booking.com',
+    contact_email: '',
+    contact_phone: '',
+    contact_whatsapp: '',
   });
 
   const stayTypes = [
@@ -178,6 +181,9 @@ const StayOwnerDashboard: React.FC = () => {
       booking_com_url: stay.booking_com_url || '',
       agoda_url: stay.agoda_url || '',
       booking_provider: stay.booking_provider || 'booking.com',
+      contact_email: (stay as any).contact_email || '',
+      contact_phone: (stay as any).contact_phone || '',
+      contact_whatsapp: (stay as any).contact_whatsapp || '',
     });
     setShowAddModal(true);
   };
@@ -195,6 +201,9 @@ const StayOwnerDashboard: React.FC = () => {
       booking_com_url: '',
       agoda_url: '',
       booking_provider: 'booking.com',
+      contact_email: '',
+      contact_phone: '',
+      contact_whatsapp: '',
     });
     setEditingStay(null);
     setShowAddModal(false);
@@ -510,9 +519,50 @@ const StayOwnerDashboard: React.FC = () => {
                 />
               </div>
 
-              {/* Step 6: Booking Platform Integration */}
+              {/* Step 6: Contact Information */}
+              <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded">
+                <h3 className="font-bold text-emerald-900 mb-1">📞 Step 6: Contact Information</h3>
+                <p className="text-sm text-emerald-700">How can guests reach you directly? (At least one contact method required)</p>
+              </div>
+
+              <FormInput
+                label="Contact Email"
+                name="contact_email"
+                type="email"
+                value={formData.contact_email}
+                onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                placeholder="e.g., info@yourhotel.com or your@email.com"
+                icon={<Phone className="w-5 h-5" />}
+                hint="Email address where guests can reach you"
+              />
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <FormInput
+                  label="Contact Phone"
+                  name="contact_phone"
+                  type="tel"
+                  value={formData.contact_phone}
+                  onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
+                  placeholder="e.g., +60123456789"
+                  icon={<Phone className="w-5 h-5" />}
+                  hint="Phone number for calls"
+                />
+
+                <FormInput
+                  label="WhatsApp Number"
+                  name="contact_whatsapp"
+                  type="tel"
+                  value={formData.contact_whatsapp}
+                  onChange={(e) => setFormData({...formData, contact_whatsapp: e.target.value})}
+                  placeholder="e.g., +60123456789"
+                  icon={<Phone className="w-5 h-5" />}
+                  hint="WhatsApp for quick messages"
+                />
+              </div>
+
+              {/* Step 7: Booking Platform Integration */}
               <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded">
-                <h3 className="font-bold text-indigo-900 mb-1">🔗 Step 6: Online Booking Links</h3>
+                <h3 className="font-bold text-indigo-900 mb-1">🔗 Step 7: Online Booking Links (Optional)</h3>
                 <p className="text-sm text-indigo-700">Add links to your property on Booking.com or Agoda</p>
               </div>
 
