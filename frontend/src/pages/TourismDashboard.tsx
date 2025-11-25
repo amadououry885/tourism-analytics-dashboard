@@ -12,7 +12,7 @@ import { SentimentAnalysis } from '../components/SentimentAnalysis';
 import { RestaurantVendors } from '../components/RestaurantVendors';
 import MapView from '../components/MapView';
 import AccommodationSearch from '../pages/accommodation/AccommodationSearch';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { CitySelector } from '../components/CitySelector'; // ✅ Import CitySelector
 
 interface City {
@@ -22,25 +22,24 @@ interface City {
 }
 
 export default function TourismDashboard() {
+  const [searchParams] = useSearchParams();
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
-  // We no longer need the 'cities' state here, as CitySelector handles it.
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // This useEffect is no longer needed as CitySelector fetches its own cities.
-  /*
+  // ✨ Read URL parameters and switch tabs automatically
   useEffect(() => {
-    const fetchCities = async () => {
-      try {
-        const response = await axios.get('http://127.0.0.1:8001/api/analytics/places/list/');
-        setCities(response.data);
-      } catch (error) {
-        console.error('Error fetching cities:', error);
-      }
-    };
-
-    fetchCities();
-  }, []);
-  */
+    const tabParam = searchParams.get('tab');
+    const cityParam = searchParams.get('city');
+    
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+    
+    if (cityParam && cityParam !== 'all') {
+      setSelectedCity(cityParam);
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -101,7 +100,7 @@ export default function TourismDashboard() {
         <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
 
         {/* Main Analytics Tabs */}
-        <Tabs defaultValue="overview" className="mt-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
           <TabsList className="bg-transparent border-0 p-0 gap-3 flex-wrap justify-start">
             <TabsTrigger 
               value="overview" 

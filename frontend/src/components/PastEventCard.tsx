@@ -1,6 +1,7 @@
-import { Calendar, MapPin, Users, Clock, TrendingUp, CheckCircle2, Award } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, TrendingUp, CheckCircle2, Award, Hotel, Utensils } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 // Event interface matching EventCard
 interface Event {
@@ -221,6 +222,27 @@ export function PastEventCard({ event, rank, onViewDetails }: PastEventCardProps
               🔄 Recurring
             </Badge>
           )}
+        </div>
+
+        {/* ✨ NEW: Nearby Restaurants & Hotels Buttons */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <Link
+            to={`/?tab=restaurants&city=${event.city?.toLowerCase().replace(/\s+/g, '-') || 'all'}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 bg-white border-2 border-orange-500 text-orange-600 rounded-lg font-semibold hover:bg-orange-50 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+          >
+            <Utensils className="w-4 h-4" />
+            <span className="text-sm">Nearby Restaurants</span>
+          </Link>
+          
+          <Link
+            to={`/?tab=accommodation&city=${event.city?.toLowerCase().replace(/\s+/g, '-') || 'all'}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 bg-white border-2 border-blue-500 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+          >
+            <Hotel className="w-4 h-4" />
+            <span className="text-sm">Nearby Hotels</span>
+          </Link>
         </div>
 
         {/* View Full Report Button */}
