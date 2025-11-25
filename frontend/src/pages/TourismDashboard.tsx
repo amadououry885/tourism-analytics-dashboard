@@ -42,7 +42,7 @@ export default function TourismDashboard() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-6 py-4">
@@ -54,22 +54,22 @@ export default function TourismDashboard() {
             <div className="flex items-center gap-4">
               <Link
                 to="/"
-                className="px-6 py-2.5 bg-white border-2 border-gray-900 hover:bg-gray-100 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
+                className="px-6 py-2.5 bg-white border-2 border-gray-900 hover:bg-gray-900 hover:text-white rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
               >
-                <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                <span className="text-gray-900 font-bold text-base">Dashboard</span>
+                <span className="font-bold text-base">Dashboard</span>
               </Link>
               <Link
                 to="/business"
-                className="px-4 py-2 text-sm bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
+                className="px-4 py-2 text-sm bg-white border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
               >
                 For Business
               </Link>
               <Link
                 to="/sign-in"
-                className="px-4 py-2 text-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
+                className="px-4 py-2 text-sm bg-white border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
               >
                 Sign In
               </Link>
@@ -83,12 +83,12 @@ export default function TourismDashboard() {
                 onChange={(e) => setTimeRange(e.target.value)}
                 className="bg-white text-gray-900 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="week">Last 7 Days</option>
-                <option value="month">Last 30 Days</option>
-                <option value="quarter">Last 3 Months</option>
-                <option value="year">Last Year</option>
+                <option value="week" className="text-gray-900">Last 7 Days</option>
+                <option value="month" className="text-gray-900">Last 30 Days</option>
+                <option value="quarter" className="text-gray-900">Last 3 Months</option>
+                <option value="year" className="text-gray-900">Last Year</option>
               </select>
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Live</Badge>
+              <Badge className="bg-green-500/30 text-green-100 border-green-400/30">Live</Badge>
             </div>
           </div>
         </div>
@@ -99,6 +99,7 @@ export default function TourismDashboard() {
         {/* Overview Metrics */}
         <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
 
+        {/* Main Analytics Tabs */}
         {/* Main Analytics Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
           <TabsList className="bg-transparent border-0 p-0 gap-3 flex-wrap justify-start">
@@ -145,7 +146,6 @@ export default function TourismDashboard() {
               Events
             </TabsTrigger>
           </TabsList>
-
           <TabsContent value="overview" className="mt-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">

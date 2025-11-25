@@ -104,8 +104,8 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       {/* Comments Card - Beautiful Blue Theme */}
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-        <CardHeader className="pb-3">
+      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-blue-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-blue-200 rounded-full">
@@ -123,8 +123,8 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
       </Card>
 
       {/* Likes Card - Beautiful Rose Theme */}
-      <Card className="bg-gradient-to-br from-rose-50 to-pink-100 border-rose-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-        <CardHeader className="pb-3">
+      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-rose-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-rose-200 rounded-full">
@@ -142,8 +142,8 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
       </Card>
 
       {/* Total Posts Card - Beautiful Purple Theme */}
-      <Card className="bg-gradient-to-br from-purple-50 to-violet-100 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-        <CardHeader className="pb-3">
+      <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-purple-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-purple-200 rounded-full">
@@ -161,8 +161,8 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
       </Card>
 
       {/* Shares Card - Beautiful Green Theme */}
-      <Card className="bg-gradient-to-br from-emerald-50 to-green-100 border-emerald-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-        <CardHeader className="pb-3">
+      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-emerald-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-emerald-200 rounded-full">
@@ -180,7 +180,7 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
       </Card>
 
       {/* Page Views Card - Beautiful Orange Theme */}
-      <Card className="bg-gradient-to-br from-orange-50 to-amber-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+      <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-orange-700 flex items-center justify-between">
             <div className="flex items-center gap-2">

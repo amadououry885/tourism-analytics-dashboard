@@ -234,7 +234,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -246,7 +246,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+        <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -258,7 +258,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+        <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -272,7 +272,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
       </div>
 
       {/* Filters and Search */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
         <CardContent className="pt-6">
           <div className="space-y-4">
             {/* Search Bar */}
@@ -371,7 +371,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
 
       {/* ✨ UPCOMING EVENTS - With JOIN US Buttons */}
       {filteredEvents.filter(event => new Date(event.start_date) >= now).length > 0 && (
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
+        <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
@@ -415,7 +415,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
 
       {/* ✨ PAST EVENTS - Event Reports, No JOIN US */}
       {filteredEvents.filter(event => new Date(event.start_date) < now).length > 0 && (
-        <Card className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-300 shadow-lg">
+        <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-slate-700 rounded-full flex items-center justify-center shadow-md">
