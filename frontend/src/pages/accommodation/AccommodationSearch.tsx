@@ -310,21 +310,23 @@ export default function AccommodationSearch() {
             <div className="bg-gray-100 border-2 border-gray-300 rounded-xl p-2 flex items-center gap-2 shadow-md">
               <button
                 onClick={() => setActiveTab('all')}
-                className={`px-6 py-2.5 rounded-lg font-semibold transition-all ${
+                className={`px-6 py-2.5 rounded-lg font-semibold transition-all border-2 ${
                   activeTab === 'all'
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                    : 'bg-white text-black hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg border-indigo-700'
+                    : 'bg-white text-gray-900 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
                 }`}
+                style={activeTab !== 'all' ? { color: '#111827' } : {}}
               >
                 All ({allCount})
               </button>
               <button
                 onClick={() => setActiveTab('local')}
-                className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 border-2 ${
                   activeTab === 'local'
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg'
-                    : 'bg-white text-black hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg border-green-700'
+                    : 'bg-white text-gray-900 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
                 }`}
+                style={activeTab !== 'local' ? { color: '#111827' } : {}}
               >
                 <span>✓ Local Partners</span>
                 {activeTab === 'local' ? (
@@ -335,11 +337,12 @@ export default function AccommodationSearch() {
               </button>
               <button
                 onClick={() => setActiveTab('external')}
-                className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 border-2 ${
                   activeTab === 'external'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg'
-                    : 'bg-white text-black hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg border-blue-700'
+                    : 'bg-white text-gray-900 hover:bg-gray-50 border-gray-300 hover:border-gray-400'
                 }`}
+                style={activeTab !== 'external' ? { color: '#111827' } : {}}
               >
                 <span>🌐 External</span>
                 {activeTab === 'external' ? (

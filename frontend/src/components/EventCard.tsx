@@ -2,6 +2,7 @@ import { Calendar, MapPin, Users, Clock, TrendingUp, Navigation, Share2, Heart }
 import { Badge } from './ui/badge';
 import { useState } from 'react';
 
+// ✨ UPDATED: Extended Event interface with new fields
 interface Event {
   id: number;
   title: string;
@@ -15,6 +16,15 @@ interface Event {
   actual_attendance?: number;
   is_published?: boolean;
   image_url?: string;
+  // ✨ NEW FIELDS:
+  max_capacity?: number | null;
+  attendee_count?: number;
+  spots_remaining?: number | null;
+  is_full?: boolean;
+  user_registered?: boolean;
+  user_has_reminder?: boolean;
+  recurrence_type?: string;
+  is_recurring_instance?: boolean;
 }
 
 interface EventCardProps {
@@ -24,7 +34,7 @@ interface EventCardProps {
   isNew?: boolean;
   isFree?: boolean;
   price?: number;
-  onViewDetails: (event: Event) => void;
+  onViewDetails: (event: Event, scrollToRegistration?: boolean) => void; // ✨ NEW: Added scrollToRegistration param
 }
 
 // Color schemes for event types
@@ -135,7 +145,13 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
   };
   
   const handleCardClick = () => {
-    onViewDetails(event);
+    onViewDetails(event, false); // ✨ UPDATED: Normal click = no scroll
+  };
+
+  // ✨ NEW: Handle JOIN US button click
+  const handleJoinUsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onViewDetails(event, true); // Scroll to registration section
   };
 
   return (
@@ -168,6 +184,29 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
         
         {/* Status Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2">
+          {/* ✨ NEW: Capacity Badge */}
+          {event.max_capacity && (
+            <Badge className={`${
+              event.is_full 
+                ? 'bg-red-500 text-white border-red-600 shadow-lg'
+                : (event.spots_remaining !== undefined && event.spots_remaining !== null && event.spots_remaining < 10)
+                ? 'bg-orange-500 text-white border-orange-600 shadow-lg animate-pulse'
+                : event.user_registered
+                ? 'bg-blue-500 text-white border-blue-600 shadow-lg'
+                : 'bg-green-500/90 text-white border-green-600 shadow-lg backdrop-blur-sm'
+            }`}>
+              {event.is_full ? (
+                <>🚫 FULL</>
+              ) : event.user_registered ? (
+                <>✓ Registered</>
+              ) : (event.spots_remaining !== undefined && event.spots_remaining !== null && event.spots_remaining < 10) ? (
+                <>⚠️ {event.spots_remaining} spots left!</>
+              ) : (
+                <>👥 {event.attendee_count || 0}/{event.max_capacity}</>
+              )}
+            </Badge>
+          )}
+          
           {isHappeningNow && (
             <Badge className="bg-red-500 text-white border-red-600 shadow-lg animate-pulse">
               ⚡ HAPPENING NOW
@@ -304,6 +343,42 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
                 🎯 Exceeded expectations!
               </div>
             )}
+          </div>
+        )}
+
+        {/* ✨ NEW: JOIN US Button - White Card Style with Maximum Visibility */}
+        {event.max_capacity && !countdown.isPast && !event.is_full && (
+          <div 
+            onClick={handleJoinUsClick}
+            className="mb-4 bg-white rounded-xl shadow-lg border-2 border-green-500 p-4 hover:border-green-600 hover:shadow-xl transition-all duration-300 cursor-pointer group/join"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md group-hover/join:scale-110 transition-transform">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="font-bold text-green-700 text-lg">JOIN US</div>
+                  <div className="text-xs text-gray-600">
+                    {event.spots_remaining || event.max_capacity} spots available
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-green-600">
+                  {event.attendee_count || 0}
+                </div>
+                <div className="text-xs text-gray-500">
+                  of {event.max_capacity?.toLocaleString()}
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
+                style={{ width: `${((event.attendee_count || 0) / (event.max_capacity || 1)) * 100}%` }}
+              ></div>
+            </div>
           </div>
         )}
 

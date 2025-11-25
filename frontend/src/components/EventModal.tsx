@@ -1,5 +1,6 @@
 import { X, Calendar, MapPin, Users, Navigation, Share2, Clock, TrendingUp } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { useRef, useLayoutEffect } from 'react';
 
 interface Event {
   id: number;
@@ -21,6 +22,7 @@ interface EventModalProps {
   event: Event | null;
   isOpen: boolean;
   onClose: () => void;
+  scrollToRegistration?: boolean; // ✨ NEW: Auto-scroll to image when JOIN US clicked
 }
 
 // Color schemes for event types
@@ -35,7 +37,27 @@ const eventTypeColors: Record<string, { gradient: string; badge: string; icon: s
   default: { gradient: 'from-gray-400 to-gray-500', badge: 'bg-gray-100 text-gray-700 border-gray-300', icon: '📅' }
 };
 
-export function EventModal({ event, isOpen, onClose }: EventModalProps) {
+export function EventModal({ event, isOpen, onClose, scrollToRegistration = false }: EventModalProps) {
+  const imageRef = useRef<HTMLDivElement>(null);
+  
+  // ✨ Auto-scroll to image when JOIN US is clicked
+  useLayoutEffect(() => {
+    if (isOpen && scrollToRegistration && imageRef.current) {
+      // Immediate scroll before paint for instant effect
+      setTimeout(() => {
+        imageRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        // Add pulse animation to image
+        imageRef.current?.classList.add('animate-pulse');
+        setTimeout(() => {
+          imageRef.current?.classList.remove('animate-pulse');
+        }, 1500);
+      }, 100);
+    }
+  }, [isOpen, scrollToRegistration]);
+  
   if (!isOpen || !event) return null;
 
   const eventType = event.tags && event.tags.length > 0 ? event.tags[0].toLowerCase() : 'default';
@@ -94,8 +116,11 @@ export function EventModal({ event, isOpen, onClose }: EventModalProps) {
         className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Hero Section */}
-        <div className={`relative h-80 overflow-hidden ${!event.image_url ? `bg-gradient-to-br ${colors.gradient}` : 'bg-gray-900'}`}>
+        {/* Hero Section - ✨ Added ref for auto-scroll */}
+        <div 
+          ref={imageRef}
+          className={`relative h-80 overflow-hidden ${!event.image_url ? `bg-gradient-to-br ${colors.gradient}` : 'bg-gray-900'}`}
+        >
           {event.image_url ? (
             <img 
               src={event.image_url} 

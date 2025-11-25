@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { Calendar, MapPin, Users, TrendingUp, Filter, Search } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { EventCard } from './EventCard';
+import { PastEventCard } from './PastEventCard';
 import { EventModal } from './EventModal';
 
 interface EventsTimelineProps {
@@ -12,6 +13,7 @@ interface EventsTimelineProps {
   selectedCity: string;
 }
 
+// ✨ UPDATED: Extended Event interface to match EventCard/PastEventCard
 interface Event {
   id: number;
   title: string;
@@ -27,6 +29,15 @@ interface Event {
   lat?: number;
   lon?: number;
   image_url?: string;
+  // ✨ NEW FIELDS:
+  max_capacity?: number | null;
+  attendee_count?: number;
+  spots_remaining?: number | null;
+  is_full?: boolean;
+  user_registered?: boolean;
+  user_has_reminder?: boolean;
+  recurrence_type?: string;
+  is_recurring_instance?: boolean;
 }
 
 const eventTypes = [
@@ -111,6 +122,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const [dateFilter, setDateFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const [selectedModal, setSelectedModal] = useState<Event | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [shouldScrollToImage, setShouldScrollToImage] = useState(false); // ✨ NEW: Track if JOIN US was clicked
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -208,8 +220,10 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   ).sort();
   const eventTypes = ['all', ...uniqueEventTypes];
 
-  const handleViewDetails = (event: Event) => {
+  // ✨ UPDATED: Handle view details with optional scroll-to-image
+  const handleViewDetails = (event: Event, scrollToImage: boolean = false) => {
     setSelectedModal(event);
+    setShouldScrollToImage(scrollToImage);
     setIsModalOpen(true);
   };
 
@@ -355,16 +369,91 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         </CardContent>
       </Card>
 
-      {/* Events Grid - Single Scrollable Card */}
-      <Card className="bg-white border-gray-200 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-gray-900">Events</CardTitle>
-          <CardDescription className="text-gray-900">
-            Browse and discover tourism events in Kedah
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          {filteredEvents.length === 0 ? (
+      {/* ✨ UPCOMING EVENTS - With JOIN US Buttons */}
+      {filteredEvents.filter(event => new Date(event.start_date) >= now).length > 0 && (
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-gray-900 text-2xl">Upcoming Events</CardTitle>
+                <CardDescription className="text-gray-700">
+                  {filteredEvents.filter(event => new Date(event.start_date) >= now).length} events you can join
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-green-500 scrollbar-track-green-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredEvents
+                  .filter(event => new Date(event.start_date) >= now)
+                  .map((event, index) => {
+                    const eventDate = new Date(event.start_date);
+                    const isHappeningNow = eventDate.toDateString() === now.toDateString();
+                    const isNew = event.id ? event.id > events.length - 2 : false;
+                    
+                    return (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        rank={index + 1}
+                        isHappeningNow={isHappeningNow}
+                        isNew={isNew}
+                        isFree={true}
+                        onViewDetails={handleViewDetails}
+                      />
+                    );
+                  })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ✨ PAST EVENTS - Event Reports, No JOIN US */}
+      {filteredEvents.filter(event => new Date(event.start_date) < now).length > 0 && (
+        <Card className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-300 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-slate-700 rounded-full flex items-center justify-center shadow-md">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-gray-900 text-2xl">Past Events</CardTitle>
+                <CardDescription className="text-gray-700">
+                  {filteredEvents.filter(event => new Date(event.start_date) < now).length} completed events with attendance reports
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredEvents
+                  .filter(event => new Date(event.start_date) < now)
+                  .map((event, index) => {
+                    return (
+                      <PastEventCard
+                        key={event.id}
+                        event={event}
+                        rank={index + 1}
+                        onViewDetails={handleViewDetails}
+                      />
+                    );
+                  })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Events Message */}
+      {filteredEvents.length === 0 && (
+        <Card className="bg-white border-gray-200 shadow-lg">
+          <CardContent className="p-6">
             <div className="py-16">
               <div className="text-center text-gray-500">
                 <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -372,37 +461,19 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
                 <p>Try adjusting your filters or search term</p>
               </div>
             </div>
-          ) : (
-            <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map((event, index) => {
-                  const eventDate = new Date(event.start_date);
-                  const isHappeningNow = eventDate.toDateString() === now.toDateString();
-                  const isNew = event.id ? event.id > events.length - 2 : false;
-                  
-                  return (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      rank={index + 1}
-                      isHappeningNow={isHappeningNow}
-                      isNew={isNew}
-                      isFree={true} // Can be determined from event data
-                      onViewDetails={handleViewDetails}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Event Detail Modal */}
+      {/* Event Detail Modal - ✨ Added scrollToRegistration prop */}
       <EventModal
         event={selectedModal}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setShouldScrollToImage(false); // Reset scroll flag
+        }}
+        scrollToRegistration={shouldScrollToImage}
       />
       {/* Event Attendance Trend */}
       {attendanceTrend.length > 0 && (
