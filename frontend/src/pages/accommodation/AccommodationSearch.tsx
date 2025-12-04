@@ -44,14 +44,18 @@ const POPULAR_SEARCHES = [
   { query: 'Family Apartment', icon: '👨‍👩‍👧‍👦' },
 ];
 
-export default function AccommodationSearch() {
+interface AccommodationSearchProps {
+  selectedCity?: string;
+}
+
+export default function AccommodationSearch({ selectedCity = 'all' }: AccommodationSearchProps) {
   const [stays, setStays] = useState<Stay[]>([]);
   const [filteredStays, setFilteredStays] = useState<Stay[]>([]);
   const [loading, setLoading] = useState(true);
   const [internalCount, setInternalCount] = useState(0);
   const [externalCount, setExternalCount] = useState(0);
   
-  // Filters
+  // Filters - Initialize district from selectedCity prop
   const [district, setDistrict] = useState('');
   const [type, setType] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -66,7 +70,21 @@ export default function AccommodationSearch() {
   // Auto-suggestions
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
+  // Sync district filter when selectedCity changes
   useEffect(() => {
+    if (selectedCity && selectedCity !== 'all') {
+      // Capitalize first letter to match district format
+      const cityName = selectedCity.charAt(0).toUpperCase() + selectedCity.slice(1);
+      console.log('🏙️ City filter changed to:', cityName);
+      setDistrict(cityName);
+    } else {
+      console.log('🏙️ City filter reset to: All Cities');
+      setDistrict('');
+    }
+  }, [selectedCity]);
+
+  useEffect(() => {
+    console.log('🔄 Fetching stays with filters:', { district, type, minPrice, maxPrice, minRating });
     fetchStays();
   }, [district, type, minPrice, maxPrice, minRating]);
 
@@ -93,9 +111,14 @@ export default function AccommodationSearch() {
       if (maxPrice) params.append('max_price', maxPrice);
       if (minRating) params.append('min_rating', minRating);
       
-      const response = await axios.get<HybridSearchResponse>(
-        `/api/stays/hybrid_search/?${params.toString()}`
-      );
+      const url = `/api/stays/hybrid_search/?${params.toString()}`;
+      console.log('📡 Fetching stays from:', url);
+      console.log('📋 Params:', { district, type, minPrice, maxPrice, minRating });
+      
+      const response = await axios.get<HybridSearchResponse>(url);
+      
+      console.log('✅ Received stays:', response.data.results.length, 'results');
+      console.log('📊 Internal:', response.data.internal_count, 'External:', response.data.external_count);
       
       setStays(response.data.results);
       setInternalCount(response.data.internal_count);
@@ -218,6 +241,20 @@ export default function AccommodationSearch() {
       {/* Header Section */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-t-2xl px-8 py-8 shadow-xl">
         <div className="max-w-6xl mx-auto">
+          {/* City Filter Active Indicator */}
+          {selectedCity && selectedCity !== 'all' && (
+            <div className="mb-4 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl px-4 py-3 flex items-center gap-3">
+              <MapPin className="w-5 h-5 text-yellow-300" />
+              <div className="flex-1">
+                <span className="text-white font-semibold">City Filter Active: </span>
+                <span className="text-yellow-300 font-bold text-lg capitalize">{selectedCity}</span>
+              </div>
+              <Badge className="bg-yellow-300 text-indigo-900 border-yellow-400">
+                {filteredStays.length} {filteredStays.length === 1 ? 'stay' : 'stays'} found
+              </Badge>
+            </div>
+          )}
+          
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
               <Home className="w-8 h-8 text-white" />
@@ -409,6 +446,11 @@ export default function AccommodationSearch() {
                   <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-indigo-600" />
                     Location
+                    {selectedCity && selectedCity !== 'all' && (
+                      <span className="text-xs font-normal text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                        🔗 Synced with city filter
+                      </span>
+                    )}
                   </label>
                   <div className="relative">
                     <select

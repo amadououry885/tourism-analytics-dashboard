@@ -164,7 +164,7 @@ export default function TourismDashboard() {
             <PopularDestinations selectedCity={selectedCity} timeRange={timeRange} />
           </TabsContent>
 
-          <TabsContent value="restaurants" className="mt-6">
+          <TabsContent value="restaurants" className="mt-6 h-[calc(100vh-200px)]">
             <RestaurantVendors selectedCity={selectedCity} timeRange={timeRange} />
           </TabsContent>
 

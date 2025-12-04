@@ -32,6 +32,26 @@ interface Destination {
   currency?: string;
   latitude?: number;
   longitude?: number;
+  // NEW FIELDS ADDED - External links
+  wikipedia_url?: string;
+  official_website?: string;
+  tripadvisor_url?: string;
+  google_maps_url?: string;
+  // Contact information
+  contact_phone?: string;
+  contact_email?: string;
+  address?: string;
+  // Operational details
+  opening_hours?: string;
+  best_time_to_visit?: string;
+  // Amenities
+  amenities?: {
+    parking?: boolean;
+    wifi?: boolean;
+    wheelchair_accessible?: boolean;
+    restaurant?: boolean;
+    restroom?: boolean;
+  };
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'];
@@ -58,7 +78,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
     try {
       // Use relative path so Vite proxy forwards to backend (avoid hard-coded ports)
-      const res = await fetch('/api/analytics/places/popular/');
+      // Add range=30d to get posts from last 30 days
+      const res = await fetch('/api/analytics/places/popular/?range=30d');
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
@@ -103,10 +124,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
 
-        // ✅ Use the popular places endpoint
+        // ✅ Use the popular places endpoint with 30-day range
         let response;
         try {
-          response = await fetch(`/api/analytics/places/popular/${cityParam}`);
+          response = await fetch(`/api/analytics/places/popular/${cityParam}${cityParam ? '&' : '?'}range=30d`);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
@@ -127,7 +148,18 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
             color: COLORS[index % COLORS.length],
             category: place.category || '',
             city: place.city || '',
-            image_url: place.image_url || ''
+            image_url: place.image_url || '',
+            // ✅ Add all new fields from API
+            wikipedia_url: place.wikipedia_url || undefined,
+            official_website: place.official_website || undefined,
+            tripadvisor_url: place.tripadvisor_url || undefined,
+            google_maps_url: place.google_maps_url || undefined,
+            contact_phone: place.contact_phone || undefined,
+            contact_email: place.contact_email || undefined,
+            address: place.address || undefined,
+            opening_hours: place.opening_hours || undefined,
+            best_time_to_visit: place.best_time_to_visit || undefined,
+            amenities: place.amenities || undefined
           }));
           
           // Sort by posts (highest first)
@@ -182,7 +214,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         // Fetch least visited destinations
         try {
-          const leastResponse = await fetch(`/api/analytics/places/least-visited/${cityParam}`);
+          const leastResponse = await fetch(`/api/analytics/places/least-visited/${cityParam}${cityParam ? '&' : '?'}range=30d`);
           if (!leastResponse.ok) {
             throw new Error(`Server responded with ${leastResponse.status}`);
           }
@@ -429,6 +461,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
       {/* Destination Detail Modal */}
       <DestinationModal
+        key={selectedDestination?.id || 'modal'}
         destination={selectedDestination}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

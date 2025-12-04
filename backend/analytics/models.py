@@ -25,6 +25,28 @@ class Place(models.Model):
     # Image (supports both URLs and base64 data URLs)
     image_url = models.TextField(blank=True, default="", help_text="URL or base64 data URL for place image")
     
+    # External Links & Resources
+    wikipedia_url = models.URLField(blank=True, default="", help_text="Wikipedia article link")
+    official_website = models.URLField(blank=True, default="", help_text="Official website or tourism board link")
+    tripadvisor_url = models.URLField(blank=True, default="", help_text="TripAdvisor page link")
+    google_maps_url = models.URLField(blank=True, default="", help_text="Google Maps link")
+    
+    # Contact Information
+    contact_phone = models.CharField(max_length=20, blank=True, default="", help_text="Contact phone number")
+    contact_email = models.EmailField(blank=True, default="", help_text="Contact email")
+    address = models.TextField(blank=True, default="", help_text="Full physical address")
+    
+    # Operational Details
+    opening_hours = models.TextField(blank=True, default="", help_text="Opening hours (e.g., 'Mon-Fri: 9AM-6PM')")
+    best_time_to_visit = models.CharField(max_length=200, blank=True, default="", help_text="Best season/time to visit")
+    
+    # Facilities & Amenities (JSON field for flexible storage)
+    amenities = models.JSONField(
+        default=dict, 
+        blank=True,
+        help_text="Facilities like parking, WiFi, wheelchair access, etc."
+    )
+    
     # Ownership tracking
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -67,6 +89,27 @@ class SocialPost(models.Model):
     shares = models.PositiveIntegerField(default=0)
     views = models.PositiveIntegerField(default=0)  # ✅ ADDED: To store post views
 
+    # AI Analysis Results
+    sentiment = models.CharField(
+        max_length=20,
+        choices=[
+            ('positive', 'Positive'),
+            ('negative', 'Negative'),
+            ('neutral', 'Neutral'),
+        ],
+        default='neutral',
+        blank=True,
+        help_text="AI-classified sentiment category"
+    )
+    sentiment_score = models.FloatField(
+        default=0.0,
+        help_text="Numerical sentiment score: -1.0 (very negative) to +1.0 (very positive)"
+    )
+    confidence = models.FloatField(
+        default=0.0,
+        help_text="AI classification confidence (0-100%)"
+    )
+
     # Filtering + linkage
     is_tourism = models.BooleanField(default=True)
     place = models.ForeignKey(
@@ -76,6 +119,29 @@ class SocialPost(models.Model):
         on_delete=models.SET_NULL,
         related_name="posts",
         db_index=True,  # we query by place a lot
+        help_text="Related tourism destination"
+    )
+    
+    # ✅ NEW: Link to vendors/restaurants
+    vendor = models.ForeignKey(
+        'vendors.Vendor',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="social_posts",
+        db_index=True,
+        help_text="Related restaurant/vendor mentioned in post"
+    )
+    
+    # ✅ NEW: Link to accommodations
+    stay = models.ForeignKey(
+        'stays.Stay',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="social_posts",
+        db_index=True,
+        help_text="Related accommodation mentioned in post"
     )
 
     # Flexible bucket for anything extra (hashtags, language, keywords, etc.)

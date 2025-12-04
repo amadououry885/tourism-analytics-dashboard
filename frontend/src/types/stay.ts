@@ -34,6 +34,14 @@ export interface Stay {
   // Ownership
   owner?: number | null;
   owner_username?: string | null;
+  
+  // Social media metrics (from AI analytics)
+  social_mentions?: number;
+  social_engagement?: number;
+  estimated_interest?: number;
+  trending_percentage?: number;
+  is_trending?: boolean;
+  social_rating?: number | null;
 }
 
 export interface HybridSearchResponse {

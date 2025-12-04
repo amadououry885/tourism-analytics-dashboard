@@ -17,6 +17,7 @@ interface DestinationCardProps {
     latitude?: number;
     longitude?: number;
     rating?: number;
+    trending?: number;  // Trending percentage from API
   };
   rank: number;
   isTrending?: boolean;
@@ -232,9 +233,13 @@ export function DestinationCard({ destination, rank, isTrending, isNew, onViewDe
           </div>
           
           {/* Trending Arrow */}
-          <div className="flex items-center gap-1 text-green-600">
+          <div className={`flex items-center gap-1 ${(destination.trending || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             <TrendingUp className="w-4 h-4" />
-            <span className="text-xs font-semibold">+12%</span>
+            <span className="text-xs font-semibold">
+              {destination.trending !== undefined 
+                ? `${destination.trending > 0 ? '+' : ''}${destination.trending.toFixed(1)}%`
+                : '+12%'}
+            </span>
           </div>
         </div>
 

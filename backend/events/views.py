@@ -2,17 +2,21 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser
 from django.utils.timezone import now
 from django.db.models import Q
-from .models import Event, EventRegistration, EventReminder
+from .models import Event, EventRegistration, EventReminder, EventRegistrationForm, EventRegistrationField
 from .serializers import (
     EventSerializer,
     EventDetailSerializer,
     EventRegistrationSerializer,
-    EventReminderSerializer
+    EventReminderSerializer,
+    EventRegistrationFormSerializer,
+    EventRegistrationFormWriteSerializer,
+    EventRegistrationFieldSerializer,
 )
 from common.permissions import AdminOrReadOnly
+from .emails import send_registration_confirmation, send_event_reminder
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -114,6 +118,61 @@ class EventViewSet(viewsets.ModelViewSet):
             'spots_remaining': event.spots_remaining,
         }, status=status.HTTP_200_OK)
     
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def cancel_registration(self, request, pk=None):
+        """Cancel a registration (for authenticated users or guest with registration ID)"""
+        event = self.get_object()
+        
+        # For authenticated users
+        if request.user.is_authenticated:
+            try:
+                registration = EventRegistration.objects.get(
+                    user=request.user,
+                    event=event,
+                    status='confirmed'
+                )
+                registration.status = 'cancelled'
+                registration.save()
+                
+                return Response({
+                    'message': 'Registration cancelled successfully',
+                    'attendee_count': event.attendee_count,
+                    'spots_remaining': event.spots_remaining,
+                }, status=status.HTTP_200_OK)
+            except EventRegistration.DoesNotExist:
+                return Response({
+                    'error': 'No active registration found for this event'
+                }, status=status.HTTP_404_NOT_FOUND)
+        
+        # For guest users (with registration ID)
+        registration_id = request.data.get('registration_id')
+        contact_email = request.data.get('contact_email')
+        
+        if not registration_id or not contact_email:
+            return Response({
+                'error': 'registration_id and contact_email are required for guest cancellation'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            registration = EventRegistration.objects.get(
+                id=registration_id,
+                event=event,
+                contact_email=contact_email,
+                status='confirmed'
+            )
+            registration.status = 'cancelled'
+            registration.save()
+            
+            return Response({
+                'message': 'Registration cancelled successfully',
+                'attendee_count': event.attendee_count,
+                'spots_remaining': event.spots_remaining,
+            }, status=status.HTTP_200_OK)
+        except EventRegistration.DoesNotExist:
+            return Response({
+                'error': 'Registration not found or already cancelled'
+            }, status=status.HTTP_404_NOT_FOUND)
+    
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def my_registration(self, request, pk=None):
         """Get current user's registration for this event"""
@@ -142,6 +201,30 @@ class EventViewSet(viewsets.ModelViewSet):
             'count': registrations.count(),
             'attendees': serializer.data
         })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def send_reminder(self, request, pk=None):
+        """Send reminder email to all confirmed attendees (Admin only)"""
+        event = self.get_object()
+        message = request.data.get('message', '')
+        
+        # Get all confirmed registrations
+        confirmed = event.registrations.filter(status='confirmed')
+        
+        if confirmed.count() == 0:
+            return Response({
+                'error': 'No confirmed attendees to send reminders to'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Send reminder emails using email utility
+        sent_count, failed_count = send_event_reminder(confirmed, event, message)
+        
+        return Response({
+            'message': f'Reminders sent successfully to {sent_count} attendees',
+            'sent_count': sent_count,
+            'failed_count': failed_count,
+            'total_confirmed': confirmed.count()
+        }, status=status.HTTP_200_OK)
     
     # ✨ NEW: Reminder Endpoints
     
@@ -242,3 +325,188 @@ class EventViewSet(viewsets.ModelViewSet):
             'message': f'Generated {len(instances)} recurring instances',
             'instances': EventSerializer(instances, many=True).data
         })
+    
+    # ✨ NEW: Registration Form Management Endpoints
+    
+    @action(detail=True, methods=['get'])
+    def registration_form(self, request, pk=None):
+        """
+        Get the custom registration form for this event.
+        Public endpoint - anyone can view the form before registering.
+        """
+        event = self.get_object()
+        
+        try:
+            form = event.registration_form
+            serializer = EventRegistrationFormSerializer(form)
+            return Response(serializer.data)
+        except EventRegistrationForm.DoesNotExist:
+            return Response({
+                'has_form': False,
+                'message': 'This event does not have a custom registration form'
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post', 'put'], permission_classes=[AdminOrReadOnly])
+    def create_registration_form(self, request, pk=None):
+        """
+        Create or update custom registration form for this event.
+        Only event organizers (admins) can do this.
+        
+        Example request body:
+        {
+            "title": "Marathon Registration",
+            "description": "Please fill all fields carefully",
+            "confirmation_message": "Thanks! See you at the marathon!",
+            "allow_guest_registration": true,
+            "fields_data": [
+                {
+                    "label": "Full Name",
+                    "field_type": "text",
+                    "is_required": true,
+                    "placeholder": "Enter your full name",
+                    "order": 1
+                },
+                {
+                    "label": "Email Address",
+                    "field_type": "email",
+                    "is_required": true,
+                    "placeholder": "you@example.com",
+                    "order": 2
+                },
+                {
+                    "label": "T-Shirt Size",
+                    "field_type": "dropdown",
+                    "is_required": true,
+                    "options": ["XS", "S", "M", "L", "XL", "XXL"],
+                    "order": 3
+                },
+                {
+                    "label": "Dietary Requirements",
+                    "field_type": "dropdown",
+                    "is_required": false,
+                    "options": ["None", "Vegetarian", "Vegan", "Halal"],
+                    "order": 4
+                }
+            ]
+        }
+        """
+        event = self.get_object()
+        
+        # Check if form already exists
+        try:
+            form = event.registration_form
+            # Update existing form
+            serializer = EventRegistrationFormWriteSerializer(form, data=request.data, partial=True)
+        except EventRegistrationForm.DoesNotExist:
+            # Create new form
+            serializer = EventRegistrationFormWriteSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            if 'event' not in request.data:
+                # Auto-set event if not provided
+                serializer.validated_data['event'] = event
+            
+            form = serializer.save()
+            response_serializer = EventRegistrationFormSerializer(form)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def submit_registration(self, request, pk=None):
+        """
+        Submit registration with custom form data.
+        Works for both authenticated users and guests (if allowed).
+        
+        Example request body:
+        {
+            "form_data": {
+                "full_name": "John Doe",
+                "email_address": "john@example.com",
+                "t_shirt_size": "L",
+                "dietary_requirements": "Halal"
+            }
+        }
+        """
+        event = self.get_object()
+        
+        # Check if event is full
+        if event.is_full:
+            return Response({
+                'error': 'Event is at full capacity'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if custom form exists
+        has_custom_form = hasattr(event, 'registration_form')
+        
+        if has_custom_form:
+            form = event.registration_form
+            
+            # Check if guest registration is allowed
+            if not form.allow_guest_registration and not request.user.is_authenticated:
+                return Response({
+                    'error': 'Please login to register for this event'
+                }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Validate and extract form data
+        form_data = request.data.get('form_data', {})
+        
+        # Extract contact info from form data (for quick lookup)
+        contact_name = form_data.get('full_name') or form_data.get('name') or ''
+        contact_email = form_data.get('email_address') or form_data.get('email') or ''
+        contact_phone = form_data.get('phone_number') or form_data.get('phone') or ''
+        
+        # Create registration
+        registration_data = {
+            'event': event.id,
+            'form_data': form_data,
+            'contact_name': contact_name,
+            'contact_email': contact_email,
+            'contact_phone': contact_phone,
+        }
+        
+        # Add user if authenticated
+        if request.user.is_authenticated:
+            registration_data['user'] = request.user.id
+            
+            # Check if user already registered
+            existing = EventRegistration.objects.filter(
+                user=request.user,
+                event=event,
+                status='confirmed'
+            ).first()
+            
+            if existing:
+                return Response({
+                    'error': 'You are already registered for this event'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = EventRegistrationSerializer(data=registration_data)
+        
+        if serializer.is_valid():
+            registration = serializer.save()
+            
+            # Send automatic thank-you email
+            email_sent = send_registration_confirmation(registration, event)
+            if email_sent:
+                print(f"✅ Confirmation email sent to {contact_email}")
+            else:
+                print(f"⚠️ Failed to send confirmation email to {contact_email}")
+            
+            # Get confirmation message
+            confirmation_msg = "Thank you for registering!"
+            if has_custom_form:
+                confirmation_msg = form.confirmation_message
+            
+            return Response({
+                'message': confirmation_msg,
+                'registration': EventRegistrationSerializer(registration).data,
+                'event': {
+                    'title': event.title,
+                    'attendee_count': event.attendee_count,
+                    'spots_remaining': event.spots_remaining,
+                },
+                'email_sent': email_sent
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

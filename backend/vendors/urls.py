@@ -4,6 +4,10 @@ from . import views
 
 router = DefaultRouter()
 router.register(r"vendors", views.VendorViewSet)
+router.register(r"menu-items", views.MenuItemViewSet, basename='menuitem')
+router.register(r"opening-hours", views.OpeningHoursViewSet, basename='openinghours')
+router.register(r"reviews", views.ReviewViewSet, basename='review')
+router.register(r"promotions", views.PromotionViewSet, basename='promotion')
 
 urlpatterns = [
     path("", include(router.urls)),

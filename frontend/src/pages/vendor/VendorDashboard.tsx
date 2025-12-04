@@ -9,18 +9,54 @@ import {
   MapPin,
   Users,
   Home,
+  UtensilsCrossed,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { FormInput } from '../../components/FormInput';
+import { MenuManagement } from '../../components/MenuManagement';
+import { OpeningHoursManagement } from '../../components/OpeningHoursManagement';
 
 interface Restaurant {
   id: number;
   name: string;
   city: string;
   cuisines: string[];
+  description?: string;
+  established_year?: number;
+  price_range?: string;
   lat?: number;
   lon?: number;
+  address?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  official_website?: string;
+  facebook_url?: string;
+  instagram_url?: string;
+  tripadvisor_url?: string;
+  google_maps_url?: string;
+  logo_url?: string;
+  cover_image_url?: string;
+  gallery_images?: string[];
+  amenities?: {
+    parking?: boolean;
+    wifi?: boolean;
+    wheelchair_accessible?: boolean;
+    outdoor_seating?: boolean;
+    halal_certified?: boolean;
+    non_smoking?: boolean;
+    live_music?: boolean;
+    tv_sports?: boolean;
+    private_events?: boolean;
+    delivery?: boolean;
+    takeaway?: boolean;
+    reservations?: boolean;
+  };
+  delivery_available?: boolean;
+  takeaway_available?: boolean;
+  reservation_required?: boolean;
+  dress_code?: string;
   is_active: boolean;
   owner?: number;
   owner_username?: string;
@@ -34,12 +70,45 @@ const VendorDashboard: React.FC = () => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
+  const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours'>('restaurants');
+  const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     city: '',
     cuisines: [] as string[],
+    description: '',
+    established_year: '',
+    price_range: '$$',
     lat: '',
     lon: '',
+    address: '',
+    contact_phone: '',
+    contact_email: '',
+    official_website: '',
+    facebook_url: '',
+    instagram_url: '',
+    tripadvisor_url: '',
+    google_maps_url: '',
+    logo_url: '',
+    cover_image_url: '',
+    amenities: {
+      parking: false,
+      wifi: false,
+      wheelchair_accessible: false,
+      outdoor_seating: false,
+      halal_certified: false,
+      non_smoking: false,
+      live_music: false,
+      tv_sports: false,
+      private_events: false,
+      delivery: false,
+      takeaway: false,
+      reservations: false,
+    },
+    delivery_available: false,
+    takeaway_available: true,
+    reservation_required: false,
+    dress_code: '',
   });
 
   const cuisineOptions = [
@@ -79,8 +148,26 @@ const VendorDashboard: React.FC = () => {
       name: formData.name,
       city: formData.city,
       cuisines: formData.cuisines,
+      description: formData.description,
+      established_year: formData.established_year ? parseInt(formData.established_year) : null,
+      price_range: formData.price_range,
       lat: formData.lat ? parseFloat(formData.lat) : null,
       lon: formData.lon ? parseFloat(formData.lon) : null,
+      address: formData.address,
+      contact_phone: formData.contact_phone,
+      contact_email: formData.contact_email,
+      official_website: formData.official_website,
+      facebook_url: formData.facebook_url,
+      instagram_url: formData.instagram_url,
+      tripadvisor_url: formData.tripadvisor_url,
+      google_maps_url: formData.google_maps_url,
+      logo_url: formData.logo_url,
+      cover_image_url: formData.cover_image_url,
+      amenities: formData.amenities,
+      delivery_available: formData.delivery_available,
+      takeaway_available: formData.takeaway_available,
+      reservation_required: formData.reservation_required,
+      dress_code: formData.dress_code,
     };
 
     console.log('Submitting payload:', payload);
@@ -138,8 +225,39 @@ const VendorDashboard: React.FC = () => {
       name: restaurant.name,
       city: restaurant.city,
       cuisines: restaurant.cuisines || [],
+      description: restaurant.description || '',
+      established_year: restaurant.established_year?.toString() || '',
+      price_range: restaurant.price_range || '$$',
       lat: restaurant.lat?.toString() || '',
       lon: restaurant.lon?.toString() || '',
+      address: restaurant.address || '',
+      contact_phone: restaurant.contact_phone || '',
+      contact_email: restaurant.contact_email || '',
+      official_website: restaurant.official_website || '',
+      facebook_url: restaurant.facebook_url || '',
+      instagram_url: restaurant.instagram_url || '',
+      tripadvisor_url: restaurant.tripadvisor_url || '',
+      google_maps_url: restaurant.google_maps_url || '',
+      logo_url: restaurant.logo_url || '',
+      cover_image_url: restaurant.cover_image_url || '',
+      amenities: restaurant.amenities || {
+        parking: false,
+        wifi: false,
+        wheelchair_accessible: false,
+        outdoor_seating: false,
+        halal_certified: false,
+        non_smoking: false,
+        live_music: false,
+        tv_sports: false,
+        private_events: false,
+        delivery: false,
+        takeaway: false,
+        reservations: false,
+      },
+      delivery_available: restaurant.delivery_available || false,
+      takeaway_available: restaurant.takeaway_available !== undefined ? restaurant.takeaway_available : true,
+      reservation_required: restaurant.reservation_required || false,
+      dress_code: restaurant.dress_code || '',
     });
     setShowAddModal(true);
   };
@@ -149,8 +267,39 @@ const VendorDashboard: React.FC = () => {
       name: '',
       city: '',
       cuisines: [],
+      description: '',
+      established_year: '',
+      price_range: '$$',
       lat: '',
       lon: '',
+      address: '',
+      contact_phone: '',
+      contact_email: '',
+      official_website: '',
+      facebook_url: '',
+      instagram_url: '',
+      tripadvisor_url: '',
+      google_maps_url: '',
+      logo_url: '',
+      cover_image_url: '',
+      amenities: {
+        parking: false,
+        wifi: false,
+        wheelchair_accessible: false,
+        outdoor_seating: false,
+        halal_certified: false,
+        non_smoking: false,
+        live_music: false,
+        tv_sports: false,
+        private_events: false,
+        delivery: false,
+        takeaway: false,
+        reservations: false,
+      },
+      delivery_available: false,
+      takeaway_available: true,
+      reservation_required: false,
+      dress_code: '',
     });
     setEditingRestaurant(null);
     setShowAddModal(false);
@@ -248,6 +397,84 @@ const VendorDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Tabs Navigation */}
+        <div className="bg-white rounded-xl shadow-md border-2 border-gray-200 mb-6 overflow-hidden">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('restaurants')}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
+                activeTab === 'restaurants'
+                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Store className="w-5 h-5" />
+              My Restaurants
+            </button>
+            <button
+              onClick={() => {
+                if (restaurants.length > 0) {
+                  setSelectedVendorId(restaurants[0].id);
+                  setActiveTab('menu');
+                } else {
+                  alert('Please add a restaurant first before managing menu items');
+                }
+              }}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
+                activeTab === 'menu'
+                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+              disabled={restaurants.length === 0}
+            >
+              <UtensilsCrossed className="w-5 h-5" />
+              Menu Management
+              {restaurants.length === 0 && <span className="text-xs">(Add restaurant first)</span>}
+            </button>
+            <button
+              onClick={() => {
+                if (restaurants.length > 0) {
+                  setSelectedVendorId(restaurants[0].id);
+                  setActiveTab('hours');
+                } else {
+                  alert('Please add a restaurant first before setting opening hours');
+                }
+              }}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
+                activeTab === 'hours'
+                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+              disabled={restaurants.length === 0}
+            >
+              <Clock className="w-5 h-5" />
+              Opening Hours
+              {restaurants.length === 0 && <span className="text-xs">(Add restaurant first)</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Restaurant Selector (for Menu & Hours tabs) */}
+        {(activeTab === 'menu' || activeTab === 'hours') && restaurants.length > 1 && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+            <label className="block text-sm font-medium text-blue-900 mb-2">
+              Select Restaurant:
+            </label>
+            <select
+              value={selectedVendorId || ''}
+              onChange={(e) => setSelectedVendorId(Number(e.target.value))}
+              className="w-full md:w-auto px-4 py-2 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {restaurants.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Tab Content */}
+        {activeTab === 'restaurants' && (
+          <>
         {/* Restaurants Grid */}
         {restaurants.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl shadow-xl border-4 border-dashed border-gray-300">
@@ -381,6 +608,18 @@ const VendorDashboard: React.FC = () => {
               ))}
             </div>
           </>
+        )}
+        </>
+        )}
+
+        {/* Menu Management Tab */}
+        {activeTab === 'menu' && selectedVendorId && (
+          <MenuManagement vendorId={selectedVendorId} />
+        )}
+
+        {/* Opening Hours Tab */}
+        {activeTab === 'hours' && selectedVendorId && (
+          <OpeningHoursManagement vendorId={selectedVendorId} />
         )}
       </main>
 
@@ -531,11 +770,378 @@ const VendorDashboard: React.FC = () => {
                 )}
               </div>
 
-              {/* Step 3: Optional Location */}
-              <div className="bg-gradient-to-r from-gray-50 to-slate-50 border-l-8 border-gray-400 p-6 rounded-xl shadow-sm">
+              {/* NEW: Business Profile Section */}
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border-l-8 border-indigo-500 p-6 rounded-xl shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-indigo-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
+                    3
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-indigo-900 text-xl">Business Details</h3>
+                    <p className="text-sm text-indigo-700">Tell customers about your restaurant</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2 text-lg">
+                    📝 About Your Restaurant
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Describe your restaurant, specialties, ambiance, history..."
+                    rows={4}
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 transition-all text-lg"
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-900 font-bold mb-2">
+                      📅 Year Established (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      name="established_year"
+                      value={formData.established_year}
+                      onChange={(e) => setFormData({...formData, established_year: e.target.value})}
+                      placeholder="e.g., 2010"
+                      className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-900 font-bold mb-2">
+                      💰 Price Range
+                    </label>
+                    <select
+                      name="price_range"
+                      value={formData.price_range}
+                      onChange={(e) => setFormData({...formData, price_range: e.target.value})}
+                      className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
+                    >
+                      <option value="$">$ Budget (&lt; RM30)</option>
+                      <option value="$$">$$ Moderate (RM30-80)</option>
+                      <option value="$$$">$$$ Upscale (RM80-150)</option>
+                      <option value="$$$$">$$$$ Fine Dining (&gt; RM150)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* NEW: Contact Information Section */}
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-l-8 border-emerald-500 p-6 rounded-xl shadow-sm mt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-emerald-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
+                    4
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-emerald-900 text-xl">📞 Contact Information</h3>
+                    <p className="text-sm text-emerald-700">How customers can reach you</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    ☎️ Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="contact_phone"
+                    value={formData.contact_phone}
+                    onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
+                    placeholder="+604-730 8888"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    📧 Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="contact_email"
+                    value={formData.contact_email}
+                    onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
+                    placeholder="info@restaurant.com"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-gray-900 font-bold mb-2">
+                    📍 Full Address
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    placeholder="Street address, building, city, postal code"
+                    rows={2}
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* NEW: Online Presence Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-8 border-blue-500 p-6 rounded-xl shadow-sm mt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
+                    5
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-blue-900 text-xl">🌐 Online Presence</h3>
+                    <p className="text-sm text-blue-700">Your website and social media links</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    🌐 Official Website
+                  </label>
+                  <input
+                    type="url"
+                    name="official_website"
+                    value={formData.official_website}
+                    onChange={(e) => setFormData({...formData, official_website: e.target.value})}
+                    placeholder="https://yourrestaurant.com"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    📘 Facebook Page
+                  </label>
+                  <input
+                    type="url"
+                    name="facebook_url"
+                    value={formData.facebook_url}
+                    onChange={(e) => setFormData({...formData, facebook_url: e.target.value})}
+                    placeholder="https://facebook.com/yourrestaurant"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    📸 Instagram Profile
+                  </label>
+                  <input
+                    type="url"
+                    name="instagram_url"
+                    value={formData.instagram_url}
+                    onChange={(e) => setFormData({...formData, instagram_url: e.target.value})}
+                    placeholder="https://instagram.com/yourrestaurant"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    ⭐ TripAdvisor Link
+                  </label>
+                  <input
+                    type="url"
+                    name="tripadvisor_url"
+                    value={formData.tripadvisor_url}
+                    onChange={(e) => setFormData({...formData, tripadvisor_url: e.target.value})}
+                    placeholder="https://tripadvisor.com/..."
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-gray-900 font-bold mb-2">
+                    📍 Google Maps Link
+                  </label>
+                  <input
+                    type="url"
+                    name="google_maps_url"
+                    value={formData.google_maps_url}
+                    onChange={(e) => setFormData({...formData, google_maps_url: e.target.value})}
+                    placeholder="https://maps.app.goo.gl/..."
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* NEW: Media Section */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-8 border-purple-500 p-6 rounded-xl shadow-sm mt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-purple-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
+                    6
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-purple-900 text-xl">📸 Images & Branding</h3>
+                    <p className="text-sm text-purple-700">Logo, cover photo, and gallery images</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    🎨 Logo URL
+                  </label>
+                  <input
+                    type="url"
+                    name="logo_url"
+                    value={formData.logo_url}
+                    onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
+                    placeholder="https://example.com/logo.jpg"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    🖼️ Cover Image URL
+                  </label>
+                  <input
+                    type="url"
+                    name="cover_image_url"
+                    value={formData.cover_image_url}
+                    onChange={(e) => setFormData({...formData, cover_image_url: e.target.value})}
+                    placeholder="https://example.com/cover.jpg"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* NEW: Amenities Section */}
+              <div className="bg-gradient-to-r from-green-50 to-lime-50 border-l-8 border-green-500 p-6 rounded-xl shadow-sm mt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
+                    7
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-green-900 text-xl">✨ Facilities & Amenities</h3>
+                    <p className="text-sm text-green-700">What features do you offer?</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { key: 'parking', label: '🅿️ Parking', icon: '🅿️' },
+                  { key: 'wifi', label: '📶 Free WiFi', icon: '📶' },
+                  { key: 'wheelchair_accessible', label: '♿ Wheelchair Accessible', icon: '♿' },
+                  { key: 'outdoor_seating', label: '🏠 Outdoor Seating', icon: '🏠' },
+                  { key: 'halal_certified', label: '🍃 Halal Certified', icon: '🍃' },
+                  { key: 'non_smoking', label: '🚭 Non-Smoking Area', icon: '🚭' },
+                  { key: 'live_music', label: '🎵 Live Music', icon: '🎵' },
+                  { key: 'tv_sports', label: '📺 TV/Sports', icon: '📺' },
+                  { key: 'private_events', label: '🎉 Private Events', icon: '🎉' },
+                  { key: 'delivery', label: '🚚 Delivery', icon: '🚚' },
+                  { key: 'takeaway', label: '📦 Takeaway', icon: '📦' },
+                  { key: 'reservations', label: '📅 Reservations', icon: '📅' },
+                ].map((amenity) => (
+                  <label
+                    key={amenity.key}
+                    className={`
+                      flex items-center gap-2 px-4 py-3 border-3 rounded-2xl cursor-pointer transition-all transform hover:scale-105
+                      ${formData.amenities[amenity.key as keyof typeof formData.amenities]
+                        ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 shadow-lg scale-105'
+                        : 'border-gray-300 hover:border-green-300 hover:bg-gray-50 hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.amenities[amenity.key as keyof typeof formData.amenities] || false}
+                      onChange={(e) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          amenities: {
+                            ...prev.amenities,
+                            [amenity.key]: e.target.checked
+                          }
+                        }));
+                      }}
+                      className="w-5 h-5 text-green-600 border-gray-400 rounded focus:ring-green-500"
+                    />
+                    <span className={`text-sm font-bold ${formData.amenities[amenity.key as keyof typeof formData.amenities] ? 'text-green-900' : 'text-gray-700'}`}>
+                      {amenity.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              {/* NEW: Operational Options Section */}
+              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-8 border-amber-500 p-6 rounded-xl shadow-sm mt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-amber-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
+                    8
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-amber-900 text-xl">⚙️ Operational Settings</h3>
+                    <p className="text-sm text-amber-700">Service options and policies</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <label className="flex items-center gap-3 px-4 py-3 bg-white border-3 border-gray-300 rounded-xl cursor-pointer hover:border-amber-400 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={formData.delivery_available}
+                      onChange={(e) => setFormData({...formData, delivery_available: e.target.checked})}
+                      className="w-5 h-5 text-amber-600 border-gray-400 rounded focus:ring-amber-500"
+                    />
+                    <span className="text-gray-900 font-bold">🚚 Delivery Available</span>
+                  </label>
+
+                  <label className="flex items-center gap-3 px-4 py-3 bg-white border-3 border-gray-300 rounded-xl cursor-pointer hover:border-amber-400 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={formData.takeaway_available}
+                      onChange={(e) => setFormData({...formData, takeaway_available: e.target.checked})}
+                      className="w-5 h-5 text-amber-600 border-gray-400 rounded focus:ring-amber-500"
+                    />
+                    <span className="text-gray-900 font-bold">📦 Takeaway Available</span>
+                  </label>
+
+                  <label className="flex items-center gap-3 px-4 py-3 bg-white border-3 border-gray-300 rounded-xl cursor-pointer hover:border-amber-400 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={formData.reservation_required}
+                      onChange={(e) => setFormData({...formData, reservation_required: e.target.checked})}
+                      className="w-5 h-5 text-amber-600 border-gray-400 rounded focus:ring-amber-500"
+                    />
+                    <span className="text-gray-900 font-bold">📅 Reservation Required</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-bold mb-2">
+                    👔 Dress Code (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    name="dress_code"
+                    value={formData.dress_code}
+                    onChange={(e) => setFormData({...formData, dress_code: e.target.value})}
+                    placeholder="e.g., Casual, Smart Casual, Formal"
+                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-amber-200 focus:border-amber-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Step 9: Optional Location */}
+              <div className="bg-gradient-to-r from-gray-50 to-slate-50 border-l-8 border-gray-400 p-6 rounded-xl shadow-sm mt-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="bg-gray-400 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    3
+                    9
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-xl">

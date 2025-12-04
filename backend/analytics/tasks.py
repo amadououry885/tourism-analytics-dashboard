@@ -25,6 +25,8 @@ django.setup()
 from analytics.scraper import SocialMediaScraper
 from analytics.classifier import PostClassifier
 from analytics.models import Place, SocialPost
+from vendors.models import Vendor
+from stays.models import Stay
 
 
 @shared_task  # ✅ ADD THIS DECORATOR
@@ -36,23 +38,44 @@ def collect_and_process_social_posts():
     3. Stores them in the database
     
     This runs automatically based on the schedule in celery.py
+    
+    Enhanced to scrape for:
+    - Destinations (Place)
+    - Restaurants/Vendors (Vendor)
+    - Accommodations (Stay)
     """
     print("=" * 60)
     print("🚀 STARTING SOCIAL MEDIA COLLECTION TASK")
     print("=" * 60)
     print(f"⏰ Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
-    # Step 1: Get all places from database to use as keywords
+    # Step 1: Get all keywords from database (places, vendors, stays)
     places = Place.objects.all()
-    keywords = [place.name for place in places]
+    vendors = Vendor.objects.filter(is_active=True)
+    stays = Stay.objects.filter(is_active=True)
+    
+    keywords = []
+    
+    # Add place names
+    place_names = [place.name for place in places]
+    keywords.extend(place_names)
+    
+    # Add vendor/restaurant names
+    vendor_names = [vendor.name for vendor in vendors]
+    keywords.extend(vendor_names)
+    
+    # Add stay/accommodation names
+    stay_names = [stay.name for stay in stays]
+    keywords.extend(stay_names)
     
     if not keywords:
-        print("⚠️ No places found in database! Add some places first.")
+        print("⚠️ No places, vendors, or stays found in database! Add some data first.")
         return
     
-    print(f"📍 Found {len(keywords)} places in database:")
-    for keyword in keywords:
-        print(f"   - {keyword}")
+    print(f"📍 Found {len(place_names)} destinations in database")
+    print(f"🍽️ Found {len(vendor_names)} restaurants/vendors in database")
+    print(f"🏨 Found {len(stay_names)} accommodations in database")
+    print(f"🔍 Total keywords to search: {len(keywords)}")
     print()
     
     # Step 2: Initialize scraper and classifier
@@ -78,15 +101,42 @@ def collect_and_process_social_posts():
         
         if classification['is_tourism']:
             print(f"   ✅ Tourism: YES (confidence: {classification['confidence']})")
-            print(f"   📍 Place: {classification['place_name']}")
+            print(f"   📍 Identified: {classification['place_name']}")
             print(f"   😊 Sentiment: {classification['sentiment']}")
             
-            # Step 4b: Find the Place object in database
-            try:
-                if classification['place_name']:
-                    place_obj = Place.objects.get(name__iexact=classification['place_name'])
-                else:
-                    print("   ⚠️ No specific place identified. Skipping.")
+            # Step 4b: Find what this post is about (place, vendor, or stay)
+            place_obj = None
+            vendor_obj = None
+            stay_obj = None
+            entity_name = classification['place_name']
+            
+            if entity_name:
+                # Try to match with Place first
+                try:
+                    place_obj = Place.objects.get(name__iexact=entity_name)
+                    print(f"   🗺️ Matched to DESTINATION: {place_obj.name}")
+                except Place.DoesNotExist:
+                    pass
+                
+                # Try to match with Vendor if not a place
+                if not place_obj:
+                    try:
+                        vendor_obj = Vendor.objects.get(name__iexact=entity_name, is_active=True)
+                        print(f"   🍽️ Matched to RESTAURANT: {vendor_obj.name}")
+                    except Vendor.DoesNotExist:
+                        pass
+                
+                # Try to match with Stay if not a place or vendor
+                if not place_obj and not vendor_obj:
+                    try:
+                        stay_obj = Stay.objects.get(name__iexact=entity_name, is_active=True)
+                        print(f"   🏨 Matched to ACCOMMODATION: {stay_obj.name}")
+                    except Stay.DoesNotExist:
+                        pass
+                
+                # If nothing matched, skip
+                if not place_obj and not vendor_obj and not stay_obj:
+                    print(f"   ⚠️ '{entity_name}' not found in database. Skipping.")
                     non_tourism_posts_skipped += 1
                     continue
                 
@@ -96,6 +146,8 @@ def collect_and_process_social_posts():
                     post_id=post_data['post_id'],
                     defaults={
                         'place': place_obj,
+                        'vendor': vendor_obj,
+                        'stay': stay_obj,
                         'content': post_data['content'],
                         'url': post_data['url'],
                         'created_at': post_data['created_at'],
@@ -104,6 +156,9 @@ def collect_and_process_social_posts():
                         'shares': post_data['shares'],
                         'views': post_data['views'],
                         'is_tourism': True,
+                        'sentiment': classification['sentiment'],
+                        'sentiment_score': classification.get('sentiment_score', 0.0),
+                        'confidence': classification['confidence'],
                         'extra': {
                             'sentiment': classification['sentiment'],
                             'confidence': classification['confidence']
@@ -116,9 +171,8 @@ def collect_and_process_social_posts():
                     tourism_posts_added += 1
                 else:
                     print(f"   🔄 Post already exists. Updated metrics.")
-                
-            except Place.DoesNotExist:
-                print(f"   ⚠️ Place '{classification['place_name']}' not found in database. Skipping.")
+            else:
+                print("   ⚠️ No specific entity identified. Skipping.")
                 non_tourism_posts_skipped += 1
                 
         else:

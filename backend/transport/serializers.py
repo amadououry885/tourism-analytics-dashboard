@@ -56,7 +56,11 @@ class ScheduleSerializer(serializers.ModelSerializer):
 class ScheduleBriefSerializer(serializers.ModelSerializer):
     class Meta:
         model = Schedule
-        fields = ['id', 'departure_time', 'arrival_time', 'capacity', 'price']
+        fields = [
+            'id', 'provider', 'transport_mode', 
+            'departure_time', 'arrival_time', 
+            'price', 'currency', 'seats_available', 'days_of_week'
+        ]
 
 
 class RouteDelaySerializer(serializers.ModelSerializer):

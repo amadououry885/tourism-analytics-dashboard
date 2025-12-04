@@ -1,5 +1,25 @@
 from django.contrib import admin
+from django import forms
+from django.utils.html import format_html
 from .models import Place, SocialPost, PostRaw, PostClean, SentimentTopic
+
+
+# ---------- Custom Form for Place with better amenities handling ----------
+class PlaceAdminForm(forms.ModelForm):
+    class Meta:
+        model = Place
+        fields = '__all__'
+        widgets = {
+            'amenities': forms.Textarea(attrs={
+                'rows': 6,
+                'cols': 60,
+                'placeholder': '{\n  "parking": true,\n  "wifi": true,\n  "wheelchair_accessible": true,\n  "restaurant": true,\n  "restroom": true\n}'
+            }),
+            'description': forms.Textarea(attrs={'rows': 4, 'cols': 80}),
+            'opening_hours': forms.Textarea(attrs={'rows': 2, 'cols': 60, 'placeholder': 'e.g., Mon-Sun: 9:00 AM - 10:00 PM'}),
+            'best_time_to_visit': forms.Textarea(attrs={'rows': 2, 'cols': 60, 'placeholder': 'e.g., November to February for cooler weather'}),
+            'address': forms.Textarea(attrs={'rows': 2, 'cols': 60}),
+        }
 
 
 # ---------- Inline: show posts inside a Place page ----------
@@ -13,10 +33,13 @@ class SocialPostInline(admin.TabularInline):
 
 @admin.register(Place)
 class PlaceAdmin(admin.ModelAdmin):
+    form = PlaceAdminForm  # Use custom form for better field handling
+    
     # columns in the table
     list_display = (
         "id", "name", "category", "city", "state", "country",
-        "is_free", "price", "currency", "latitude", "longitude",
+        "is_free", "price", "currency", "has_wikipedia", "has_website", 
+        "has_contact", "has_amenities",
     )
     list_filter = ("category", "city", "state", "country", "is_free", "currency")
     search_fields = ("name", "description", "city", "state", "country", "category")
@@ -24,10 +47,56 @@ class PlaceAdmin(admin.ModelAdmin):
     list_per_page = 50
 
     fieldsets = (
-        ("Basic info", {"fields": ("name", "description", "category")}),
-        ("Location", {"fields": ("city", "state", "country", "latitude", "longitude")}),
-        ("Pricing", {"fields": ("is_free", "price", "currency")}),
+        ("Basic Information", {
+            "fields": ("name", "description", "category", "image_url")
+        }),
+        ("Location Details", {
+            "fields": ("city", "state", "country", "latitude", "longitude", "address")
+        }),
+        ("Pricing Information", {
+            "fields": ("is_free", "price", "currency")
+        }),
+        ("External Links & Resources", {
+            "fields": ("wikipedia_url", "official_website", "tripadvisor_url", "google_maps_url"),
+            "description": "Add external links to help visitors find more information about this place."
+        }),
+        ("Contact Information", {
+            "fields": ("contact_phone", "contact_email"),
+            "description": "Provide contact details for visitors to reach out."
+        }),
+        ("Visitor Information", {
+            "fields": ("opening_hours", "best_time_to_visit"),
+            "description": "Help visitors plan their visit with operating hours and best times."
+        }),
+        ("Facilities & Amenities", {
+            "fields": ("amenities",),
+            "description": "Enter amenities as JSON, e.g.: {\"parking\": true, \"wifi\": true, \"wheelchair_accessible\": true, \"restaurant\": true, \"restroom\": true}"
+        }),
+        ("Ownership & Management", {
+            "fields": ("created_by",),
+            "classes": ("collapse",)
+        }),
     )
+    
+    def has_wikipedia(self, obj):
+        return bool(obj.wikipedia_url)
+    has_wikipedia.boolean = True
+    has_wikipedia.short_description = "Wikipedia"
+    
+    def has_website(self, obj):
+        return bool(obj.official_website)
+    has_website.boolean = True
+    has_website.short_description = "Website"
+    
+    def has_contact(self, obj):
+        return bool(obj.contact_phone or obj.contact_email)
+    has_contact.boolean = True
+    has_contact.short_description = "Contact Info"
+    
+    def has_amenities(self, obj):
+        return bool(obj.amenities)
+    has_amenities.boolean = True
+    has_amenities.short_description = "Amenities"
 
     inlines = [SocialPostInline]
 

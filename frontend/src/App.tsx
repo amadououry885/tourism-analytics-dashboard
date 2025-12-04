@@ -13,7 +13,8 @@ import SignIn from './pages/SignIn';
 import Register from './pages/Register';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PlacesManagement from './pages/admin/PlacesManagement';
-import VendorDashboard from './pages/vendor/VendorDashboard';
+import EventRegistrations from './pages/EventRegistrations';
+import VendorDashboard from './pages/vendor/VendorDashboardNew';
 import StayOwnerDashboard from './pages/stays/StayOwnerDashboard';
 
 export default function App() {
@@ -43,6 +44,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <PlacesManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/events/:eventId/registrations"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <EventRegistrations />
                 </ProtectedRoute>
               }
             />

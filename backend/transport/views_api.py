@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 from django.db.models import Q, F, Count, Avg, Sum
+from django.conf import settings
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import requests
 
 from common.permissions import AdminOrReadOnly
 
@@ -116,25 +118,140 @@ class RouteSearchView(APIView):
                 is_active=True
             )
 
-        # Filter schedules by day of week
-        schedules = schedules.filter(days_of_week__contains=[weekday])
+        # Filter schedules by day of week (handle both list and JSON string)
+        filtered_schedules = []
+        for schedule in schedules:
+            days = schedule.days_of_week
+            # Handle both list and JSON string formats
+            if isinstance(days, str):
+                import json
+                try:
+                    days = json.loads(days)
+                except:
+                    days = []
+            
+            if weekday in days:
+                filtered_schedules.append(schedule)
 
         # Get delays for these schedules
+        schedule_ids = [s.id for s in filtered_schedules]
         delays = RouteDelay.objects.filter(
-            schedule__in=schedules,
+            schedule_id__in=schedule_ids,
             date=travel_date
         )
         delay_map = {d.schedule_id: d for d in delays}
 
         # Format response
         results = []
-        for schedule in schedules:
+        for schedule in filtered_schedules:
             delay = delay_map.get(schedule.id)
             schedule_data = ScheduleBriefSerializer(schedule).data
             schedule_data['delay'] = RouteDelaySerializer(delay).data if delay else None
             results.append(schedule_data)
 
         return Response(results)
+
+class GoogleDirectionsView(APIView):
+    """Fetch real-time transport options from Google Maps Directions API"""
+    
+    def get(self, request):
+        from_place = request.GET.get('from')
+        to_place = request.GET.get('to')
+        date = request.GET.get('date')
+        
+        if not all([from_place, to_place]):
+            return Response({"error": "Missing required parameters"}, status=400)
+        
+        # Check if API key is configured
+        api_key = settings.GOOGLE_MAPS_API_KEY
+        if not api_key:
+            return Response({
+                "error": "Google Maps API key not configured",
+                "message": "Please add GOOGLE_MAPS_API_KEY to your .env file"
+            }, status=500)
+        
+        try:
+            # Parse date for departure time
+            if date:
+                travel_date = datetime.strptime(date, '%Y-%m-%d')
+                # Set departure time to 9 AM on that date
+                departure_timestamp = int(travel_date.replace(hour=9).timestamp())
+            else:
+                departure_timestamp = int(datetime.now().timestamp())
+            
+            # Call Google Maps Directions API
+            url = "https://maps.googleapis.com/maps/api/directions/json"
+            params = {
+                'origin': from_place,
+                'destination': to_place,
+                'mode': 'transit',  # Public transport only
+                'departure_time': departure_timestamp,
+                'alternatives': True,  # Get multiple route options
+                'key': api_key,
+                'region': 'my',  # Malaysia
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get('status') != 'OK':
+                return Response({
+                    "error": "Google Maps API error",
+                    "status": data.get('status'),
+                    "message": data.get('error_message', 'No routes found')
+                }, status=400)
+            
+            # Parse and format routes
+            routes = []
+            for route in data.get('routes', [])[:5]:  # Limit to 5 alternatives
+                leg = route['legs'][0]
+                
+                # Extract transit details
+                for step in leg.get('steps', []):
+                    if step.get('travel_mode') == 'TRANSIT':
+                        transit = step.get('transit_details', {})
+                        line = transit.get('line', {})
+                        
+                        routes.append({
+                            'provider': line.get('agencies', [{}])[0].get('name', 'Unknown'),
+                            'transport_mode': line.get('vehicle', {}).get('type', 'BUS').lower(),
+                            'departure_time': transit.get('departure_time', {}).get('text', ''),
+                            'arrival_time': transit.get('arrival_time', {}).get('text', ''),
+                            'duration': step.get('duration', {}).get('text', ''),
+                            'distance': step.get('distance', {}).get('text', ''),
+                            'from_stop': transit.get('departure_stop', {}).get('name', from_place),
+                            'to_stop': transit.get('arrival_stop', {}).get('name', to_place),
+                            'line_name': line.get('short_name') or line.get('name', ''),
+                            'num_stops': transit.get('num_stops', 0),
+                            'source': 'google_maps'
+                        })
+            
+            if not routes:
+                # No transit found, return summary
+                return Response({
+                    "routes": [],
+                    "summary": {
+                        "from": from_place,
+                        "to": to_place,
+                        "distance": data['routes'][0]['legs'][0].get('distance', {}).get('text', ''),
+                        "duration": data['routes'][0]['legs'][0].get('duration', {}).get('text', ''),
+                        "message": "No public transit available. Consider driving or other transport."
+                    }
+                })
+            
+            return Response(routes)
+            
+        except requests.RequestException as e:
+            return Response({
+                "error": "Failed to fetch from Google Maps",
+                "details": str(e)
+            }, status=500)
+        except Exception as e:
+            return Response({
+                "error": "Internal server error",
+                "details": str(e)
+            }, status=500)
 
 class RouteAnalyticsView(APIView):
     """Get analytics for routes"""

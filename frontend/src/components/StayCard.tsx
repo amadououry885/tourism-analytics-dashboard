@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, MapPin, Users, Wifi, Coffee, Car, ExternalLink, Mail, Phone, MessageCircle } from 'lucide-react';
+import { Star, MapPin, Users, Wifi, Coffee, Car, ExternalLink, Mail, Phone, MessageCircle, TrendingUp, TrendingDown, Heart } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Stay } from '../types/stay';
@@ -93,17 +93,55 @@ export function StayCard({ stay, onViewDetails }: StayCardProps) {
         </div>
 
         {/* Rating & Type */}
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
           {stay.rating && (
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
               <span className="font-semibold text-gray-900">{stay.rating}</span>
+              {stay.social_mentions && stay.social_mentions > 0 && (
+                <span className="text-xs text-gray-500">({stay.social_mentions} mentions)</span>
+              )}
             </div>
           )}
           <Badge className="bg-purple-100 text-purple-700 border-purple-300">
             {stay.type}
           </Badge>
+          {stay.is_trending && (
+            <Badge className={`${
+              stay.trending_percentage && stay.trending_percentage > 0 
+                ? 'bg-orange-100 text-orange-700 border-orange-300' 
+                : 'bg-gray-100 text-gray-600 border-gray-300'
+            }`}>
+              {stay.trending_percentage && stay.trending_percentage > 0 ? (
+                <>
+                  🔥 +{stay.trending_percentage}%
+                </>
+              ) : (
+                <>
+                  📊 Trending
+                </>
+              )}
+            </Badge>
+          )}
         </div>
+
+        {/* Social Metrics */}
+        {(stay.social_engagement || stay.estimated_interest) && (
+          <div className="flex items-center gap-3 mb-3 text-sm text-gray-600">
+            {stay.estimated_interest && stay.estimated_interest > 0 && (
+              <div className="flex items-center gap-1">
+                <Users className="w-4 h-4" />
+                <span>{stay.estimated_interest.toLocaleString()} interested</span>
+              </div>
+            )}
+            {stay.social_engagement && stay.social_engagement > 0 && (
+              <div className="flex items-center gap-1">
+                <Heart className="w-4 h-4" />
+                <span>{stay.social_engagement.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Amenities */}
         {stay.amenities && stay.amenities.length > 0 && (

@@ -2,7 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Avg, Count, Sum, F
+from datetime import datetime, timedelta
 from .models import Stay, StayImage
 from .serializers import StaySerializer, StayImageSerializer
 from common.permissions import IsStayOwnerOrReadOnly
@@ -20,6 +21,95 @@ class StayViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         """Keep original owner on updates"""
         serializer.save()
+    
+    def calculate_social_rating(self, stay):
+        """Calculate rating from social media sentiment (1-10 scale for stays)"""
+        from analytics.models import SocialPost
+        
+        # Use foreign key relationship if available, fallback to text search
+        posts = SocialPost.objects.filter(stay=stay)
+        
+        # Fallback: also search by name/landmark in content if no direct links
+        if not posts.exists():
+            posts = SocialPost.objects.filter(
+                Q(content__icontains=stay.name) |
+                (Q(content__icontains=stay.landmark) if stay.landmark else Q(pk=None))
+            )
+        
+        if not posts.exists():
+            return None
+        
+        avg_sentiment = posts.aggregate(avg=Avg('sentiment_score'))['avg'] or 0.0
+        
+        # Convert sentiment (-1.0 to +1.0) to rating (1-10)
+        # -1.0 → 1.0, 0.0 → 5.5, +1.0 → 10.0
+        rating = ((avg_sentiment + 1) / 2) * 9 + 1
+        
+        return round(rating, 1)
+    
+    def calculate_trending(self, stay):
+        """Calculate trending status from social media mentions"""
+        from analytics.models import SocialPost
+        
+        now = datetime.now()
+        current_start = now - timedelta(days=7)
+        prev_start = now - timedelta(days=14)
+        
+        # Use foreign key relationship + fallback to text search
+        base_query = Q(stay=stay) | Q(content__icontains=stay.name)
+        if stay.landmark:
+            base_query |= Q(content__icontains=stay.landmark)
+        
+        # Current period mentions
+        current = SocialPost.objects.filter(
+            base_query,
+            created_at__gte=current_start
+        ).count()
+        
+        # Previous period mentions
+        previous = SocialPost.objects.filter(
+            base_query,
+            created_at__range=[prev_start, current_start]
+        ).count()
+        
+        if previous == 0:
+            growth = 100 if current > 0 else 0
+        else:
+            growth = ((current - previous) / previous) * 100
+        
+        return {
+            'is_trending': growth > 20,
+            'growth_percentage': round(growth, 1),
+            'current_mentions': current,
+            'previous_mentions': previous
+        }
+    
+    def get_social_metrics(self, stay):
+        """Get all social media metrics for a stay"""
+        from analytics.models import SocialPost
+        
+        # Use foreign key relationship + fallback to text search
+        base_query = Q(stay=stay) | Q(content__icontains=stay.name)
+        if stay.landmark:
+            base_query |= Q(content__icontains=stay.landmark)
+        
+        posts = SocialPost.objects.filter(base_query)
+        
+        mention_count = posts.count()
+        
+        # Calculate total engagement
+        engagement = posts.aggregate(
+            total=Sum(F('likes') + F('comments') + F('shares'))
+        )['total'] or 0
+        
+        # Estimate interest (1 mention ≈ 50 potential viewers)
+        estimated_interest = mention_count * 50
+        
+        return {
+            'social_mentions': mention_count,
+            'social_engagement': engagement,
+            'estimated_interest': estimated_interest
+        }
 
     def get_queryset(self):
         """Filter stays - owners see their own, others see all active"""
@@ -61,6 +151,75 @@ class StayViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(amenities__contains=[a])
 
         return qs
+    
+    def list(self, request, *args, **kwargs):
+        """Override list to add social media metrics to each stay"""
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Paginate if needed
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            results = self._enhance_with_social_metrics(serializer.data)
+            return self.get_paginated_response(results)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        results = self._enhance_with_social_metrics(serializer.data)
+        return Response(results)
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Override retrieve to add social media metrics to single stay"""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        
+        # Add social metrics
+        social_metrics = self.get_social_metrics(instance)
+        trending_data = self.calculate_trending(instance)
+        social_rating = self.calculate_social_rating(instance)
+        
+        data.update({
+            'social_mentions': social_metrics['social_mentions'],
+            'social_engagement': social_metrics['social_engagement'],
+            'estimated_interest': social_metrics['estimated_interest'],
+            'trending_percentage': trending_data['growth_percentage'],
+            'is_trending': trending_data['is_trending'],
+            'social_rating': social_rating,
+        })
+        
+        return Response(data)
+    
+    def _enhance_with_social_metrics(self, stays_data):
+        """Add social media metrics to list of stays"""
+        from .models import Stay
+        
+        enhanced = []
+        for stay_data in stays_data:
+            try:
+                stay = Stay.objects.get(id=stay_data['id'])
+                
+                # Get social metrics
+                social_metrics = self.get_social_metrics(stay)
+                trending_data = self.calculate_trending(stay)
+                social_rating = self.calculate_social_rating(stay)
+                
+                # Add to stay data
+                stay_data.update({
+                    'social_mentions': social_metrics['social_mentions'],
+                    'social_engagement': social_metrics['social_engagement'],
+                    'estimated_interest': social_metrics['estimated_interest'],
+                    'trending_percentage': trending_data['growth_percentage'],
+                    'is_trending': trending_data['is_trending'],
+                    'social_rating': social_rating,
+                    # Use social rating if no manual rating set
+                    'rating': stay_data.get('rating') or social_rating or 0,
+                })
+                
+                enhanced.append(stay_data)
+            except Stay.DoesNotExist:
+                enhanced.append(stay_data)
+        
+        return enhanced
     
     @action(detail=False, methods=['get'], permission_classes=[])
     def hybrid_search(self, request):

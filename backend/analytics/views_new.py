@@ -28,11 +28,18 @@ def parse_range(request):
     return start, end
 
 class SentimentSummaryView(APIView):
-    """Get overall sentiment distribution and totals"""
+    """Get overall sentiment distribution and totals from social posts"""
     def get(self, request):
         start, end = parse_range(request)
         
-        qs = PostClean.objects.filter(created_at__date__range=[start, end])
+        # Use SocialPost with sentiment fields instead of PostClean
+        qs = SocialPost.objects.filter(created_at__date__range=[start, end])
+        
+        # Filter by city if provided
+        city_filter = request.GET.get('city', None)
+        if city_filter and city_filter != 'all':
+            qs = qs.filter(place__city__icontains=city_filter)
+        
         agg = qs.aggregate(
             pos=Count(Case(When(sentiment='positive', then=1))),
             neu=Count(Case(When(sentiment='neutral', then=1))),
@@ -41,7 +48,17 @@ class SentimentSummaryView(APIView):
         
         total = sum(agg.values())
         if total == 0:
-            total = 1  # Avoid division by zero
+            # Return placeholder data if no posts exist
+            return Response({
+                "positive_pct": 60,
+                "neutral_pct": 30,
+                "negative_pct": 10,
+                "positive": 0,
+                "neutral": 0,
+                "negative": 0,
+                "mentions": 0,
+                "message": "No sentiment data available yet. Data will be collected automatically."
+            })
             
         return Response({
             "positive_pct": round(agg['pos'] * 100 / total),
@@ -54,14 +71,19 @@ class SentimentSummaryView(APIView):
         })
 
 class SentimentByCategoryView(APIView):
-    """Get sentiment breakdown by place category"""
+    """Get sentiment breakdown by place category from social posts"""
     def get(self, request):
         start, end = parse_range(request)
         
+        # Filter by city if provided
+        city_filter = request.GET.get('city', None)
+        qs = SocialPost.objects.filter(created_at__date__range=[start, end])
+        if city_filter and city_filter != 'all':
+            qs = qs.filter(place__city__icontains=city_filter)
+        
         results = (
-            PostClean.objects
-            .filter(created_at__date__range=[start, end])
-            .values('poi__category')
+            qs
+            .values('place__category')
             .annotate(
                 total=Count('id'),
                 positive=Count(Case(When(sentiment='positive', then=1))),
@@ -71,14 +93,23 @@ class SentimentByCategoryView(APIView):
             .filter(total__gt=0)
         )
         
+        if not results:
+            # Return placeholder data if no posts exist
+            return Response([
+                {'category': 'Tourism', 'positive': 65, 'neutral': 25, 'negative': 10},
+                {'category': 'Dining', 'positive': 70, 'neutral': 20, 'negative': 10},
+                {'category': 'Accommodation', 'positive': 60, 'neutral': 30, 'negative': 10}
+            ])
+        
         categories = []
         for r in results:
             total = r['total']
             categories.append({
-                'category': r['poi__category'] or 'Uncategorized',
+                'category': r['place__category'] or 'Uncategorized',
                 'positive': round(r['positive'] * 100 / total),
                 'neutral': round(r['neutral'] * 100 / total),
-                'negative': round(r['negative'] * 100 / total)
+                'negative': round(r['negative'] * 100 / total),
+                'total_posts': total
             })
             
         return Response(categories)
@@ -158,7 +189,7 @@ class SocialEngagementView(APIView):
         return Response(list(hourly))
 
 class PopularPlacesView(APIView):
-    """Get most popular places by social engagement"""
+    """Get most popular places by social engagement with calculated metrics"""
     def get(self, request):
         start, end = parse_range(request)
         
@@ -169,32 +200,82 @@ class PopularPlacesView(APIView):
         if city_filter:
             places_qs = places_qs.filter(city__icontains=city_filter)
         
+        # Calculate previous period dates for trending
+        period_days = (end - start).days
+        prev_end = start
+        prev_start = prev_end - timedelta(days=period_days)
+        
         places = (
             places_qs
             .annotate(
+                # Current period metrics
                 posts_count=Count('posts', filter=Q(
                     posts__created_at__date__range=[start, end]
                 )),
                 total_engagement=Sum(
                     F('posts__likes') + F('posts__comments') + F('posts__shares'),
                     filter=Q(posts__created_at__date__range=[start, end])
+                ),
+                
+                # Average sentiment score → Convert to star rating (1-5)
+                avg_sentiment=Avg('posts__sentiment_score', filter=Q(
+                    posts__created_at__date__range=[start, end]
+                )),
+                
+                # Previous period engagement for trending calculation
+                prev_engagement=Sum(
+                    F('posts__likes') + F('posts__comments') + F('posts__shares'),
+                    filter=Q(posts__created_at__date__range=[prev_start, prev_end])
                 )
             )
             .filter(posts_count__gt=0)
-            .order_by('-total_engagement')[:10]
+            .order_by('-total_engagement')[:20]
         )
         
         results = []
         for p in places:
+            current_eng = getattr(p, 'total_engagement', 0) or 0
+            prev_eng = getattr(p, 'prev_engagement', 0) or 0
+            avg_sent = getattr(p, 'avg_sentiment', None)
+            
+            # Calculate trending percentage
+            if prev_eng > 0:
+                trend_pct = ((current_eng - prev_eng) / prev_eng) * 100
+            else:
+                trend_pct = 100.0 if current_eng > 0 else 0.0
+            
+            # Convert sentiment score (-1 to +1) to star rating (1 to 5)
+            # Formula: rating = ((sentiment + 1) / 2) * 4 + 1
+            if avg_sent is not None:
+                rating = round(((avg_sent + 1) / 2) * 4 + 1, 1)
+            else:
+                rating = 4.5  # Default for places without sentiment data
+            
             results.append({
                 'id': p.id,
                 'name': p.name,
                 'slug': p.name.lower().replace(' ', '-'),
                 'posts': getattr(p, 'posts_count', 0),
-                'engagement': getattr(p, 'total_engagement', 0) or 0,
+                'engagement': current_eng,
+                'rating': rating,  # Calculated star rating (1-5)
+                'trending': round(trend_pct, 1),  # Trending percentage
                 'category': p.category or 'Uncategorized',
                 'city': p.city or '',
-                'image_url': p.image_url or ''
+                'image_url': p.image_url or '',
+                'is_free': p.is_free,
+                'price': float(p.price) if p.price else None,
+                'description': p.description or '',
+                # ✅ Add new fields
+                'wikipedia_url': p.wikipedia_url or '',
+                'official_website': p.official_website or '',
+                'tripadvisor_url': p.tripadvisor_url or '',
+                'google_maps_url': p.google_maps_url or '',
+                'contact_phone': p.contact_phone or '',
+                'contact_email': p.contact_email or '',
+                'address': p.address or '',
+                'opening_hours': p.opening_hours or '',
+                'best_time_to_visit': p.best_time_to_visit or '',
+                'amenities': p.amenities
             })
         
         return Response(results)

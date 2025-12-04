@@ -13,6 +13,7 @@ router.register(r'schedules', views_api.ScheduleViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('search/', views_api.RouteSearchView.as_view(), name='route-search'),
+    path('google-directions/', views_api.GoogleDirectionsView.as_view(), name='google-directions'),
     # Analytics endpoints
     path('analytics/transport-modes/', views_analytics.transport_modes_summary, name='transport-modes-summary'),
     path('analytics/monthly-usage/', views_analytics.monthly_transport_usage, name='monthly-transport-usage'),

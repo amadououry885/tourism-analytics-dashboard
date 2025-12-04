@@ -474,6 +474,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
           setShouldScrollToImage(false); // Reset scroll flag
         }}
         scrollToRegistration={shouldScrollToImage}
+        onRegistrationModalOpen={() => setShouldScrollToImage(false)}
       />
       {/* Event Attendance Trend */}
       {attendanceTrend.length > 0 && (

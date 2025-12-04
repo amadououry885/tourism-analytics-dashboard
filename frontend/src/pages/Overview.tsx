@@ -3,10 +3,13 @@ import { CitySelector } from '../components/CitySelector';
 import { HeaderNavTabs } from '../components/HeaderNavTabs';
 import { PopularDestinations } from '../components/PopularDestinations';
 import { KedahMap } from '../components/KedahMap'; // Import the Leaflet map component
+import { SocialMediaCharts } from '../components/SocialMediaCharts';
+import { OverviewMetrics } from '../components/OverviewMetrics';
 import axios from 'axios';
 
 const Overview: React.FC = () => {
   const [selectedCity, setSelectedCity] = useState<string>('all');
+  const [timeRange, setTimeRange] = useState<string>('month');
   const [cities, setCities] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,10 +68,14 @@ const Overview: React.FC = () => {
         <div></div>
         <CitySelector selectedCity={selectedCity} onCityChange={setSelectedCity} />
         <div className="flex items-center gap-2">
-          <select className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm">
-            <option>Last 30 Days</option>
-            <option>Last 7 Days</option>
-            <option>Last 90 Days</option>
+          <select 
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
+          >
+            <option value="week">Last 7 Days</option>
+            <option value="month">Last 30 Days</option>
+            <option value="year">Last Year</option>
           </select>
           <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
@@ -77,9 +84,12 @@ const Overview: React.FC = () => {
         </div>
       </div>
 
-      {/* Social Metrics Bar - Placeholder */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-8 text-center text-gray-400">
-        Social Metrics Bar
+      {/* Overview Metrics Cards */}
+      <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
+
+      {/* Social Media Charts Section */}
+      <div className="mb-8">
+        <SocialMediaCharts detailed={false} selectedCity={selectedCity} timeRange={timeRange} />
       </div>
 
       {/* Main Content Grid */}

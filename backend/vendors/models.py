@@ -2,14 +2,56 @@ from django.db import models
 from django.conf import settings
 
 class Vendor(models.Model):
+    # Basic Information
     name = models.CharField(max_length=200)
     city = models.CharField(max_length=120, db_index=True)
     cuisines = models.JSONField(default=list, blank=True)
+    description = models.TextField(blank=True, help_text="About the restaurant")
+    established_year = models.IntegerField(null=True, blank=True, help_text="Year the restaurant opened")
+    
+    # Location
     lat = models.FloatField(null=True, blank=True)
     lon = models.FloatField(null=True, blank=True)
+    address = models.TextField(blank=True, help_text="Full street address")
+    
+    # Pricing
+    PRICE_RANGE_CHOICES = [
+        ('$', 'Budget (< RM30)'),
+        ('$$', 'Moderate (RM30-80)'),
+        ('$$$', 'Upscale (RM80-150)'),
+        ('$$$$', 'Fine Dining (> RM150)')
+    ]
+    price_range = models.CharField(max_length=10, choices=PRICE_RANGE_CHOICES, default='$$', blank=True)
+    
+    # Contact Information
+    contact_phone = models.CharField(max_length=20, blank=True)
+    contact_email = models.EmailField(blank=True)
+    
+    # Online Presence
+    official_website = models.URLField(blank=True)
+    facebook_url = models.URLField(blank=True)
+    instagram_url = models.URLField(blank=True)
+    tripadvisor_url = models.URLField(blank=True)
+    google_maps_url = models.URLField(blank=True)
+    
+    # Visual Content
+    logo_url = models.URLField(blank=True, help_text="Restaurant logo image URL")
+    cover_image_url = models.URLField(blank=True, help_text="Banner/cover image URL")
+    gallery_images = models.JSONField(default=list, blank=True, help_text="Array of image URLs for gallery")
+    
+    # Amenities & Features
+    amenities = models.JSONField(default=dict, blank=True, help_text="Facilities like parking, wifi, wheelchair_accessible, etc.")
+    
+    # Operational Info
+    delivery_available = models.BooleanField(default=False)
+    takeaway_available = models.BooleanField(default=True)
+    reservation_required = models.BooleanField(default=False)
+    dress_code = models.CharField(max_length=100, blank=True, help_text="e.g., Casual, Smart Casual, Formal")
+    
+    # System Fields
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)   # ✅ auto timestamp
-    updated_at = models.DateTimeField(auto_now=True)       # ✅ auto update timestamp
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     # Ownership tracking (nullable for existing records)
     owner = models.ForeignKey(

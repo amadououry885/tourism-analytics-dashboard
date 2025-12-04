@@ -95,9 +95,26 @@ class VendorListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Vendor
-        fields = ['id', 'name', 'city', 'cuisines', 'lat', 'lon', 
-                 'rating_average', 'total_reviews', 'is_active', 'owner', 'owner_username']
-        read_only_fields = ['owner', 'owner_username']
+        fields = [
+            'id', 'name', 'city', 'cuisines', 'lat', 'lon', 
+            'description', 'established_year', 'price_range',
+            'address', 'contact_phone', 'contact_email',
+            'official_website', 'facebook_url', 'instagram_url', 
+            'tripadvisor_url', 'google_maps_url',
+            'logo_url', 'cover_image_url', 'gallery_images',
+            'amenities', 'delivery_available', 'takeaway_available',
+            'reservation_required', 'dress_code',
+            'rating_average', 'total_reviews', 'is_active', 
+            'owner', 'owner_username', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['owner', 'owner_username', 'created_at', 'updated_at']
+    
+    def get_rating_average(self, obj):
+        avg = obj.reviews.aggregate(Avg('rating'))['rating__avg']
+        return round(avg, 1) if avg else 0
+    
+    def get_total_reviews(self, obj):
+        return obj.reviews.count()
     
     def get_rating_average(self, obj):
         avg = obj.reviews.aggregate(Avg('rating'))['rating__avg']

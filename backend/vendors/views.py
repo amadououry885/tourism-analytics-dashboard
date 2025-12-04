@@ -221,3 +221,75 @@ class VendorSearchView(APIView):
         ).order_by('-avg_rating')
         
         return Response(VendorListSerializer(qs, many=True).data)
+
+
+class MenuItemViewSet(viewsets.ModelViewSet):
+    """CRUD for menu items - vendor owners only"""
+    serializer_class = MenuItemSerializer
+    
+    def get_queryset(self):
+        # Vendors can only see/edit their own menu items
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'vendor_set'):
+            vendor_ids = user.vendor_set.values_list('id', flat=True)
+            return MenuItem.objects.filter(vendor_id__in=vendor_ids)
+        return MenuItem.objects.none()
+    
+    def perform_create(self, serializer):
+        # Ensure vendor is owned by current user
+        vendor = serializer.validated_data['vendor']
+        if vendor.owner != self.request.user:
+            return Response(
+                {'error': 'You can only add menu items to your own restaurants'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        serializer.save()
+
+
+class OpeningHoursViewSet(viewsets.ModelViewSet):
+    """CRUD for opening hours - vendor owners only"""
+    serializer_class = OpeningHoursSerializer
+    
+    def get_queryset(self):
+        # Vendors can only see/edit their own opening hours
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'vendor_set'):
+            vendor_ids = user.vendor_set.values_list('id', flat=True)
+            return OpeningHours.objects.filter(vendor_id__in=vendor_ids)
+        return OpeningHours.objects.none()
+    
+    def perform_create(self, serializer):
+        # Ensure vendor is owned by current user
+        vendor = serializer.validated_data['vendor']
+        if vendor.owner != self.request.user:
+            return Response(
+                {'error': 'You can only add hours to your own restaurants'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        serializer.save()
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """Reviews - anyone can view, authenticated users can create"""
+    serializer_class = ReviewSerializer
+    queryset = Review.objects.all().order_by('-date')
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        vendor_id = self.request.query_params.get('vendor_id')
+        if vendor_id:
+            queryset = queryset.filter(vendor_id=vendor_id)
+        return queryset
+
+
+class PromotionViewSet(viewsets.ModelViewSet):
+    """CRUD for promotions - vendor owners only"""
+    serializer_class = PromotionSerializer
+    
+    def get_queryset(self):
+        # Vendors can only see/edit their own promotions
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'vendor_set'):
+            vendor_ids = user.vendor_set.values_list('id', flat=True)
+            return Promotion.objects.filter(vendor_id__in=vendor_ids)
+        return Promotion.objects.none()

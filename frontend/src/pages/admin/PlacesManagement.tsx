@@ -16,6 +16,23 @@ interface Place {
   latitude: string;
   longitude: string;
   image_url: string;
+  // New fields
+  wikipedia_url?: string;
+  official_website?: string;
+  tripadvisor_url?: string;
+  google_maps_url?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  address?: string;
+  opening_hours?: string;
+  best_time_to_visit?: string;
+  amenities?: {
+    parking?: boolean;
+    wifi?: boolean;
+    wheelchair_accessible?: boolean;
+    restaurant?: boolean;
+    restroom?: boolean;
+  };
 }
 
 const emptyPlace: Place = {
@@ -30,7 +47,24 @@ const emptyPlace: Place = {
   currency: 'MYR',
   latitude: '',
   longitude: '',
-  image_url: ''
+  image_url: '',
+  // New fields with defaults
+  wikipedia_url: '',
+  official_website: '',
+  tripadvisor_url: '',
+  google_maps_url: '',
+  contact_phone: '',
+  contact_email: '',
+  address: '',
+  opening_hours: '',
+  best_time_to_visit: '',
+  amenities: {
+    parking: false,
+    wifi: false,
+    wheelchair_accessible: false,
+    restaurant: false,
+    restroom: false
+  }
 };
 
 export default function PlacesManagement() {
@@ -456,6 +490,244 @@ export default function PlacesManagement() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="99.8431"
                   />
+                </div>
+
+                {/* External Links & Resources */}
+                <div className="md:col-span-2 border-t-2 border-blue-200 pt-4 mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    🔗 External Links & Resources
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Wikipedia URL
+                      </label>
+                      <input
+                        type="url"
+                        name="wikipedia_url"
+                        value={formData.wikipedia_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="https://en.wikipedia.org/wiki/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Official Website
+                      </label>
+                      <input
+                        type="url"
+                        name="official_website"
+                        value={formData.official_website || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="https://example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        TripAdvisor URL
+                      </label>
+                      <input
+                        type="url"
+                        name="tripadvisor_url"
+                        value={formData.tripadvisor_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="https://www.tripadvisor.com/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Google Maps URL
+                      </label>
+                      <input
+                        type="url"
+                        name="google_maps_url"
+                        value={formData.google_maps_url || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="https://maps.app.goo.gl/..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="md:col-span-2 border-t-2 border-emerald-200 pt-4 mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    📞 Contact Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Phone
+                      </label>
+                      <input
+                        type="tel"
+                        name="contact_phone"
+                        value={formData.contact_phone || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        placeholder="+604-730 8888"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Email
+                      </label>
+                      <input
+                        type="email"
+                        name="contact_email"
+                        value={formData.contact_email || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        placeholder="info@example.com"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Address
+                      </label>
+                      <textarea
+                        name="address"
+                        value={formData.address || ''}
+                        onChange={handleInputChange}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        placeholder="Full street address"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visitor Information */}
+                <div className="md:col-span-2 border-t-2 border-amber-200 pt-4 mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    🕒 Visitor Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Opening Hours
+                      </label>
+                      <textarea
+                        name="opening_hours"
+                        value={formData.opening_hours || ''}
+                        onChange={handleInputChange}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                        placeholder="Mon-Sun: 10:00 AM - 10:00 PM"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Best Time to Visit
+                      </label>
+                      <textarea
+                        name="best_time_to_visit"
+                        value={formData.best_time_to_visit || ''}
+                        onChange={handleInputChange}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                        placeholder="Weekday afternoons for less crowd"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Facilities & Amenities */}
+                <div className="md:col-span-2 border-t-2 border-green-200 pt-4 mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    ✨ Facilities & Amenities
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <label className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.amenities?.parking || false}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            amenities: {
+                              ...prev.amenities,
+                              parking: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium">🅿️ Parking</span>
+                    </label>
+                    <label className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.amenities?.wifi || false}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            amenities: {
+                              ...prev.amenities,
+                              wifi: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium">📶 WiFi</span>
+                    </label>
+                    <label className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.amenities?.wheelchair_accessible || false}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            amenities: {
+                              ...prev.amenities,
+                              wheelchair_accessible: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium">♿ Accessible</span>
+                    </label>
+                    <label className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.amenities?.restaurant || false}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            amenities: {
+                              ...prev.amenities,
+                              restaurant: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium">🍽️ Restaurant</span>
+                    </label>
+                    <label className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={formData.amenities?.restroom || false}
+                        onChange={(e) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            amenities: {
+                              ...prev.amenities,
+                              restroom: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      <span className="text-sm font-medium">🚻 Restroom</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 

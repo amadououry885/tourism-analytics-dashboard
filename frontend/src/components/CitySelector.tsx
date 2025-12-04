@@ -41,8 +41,8 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
         
       } catch (error) {
         console.error('❌ Error fetching cities:', error);
-        // Fallback to default cities
-        setCities(['Alor Setar', 'Jitra', 'Kulim', 'Langkawi', 'Sungai Petani']);
+        // Fallback to default cities (sorted alphabetically, matching database)
+        setCities(['Alor Setar', 'Jitra', 'Kuah', 'Langkawi', 'Sungai Petani']);
       } finally {
         setLoading(false);
       }

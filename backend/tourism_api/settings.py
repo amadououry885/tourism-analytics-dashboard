@@ -33,6 +33,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3001",
 ]
 
+# ── Google Maps API ───────────────────────────────────────────────────────────
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+
 # ── Installed apps ────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",

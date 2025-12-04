@@ -250,7 +250,9 @@ class EventRegistration(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='event_registrations'
+        related_name='event_registrations',
+        null=True,  # Allow guest registrations
+        blank=True
     )
     event = models.ForeignKey(
         Event,
@@ -266,19 +268,167 @@ class EventRegistration(models.Model):
         ],
         default='confirmed'
     )
+    
+    # ✨ NEW: Store form responses as JSON
+    form_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="User's responses to custom registration fields"
+    )
+    
+    # ✨ NEW: Basic contact info (extracted from form_data for quick access)
+    contact_name = models.CharField(max_length=200, blank=True)
+    contact_email = models.CharField(max_length=254, blank=True)  # Changed from EmailField to allow any format
+    contact_phone = models.CharField(max_length=20, blank=True)
+    
     registered_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('user', 'event')
         ordering = ['-registered_at']
         indexes = [
             models.Index(fields=['event', 'status']),
             models.Index(fields=['user']),
+            models.Index(fields=['contact_email']),
         ]
     
     def __str__(self):
-        return f"{self.user.username} → {self.event.title} ({self.status})"
+        name = self.contact_name or (self.user.username if self.user else 'Guest')
+        return f"{name} → {self.event.title} ({self.status})"
+
+
+# ✨ NEW MODEL: Custom Registration Form Configuration
+class EventRegistrationForm(models.Model):
+    """
+    Defines the custom registration form for an event.
+    Each event can have its own set of required fields.
+    """
+    event = models.OneToOneField(
+        Event,
+        on_delete=models.CASCADE,
+        related_name='registration_form',
+        help_text="Event this form belongs to"
+    )
+    
+    title = models.CharField(
+        max_length=200,
+        default="Event Registration",
+        help_text="Form title shown to users"
+    )
+    
+    description = models.TextField(
+        blank=True,
+        help_text="Instructions or welcome message for form"
+    )
+    
+    confirmation_message = models.TextField(
+        default="Thank you for registering! You will receive a confirmation email shortly.",
+        help_text="Message shown after successful registration"
+    )
+    
+    # ✨ Allow guest registrations (without login)
+    allow_guest_registration = models.BooleanField(
+        default=True,
+        help_text="Allow users to register without logging in"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Registration Form: {self.event.title}"
+
+
+# ✨ NEW MODEL: Individual Form Fields
+class EventRegistrationField(models.Model):
+    """
+    Individual fields in a registration form.
+    Examples: name, email, phone, age, dietary_preferences, etc.
+    """
+    FIELD_TYPES = [
+        ('text', 'Short Text'),
+        ('textarea', 'Long Text'),
+        ('email', 'Email'),
+        ('phone', 'Phone Number'),
+        ('number', 'Number'),
+        ('date', 'Date'),
+        ('dropdown', 'Dropdown Select'),
+        ('checkbox', 'Checkbox'),
+        ('radio', 'Radio Buttons'),
+    ]
+    
+    form = models.ForeignKey(
+        EventRegistrationForm,
+        on_delete=models.CASCADE,
+        related_name='fields',
+        help_text="Form this field belongs to"
+    )
+    
+    label = models.CharField(
+        max_length=200,
+        help_text="Field label shown to user (e.g., 'Full Name', 'Email Address')"
+    )
+    
+    field_type = models.CharField(
+        max_length=20,
+        choices=FIELD_TYPES,
+        default='text',
+        help_text="Type of input field"
+    )
+    
+    is_required = models.BooleanField(
+        default=True,
+        help_text="Is this field mandatory?"
+    )
+    
+    placeholder = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Placeholder text (e.g., 'Enter your email')"
+    )
+    
+    help_text = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Additional help text below field"
+    )
+    
+    # For dropdown/radio/checkbox options
+    options = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Options for dropdown/radio/checkbox (list of strings)"
+    )
+    
+    # Field ordering
+    order = models.IntegerField(
+        default=0,
+        help_text="Display order (lower numbers appear first)"
+    )
+    
+    # Validation rules
+    min_length = models.IntegerField(null=True, blank=True)
+    max_length = models.IntegerField(null=True, blank=True)
+    pattern = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Regex pattern for validation"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['order', 'id']
+        indexes = [
+            models.Index(fields=['form', 'order']),
+        ]
+    
+    def __str__(self):
+        required = "*" if self.is_required else ""
+        return f"{self.label}{required} ({self.field_type})"
 
 
 # ✨ NEW MODEL: Event Reminder
