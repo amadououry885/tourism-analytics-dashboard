@@ -101,7 +101,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       // If the fetch failed locally, give a helpful hint to the developer/user
       const hint =
         msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
-          ? 'Unable to reach backend at http://localhost:8000. Is the Django server running? Try: cd backend && python manage.py runserver 8000'
+          ? `Unable to reach backend at ${import.meta.env.VITE_API_URL || 'http://localhost:8000'}. Please check your connection.`
           : '';
       setError(msg + (hint ? ` — ${hint}` : ''));
       console.error('Error fetching popular destinations:', err);
@@ -245,7 +245,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         // If the fetch failed locally, give a helpful hint to the developer/user
         const hint =
           msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
-            ? 'Unable to reach backend at http://localhost:8000. Is the Django server running? Try: cd backend && python manage.py runserver 8000'
+            ? `Unable to reach backend at ${import.meta.env.VITE_API_URL || 'http://localhost:8000'}. Please check your connection.`
             : '';
         setError(msg + (hint ? ` — ${hint}` : ''));
         console.error('Error fetching popular destinations:', err);
