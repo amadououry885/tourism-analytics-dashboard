@@ -77,9 +77,9 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     setError(null);
 
     try {
-      // Use relative path so Vite proxy forwards to backend (avoid hard-coded ports)
-      // Add range=30d to get posts from last 30 days
-      const res = await fetch('/api/analytics/places/popular/?range=30d');
+      // Use environment variable for API URL
+      const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+      const res = await fetch(`${API_URL}/analytics/places/popular/?range=30d`);
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
@@ -125,9 +125,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
 
         // ✅ Use the popular places endpoint with 30-day range
+        const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         let response;
         try {
-          response = await fetch(`/api/analytics/places/popular/${cityParam}${cityParam ? '&' : '?'}range=30d`);
+          response = await fetch(`${API_URL}/analytics/places/popular/${cityParam}${cityParam ? '&' : '?'}range=30d`);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
@@ -181,7 +182,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         } catch (apiError) {
           console.log('⚠️ analytics/places failed, trying places endpoint...');
           // Fallback to places endpoint
-          response = await fetch(`/api/places/${cityParam}`);
+          response = await fetch(`${API_URL}/places/${cityParam}`);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
@@ -214,7 +215,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         // Fetch least visited destinations
         try {
-          const leastResponse = await fetch(`/api/analytics/places/least-visited/${cityParam}${cityParam ? '&' : '?'}range=30d`);
+          const leastResponse = await fetch(`${API_URL}/analytics/places/least-visited/${cityParam}${cityParam ? '&' : '?'}range=30d`);
           if (!leastResponse.ok) {
             throw new Error(`Server responded with ${leastResponse.status}`);
           }
