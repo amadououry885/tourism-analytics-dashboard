@@ -79,7 +79,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     try {
       // Use environment variable for API URL
       const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-      const res = await fetch(`${API_URL}/analytics/places/popular/?range=30d`);
+      const res = await fetch(`${API_URL}/places/popular/?range=30d`);
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
@@ -128,7 +128,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         let response;
         try {
-          response = await fetch(`${API_URL}/analytics/places/popular/${cityParam}${cityParam ? '&' : '?'}range=30d`);
+          response = await fetch(`${API_URL}/places/popular/${cityParam}${cityParam ? '&' : '?'}range=30d`);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
@@ -215,7 +215,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         // Fetch least visited destinations
         try {
-          const leastResponse = await fetch(`${API_URL}/analytics/places/least-visited/${cityParam}${cityParam ? '&' : '?'}range=30d`);
+          const leastResponse = await fetch(`${API_URL}/rankings/least-pois${cityParam}${cityParam ? '&' : '?'}range=30d`);
           if (!leastResponse.ok) {
             throw new Error(`Server responded with ${leastResponse.status}`);
           }
