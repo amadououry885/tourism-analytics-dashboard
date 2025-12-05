@@ -2,6 +2,9 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'ax
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
+// Set axios defaults globally so ALL axios calls use the correct base URL
+axios.defaults.baseURL = API_BASE_URL;
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
