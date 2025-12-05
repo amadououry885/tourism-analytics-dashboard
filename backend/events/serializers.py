@@ -89,6 +89,12 @@ class EventSerializer(serializers.ModelSerializer):
     user_registered = serializers.SerializerMethodField()
     user_has_reminder = serializers.SerializerMethodField()
     
+    # ✨ NEW: Live event status fields
+    is_happening_now = serializers.SerializerMethodField()
+    days_into_event = serializers.SerializerMethodField()
+    total_days = serializers.SerializerMethodField()
+    days_remaining = serializers.SerializerMethodField()
+    
     # ✨ NEW: Include registration form if exists
     has_custom_form = serializers.SerializerMethodField()
     
@@ -111,18 +117,25 @@ class EventSerializer(serializers.ModelSerializer):
             "actual_attendance",
             "created_by",
             "created_by_username",
-            # ✨ NEW FIELDS:
+            # ✨ CAPACITY FIELDS:
             "max_capacity",
             "attendee_count",
             "spots_remaining",
             "is_full",
             "user_registered",
             "user_has_reminder",
+            # ✨ RECURRING FIELDS:
             "recurrence_type",
             "recurrence_end_date",
             "parent_event",
             "is_recurring_instance",
-            "has_custom_form",  # ✨ NEW
+            # ✨ LIVE STATUS FIELDS:
+            "is_happening_now",
+            "days_into_event",
+            "total_days",
+            "days_remaining",
+            # ✨ FORM FIELDS:
+            "has_custom_form",
         ]
         read_only_fields = [
             'created_by', 
@@ -133,6 +146,10 @@ class EventSerializer(serializers.ModelSerializer):
             'user_registered', 
             'user_has_reminder', 
             'is_recurring_instance',
+            'is_happening_now',
+            'days_into_event',
+            'total_days',
+            'days_remaining',
             'has_custom_form',
         ]
     
@@ -161,6 +178,22 @@ class EventSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return False
         return obj.user_has_reminder(request.user)
+    
+    def get_is_happening_now(self, obj):
+        """Check if event is currently happening"""
+        return obj.is_happening_now  # Access @property
+    
+    def get_days_into_event(self, obj):
+        """Return which day of multi-day event we're on"""
+        return obj.days_into_event  # Access @property
+    
+    def get_total_days(self, obj):
+        """Return total duration in days"""
+        return obj.total_days  # Access @property
+    
+    def get_days_remaining(self, obj):
+        """Return days remaining in event"""
+        return obj.days_remaining  # Access @property
     
     def get_has_custom_form(self, obj):
         """Check if event has custom registration form"""

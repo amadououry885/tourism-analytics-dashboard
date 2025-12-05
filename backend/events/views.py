@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser
 from django.utils.timezone import now
 from django.db.models import Q
+from django.db import models
 from .models import Event, EventRegistration, EventReminder, EventRegistrationForm, EventRegistrationField
 from .serializers import (
     EventSerializer,
@@ -79,11 +80,37 @@ class EventViewSet(viewsets.ModelViewSet):
         if end_before:
             qs = qs.filter(end_date__lte=end_before)
         
+        # ✨ UPDATED: By default, hide parent recurring events (show only instances or one-time events)
+        # Parent events are templates, not actual occurrences
         if hide_instances == "1":
-            # Only show parent events, not auto-generated instances
+            # Admin view: show only parent events (templates), hide instances
             qs = qs.filter(is_recurring_instance=False)
+        else:
+            # Default user view: show instances OR non-recurring events (hide parent templates)
+            qs = qs.filter(
+                Q(is_recurring_instance=True) |  # Show recurring instances
+                Q(recurrence_type='none')         # Show one-time events
+            )
 
         return qs
+    
+    # ✨ NEW: Happening Now Endpoint
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def happening_now(self, request):
+        """Return events that are currently happening (between start and end dates)"""
+        from django.utils.timezone import now as timezone_now
+        current_time = timezone_now()
+        
+        # Get events that are currently active
+        happening_events = self.get_queryset().filter(
+            start_date__lte=current_time
+        ).filter(
+            models.Q(end_date__gte=current_time) | 
+            models.Q(end_date__isnull=True, start_date__date=current_time.date())
+        ).order_by('start_date')
+        
+        serializer = self.get_serializer(happening_events, many=True)
+        return Response(serializer.data)
     
     # ✨ NEW: Registration Endpoints
     

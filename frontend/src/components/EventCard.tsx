@@ -3,7 +3,7 @@ import { Badge } from './ui/badge';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-// ✨ UPDATED: Extended Event interface with new fields
+// ✨ UPDATED: Extended Event interface with live status fields
 interface Event {
   id: number;
   title: string;
@@ -17,15 +17,21 @@ interface Event {
   actual_attendance?: number;
   is_published?: boolean;
   image_url?: string;
-  // ✨ NEW FIELDS:
+  // ✨ CAPACITY FIELDS:
   max_capacity?: number | null;
   attendee_count?: number;
   spots_remaining?: number | null;
   is_full?: boolean;
   user_registered?: boolean;
   user_has_reminder?: boolean;
+  // ✨ RECURRING FIELDS:
   recurrence_type?: string;
   is_recurring_instance?: boolean;
+  // ✨ LIVE STATUS FIELDS:
+  is_happening_now?: boolean;
+  days_into_event?: number | null;
+  total_days?: number;
+  days_remaining?: number | null;
 }
 
 interface EventCardProps {
@@ -185,6 +191,13 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
         
         {/* Status Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2">
+          {/* ✨ NEW: Recurring Event Badge */}
+          {event.recurrence_type && (
+            <Badge className="bg-purple-500/90 text-white border-purple-600 shadow-lg backdrop-blur-sm">
+              🔄 Repeats {event.recurrence_type}
+            </Badge>
+          )}
+          
           {/* ✨ NEW: Capacity Badge */}
           {event.max_capacity && (
             <Badge className={`${

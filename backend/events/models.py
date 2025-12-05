@@ -91,6 +91,51 @@ class Event(models.Model):
             return False
         return self.attendee_count >= self.max_capacity
     
+    # ✨ NEW PROPERTY: Check if event is happening now
+    @property
+    def is_happening_now(self):
+        """Check if event is currently active (between start and end dates)"""
+        from django.utils.timezone import now as timezone_now
+        current_time = timezone_now()
+        
+        if self.end_date:
+            return self.start_date <= current_time <= self.end_date
+        else:
+            # If no end date, check if it started today
+            return self.start_date.date() == current_time.date() and self.start_date <= current_time
+    
+    # ✨ NEW PROPERTY: Days into multi-day event
+    @property
+    def days_into_event(self):
+        """Return which day of the event we're on (for multi-day events)"""
+        from django.utils.timezone import now as timezone_now
+        if not self.is_happening_now or not self.end_date:
+            return None
+        
+        current_time = timezone_now()
+        days_passed = (current_time.date() - self.start_date.date()).days + 1
+        return max(1, days_passed)
+    
+    # ✨ NEW PROPERTY: Total days of event
+    @property
+    def total_days(self):
+        """Return total duration in days"""
+        if not self.end_date:
+            return 1
+        return (self.end_date.date() - self.start_date.date()).days + 1
+    
+    # ✨ NEW PROPERTY: Days remaining in event
+    @property
+    def days_remaining(self):
+        """Return days remaining in event (for happening events)"""
+        from django.utils.timezone import now as timezone_now
+        if not self.is_happening_now or not self.end_date:
+            return None
+        
+        current_time = timezone_now()
+        days_left = (self.end_date.date() - current_time.date()).days
+        return max(0, days_left)
+    
     # ✨ NEW METHOD: Check if user is registered
     def is_user_registered(self, user):
         """Check if user has confirmed registration"""

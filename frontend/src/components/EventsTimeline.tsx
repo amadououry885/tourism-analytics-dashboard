@@ -29,15 +29,21 @@ interface Event {
   lat?: number;
   lon?: number;
   image_url?: string;
-  // ✨ NEW FIELDS:
+  // ✨ CAPACITY FIELDS:
   max_capacity?: number | null;
   attendee_count?: number;
   spots_remaining?: number | null;
   is_full?: boolean;
   user_registered?: boolean;
   user_has_reminder?: boolean;
+  // ✨ RECURRING FIELDS:
   recurrence_type?: string;
   is_recurring_instance?: boolean;
+  // ✨ LIVE STATUS FIELDS:
+  is_happening_now?: boolean;
+  days_into_event?: number | null;
+  total_days?: number;
+  days_remaining?: number | null;
 }
 
 const eventTypes = [
@@ -112,6 +118,7 @@ const defaultEvents: Event[] = [
 export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps) {
   const [selectedEventType, setSelectedEventType] = useState('all');
   const [events, setEvents] = useState<Event[]>(defaultEvents);
+  const [happeningNowEvents, setHappeningNowEvents] = useState<Event[]>([]); // ✨ NEW: Live events state
   const [attendanceTrend, setAttendanceTrend] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -123,6 +130,18 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const [selectedModal, setSelectedModal] = useState<Event | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shouldScrollToImage, setShouldScrollToImage] = useState(false); // ✨ NEW: Track if JOIN US was clicked
+
+  // ✨ NEW: Fetch happening now events
+  const fetchHappeningNow = async () => {
+    try {
+      const response = await axios.get('/api/events/happening_now/');
+      const liveEvents = response.data.results || response.data || [];
+      setHappeningNowEvents(liveEvents);
+    } catch (error) {
+      console.error('Error fetching happening now events:', error);
+      setHappeningNowEvents([]);
+    }
+  };
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -146,6 +165,10 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         if (trendData.length > 0) {
           setAttendanceTrend(trendData);
         }
+        
+        // ✨ NEW: Fetch happening now events
+        await fetchHappeningNow();
+        
         // Keep default demo events if no backend data
       } catch (error) {
         console.error('Error fetching events:', error);
@@ -157,6 +180,15 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
 
     fetchEvents();
   }, [selectedCity, timeRange]);
+
+  // ✨ NEW: Auto-refresh happening now events every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchHappeningNow();
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return <div className="text-gray-900">Loading events...</div>;
@@ -232,6 +264,72 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
 
   return (
     <div className="space-y-6">
+      {/* ✨ NEW: Happening Now Section */}
+      {happeningNowEvents.length > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 p-6 shadow-lg">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <h3 className="text-xl font-bold text-red-700">Happening Now</h3>
+            </div>
+            <span className="text-sm text-red-600 font-medium">
+              {happeningNowEvents.length} {happeningNowEvents.length === 1 ? 'event' : 'events'} live
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {happeningNowEvents.map(event => (
+              <Card key={event.id} className="bg-white border-red-300 shadow-md hover:shadow-xl transition-shadow cursor-pointer" onClick={() => handleViewDetails(event)}>
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    {/* Title with LIVE badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-gray-900 line-clamp-2">{event.title}</h4>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded whitespace-nowrap">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        LIVE
+                      </span>
+                    </div>
+                    
+                    {/* Multi-day progress */}
+                    {event.days_into_event && event.total_days && event.total_days > 1 && (
+                      <div className="bg-red-100 text-red-700 text-sm font-medium px-3 py-2 rounded">
+                        📅 Day {event.days_into_event} of {event.total_days}
+                        {event.days_remaining !== null && event.days_remaining !== undefined && (
+                          <span className="ml-2 text-red-600">({event.days_remaining} {event.days_remaining === 1 ? 'day' : 'days'} left)</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Recurring badge */}
+                    {event.recurrence_type && (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                        🔄 Repeats {event.recurrence_type}
+                      </div>
+                    )}
+                    
+                    {/* Location */}
+                    {event.location_name && (
+                      <div className="text-sm text-gray-600 flex items-center gap-1">
+                        📍 {event.location_name}
+                      </div>
+                    )}
+                    
+                    {/* Capacity */}
+                    {event.max_capacity && (
+                      <div className="text-sm text-gray-600">
+                        👥 {event.attendee_count || 0} / {event.max_capacity} registered
+                        {event.is_full && <span className="ml-2 text-red-600 font-semibold">FULL</span>}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">

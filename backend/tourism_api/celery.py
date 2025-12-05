@@ -21,6 +21,18 @@ app.conf.beat_schedule = {
         'schedule': crontab(minute=0, hour='*/2'),  # Every 2 hours
     },
     
+    # ✨ NEW: Generate next recurring event instances every hour
+    'generate-recurring-events-hourly': {
+        'task': 'events.tasks.generate_next_recurring_instances',
+        'schedule': crontab(minute=0, hour='*/1'),  # Every hour
+    },
+    
+    # ✨ NEW: Clean up old recurring instances weekly
+    'cleanup-old-recurring-instances': {
+        'task': 'events.tasks.cleanup_old_recurring_instances',
+        'schedule': crontab(minute=0, hour=0, day_of_week=0),  # Every Sunday at midnight
+    },
+    
     # Alternative schedules you can use:
     # 'collect-social-media-hourly': {
     #     'task': 'analytics.tasks.collect_and_process_social_posts',

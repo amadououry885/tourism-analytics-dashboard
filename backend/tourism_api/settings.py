@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import logging
 from dotenv import load_dotenv
+import dj_database_url  # ✨ NEW: For production database URLs
 
 # ── Load Environment Variables ────────────────────────────────────────────────
 # Load .env file from backend directory
@@ -23,15 +24,23 @@ def _split_env(name: str, default: str = ""):
     return [s.strip() for s in val.split(",") if s.strip()]
 
 # ── Hosts / CORS / CSRF ───────────────────────────────────────────────────────
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
+# ✨ UPDATED: Production-ready hosts
+ALLOWED_HOSTS = _split_env("ALLOWED_HOSTS", "localhost,127.0.0.1,.onrender.com,.vercel.app")
 
-CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3001",
-]
+# ✨ UPDATED: Production CORS
+if ENV == "production":
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = _split_env(
+        "CORS_ALLOWED_ORIGINS",
+        "https://tourism-analytics-dashboard.vercel.app"
+    )
+else:
+    CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = _split_env(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,https://*.vercel.app,https://*.onrender.com"
+)
 
 # ── Google Maps API ───────────────────────────────────────────────────────────
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
@@ -94,9 +103,19 @@ WSGI_APPLICATION = "tourism_api.wsgi.application"
 # ── Database (Local SQLite only) ──────────────────────────────────────────────
 SQLITE_PATH = os.getenv("SQLITE_PATH", str(BASE_DIR / "data" / "db.sqlite3"))
 os.makedirs(os.path.dirname(SQLITE_PATH), exist_ok=True)
-DATABASES = {
-    "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": SQLITE_PATH}
-}
+
+# ✨ UPDATED: Production-ready database configuration
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    # Production: Use PostgreSQL from DATABASE_URL
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    }
+else:
+    # Development: Use SQLite
+    DATABASES = {
+        "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": SQLITE_PATH}
+    }
 
 # ── Password validation ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [

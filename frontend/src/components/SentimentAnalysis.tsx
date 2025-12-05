@@ -64,7 +64,7 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
           <div className="h-6 bg-gray-200 rounded w-48"></div>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] bg-gray-200 rounded"></div>
+          <div className="h-[240px] bg-gray-200 rounded"></div>
         </CardContent>
       </Card>
     );
@@ -95,28 +95,28 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
           <CardDescription className="text-gray-900">Overall visitor sentiment from social media</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             {sentimentData.map((item) => {
               const Icon = item.name === 'Positive' ? Smile : item.name === 'Neutral' ? Meh : Frown;
               return (
-                <div key={item.name} className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <Icon className="w-8 h-8 mx-auto mb-2" style={{ color: item.color }} />
-                  <p className="text-2xl text-white mb-1">{item.value}%</p>
-                  <p className="text-sm text-gray-900">{item.name}</p>
-                  <p className="text-xs text-gray-900 mt-1">{item.count.toLocaleString()} mentions</p>
+                <div key={item.name} className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <Icon className="w-6 h-6 mx-auto mb-1" style={{ color: item.color }} />
+                  <p className="text-xl font-bold text-gray-900 mb-0.5">{item.value}%</p>
+                  <p className="text-xs text-gray-600">{item.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{item.count.toLocaleString()}</p>
                 </div>
               );
             })}
           </div>
           
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={150}>
             <PieChart>
               <Pie
                 data={sentimentData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={80}
+                innerRadius={45}
+                outerRadius={65}
                 fill="#8884d8"
                 paddingAngle={5}
                 dataKey="value"

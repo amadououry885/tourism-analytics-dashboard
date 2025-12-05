@@ -287,7 +287,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex flex-col gap-6">
         {/* Platform Performance */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>

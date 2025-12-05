@@ -354,7 +354,7 @@ class NearbyPlacesView(APIView):
 
 
 class OverviewMetricsView(APIView):
-    """Get overview metrics filtered by city and period"""
+    """Get comprehensive overview metrics with all social media analytics"""
     def get(self, request):
         from datetime import datetime, timedelta
         
@@ -373,34 +373,166 @@ class OverviewMetricsView(APIView):
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=days)
         
+        # Calculate previous period for trending
+        prev_end = start_date
+        prev_start = prev_end - timedelta(days=days)
+        
         # Base query
         posts_qs = SocialPost.objects.filter(created_at__date__range=[start_date, end_date])
+        prev_posts_qs = SocialPost.objects.filter(created_at__date__range=[prev_start, prev_end])
         
         # Filter by city if specified
         if city and city != 'all':
             place = Place.objects.filter(name__iexact=city).first()
             if place:
                 posts_qs = posts_qs.filter(place=place)
+                prev_posts_qs = prev_posts_qs.filter(place=place)
         
-        # Calculate metrics
+        # === 1. BASIC METRICS ===
         metrics = posts_qs.aggregate(
             total_posts=Count('id'),
             total_likes=Sum('likes'),
             total_comments=Sum('comments'),
-            total_shares=Sum('shares')
+            total_shares=Sum('shares'),
+            total_views=Sum('views')
         )
         
-        # Calculate total visitors (now just comments count)
         total_visitors = (metrics['total_comments'] or 0)
-        social_engagement = (metrics['total_likes'] or 0)  # Now just likes
-        page_views = total_visitors * 2  # Rough estimation
+        social_engagement = (metrics['total_likes'] or 0)
+        page_views = total_visitors * 2
         
+        # === 2. SENTIMENT ANALYSIS ===
+        sentiment_agg = posts_qs.aggregate(
+            positive_count=Count(Case(When(sentiment='positive', then=1))),
+            neutral_count=Count(Case(When(sentiment='neutral', then=1))),
+            negative_count=Count(Case(When(sentiment='negative', then=1))),
+            avg_sentiment_score=Avg('sentiment_score')
+        )
+        
+        total_sentiment_posts = (sentiment_agg['positive_count'] or 0) + (sentiment_agg['neutral_count'] or 0) + (sentiment_agg['negative_count'] or 0)
+        
+        if total_sentiment_posts > 0:
+            sentiment_data = {
+                'positive_pct': round((sentiment_agg['positive_count'] or 0) * 100 / total_sentiment_posts),
+                'neutral_pct': round((sentiment_agg['neutral_count'] or 0) * 100 / total_sentiment_posts),
+                'negative_pct': round((sentiment_agg['negative_count'] or 0) * 100 / total_sentiment_posts),
+                'positive': sentiment_agg['positive_count'] or 0,
+                'neutral': sentiment_agg['neutral_count'] or 0,
+                'negative': sentiment_agg['negative_count'] or 0,
+                'avg_score': round(sentiment_agg['avg_sentiment_score'] or 0, 2)
+            }
+        else:
+            sentiment_data = {
+                'positive_pct': 60, 'neutral_pct': 30, 'negative_pct': 10,
+                'positive': 0, 'neutral': 0, 'negative': 0, 'avg_score': 0
+            }
+        
+        # === 3. PLATFORM BREAKDOWN ===
+        platforms = list(
+            posts_qs.values('platform')
+            .annotate(
+                posts=Count('id'),
+                likes=Sum('likes'),
+                comments=Sum('comments'),
+                shares=Sum('shares')
+            )
+            .order_by('-posts')
+        )
+        
+        # === 4. HOURLY ENGAGEMENT PATTERN ===
+        hourly_engagement = list(
+            posts_qs.annotate(hour=ExtractHour('created_at'))
+            .values('hour')
+            .annotate(
+                posts=Count('id'),
+                engagement=Sum(F('likes') + F('comments') + F('shares'))
+            )
+            .order_by('hour')
+        )
+        
+        # === 5. DAILY TRENDS (for chart) ===
+        daily_trends = list(
+            posts_qs.annotate(date=TruncDate('created_at'))
+            .values('date')
+            .annotate(
+                likes=Sum('likes'),
+                comments=Sum('comments'),
+                shares=Sum('shares'),
+                posts=Count('id')
+            )
+            .order_by('date')
+        )
+        
+        # Format dates
+        for item in daily_trends:
+            item['date'] = item['date'].strftime('%Y-%m-%d')
+        
+        # === 6. TOP KEYWORDS (from extra field) ===
+        keywords_data = []
+        for post in posts_qs.filter(extra__isnull=False)[:100]:
+            if 'keywords' in post.extra and isinstance(post.extra['keywords'], list):
+                keywords_data.extend(post.extra['keywords'])
+        
+        from collections import Counter
+        keyword_counts = Counter(keywords_data).most_common(10)
+        top_keywords = [{'keyword': k, 'count': c} for k, c in keyword_counts]
+        
+        # === 7. SENTIMENT BY CATEGORY ===
+        sentiment_by_category = list(
+            posts_qs.values('place__category')
+            .annotate(
+                total=Count('id'),
+                positive=Count(Case(When(sentiment='positive', then=1))),
+                neutral=Count(Case(When(sentiment='neutral', then=1))),
+                negative=Count(Case(When(sentiment='negative', then=1)))
+            )
+            .filter(total__gt=0)
+            .order_by('-total')
+        )
+        
+        # Format category data
+        for item in sentiment_by_category:
+            item['category'] = item.pop('place__category') or 'Uncategorized'
+        
+        # === 8. TRENDING CALCULATION ===
+        prev_metrics = prev_posts_qs.aggregate(
+            prev_engagement=Sum(F('likes') + F('comments') + F('shares'))
+        )
+        
+        current_total_engagement = (metrics['total_likes'] or 0) + (metrics['total_comments'] or 0) + (metrics['total_shares'] or 0)
+        prev_total_engagement = prev_metrics['prev_engagement'] or 0
+        
+        if prev_total_engagement > 0:
+            trending_pct = round(((current_total_engagement - prev_total_engagement) / prev_total_engagement) * 100, 1)
+        else:
+            trending_pct = 100.0 if current_total_engagement > 0 else 0.0
+        
+        # === CONSOLIDATED RESPONSE ===
         return Response({
-            'total_visitors': total_visitors,  # This is Comments count
-            'social_engagement': social_engagement,  # This is Likes count
+            # Basic Metrics
+            'total_visitors': total_visitors,
+            'social_engagement': social_engagement,
             'total_posts': metrics['total_posts'] or 0,
             'shares': metrics['total_shares'] or 0,
-            'page_views': page_views
+            'page_views': page_views,
+            'total_likes': metrics['total_likes'] or 0,
+            'total_comments': metrics['total_comments'] or 0,
+            'total_views': metrics['total_views'] or 0,
+            'trending_pct': trending_pct,
+            
+            # Sentiment Analysis
+            'sentiment': sentiment_data,
+            'sentiment_by_category': sentiment_by_category,
+            
+            # Platform Analytics
+            'platforms': platforms,
+            
+            # Engagement Patterns
+            'hourly_engagement': hourly_engagement,
+            'daily_trends': daily_trends,
+            
+            # Keywords
+            'top_keywords': top_keywords
         })
 
 

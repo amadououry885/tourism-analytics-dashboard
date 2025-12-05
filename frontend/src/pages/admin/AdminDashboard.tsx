@@ -76,6 +76,8 @@ const AdminDashboard: React.FC = () => {
     tags: [] as string[],
     city: '',
     image_url: '',
+    recurrence_type: '', // ✨ NEW: daily, weekly, monthly, yearly, or empty for one-time
+    max_capacity: null as number | null, // ✨ NEW: Maximum attendees
   };
   
   const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'transport' | 'places'>('approvals');
@@ -1307,6 +1309,90 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <p className="text-xs text-gray-500">Tip: Upload a poster or hero image (max 5MB). We accept JPG, PNG.</p>
                 </div>
+                  </div>
+
+                  {/* ✨ NEW: Step 6 - Recurring Event Settings */}
+                  <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl p-6 border-2 border-indigo-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
+                        6
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-indigo-900">🔄 Advanced Settings (Optional)</h3>
+                        <p className="text-sm text-indigo-700">Make this event recurring and set capacity</p>
+                      </div>
+                    </div>
+
+                    {/* Recurring Event Toggle */}
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-lg p-4 border-2 border-indigo-200">
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          🔄 Recurring Event
+                        </label>
+                        <select
+                          name="recurrence_type"
+                          value={eventForm.recurrence_type || ''}
+                          onChange={(e) => setEventForm({...eventForm, recurrence_type: e.target.value})}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500 bg-white"
+                        >
+                          <option value="">📅 One-time event (no repeat)</option>
+                          <option value="daily">🌅 Daily - Repeats every day</option>
+                          <option value="weekly">📆 Weekly - Repeats every week</option>
+                          <option value="monthly">🗓️ Monthly - Repeats every month</option>
+                          <option value="yearly">🎊 Yearly - Repeats every year</option>
+                        </select>
+                        <p className="mt-2 text-sm text-indigo-600 flex items-start gap-2">
+                          <span className="text-lg">💡</span>
+                          <span>
+                            {eventForm.recurrence_type ? (
+                              <>
+                                <strong>Recurring event enabled!</strong> New instances will be automatically created {eventForm.recurrence_type}.
+                                Example: Weekly markets, annual festivals, daily tours.
+                              </>
+                            ) : (
+                              <>Select a recurrence pattern to automatically generate future event instances. Perfect for regular markets, tours, or annual celebrations!</>
+                            )}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Max Capacity */}
+                      <div className="bg-white rounded-lg p-4 border-2 border-indigo-200">
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          👥 Maximum Capacity (Optional)
+                        </label>
+                        <input
+                          type="number"
+                          name="max_capacity"
+                          value={eventForm.max_capacity || ''}
+                          onChange={(e) => setEventForm({...eventForm, max_capacity: e.target.value ? parseInt(e.target.value) : null})}
+                          placeholder="e.g., 500"
+                          min="1"
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500"
+                        />
+                        <p className="mt-2 text-sm text-gray-600">
+                          💡 Set a maximum number of attendees. Leave blank for unlimited capacity.
+                        </p>
+                      </div>
+
+                      {/* Visual Indicator when Recurring is Active */}
+                      {eventForm.recurrence_type && (
+                        <div className="bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300 rounded-lg p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center animate-pulse">
+                              <span className="text-2xl">🔄</span>
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-purple-900">Recurring Event Active</h4>
+                              <p className="text-sm text-purple-700">
+                                This event will automatically repeat <strong>{eventForm.recurrence_type}</strong>. 
+                                Create once, runs forever!
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                 {/* Action Buttons */}

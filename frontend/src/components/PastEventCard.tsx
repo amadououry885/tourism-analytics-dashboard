@@ -3,7 +3,7 @@ import { Badge } from './ui/badge';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-// Event interface matching EventCard
+// ✨ UPDATED: Event interface matching EventCard with live status fields
 interface Event {
   id: number;
   title: string;
@@ -17,14 +17,21 @@ interface Event {
   actual_attendance?: number;
   is_published?: boolean;
   image_url?: string;
+  // ✨ CAPACITY FIELDS:
   max_capacity?: number | null;
   attendee_count?: number;
   spots_remaining?: number | null;
   is_full?: boolean;
   user_registered?: boolean;
   user_has_reminder?: boolean;
+  // ✨ RECURRING FIELDS:
   recurrence_type?: string;
   is_recurring_instance?: boolean;
+  // ✨ LIVE STATUS FIELDS:
+  is_happening_now?: boolean;
+  days_into_event?: number | null;
+  total_days?: number;
+  days_remaining?: number | null;
 }
 
 interface PastEventCardProps {
@@ -80,11 +87,18 @@ export function PastEventCard({ event, rank, onViewDetails }: PastEventCardProps
       className="group relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-gray-300 cursor-pointer transform hover:-translate-y-1"
     >
       {/* Past Event Badge - Top Left */}
-      <div className="absolute top-3 left-3 z-10">
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
         <Badge className="bg-gray-700 text-white border-gray-600 shadow-md flex items-center gap-1">
           <CheckCircle2 className="w-3 h-3" />
           Event Completed
         </Badge>
+        
+        {/* ✨ NEW: Recurring Event Badge for Past Events */}
+        {event.recurrence_type && (
+          <Badge className="bg-purple-500 text-white border-purple-600 shadow-md flex items-center gap-1">
+            🔄 Repeats {event.recurrence_type}
+          </Badge>
+        )}
       </div>
 
       {/* Rank Badge - Top Right */}

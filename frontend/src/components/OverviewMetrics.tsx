@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Eye, Heart, Share2, MessageCircle } from 'lucide-react';
+import { Eye, Heart, Share2, MessageCircle, TrendingUp, Smile, Meh, Frown } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 interface OverviewMetricsProps {
   selectedCity: string;
@@ -14,6 +15,24 @@ interface Metrics {
   totalPosts: number;
   shares: number;
   pageViews: number;
+  totalLikes: number;
+  totalComments: number;
+  trendingPct: number;
+  sentiment?: {
+    positivePct: number;
+    neutralPct: number;
+    negativePct: number;
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  platforms?: Array<{
+    platform: string;
+    posts: number;
+    likes: number;
+    comments: number;
+    shares: number;
+  }>;
 }
 
 export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProps) {
@@ -45,8 +64,7 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
 
         const url = `/api/analytics/overview-metrics/?${queryParams.toString()}`;
         
-        console.log('📊 Fetching metrics from:', url);
-        console.log('🏙️ City:', selectedCity, '⏱️ Time Range:', timeRange);
+        console.log('📊 Fetching comprehensive metrics from:', url);
 
         const response = await axios.get(url);
         const data = response.data;
@@ -58,9 +76,14 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
           totalPosts: data.total_posts || 0,
           shares: data.shares || 0,
           pageViews: data.page_views || 0,
+          totalLikes: data.total_likes || 0,
+          totalComments: data.total_comments || 0,
+          trendingPct: data.trending_pct || 0,
+          sentiment: data.sentiment,
+          platforms: data.platforms || [],
         };
 
-        console.log('✅ Metrics loaded:', fetchedMetrics);
+        console.log('✅ Comprehensive metrics loaded:', fetchedMetrics);
         setMetrics(fetchedMetrics);
       } catch (error) {
         console.error('❌ Error fetching metrics:', error);
@@ -117,13 +140,13 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-blue-800">
-            {metrics.totalVisitors >= 1000 ? (metrics.totalVisitors / 1000).toFixed(1) + 'K' : metrics.totalVisitors}
+            {metrics.totalComments >= 1000 ? (metrics.totalComments / 1000).toFixed(1) + 'K' : metrics.totalComments}
           </div>
         </CardContent>
       </Card>
 
       {/* Likes Card - Beautiful Rose Theme */}
-      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
+      <Card className="bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-rose-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -136,13 +159,13 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-rose-800">
-            {(metrics.socialEngagement / 1000).toFixed(0)}K
+            {metrics.totalLikes >= 1000 ? (metrics.totalLikes / 1000).toFixed(0) + 'K' : metrics.totalLikes}
           </div>
         </CardContent>
       </Card>
 
       {/* Total Posts Card - Beautiful Purple Theme */}
-      <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 shadow-md hover:shadow-lg transition-shadow">
+      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-purple-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -161,27 +184,27 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
       </Card>
 
       {/* Shares Card - Beautiful Green Theme */}
-      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
+      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-emerald-700 flex items-center justify-between">
+          <CardTitle className="text-sm font-semibold text-green-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-emerald-200 rounded-full">
-                <Share2 className="w-4 h-4 text-emerald-700" />
+              <div className="p-2 bg-green-200 rounded-full">
+                <Share2 className="w-4 h-4 text-green-700" />
               </div>
               <span> Shares</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-emerald-800">
-            {(metrics.shares / 1000).toFixed(1)}K
+          <div className="text-3xl font-bold text-green-800">
+            {metrics.shares >= 1000 ? (metrics.shares / 1000).toFixed(1) + 'K' : metrics.shares}
           </div>
         </CardContent>
       </Card>
 
       {/* Page Views Card - Beautiful Orange Theme */}
-      <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-        <CardHeader className="pb-3">
+      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold text-orange-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-orange-200 rounded-full">
