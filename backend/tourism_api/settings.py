@@ -105,14 +105,15 @@ SQLITE_PATH = os.getenv("SQLITE_PATH", str(BASE_DIR / "data" / "db.sqlite3"))
 os.makedirs(os.path.dirname(SQLITE_PATH), exist_ok=True)
 
 # ✨ UPDATED: Production-ready database configuration
-DATABASE_URL = os.getenv("DATABASE_URL")
-if DATABASE_URL:
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+# Check if DATABASE_URL exists and is valid (not empty or malformed)
+if DATABASE_URL and DATABASE_URL.strip() and "://" in DATABASE_URL and len(DATABASE_URL.split("://")[0]) > 0:
     # Production: Use PostgreSQL from DATABASE_URL
     DATABASES = {
         "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
 else:
-    # Development: Use SQLite
+    # Development: Use SQLite (also fallback if DATABASE_URL is invalid)
     DATABASES = {
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": SQLITE_PATH}
     }
