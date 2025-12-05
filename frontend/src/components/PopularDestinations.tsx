@@ -79,22 +79,15 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     try {
       // Use environment variable for API URL
       const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-      const res = await fetch(`${API_URL}/analytics/places/popular/?range=30d`);
+      const res = await fetch(`${API_URL}/places/`);
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
       const data = await res.json();
 
-      // Expect an array; guard against unexpected shapes
-      if (Array.isArray(data)) {
-        setDestinations(data);
-      } else if (data && Array.isArray(data.results)) {
-        setDestinations(data.results);
-      } else {
-        // fallback: empty array
-        setDestinations([]);
-        console.warn('Unexpected popular places response shape:', data);
-      }
+      // Handle paginated response from DRF ViewSet
+      const places = data.results || data || [];
+      setDestinations(places);
     } catch (err) {
       // normalize error to string
       const msg = err instanceof Error ? err.message : String(err);
@@ -124,16 +117,19 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
 
-        // ✅ Use the popular places endpoint with 30-day range
+        // ✅ Fetch places from CRUD endpoint
         const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         let response;
         try {
-          response = await fetch(`${API_URL}/analytics/places/popular/${cityParam}${cityParam ? '&' : '?'}range=30d`);
+          const url = selectedCity && selectedCity !== 'all' 
+            ? `${API_URL}/places/?city=${selectedCity}`
+            : `${API_URL}/places/`;
+          response = await fetch(url);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
           const data = await response.json();
-          console.log('✅ Response from analytics/places:', data);
+          console.log('✅ Response from /places/:', data);
 
           // Handle different response formats
           const places = data.results || data || [];
