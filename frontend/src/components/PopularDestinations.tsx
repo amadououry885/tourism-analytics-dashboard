@@ -79,7 +79,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     try {
       // Use environment variable for API URL
       const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-      const res = await fetch(`${API_URL}/analytics/places/list/`);
+      const res = await fetch(`${API_URL}/analytics/places/popular/`);
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
@@ -117,17 +117,17 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
 
-        // ✅ Fetch places from analytics endpoint
+        // ✅ Fetch places from analytics popular endpoint
         const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         let response;
         try {
-          const url = `${API_URL}/analytics/places/list/`;
+          const url = `${API_URL}/analytics/places/popular/`;
           response = await fetch(url);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
           const data = await response.json();
-          console.log('✅ Response from analytics/places/list/:', data);
+          console.log('✅ Response from analytics/places/popular/:', data);
 
           // Handle array response
           const places = Array.isArray(data) ? data : (data.results || data || []);
