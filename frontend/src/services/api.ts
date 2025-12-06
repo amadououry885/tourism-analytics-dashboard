@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+// Use production URL directly to avoid Vercel build-time environment variable issues
+const API_BASE_URL = 'https://tourism-analytics-backend.onrender.com/api';
 
 // Set axios defaults globally so ALL axios calls use the correct base URL
 axios.defaults.baseURL = API_BASE_URL;
