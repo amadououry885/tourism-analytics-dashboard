@@ -79,14 +79,14 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     try {
       // Use environment variable for API URL
       const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-      const res = await fetch(`${API_URL}/places/`);
+      const res = await fetch(`${API_URL}/analytics/places/list/`);
       if (!res.ok) {
         throw new Error(`Server responded with ${res.status}`);
       }
       const data = await res.json();
 
-      // Handle paginated response from DRF ViewSet
-      const places = data.results || data || [];
+      // Handle array response from analytics endpoint
+      const places = Array.isArray(data) ? data : (data.results || data || []);
       setDestinations(places);
     } catch (err) {
       // normalize error to string
@@ -117,22 +117,20 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
 
-        // ✅ Fetch places from CRUD endpoint
+        // ✅ Fetch places from analytics endpoint
         const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         let response;
         try {
-          const url = selectedCity && selectedCity !== 'all' 
-            ? `${API_URL}/places/?city=${selectedCity}`
-            : `${API_URL}/places/`;
+          const url = `${API_URL}/analytics/places/list/`;
           response = await fetch(url);
           if (!response.ok) {
             throw new Error(`Server responded with ${response.status}`);
           }
           const data = await response.json();
-          console.log('✅ Response from /places/:', data);
+          console.log('✅ Response from analytics/places/list/:', data);
 
-          // Handle different response formats
-          const places = data.results || data || [];
+          // Handle array response
+          const places = Array.isArray(data) ? data : (data.results || data || []);
           console.log('📊 Parsed places:', places);
 
           // Set ALL destinations data (not just top 5) - ranked by posts
