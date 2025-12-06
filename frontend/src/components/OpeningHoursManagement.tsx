@@ -33,7 +33,7 @@ export const OpeningHoursManagement: React.FC<OpeningHoursManagementProps> = ({ 
   const fetchHours = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/vendors/opening-hours/', {
+      const response = await axios.get('/vendors/opening-hours/', {
         params: { vendor_id: vendorId }
       });
       
@@ -99,7 +99,7 @@ export const OpeningHoursManagement: React.FC<OpeningHoursManagementProps> = ({ 
           await axios.put(`/api/vendors/opening-hours/${hour.id}/`, hour);
         } else {
           // Create new
-          await axios.post('/api/vendors/opening-hours/', hour);
+          await axios.post('/vendors/opening-hours/', hour);
         }
       });
       

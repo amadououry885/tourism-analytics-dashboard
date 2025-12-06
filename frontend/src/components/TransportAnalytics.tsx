@@ -111,7 +111,7 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
       setShowResults(true);
       
       // Search our database
-      const response = await axios.get('/api/transport/search/', {
+      const response = await axios.get('/transport/search/', {
         params: {
           from: fromPlace,
           to: toPlace,

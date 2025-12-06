@@ -18,7 +18,7 @@ export function DestinationsRanking() {
     const fetchDestinations = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/api/analytics/destinations/ranking/');
+        const response = await axios.get('/analytics/destinations/ranking/');
         const data = response.data;
         const sortedDestinations = data
           .map((item: any, index: number) => ({

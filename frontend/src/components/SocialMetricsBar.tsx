@@ -51,7 +51,7 @@ export const SocialMetricsBar: React.FC = () => {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const response = await axios.get('/api/analytics/social-metrics/');
+        const response = await axios.get('/analytics/social-metrics/');
         setMetrics(response.data);
       } catch (error) {
         console.error('Error fetching social metrics:', error);

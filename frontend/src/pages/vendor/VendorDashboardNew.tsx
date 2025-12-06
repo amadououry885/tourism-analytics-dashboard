@@ -140,8 +140,8 @@ export default function VendorDashboardNew() {
     try {
       setLoading(true);
       const [restaurantsRes, menuRes] = await Promise.all([
-        axios.get('/api/vendors/'),
-        axios.get('/api/vendors/menu-items/'),
+        axios.get('/vendors/'),
+        axios.get('/vendors/menu-items/'),
       ]);
       
       const vendorData = restaurantsRes.data.results || [];
@@ -209,7 +209,7 @@ export default function VendorDashboardNew() {
         await axios.put(`/api/vendors/${editingRestaurant}/`, payload);
         alert('Restaurant updated successfully!');
       } else {
-        await axios.post('/api/vendors/', payload);
+        await axios.post('/vendors/', payload);
         alert('Restaurant added successfully!');
       }
       
@@ -296,7 +296,7 @@ export default function VendorDashboardNew() {
         price: parseFloat(menuForm.price),
         spiciness_level: menuForm.spiciness_level,
       };
-      await axios.post('/api/vendors/menu-items/', payload);
+      await axios.post('/vendors/menu-items/', payload);
       alert('Menu item added successfully!');
       setMenuForm({
         restaurant: '',

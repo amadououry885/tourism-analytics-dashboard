@@ -59,7 +59,7 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/vendors/menu-items/', {
+      const response = await axios.get('/vendors/menu-items/', {
         params: { vendor_id: vendorId }
       });
       setMenuItems(response.data);
@@ -76,7 +76,7 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
       if (editingItem?.id) {
         await axios.put(`/api/vendors/menu-items/${editingItem.id}/`, formData);
       } else {
-        await axios.post('/api/vendors/menu-items/', formData);
+        await axios.post('/vendors/menu-items/', formData);
       }
       await fetchMenuItems();
       resetForm();

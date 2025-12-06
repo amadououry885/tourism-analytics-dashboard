@@ -134,7 +134,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   // ✨ NEW: Fetch happening now events
   const fetchHappeningNow = async () => {
     try {
-      const response = await axios.get('/api/events/happening_now/');
+      const response = await axios.get('/events/happening_now/');
       const liveEvents = response.data.results || response.data || [];
       setHappeningNowEvents(liveEvents);
     } catch (error) {
@@ -149,11 +149,11 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         setLoading(true);
         
         // Fetch events
-        const response = await axios.get('/api/events/');
+        const response = await axios.get('/events/');
         const backendEvents = response.data.results || response.data || [];
         
         // Fetch attendance trend data
-        const trendResponse = await axios.get('/api/analytics/events/attendance-trend/?range=365d');
+        const trendResponse = await axios.get('/analytics/events/attendance-trend/?range=365d');
         const trendData = trendResponse.data || [];
         
         // If backend has data, use it; otherwise keep demo data

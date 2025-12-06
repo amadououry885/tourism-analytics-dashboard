@@ -24,7 +24,7 @@ const Overview: React.FC = () => {
         console.log('🔍 Fetching cities from Places API...');
 
         // ✅ Use the main Places API to get all cities
-        const response = await axios.get('/api/analytics/places/list/');
+        const response = await axios.get('/analytics/places/list/');
         const places = response.data;
         
         console.log('🏙️ Fetched places from analytics API:', places);

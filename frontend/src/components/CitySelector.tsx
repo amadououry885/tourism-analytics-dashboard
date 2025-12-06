@@ -22,7 +22,7 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
         console.log('🔍 Fetching cities from Places API...');
 
         // ✅ Use the correct Places API endpoint (with trailing slash)
-        const response = await axios.get('/api/analytics/places/list/');
+        const response = await axios.get('/analytics/places/list/');
         const places = response.data;
         
         console.log('🏙️ Fetched places from analytics API:', places);

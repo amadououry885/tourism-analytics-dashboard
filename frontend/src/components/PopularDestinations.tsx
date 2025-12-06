@@ -78,8 +78,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     setError(null);
 
     try {
-      // Use axios with relative URL like other working components
-      const response = await axios.get('/api/analytics/places/popular/');
+      // Use axios with relative URL (baseURL already has /api)
+      const response = await axios.get('/analytics/places/popular/');
       const data = response.data;
 
       // Handle array response from analytics endpoint
@@ -117,7 +117,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         // ✅ Fetch places from analytics popular endpoint using axios
         let response;
         try {
-          response = await axios.get('/api/analytics/places/popular/');
+          response = await axios.get('/analytics/places/popular/');
           const data = response.data;
           console.log('✅ Response from analytics/places/popular/:', data);
 
@@ -168,7 +168,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         } catch (apiError) {
           console.log('⚠️ analytics/places failed, trying places endpoint...');
           // Fallback to places endpoint using axios
-          response = await axios.get('/api/places/');
+          response = await axios.get('/places/');
           const data = response.data;
           console.log('✅ Response from places:', data);
 
@@ -198,7 +198,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         // Fetch least visited destinations
         try {
-          const leastResponse = await axios.get('/api/rankings/least-pois');
+          const leastResponse = await axios.get('/rankings/least-pois');
           const leastData = leastResponse.data;
           console.log('✅ Response from rankings/least-pois:', leastData);
           const leastPlaces = leastData.results || leastData || [];
