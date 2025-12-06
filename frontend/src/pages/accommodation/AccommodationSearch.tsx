@@ -111,7 +111,7 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
       if (maxPrice) params.append('max_price', maxPrice);
       if (minRating) params.append('min_rating', minRating);
       
-      const url = `/api/stays/hybrid_search/?${params.toString()}`;
+      const url = `/stays/hybrid_search/?${params.toString()}`;
       console.log('📡 Fetching stays from:', url);
       console.log('📋 Params:', { district, type, minPrice, maxPrice, minRating });
       

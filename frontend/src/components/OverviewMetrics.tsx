@@ -62,7 +62,7 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
         if (cityParam) queryParams.append('city', cityParam);
         queryParams.append('period', period);
 
-        const url = `/api/analytics/overview-metrics/?${queryParams.toString()}`;
+        const url = `/analytics/overview-metrics/?${queryParams.toString()}`;
         
         console.log('📊 Fetching comprehensive metrics from:', url);
 
