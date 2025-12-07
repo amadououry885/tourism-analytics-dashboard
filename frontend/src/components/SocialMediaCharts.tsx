@@ -94,9 +94,9 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
           axios.get(`/analytics/social/metrics/?${metricsParams.toString()}`)
         ]);
 
-        setEngagementData(engagementRes.data || []);
-        setPlatformData(platformRes.data || []);
-        setMetrics(metricsRes.data || {});
+        setEngagementData(engagementResponse.data || []);
+        setPlatformData(platformsResponse.data || []);
+        setMetrics(metricsResponse.data || {});
         
         // Calculate sentiment distribution from posts (keyword-based analysis)
         // Build params for posts endpoint (uses range parameter like metrics)
