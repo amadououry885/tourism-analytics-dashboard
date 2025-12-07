@@ -2,6 +2,7 @@ import { Calendar, MapPin, Users, Clock, TrendingUp, Navigation, Share2, Heart, 
 import { Badge } from './ui/badge';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { EventRegistrationModal } from './EventRegistrationModal';
 
 // ✨ UPDATED: Extended Event interface with live status fields
 interface Event {
@@ -58,6 +59,7 @@ const eventTypeColors: Record<string, { gradient: string; badge: string; icon: s
 
 export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, onViewDetails }: EventCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   
   const eventType = event.tags && event.tags.length > 0 ? event.tags[0].toLowerCase() : 'default';
   const colors = eventTypeColors[eventType] || eventTypeColors.default;
@@ -155,14 +157,23 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
     onViewDetails(event, false); // ✨ UPDATED: Normal click = no scroll
   };
 
-  // ✨ NEW: Handle JOIN US button click
+  // ✨ NEW: Handle JOIN US button click - Opens registration modal
   const handleJoinUsClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onViewDetails(event, true); // Scroll to registration section
+    setShowRegistrationModal(true);
   };
 
   return (
-    <div 
+    <>
+      {/* Registration Modal */}
+      <EventRegistrationModal
+        event={event}
+        isOpen={showRegistrationModal}
+        onClose={() => setShowRegistrationModal(false)}
+      />
+      
+      {/* Event Card */}
+      <div 
       onClick={handleCardClick}
       className="group relative bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer hover:-translate-y-2 animate-fadeIn"
     >
@@ -432,5 +443,6 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
         </button>
       </div>
     </div>
+    </>
   );
 }
