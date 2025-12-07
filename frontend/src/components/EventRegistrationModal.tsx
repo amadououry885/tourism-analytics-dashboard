@@ -291,8 +291,8 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
             justifyContent: 'space-between'
           }}
         >
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
               <div 
                 style={{
                   width: '40px',
@@ -304,19 +304,35 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
                   justifyContent: 'center'
                 }}
               >
-                <Users className="w-5 h-5 text-white" />
+                <Users style={{ width: '20px', height: '20px', color: 'white' }} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Event Registration</h2>
-                <p className="text-sm text-gray-500">{event.title}</p>
+                <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginBottom: '0' }}>Event Registration</h2>
+                <p style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>{event.title}</p>
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition"
+            style={{
+              color: '#9ca3af',
+              backgroundColor: 'transparent',
+              border: 'none',
+              borderRadius: '50%',
+              padding: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.color = '#4b5563';
+              e.currentTarget.style.backgroundColor = '#f3f4f6';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.color = '#9ca3af';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
-            <X className="w-6 h-6" />
+            <X style={{ width: '24px', height: '24px' }} />
           </button>
         </div>
 
@@ -330,23 +346,23 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
           }}
         >
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+              <Loader2 style={{ width: '32px', height: '32px', color: '#2563eb', animation: 'spin 1s linear infinite' }} />
             </div>
           ) : success ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-green-600" />
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <div style={{ width: '64px', height: '64px', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Check style={{ width: '32px', height: '32px', color: '#16a34a' }} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h3>
-              <p className="text-gray-600">{formConfig?.confirmation_message}</p>
+              <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>Registration Successful!</h3>
+              <p style={{ color: '#4b5563' }}>{formConfig?.confirmation_message}</p>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto">
+            <div style={{ maxWidth: '768px', margin: '0 auto' }}>
               {/* Event info card - matching details modal */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-start gap-3">
+              <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', border: '1px solid #e5e7eb', padding: '24px', marginBottom: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                     <Calendar className="w-5 h-5 text-gray-400 mt-1" />
                     <div>
                       <div className="text-sm font-semibold text-gray-700">Start Date & Time</div>
