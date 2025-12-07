@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Check, Loader2, User, Mail, Phone, Calendar, FileText, Users, MapPin } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import api from '../services/api';
 
 interface Event {
@@ -247,7 +248,7 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div 
       style={{
         position: 'fixed',
@@ -423,6 +424,7 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
