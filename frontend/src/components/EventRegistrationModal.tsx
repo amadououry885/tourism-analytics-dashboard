@@ -248,13 +248,52 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        zIndex: 50
+      }}
+      onClick={onClose}
+    >
+      <div 
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          maxWidth: '1200px',
+          width: '100%',
+          maxHeight: '90vh',
+          overflow: 'hidden',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header - matching event details modal style */}
-        <div className="bg-white border-b border-gray-200 p-6 flex items-start justify-between">
+        <div 
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+              <div 
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  background: 'linear-gradient(to bottom right, #10b981, #059669)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
                 <Users className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -264,6 +303,22 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
             </div>
           </div>
           <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div 
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '24px',
+            backgroundColor: '#f9fafb'
+          }}
+        >
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition"
           >
