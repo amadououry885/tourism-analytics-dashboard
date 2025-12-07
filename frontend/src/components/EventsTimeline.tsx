@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api'; // Use configured API instance instead of raw axios
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Calendar, MapPin, Users, TrendingUp, Filter, Search } from 'lucide-react';
@@ -134,7 +134,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   // ✨ NEW: Fetch happening now events
   const fetchHappeningNow = async () => {
     try {
-      const response = await axios.get('/events/happening_now/');
+      const response = await api.get('/events/happening_now/');
       const liveEvents = response.data.results || response.data || [];
       setHappeningNowEvents(liveEvents);
     } catch (error) {
@@ -148,17 +148,17 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
       try {
         setLoading(true);
         
-        console.log('[EventsTimeline] Fetching events from:', axios.defaults.baseURL + '/events/');
+        console.log('[EventsTimeline] Fetching events from:', api.defaults.baseURL + '/events/');
         
         // Fetch events
-        const response = await axios.get('/events/');
+        const response = await api.get('/events/');
         const backendEvents = response.data.results || response.data || [];
         
         console.log('[EventsTimeline] Received events:', backendEvents.length, 'events');
         console.log('[EventsTimeline] First event:', backendEvents[0]);
         
         // Fetch attendance trend data
-        const trendResponse = await axios.get('/analytics/events/attendance-trend/?range=365d');
+        const trendResponse = await api.get('/analytics/events/attendance-trend/?range=365d');
         const trendData = trendResponse.data || [];
         
         // If backend has data, use it; otherwise keep demo data
@@ -180,12 +180,12 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         // Keep default demo events if no backend data
       } catch (error) {
         console.error('[EventsTimeline] Error fetching events:', error);
-        if (axios.isAxiosError(error)) {
-          console.error('[EventsTimeline] Axios error details:', {
+        if (error instanceof Error) {
+          console.error('[EventsTimeline] Error details:', {
             message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-            url: error.config?.url
+            status: (error as any).response?.status,
+            data: (error as any).response?.data,
+            url: (error as any).config?.url
           });
         }
         // Keep demo events on error
