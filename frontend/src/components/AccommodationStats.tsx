@@ -45,7 +45,7 @@ export function AccommodationStats({ selectedCity, timeRange }: AccommodationSta
           params.append('district', selectedCity);
         }
 
-        const response = await axios.get(`/api/stays/?${params.toString()}`);
+        const response = await axios.get(`/stays/?${params.toString()}`);
         const backendStays = response.data.results || [];
         
         // If backend has data, use it; otherwise keep demo data

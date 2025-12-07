@@ -52,7 +52,7 @@ export function DynamicRegistrationForm({
     const fetchForm = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/events/${eventId}/registration_form/`);
+        const response = await axios.get(`/events/${eventId}/registration_form/`);
         setForm(response.data);
         setError(null);
       } catch (err: any) {

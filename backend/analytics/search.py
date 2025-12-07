@@ -3,8 +3,8 @@ from django.http import JsonResponse
 from django.db.models import Q, Case, When, Value, IntegerField
 from rest_framework.decorators import api_view
 
-# We’ll search your legacy POIs used by the analytics:
-from .models_old import POI
+# Use the current Place model instead of legacy POI
+from .models import Place
 
 def _limit(request, default=20, max_val=100):
     try:
@@ -26,7 +26,7 @@ def search_pois(request):
     q = (request.GET.get("q") or "").strip()
     limit = _limit(request)
 
-    qs = POI.objects.all()
+    qs = Place.objects.all()
 
     if q:
         qs = qs.annotate(

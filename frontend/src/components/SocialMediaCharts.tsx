@@ -88,10 +88,10 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         metricsParams.append('range', range);
 
         // Fetch all data in parallel with city filtering
-        const [engagementRes, platformRes, metricsRes] = await Promise.all([
-          axios.get(`/api/analytics/social-engagement/?${params.toString()}`),
-          axios.get(`/api/analytics/social/platforms/?${metricsParams.toString()}`),
-          axios.get(`/api/analytics/social/metrics/?${metricsParams.toString()}`)
+        const [engagementResponse, platformsResponse, metricsResponse] = await Promise.all([
+          axios.get(`/analytics/social-engagement/?${params.toString()}`),
+          axios.get(`/analytics/social/platforms/?${metricsParams.toString()}`),
+          axios.get(`/analytics/social/metrics/?${metricsParams.toString()}`)
         ]);
 
         setEngagementData(engagementRes.data || []);
@@ -106,7 +106,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         }
         postsParams.append('range', range);
         
-        const postsResponse = await axios.get(`/api/posts/?${postsParams.toString()}`);
+        const postsResponse = await axios.get(`/posts/?${postsParams.toString()}`);
         const allPosts = postsResponse.data?.results || [];
         
         // Simple keyword-based sentiment analysis
@@ -533,7 +533,7 @@ function CityComparisonChart({ timeRange }: CityComparisonProps) {
         
         const cityPromises = cities.map(async (city) => {
           try {
-            const response = await axios.get(`/api/analytics/social/metrics/?range=${range}&city=${encodeURIComponent(city)}`);
+            const response = await axios.get(`/analytics/social/metrics/?range=${range}&city=${encodeURIComponent(city)}`);
             return {
               city,
               posts: response.data.total_posts || 0,

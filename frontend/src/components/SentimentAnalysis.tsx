@@ -28,7 +28,7 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
         if (timeRange) params.append('range', timeRange === 'week' ? '7d' : '30d');
         
         // Fetch sentiment summary
-        const summaryResponse = await axios.get(`/api/analytics/sentiment/summary/?${params.toString()}`);
+        const summaryResponse = await axios.get(`/analytics/sentiment/summary/?${params.toString()}`);
         
         if (summaryResponse.data) {
           setSentimentData([
@@ -40,10 +40,10 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
 
         // Fetch keywords if detailed view
         if (detailed) {
-          const keywordsResponse = await axios.get(`/api/analytics/sentiment/keywords/?${params.toString()}`);
+          const keywordsResponse = await axios.get(`/analytics/sentiment/keywords/?${params.toString()}`);
           setTopKeywords(keywordsResponse.data || []);
 
-          const categoryResponse = await axios.get(`/api/analytics/sentiment/by-category/?${params.toString()}`);
+          const categoryResponse = await axios.get(`/analytics/sentiment/by-category/?${params.toString()}`);
           setCategorysentiment(categoryResponse.data || []);
         }
       } catch (error) {

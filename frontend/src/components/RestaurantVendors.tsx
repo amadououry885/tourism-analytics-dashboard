@@ -96,7 +96,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
         const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
         
         // Fetch vendors - WITH CITY FILTER
-        const response = await axios.get(`/api/vendors/${cityParam}`);
+        const response = await axios.get(`/vendors/${cityParam}`);
         const vendors = response.data.results || [];
         
         // Transform vendor data to restaurant format
