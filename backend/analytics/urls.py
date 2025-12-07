@@ -27,6 +27,8 @@ urlpatterns = [
     # === OVERVIEW & DASHBOARD ===
     path('overview-metrics', vn.OverviewMetricsView.as_view(), name='overview-metrics'),
     path('overview-metrics/', vn.OverviewMetricsView.as_view()),
+    path('analytics/overview-metrics', vn.OverviewMetricsView.as_view()),  # Frontend alias
+    path('analytics/overview-metrics/', vn.OverviewMetricsView.as_view()),
     path('metrics/totals', vs.metrics_totals, name='metrics-totals'),
     path('metrics/totals/', vs.metrics_totals),
     path('metrics/visitors', vs.visitors_metrics, name='metrics-visitors'),
