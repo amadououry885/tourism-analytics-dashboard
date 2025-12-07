@@ -361,7 +361,7 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
         )}
 
         {/* ✨ NEW: JOIN US Button - White Card Style with Maximum Visibility */}
-        {event.max_capacity && !countdown.isPast && !event.is_full && (
+        {!countdown.isPast && !event.is_full && (
           <div 
             onClick={handleJoinUsClick}
             className="mb-4 bg-white rounded-xl shadow-lg border-2 border-green-500 p-4 hover:border-green-600 hover:shadow-xl transition-all duration-300 cursor-pointer group/join"
@@ -374,25 +374,32 @@ export function EventCard({ event, rank, isHappeningNow, isNew, isFree, price, o
                 <div>
                   <div className="font-bold text-green-700 text-lg">JOIN US</div>
                   <div className="text-xs text-gray-600">
-                    {event.spots_remaining || event.max_capacity} spots available
+                    {event.max_capacity 
+                      ? `${event.spots_remaining || event.max_capacity} spots available`
+                      : 'Register for this event'
+                    }
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-green-600">
-                  {event.attendee_count || 0}
+              {event.max_capacity && (
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-green-600">
+                    {event.attendee_count || 0}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    of {event.max_capacity?.toLocaleString()}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  of {event.max_capacity?.toLocaleString()}
-                </div>
+              )}
+            </div>
+            {event.max_capacity && (
+              <div className="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
+                  style={{ width: `${((event.attendee_count || 0) / (event.max_capacity || 1)) * 100}%` }}
+                ></div>
               </div>
-            </div>
-            <div className="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
-                style={{ width: `${((event.attendee_count || 0) / (event.max_capacity || 1)) * 100}%` }}
-              ></div>
-            </div>
+            )}
           </div>
         )}
 
