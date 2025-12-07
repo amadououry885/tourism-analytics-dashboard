@@ -282,6 +282,15 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
       >
         {/* Header - matching event details modal style */}
         <div 
+          style={{
+            backgroundColor: 'white',
+            borderBottom: '1px solid #e5e7eb',
+            padding: '24px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between'
+          }}
+        >
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <div 
@@ -320,14 +329,6 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
             backgroundColor: '#f9fafb'
           }}
         >
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {loading ? (
             <div className="flex items-center justify-center py-12">
