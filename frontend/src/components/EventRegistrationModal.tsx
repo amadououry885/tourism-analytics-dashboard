@@ -252,22 +252,26 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
     <div 
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
         backgroundColor: 'rgba(0, 0, 0, 0.75)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
-        zIndex: 50
+        zIndex: 9999,
+        transform: 'none',
+        margin: '0',
+        inset: '0'
       }}
       onClick={onClose}
     >
       <div 
         style={{
+          position: 'relative',
           backgroundColor: 'white',
           borderRadius: '16px',
           maxWidth: '1200px',
@@ -276,7 +280,9 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
           overflow: 'hidden',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          transform: 'none',
+          margin: '0 auto'
         }}
         onClick={(e) => e.stopPropagation()}
       >
