@@ -148,9 +148,14 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
       try {
         setLoading(true);
         
+        console.log('[EventsTimeline] Fetching events from:', axios.defaults.baseURL + '/events/');
+        
         // Fetch events
         const response = await axios.get('/events/');
         const backendEvents = response.data.results || response.data || [];
+        
+        console.log('[EventsTimeline] Received events:', backendEvents.length, 'events');
+        console.log('[EventsTimeline] First event:', backendEvents[0]);
         
         // Fetch attendance trend data
         const trendResponse = await axios.get('/analytics/events/attendance-trend/?range=365d');
@@ -158,7 +163,10 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         
         // If backend has data, use it; otherwise keep demo data
         if (backendEvents.length > 0) {
+          console.log('[EventsTimeline] Setting events from backend');
           setEvents(backendEvents);
+        } else {
+          console.warn('[EventsTimeline] No backend events, keeping demo data');
         }
         
         // Update attendance trend if we have data
@@ -171,7 +179,15 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         
         // Keep default demo events if no backend data
       } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error('[EventsTimeline] Error fetching events:', error);
+        if (axios.isAxiosError(error)) {
+          console.error('[EventsTimeline] Axios error details:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            url: error.config?.url
+          });
+        }
         // Keep demo events on error
       } finally {
         setLoading(false);
