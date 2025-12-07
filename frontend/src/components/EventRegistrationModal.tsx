@@ -280,7 +280,7 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header - matching event details modal style */}
+        {/* Header - matching event details modal style - Fixed JSX */}
         <div 
           style={{
             backgroundColor: 'white',
