@@ -157,10 +157,6 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         console.log('[EventsTimeline] Received events:', backendEvents.length, 'events');
         console.log('[EventsTimeline] First event:', backendEvents[0]);
         
-        // Fetch attendance trend data
-        const trendResponse = await api.get('/analytics/events/attendance-trend/?range=365d');
-        const trendData = trendResponse.data || [];
-        
         // If backend has data, use it; otherwise keep demo data
         if (backendEvents.length > 0) {
           console.log('[EventsTimeline] Setting events from backend');
@@ -169,15 +165,24 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
           console.warn('[EventsTimeline] No backend events, keeping demo data');
         }
         
-        // Update attendance trend if we have data
-        if (trendData.length > 0) {
-          setAttendanceTrend(trendData);
+        // Fetch attendance trend data (non-blocking - don't fail if this endpoint doesn't exist)
+        try {
+          const trendResponse = await api.get('/analytics/events/attendance-trend/?range=365d');
+          const trendData = trendResponse.data || [];
+          if (trendData.length > 0) {
+            setAttendanceTrend(trendData);
+          }
+        } catch (trendError) {
+          console.warn('[EventsTimeline] Attendance trend endpoint not available, skipping');
         }
         
-        // ✨ NEW: Fetch happening now events
-        await fetchHappeningNow();
+        // ✨ NEW: Fetch happening now events (non-blocking)
+        try {
+          await fetchHappeningNow();
+        } catch (happeningError) {
+          console.warn('[EventsTimeline] Happening now endpoint not available, skipping');
+        }
         
-        // Keep default demo events if no backend data
       } catch (error) {
         console.error('[EventsTimeline] Error fetching events:', error);
         if (error instanceof Error) {
