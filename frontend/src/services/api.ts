@@ -1,7 +1,9 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 
-// Use production URL directly to avoid Vercel build-time environment variable issues
-const API_BASE_URL = 'https://tourism-analytics-backend.onrender.com/api';
+// Use localhost in development, production URL in production
+const API_BASE_URL = import.meta.env.DEV 
+  ? '/api'  // Vite proxy will forward to localhost:8000
+  : 'https://tourism-analytics-dashboard.onrender.com/api';
 
 // Set axios defaults globally so ALL axios calls use the correct base URL
 axios.defaults.baseURL = API_BASE_URL;
