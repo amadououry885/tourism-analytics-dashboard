@@ -56,7 +56,7 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
       setError(null);
       
       // Fetch custom form configuration for this event
-      const response = await api.get(`/events/${event.id}/registration-form/`);
+      const response = await api.get(`/events/${event.id}/registration_form/`);
       setFormConfig(response.data);
       
       // Initialize form data with empty values
@@ -121,12 +121,8 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
       });
       
       // Submit registration
-      await api.post(`/events/${event.id}/register/`, {
-        event: event.id,
+      await api.post(`/events/${event.id}/submit_registration/`, {
         form_data: submission,
-        contact_name: submission.full_name || submission.name,
-        contact_email: submission.email_address || submission.email,
-        contact_phone: submission.phone_number || submission.phone || '',
       });
       
       setSuccess(true);
