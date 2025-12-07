@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Loader2, User, Mail, Phone, Calendar, FileText } from 'lucide-react';
+import { X, Check, Loader2, User, Mail, Phone, Calendar, FileText, Users, MapPin } from 'lucide-react';
 import api from '../services/api';
 
 interface Event {
