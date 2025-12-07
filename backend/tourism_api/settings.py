@@ -24,8 +24,8 @@ def _split_env(name: str, default: str = ""):
     return [s.strip() for s in val.split(",") if s.strip()]
 
 # ── Hosts / CORS / CSRF ───────────────────────────────────────────────────────
-# ✨ UPDATED: Production-ready hosts
-ALLOWED_HOSTS = _split_env("ALLOWED_HOSTS", "localhost,127.0.0.1,.onrender.com,.vercel.app")
+# ✨ UPDATED: Production-ready hosts (includes AWS EB)
+ALLOWED_HOSTS = _split_env("ALLOWED_HOSTS", "localhost,127.0.0.1,.onrender.com,.vercel.app,.elasticbeanstalk.com,.amazonaws.com")
 
 # ✨ UPDATED: Production CORS
 if ENV == "production":
@@ -39,7 +39,7 @@ else:
 
 CSRF_TRUSTED_ORIGINS = _split_env(
     "CSRF_TRUSTED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000,https://*.vercel.app,https://*.onrender.com"
+    "http://localhost:3000,http://127.0.0.1:3000,https://*.vercel.app,https://*.onrender.com,https://*.elasticbeanstalk.com,https://*.amazonaws.com"
 )
 
 # ── Google Maps API ───────────────────────────────────────────────────────────
@@ -105,15 +105,21 @@ SQLITE_PATH = os.getenv("SQLITE_PATH", str(BASE_DIR / "data" / "db.sqlite3"))
 os.makedirs(os.path.dirname(SQLITE_PATH), exist_ok=True)
 
 # ✨ UPDATED: Production-ready database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-# Check if DATABASE_URL exists and is valid (not empty or malformed)
-if DATABASE_URL and DATABASE_URL.strip() and "://" in DATABASE_URL and len(DATABASE_URL.split("://")[0]) > 0:
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+
+# Debug: Print what we're using (will show in logs)
+import logging
+logger = logging.getLogger(__name__)
+
+if DATABASE_URL and DATABASE_URL.startswith(("postgres://", "postgresql://")):
     # Production: Use PostgreSQL from DATABASE_URL
+    logger.info(f"Using PostgreSQL database from DATABASE_URL")
     DATABASES = {
         "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
 else:
     # Development: Use SQLite (also fallback if DATABASE_URL is invalid)
+    logger.warning(f"DATABASE_URL not found or invalid, using SQLite at {SQLITE_PATH}")
     DATABASES = {
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": SQLITE_PATH}
     }
