@@ -129,26 +129,26 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Route Search Section */}
       <Card className="border-primary/20 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5" />
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
             Route Planner & Search
           </CardTitle>
-          <CardDescription>Find the best transport options for your journey</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Find the best transport options for your journey</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0 space-y-3 sm:space-y-4">
           {/* Search Form */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
             {/* From */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">From</label>
+            <div className="space-y-1 sm:space-y-2">
+              <label className="text-xs sm:text-sm font-medium">From</label>
               <select
                 value={fromPlace}
                 onChange={(e) => setFromPlace(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select origin</option>
                 {allPlaces.map(place => (
@@ -159,18 +159,18 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
               </select>
             </div>
 
-            {/* Arrow */}
-            <div className="flex items-end justify-center pb-2">
-              <ArrowRight className="w-6 h-6 text-primary" />
+            {/* Arrow - hidden on mobile, visible on md+ */}
+            <div className="hidden md:flex items-end justify-center pb-2">
+              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
 
             {/* To */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">To</label>
+            <div className="space-y-1 sm:space-y-2">
+              <label className="text-xs sm:text-sm font-medium">To</label>
               <select
                 value={toPlace}
                 onChange={(e) => setToPlace(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Select destination</option>
                 {allPlaces.map(place => (
@@ -182,37 +182,37 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
             </div>
 
             {/* Date */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Travel Date</label>
+            <div className="space-y-1 sm:space-y-2">
+              <label className="text-xs sm:text-sm font-medium">Travel Date</label>
               <input
                 type="date"
                 value={travelDate}
                 onChange={(e) => setTravelDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full border rounded-lg px-2 sm:px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
             {/* Search Button */}
-            <div className="flex items-end">
+            <div className="flex items-end sm:col-span-2 md:col-span-1">
               <Button 
                 onClick={handleSearch}
                 disabled={searching || !fromPlace || !toPlace}
-                className="w-full"
+                className="w-full text-sm"
               >
-                {searching ? 'Searching...' : 'Search Routes'}
+                {searching ? 'Searching...' : 'Search'}
               </Button>
             </div>
           </div>
 
           {/* Route Type Badge */}
           {detectedRouteType && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Route Type:</span>
-              <Badge className={`${routeTypeLabels[detectedRouteType as keyof typeof routeTypeLabels].color} text-white`}>
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm text-muted-foreground">Route:</span>
+              <Badge className={`${routeTypeLabels[detectedRouteType as keyof typeof routeTypeLabels].color} text-white text-[10px] sm:text-xs`}>
                 {routeTypeLabels[detectedRouteType as keyof typeof routeTypeLabels].label}
               </Badge>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                 {routeTypeLabels[detectedRouteType as keyof typeof routeTypeLabels].description}
               </span>
             </div>
@@ -220,8 +220,8 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
 
           {/* Search Results */}
           {showResults && (
-            <div className="mt-6 space-y-3">
-              <h3 className="font-semibold">
+            <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
+              <h3 className="font-semibold text-sm sm:text-base">
                 {searchResults.length > 0 
                   ? `Available Options (${fromPlace} → ${toPlace})`
                   : 'No routes found in database'
@@ -229,18 +229,18 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
               </h3>
               
               {searchResults.length === 0 && !searching && (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
+                <div className="space-y-3 sm:space-y-4">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     No scheduled transport in our database for this route. 
                   </p>
                   
                   {/* Google Maps Link */}
-                  <div className="border rounded-lg p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
-                    <div className="flex items-center gap-3 mb-4">
-                      <MapPin className="w-6 h-6 text-blue-600" />
+                  <div className="border rounded-lg p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-gray-900">View on Google Maps</h4>
-                        <p className="text-sm text-gray-600">Get real-time transit directions</p>
+                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base">View on Google Maps</h4>
+                        <p className="text-xs sm:text-sm text-gray-600">Get real-time transit directions</p>
                       </div>
                     </div>
                     
@@ -249,14 +249,14 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
                         const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(fromPlace)}&destination=${encodeURIComponent(toPlace)}&travelmode=transit`;
                         window.open(googleMapsUrl, '_blank');
                       }}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-sm"
                     >
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Open Google Maps Transit Directions
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      Open Google Maps
                     </Button>
                     
-                    <p className="text-xs text-gray-500 mt-3 text-center">
-                      💡 Shows flights, buses, trains, and ferries with real-time schedules
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-2 sm:mt-3 text-center">
+                      💡 Shows flights, buses, trains, and ferries
                     </p>
                   </div>
                 </div>
@@ -269,60 +269,60 @@ export const TransportAnalytics: React.FC<TransportAnalyticsProps> = ({ selected
                 return (
                   <div 
                     key={index}
-                    className="p-4 border rounded-lg hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
+                    className="p-3 sm:p-4 border rounded-lg hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-2 sm:gap-4">
                       <div 
-                        className="p-3 rounded-lg flex-shrink-0"
+                        className="p-2 sm:p-3 rounded-lg flex-shrink-0"
                         style={{ backgroundColor: `${color}30` }}
                       >
-                        <Icon className="w-6 h-6" style={{ color }} />
+                        <Icon className="w-4 h-4 sm:w-6 sm:h-6" style={{ color }} />
                       </div>
                       
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-2">
                           <div>
-                            <h4 className="font-medium capitalize">{option.transport_mode}</h4>
-                            <p className="text-sm text-muted-foreground">{option.provider}</p>
+                            <h4 className="font-medium capitalize text-sm sm:text-base">{option.transport_mode}</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{option.provider}</p>
                             {option.source === 'google_maps' && (
-                              <Badge variant="outline" className="mt-1 text-xs">
+                              <Badge variant="outline" className="mt-1 text-[10px] sm:text-xs">
                                 Real-time via Google Maps
                               </Badge>
                             )}
                           </div>
-                          <div className="text-right">
+                          <div className="sm:text-right">
                             {option.price ? (
                               <>
-                                <p className="text-lg font-semibold">
+                                <p className="text-base sm:text-lg font-semibold">
                                   {option.currency || 'MYR'} {option.price}
                                 </p>
-                                <p className="text-xs text-muted-foreground">per person</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">per person</p>
                               </>
                             ) : (
-                              <p className="text-sm text-muted-foreground">Price varies</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">Price varies</p>
                             )}
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-4 mt-3 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-muted-foreground" />
-                            <span>{option.departure_time}</span>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs sm:text-sm">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="truncate">{option.departure_time}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                            <span>{option.arrival_time || 'N/A'}</span>
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="truncate">{option.arrival_time || 'N/A'}</span>
                           </div>
                           {option.duration && (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{option.duration}</Badge>
+                            <div className="flex items-center gap-1 sm:gap-2 col-span-2 sm:col-span-1">
+                              <Badge variant="outline" className="text-[10px] sm:text-xs">{option.duration}</Badge>
                             </div>
                           )}
                         </div>
                         
                         {/* Google Maps specific details */}
                         {option.source === 'google_maps' && (
-                          <div className="mt-2 pt-2 border-t text-xs text-muted-foreground space-y-1">
+                          <div className="mt-2 pt-2 border-t text-[10px] sm:text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
                             {option.line_name && (
                               <p>Line: <span className="font-medium">{option.line_name}</span></p>
                             )}

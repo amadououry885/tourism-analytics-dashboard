@@ -96,17 +96,17 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
     fetchMetrics();
   }, [selectedCity, timeRange]);
 
-  // Show loading state
+  // Show loading state - Mobile responsive grid
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
         {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i} className="bg-gray-50 border-gray-200 animate-pulse">
-            <CardHeader className="pb-3">
-              <div className="h-4 bg-gray-200 rounded w-20"></div>
+            <CardHeader className="pb-2 p-3 sm:p-4">
+              <div className="h-3 sm:h-4 bg-gray-200 rounded w-16 sm:w-20"></div>
             </CardHeader>
-            <CardContent>
-              <div className="h-8 bg-gray-200 rounded w-16"></div>
+            <CardContent className="p-3 sm:p-4 pt-0">
+              <div className="h-6 sm:h-8 bg-gray-200 rounded w-12 sm:w-16"></div>
             </CardContent>
           </Card>
         ))}
@@ -114,32 +114,33 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
     );
   }
 
-  // Show error state
+  // Show error state - Mobile responsive
   if (error || !metrics) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-800 font-semibold">⚠️ {error || 'Failed to load metrics'}</p>
-        <p className="text-sm text-red-600 mt-2">Please check your connection or try again later.</p>
+      <div className="p-3 sm:p-4 md:p-6 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-800 font-semibold text-sm sm:text-base">⚠️ {error || 'Failed to load metrics'}</p>
+        <p className="text-xs sm:text-sm text-red-600 mt-1 sm:mt-2">Please check your connection or try again later.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
       {/* Comments Card - Beautiful Blue Theme */}
       <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-blue-700 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-200 rounded-full">
-                <MessageCircle className="w-4 h-4 text-blue-700" />
+        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-blue-700 flex items-center justify-between">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="p-1 sm:p-2 bg-blue-200 rounded-full">
+                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-700" />
               </div>
-              <span> Comments</span>
+              <span className="hidden sm:inline">Comments</span>
+              <span className="sm:hidden">💬</span>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-blue-800">
+        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
+          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-800">
             {metrics.totalComments >= 1000 ? (metrics.totalComments / 1000).toFixed(1) + 'K' : metrics.totalComments}
           </div>
         </CardContent>
@@ -147,18 +148,19 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
 
       {/* Likes Card - Beautiful Rose Theme */}
       <Card className="bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200 shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-rose-700 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-rose-200 rounded-full">
-                <Heart className="w-4 h-4 text-rose-700 fill-current" />
+        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-rose-700 flex items-center justify-between">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="p-1 sm:p-2 bg-rose-200 rounded-full">
+                <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-rose-700 fill-current" />
               </div>
-              <span> Likes</span>
+              <span className="hidden sm:inline">Likes</span>
+              <span className="sm:hidden">❤️</span>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-rose-800">
+        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
+          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-rose-800">
             {metrics.totalLikes >= 1000 ? (metrics.totalLikes / 1000).toFixed(0) + 'K' : metrics.totalLikes}
           </div>
         </CardContent>
@@ -166,18 +168,19 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
 
       {/* Total Posts Card - Beautiful Purple Theme */}
       <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-purple-700 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-purple-200 rounded-full">
-                <MessageCircle className="w-4 h-4 text-purple-700" />
+        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-purple-700 flex items-center justify-between">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="p-1 sm:p-2 bg-purple-200 rounded-full">
+                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-purple-700" />
               </div>
-              <span>Total Posts</span>
+              <span className="hidden sm:inline">Posts</span>
+              <span className="sm:hidden">📝</span>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-purple-800">
+        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
+          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-purple-800">
             {metrics.totalPosts >= 1000 ? (metrics.totalPosts / 1000).toFixed(1) + 'K' : metrics.totalPosts}
           </div>
         </CardContent>
@@ -185,37 +188,39 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
 
       {/* Shares Card - Beautiful Green Theme */}
       <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-green-700 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-green-200 rounded-full">
-                <Share2 className="w-4 h-4 text-green-700" />
+        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-green-700 flex items-center justify-between">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="p-1 sm:p-2 bg-green-200 rounded-full">
+                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-700" />
               </div>
-              <span> Shares</span>
+              <span className="hidden sm:inline">Shares</span>
+              <span className="sm:hidden">📤</span>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-green-800">
+        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
+          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-green-800">
             {metrics.shares >= 1000 ? (metrics.shares / 1000).toFixed(1) + 'K' : metrics.shares}
           </div>
         </CardContent>
       </Card>
 
       {/* Page Views Card - Beautiful Orange Theme */}
-      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-orange-700 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-orange-200 rounded-full">
-                <Eye className="w-4 h-4 text-orange-700" />
+      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow col-span-2 sm:col-span-1">
+        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-orange-700 flex items-center justify-between">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="p-1 sm:p-2 bg-orange-200 rounded-full">
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-orange-700" />
               </div>
-              <span> Page Views</span>
+              <span className="hidden sm:inline">Views</span>
+              <span className="sm:hidden">👁️</span>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-orange-800">
+        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
+          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-orange-800">
             {metrics.pageViews >= 1000000 ? (metrics.pageViews / 1000000).toFixed(1) + 'M' : 
              metrics.pageViews >= 1000 ? (metrics.pageViews / 1000).toFixed(1) + 'K' : metrics.pageViews}
           </div>

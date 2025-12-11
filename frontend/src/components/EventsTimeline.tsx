@@ -284,63 +284,63 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const pastCount = events.filter(e => new Date(e.start_date) <= now).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* ✨ NEW: Happening Now Section */}
       {happeningNowEvents.length > 0 && (
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 p-6 shadow-lg">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 p-3 sm:p-4 md:p-6 shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <h3 className="text-xl font-bold text-red-700">Happening Now</h3>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <h3 className="text-lg sm:text-xl font-bold text-red-700">Happening Now</h3>
             </div>
-            <span className="text-sm text-red-600 font-medium">
+            <span className="text-xs sm:text-sm text-red-600 font-medium">
               {happeningNowEvents.length} {happeningNowEvents.length === 1 ? 'event' : 'events'} live
             </span>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {happeningNowEvents.map(event => (
               <Card key={event.id} className="bg-white border-red-300 shadow-md hover:shadow-xl transition-shadow cursor-pointer" onClick={() => handleViewDetails(event)}>
-                <CardContent className="pt-6">
-                  <div className="space-y-3">
+                <CardContent className="p-3 sm:p-4 md:pt-6">
+                  <div className="space-y-2 sm:space-y-3">
                     {/* Title with LIVE badge */}
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-semibold text-gray-900 line-clamp-2">{event.title}</h4>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded whitespace-nowrap">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      <h4 className="font-semibold text-gray-900 line-clamp-2 text-sm sm:text-base">{event.title}</h4>
+                      <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded whitespace-nowrap">
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></div>
                         LIVE
                       </span>
                     </div>
                     
                     {/* Multi-day progress */}
                     {event.days_into_event && event.total_days && event.total_days > 1 && (
-                      <div className="bg-red-100 text-red-700 text-sm font-medium px-3 py-2 rounded">
+                      <div className="bg-red-100 text-red-700 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1.5 sm:py-2 rounded">
                         📅 Day {event.days_into_event} of {event.total_days}
                         {event.days_remaining !== null && event.days_remaining !== undefined && (
-                          <span className="ml-2 text-red-600">({event.days_remaining} {event.days_remaining === 1 ? 'day' : 'days'} left)</span>
+                          <span className="ml-1 sm:ml-2 text-red-600">({event.days_remaining} {event.days_remaining === 1 ? 'day' : 'days'} left)</span>
                         )}
                       </div>
                     )}
                     
                     {/* Recurring badge */}
                     {event.recurrence_type && (
-                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                      <div className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-100 text-blue-700 text-[10px] sm:text-xs font-medium rounded">
                         🔄 Repeats {event.recurrence_type}
                       </div>
                     )}
                     
                     {/* Location */}
                     {event.location_name && (
-                      <div className="text-sm text-gray-600 flex items-center gap-1">
+                      <div className="text-xs sm:text-sm text-gray-600 flex items-center gap-1">
                         📍 {event.location_name}
                       </div>
                     )}
                     
                     {/* Capacity */}
                     {event.max_capacity && (
-                      <div className="text-sm text-gray-600">
+                      <div className="text-xs sm:text-sm text-gray-600">
                         👥 {event.attendee_count || 0} / {event.max_capacity} registered
-                        {event.is_full && <span className="ml-2 text-red-600 font-semibold">FULL</span>}
+                        {event.is_full && <span className="ml-1 sm:ml-2 text-red-600 font-semibold">FULL</span>}
                       </div>
                     )}
                   </div>
@@ -352,39 +352,39 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
         <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Total Events</div>
-                <div className="text-3xl font-bold text-blue-600">{events.length}</div>
+          <CardContent className="p-2 sm:p-4 md:pt-6">
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-1 sm:gap-0">
+              <div className="text-center sm:text-left">
+                <div className="text-[10px] sm:text-sm text-gray-600 mb-0.5 sm:mb-1">Total</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-600">{events.length}</div>
               </div>
-              <Calendar className="w-12 h-12 text-blue-400" />
+              <Calendar className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-blue-400 hidden sm:block" />
             </div>
           </CardContent>
         </Card>
         
         <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Upcoming</div>
-                <div className="text-3xl font-bold text-green-600">{upcomingCount}</div>
+          <CardContent className="p-2 sm:p-4 md:pt-6">
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-1 sm:gap-0">
+              <div className="text-center sm:text-left">
+                <div className="text-[10px] sm:text-sm text-gray-600 mb-0.5 sm:mb-1">Upcoming</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-green-600">{upcomingCount}</div>
               </div>
-              <TrendingUp className="w-12 h-12 text-green-400" />
+              <TrendingUp className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-green-400 hidden sm:block" />
             </div>
           </CardContent>
         </Card>
         
         <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Past Events</div>
-                <div className="text-3xl font-bold text-purple-600">{pastCount}</div>
+          <CardContent className="p-2 sm:p-4 md:pt-6">
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-1 sm:gap-0">
+              <div className="text-center sm:text-left">
+                <div className="text-[10px] sm:text-sm text-gray-600 mb-0.5 sm:mb-1">Past</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-600">{pastCount}</div>
               </div>
-              <Users className="w-12 h-12 text-purple-400" />
+              <Users className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-purple-400 hidden sm:block" />
             </div>
           </CardContent>
         </Card>
@@ -392,49 +392,49 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
 
       {/* Filters and Search */}
       <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
-        <CardContent className="pt-6">
-          <div className="space-y-4">
+        <CardContent className="p-3 sm:p-4 md:pt-6">
+          <div className="space-y-3 sm:space-y-4">
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search events by name, location, or description..."
+                placeholder="Search events..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
               />
             </div>
 
             {/* Filter Buttons Row */}
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {/* Event Category Filter */}
               <div className="flex items-start gap-2">
-                <Filter className="w-5 h-5 text-gray-600 mt-1" />
-                <div className="flex-1">
-                  <span className="text-sm font-medium text-gray-700 block mb-2">Category:</span>
-                  <div className="flex flex-wrap gap-2">
+                <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 mt-1 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs sm:text-sm font-medium text-gray-700 block mb-1.5 sm:mb-2">Category:</span>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {[
-                      { value: 'all', label: 'All Events', icon: '🎯' },
+                      { value: 'all', label: 'All', icon: '🎯' },
                       { value: 'sports', label: 'Sports', icon: '⚽' },
                       { value: 'food', label: 'Food', icon: '🍽️' },
                       { value: 'festival', label: 'Festival', icon: '🎉' },
                       { value: 'cultural', label: 'Cultural', icon: '🎭' },
                       { value: 'business', label: 'Business', icon: '💼' },
-                      { value: 'entertainment', label: 'Entertainment', icon: '🎪' },
-                      { value: 'exhibition', label: 'Exhibition', icon: '🎨' }
+                      { value: 'entertainment', label: 'Fun', icon: '🎪' },
+                      { value: 'exhibition', label: 'Exhibit', icon: '🎨' }
                     ].map(({ value, label, icon }) => (
                       <button
                         key={value}
                         onClick={() => setSelectedEventType(value)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                        className={`px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 rounded-full text-[10px] sm:text-xs md:text-sm font-medium transition-all flex items-center gap-1 sm:gap-2 ${
                           selectedEventType === value
                             ? 'bg-blue-600 text-white shadow-md transform scale-105'
                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-blue-400'
                         }`}
                       >
                         <span>{icon}</span>
-                        <span>{label}</span>
+                        <span className="hidden sm:inline">{label}</span>
                       </button>
                     ))}
                   </div>
@@ -443,16 +443,16 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
             </div>
 
             {/* Date Filter & Sort Row */}
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4">
               {/* Date Filter */}
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Show:</span>
-                <div className="flex gap-2">
+                <span className="text-xs sm:text-sm font-medium text-gray-700">Show:</span>
+                <div className="flex gap-1 sm:gap-2">
                   {(['all', 'upcoming', 'past'] as const).map(filter => (
                     <button
                       key={filter}
                       onClick={() => setDateFilter(filter)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                      className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-sm font-medium transition-all ${
                         dateFilter === filter
                           ? 'bg-purple-600 text-white shadow-md'
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -465,12 +465,12 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
               </div>
 
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-2 ml-auto">
-                <span className="text-sm font-medium text-gray-700">Sort by:</span>
+              <div className="flex items-center gap-2 sm:ml-auto">
+                <span className="text-xs sm:text-sm font-medium text-gray-700">Sort:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'date' | 'name' | 'attendance')}
-                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="date">📅 Date</option>
                   <option value="name">🔤 Name</option>
@@ -480,7 +480,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
             </div>
 
             {/* Results Counter */}
-            <div className="text-sm text-gray-600 pt-2 border-t border-gray-200">
+            <div className="text-xs sm:text-sm text-gray-600 pt-2 border-t border-gray-200">
               Showing <span className="font-bold text-gray-900">{filteredEvents.length}</span> of{' '}
               <span className="font-bold text-gray-900">{events.length}</span> events
             </div>

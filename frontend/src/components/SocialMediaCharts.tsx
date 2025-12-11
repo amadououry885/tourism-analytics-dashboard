@@ -203,21 +203,22 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Main Engagement Chart */}
       <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-gray-900 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            Social Media Engagement Trends
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-gray-900 flex items-center gap-2 text-base sm:text-lg">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+            <span className="hidden sm:inline">Social Media Engagement Trends</span>
+            <span className="sm:hidden">Engagement Trends</span>
           </CardTitle>
-          <CardDescription className="text-gray-600">
-            Track how tourists interact with your destination on social media
+          <CardDescription className="text-gray-600 text-xs sm:text-sm">
+            Track how tourists interact on social media
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={engagementData}>
+        <CardContent className="p-2 sm:p-4 md:p-6 pt-0">
+          <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px] md:!h-[350px]">
+            <LineChart data={engagementData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
               <defs>
                 <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3}/>
@@ -236,11 +237,15 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
               <XAxis 
                 dataKey="date" 
                 stroke="#6b7280"
-                style={{ fontSize: '12px' }}
+                style={{ fontSize: '10px' }}
+                tick={{ fontSize: 10 }}
+                interval="preserveStartEnd"
               />
               <YAxis 
                 stroke="#6b7280"
-                style={{ fontSize: '12px' }}
+                style={{ fontSize: '10px' }}
+                tick={{ fontSize: 10 }}
+                width={40}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -248,38 +253,40 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  color: '#111827'
+                  color: '#111827',
+                  fontSize: '12px'
                 }} 
               />
               <Legend 
-                wrapperStyle={{ paddingTop: '20px' }}
+                wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
                 iconType="circle"
+                iconSize={8}
               />
               <Line 
                 type="monotone" 
                 dataKey="likes" 
                 stroke="#ec4899" 
-                strokeWidth={3}
-                dot={{ fill: '#ec4899', r: 4 }}
-                activeDot={{ r: 6 }}
+                strokeWidth={2}
+                dot={{ fill: '#ec4899', r: 2 }}
+                activeDot={{ r: 4 }}
                 fill="url(#colorLikes)"
               />
               <Line 
                 type="monotone" 
                 dataKey="comments" 
                 stroke="#3b82f6" 
-                strokeWidth={3}
-                dot={{ fill: '#3b82f6', r: 4 }}
-                activeDot={{ r: 6 }}
+                strokeWidth={2}
+                dot={{ fill: '#3b82f6', r: 2 }}
+                activeDot={{ r: 4 }}
                 fill="url(#colorComments)"
               />
               <Line 
                 type="monotone" 
                 dataKey="shares" 
                 stroke="#10b981" 
-                strokeWidth={3}
-                dot={{ fill: '#10b981', r: 4 }}
-                activeDot={{ r: 6 }}
+                strokeWidth={2}
+                dot={{ fill: '#10b981', r: 2 }}
+                activeDot={{ r: 4 }}
                 fill="url(#colorShares)"
               />
             </LineChart>
@@ -287,17 +294,17 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         </CardContent>
       </Card>
 
-      <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Platform Performance */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900">📱 Platform Performance</CardTitle>
-            <CardDescription className="text-gray-600">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-gray-900 text-base sm:text-lg">📱 Platform Performance</CardTitle>
+            <CardDescription className="text-gray-600 text-xs sm:text-sm">
               Which platforms tourists use most
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="p-2 sm:p-4 md:p-6 pt-0">
+            <ResponsiveContainer width="100%" height={220} className="sm:!h-[260px] md:!h-[300px]">
               <BarChart data={platformData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="platform" stroke="#6b7280" style={{ fontSize: '12px' }} />
@@ -327,14 +334,14 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
 
         {/* Engagement Breakdown */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900">💬 Engagement Breakdown</CardTitle>
-            <CardDescription className="text-gray-600">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-gray-900 text-base sm:text-lg">💬 Engagement Breakdown</CardTitle>
+            <CardDescription className="text-gray-600 text-xs sm:text-sm">
               How tourists interact with content
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="p-2 sm:p-4 md:p-6 pt-0">
+            <ResponsiveContainer width="100%" height={220} className="sm:!h-[260px] md:!h-[300px]">
               <PieChart>
                 <Pie
                   data={[
@@ -344,11 +351,12 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
                   ]}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
+                  innerRadius={40}
+                  outerRadius={70}
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
                 >
                   {[
                     { color: '#ec4899' },
@@ -364,33 +372,35 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
                     backgroundColor: '#ffffff', 
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
-                    color: '#111827'
+                    color: '#111827',
+                    fontSize: '12px'
                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex justify-center gap-6 mt-4">
-              <div className="flex items-center gap-2">
-                <Heart className="w-4 h-4 text-pink-600" />
-                <span className="text-sm text-gray-600">Likes</span>
+            <div className="flex justify-center gap-3 sm:gap-6 mt-2 sm:mt-4 flex-wrap">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-pink-600" />
+                <span className="text-xs sm:text-sm text-gray-600">Likes</span>
               </div>
-              <div className="flex items-center gap-2">
-                <MessageCircle className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-gray-600">Comments</span>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
+                <span className="text-xs sm:text-sm text-gray-600">Comments</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-gray-600">Shares</span>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                <span className="text-xs sm:text-sm text-gray-600">Shares</span>
               </div>
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Sentiment Analysis Pie Chart */}
-        <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900 flex items-center gap-2">
-              😊 Sentiment Analysis
+      {/* Sentiment Analysis Pie Chart */}
+      <Card className="bg-white border-gray-200 shadow-sm">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-gray-900 flex items-center gap-2 text-base sm:text-lg">
+            😊 Sentiment Analysis
             </CardTitle>
             <CardDescription className="text-gray-600">
               How tourists feel about destinations

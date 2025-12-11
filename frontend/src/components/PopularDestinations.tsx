@@ -336,35 +336,37 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Filters and Search */}
       <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="space-y-4">
+        <CardContent className="p-3 sm:p-4 md:pt-6">
+          <div className="space-y-3 sm:space-y-4">
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search destinations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
               />
             </div>
 
             {/* Filter Buttons Row */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3">
               {/* Category Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">Category:</span>
-                <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">Category:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {categories.map(cat => (
                     <button
                       key={cat}
                       onClick={() => setSelectedCategory(cat || 'All')}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                      className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium transition-all ${
                         selectedCategory === cat
                           ? 'bg-blue-600 text-white shadow-md'
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -377,33 +379,33 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               </div>
 
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-2 ml-auto">
-                <span className="text-sm font-medium text-gray-700">Sort by:</span>
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto mt-2 sm:mt-0">
+                <span className="text-xs sm:text-sm font-medium text-gray-700">Sort:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg bg-white text-xs sm:text-sm font-medium focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="popularity">🔥 Popularity</option>
+                  <option value="popularity">🔥 Popular</option>
                   <option value="name">🔤 Name</option>
                   <option value="rating">⭐ Rating</option>
                 </select>
               </div>
 
               {/* Free Only Toggle */}
-              <label className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
+              <label className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
                 <input
                   type="checkbox"
                   checked={showFreeOnly}
                   onChange={(e) => setShowFreeOnly(e.target.checked)}
                   className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                 />
-                <span className="text-sm font-medium text-gray-700">🎟️ Free Only</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-700">🎟️ Free</span>
               </label>
             </div>
 
             {/* Results Count */}
-            <div className="text-sm text-gray-600">
+            <div className="text-xs sm:text-sm text-gray-600">
               Showing <span className="font-bold text-blue-600">{filteredDestinations.length}</span> of {topDestinations.length} destinations
             </div>
           </div>
@@ -412,18 +414,18 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
       {/* Destinations Grid - Single Scrollable Card */}
       <Card className="bg-white border-gray-200 shadow-lg">
-        <CardContent className="p-6">
+        <CardContent className="p-3 sm:p-4 md:p-6">
           {filteredDestinations.length === 0 ? (
             <div className="py-16">
               <div className="text-center text-gray-500">
-                <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-xl font-bold text-gray-700 mb-2">No destinations found</h3>
-                <p>Try adjusting your filters or search term</p>
+                <MapPin className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
+                <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-2">No destinations found</h3>
+                <p className="text-sm sm:text-base">Try adjusting your filters or search term</p>
               </div>
             </div>
           ) : (
-            <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="max-h-[600px] sm:max-h-[700px] md:max-h-[800px] overflow-y-auto pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                 {filteredDestinations.map((destination, index) => (
                   <DestinationCard
                     key={`${destination.name}-${index}`}
@@ -449,14 +451,14 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       />
 
       {/* Post Distribution Pie Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:gap-6">
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900">Post Distribution</CardTitle>
-            <CardDescription className="text-gray-900">Social engagement breakdown by destination</CardDescription>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-gray-900 text-base sm:text-lg">Post Distribution</CardTitle>
+            <CardDescription className="text-gray-900 text-xs sm:text-sm">Social engagement breakdown by destination</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
               <PieChart>
                 <Pie
                   data={postDistribution}
@@ -464,7 +466,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   cy="50%"
                   labelLine={false}
                   label={({ name, percentage }) => `${name} ${percentage}%`}
-                  outerRadius={80}
+                  outerRadius={60}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -477,7 +479,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                     backgroundColor: '#ffffff',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
-                    color: '#111827'
+                    color: '#111827',
+                    fontSize: '12px'
                   }}
                 />
               </PieChart>
@@ -488,12 +491,12 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
       {/* Comparison Chart */}
       <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-gray-900">Social Engagement Comparison</CardTitle>
-          <CardDescription className="text-gray-900">Post counts across top destinations</CardDescription>
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="text-gray-900 text-base sm:text-lg">Social Engagement Comparison</CardTitle>
+          <CardDescription className="text-gray-900 text-xs sm:text-sm">Post counts across top destinations</CardDescription>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[350px]">
             <BarChart data={topDestinations}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
               <XAxis dataKey="name" stroke="#6b7280" />

@@ -42,17 +42,20 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
 
   return (
     <Card className="bg-white border-gray-200 shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-gray-900">Kedah Map Overview</CardTitle>
-        <CardDescription className="text-gray-900">Regional visitor distribution</CardDescription>
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <CardTitle className="text-gray-900 text-base sm:text-lg">Kedah Map Overview</CardTitle>
+        <CardDescription className="text-gray-900 text-xs sm:text-sm">Regional visitor distribution</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
         {/* Google Maps Embed */}
-        <div className="relative w-full h-[400px] bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+        <div className="relative w-full h-[250px] sm:h-[300px] md:h-[400px] bg-gray-100 rounded-lg border border-gray-200 overflow-hidden touch-pan-y">
           <MapContainer 
             center={center} 
             zoom={zoom} 
-            scrollWheelZoom={false} 
+            scrollWheelZoom={false}
+            dragging={true}
+            tap={true}
+            touchZoom={true}
             style={{ height: '100%', width: '100%' }}
             key={`map-${center[0]}-${center[1]}`}
           >
@@ -68,30 +71,30 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
             ))}
           </MapContainer>
           {/* Overlay with location info */}
-          <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 border border-gray-200 shadow-lg">
-            <div className="flex items-center gap-2 text-xs text-gray-700">
-              <MapPin className="w-3 h-3" />
+          <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 bg-white/95 backdrop-blur-sm rounded-lg p-2 sm:p-3 border border-gray-200 shadow-lg">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-gray-700">
+              <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span>Kedah, Malaysia - Tourism Hotspots</span>
             </div>
           </div>
         </div>
 
         {/* City Stats */}
-        <div className="mt-4 space-y-2">
+        <div className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2">
           {cities
             .filter(city => selectedCity === 'all' || selectedCity === city.id)
             .map((city) => (
-              <div key={city.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-400 transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
+              <div key={city.id} className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-400 transition-colors cursor-pointer">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div 
-                    className="w-3 h-3 rounded-full"
+                    className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: city.color }}
                   />
-                  <span className="text-gray-900 text-sm font-medium">{city.name}</span>
+                  <span className="text-gray-900 text-xs sm:text-sm font-medium truncate">{city.name}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-900 text-sm">{city.visitors.toLocaleString()}</span>
-                  <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-gray-900 text-xs sm:text-sm">{city.visitors.toLocaleString()}</span>
+                  <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-[10px] sm:text-xs px-1.5 sm:px-2">
                     {city.trend}
                   </Badge>
                 </div>
@@ -100,19 +103,19 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
         </div>
 
         {/* Legend */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-4 text-xs text-gray-900">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-3 h-3" />
-              <span>Tourist Hotspots</span>
+        <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-gray-900">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span>Hotspots</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-3 h-3" />
-              <span>Visitor Count</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span>Visitors</span>
             </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-3 h-3" />
-              <span>Growth Rate</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span>Growth</span>
             </div>
           </div>
         </div>
