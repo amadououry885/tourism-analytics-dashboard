@@ -33,64 +33,44 @@ export default function TourismDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Sticky with solid background */}
+      {/* Header - Sticky */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="w-full bg-white">
-          {/* Main header row */}
-          <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-3 bg-white">
-            <div className="flex items-center justify-between gap-2">
-              {/* Logo */}
-              <h1 className="text-gray-900 text-sm sm:text-lg md:text-2xl font-bold whitespace-nowrap">
-                Kedah Tourism
-              </h1>
-
-              {/* Desktop Navigation - hidden on mobile */}
-              <div className="hidden md:flex items-center gap-3">
-                <Link to="/" className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium">
-                  Dashboard
-                </Link>
-                <Link to="/business" className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
-                  For Business
-                </Link>
-                <Link to="/sign-in" className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
-                  Sign In
-                </Link>
-              </div>
-
-              {/* Filters - visible on all screens */}
-              <div className="flex items-center gap-1 sm:gap-2">
-                <CitySelector 
-                  selectedCity={selectedCity}
-                  onCityChange={setSelectedCity}
-                />
-                <select 
-                  value={timeRange} 
-                  onChange={(e) => setTimeRange(e.target.value)}
-                  className="bg-white text-gray-900 border border-gray-300 rounded px-1 sm:px-2 py-1 text-[10px] sm:text-xs focus:outline-none"
-                >
-                  <option value="week">7D</option>
-                  <option value="month">30D</option>
-                  <option value="quarter">3M</option>
-                  <option value="year">1Y</option>
-                </select>
-                <span className="bg-green-100 text-green-700 text-[9px] sm:text-xs px-1.5 py-0.5 rounded font-medium">Live</span>
-              </div>
+        {/* Top bar: Logo + Filters */}
+        <div className="container mx-auto px-2 sm:px-4 py-2">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <h1 className="text-gray-900 text-base sm:text-xl font-bold">Kedah Tourism</h1>
+            
+            {/* Right side: Filters */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <CitySelector selectedCity={selectedCity} onCityChange={setSelectedCity} />
+              <select 
+                value={timeRange} 
+                onChange={(e) => setTimeRange(e.target.value)}
+                className="border border-gray-300 rounded px-1.5 py-1 text-[10px] sm:text-xs"
+              >
+                <option value="week">7D</option>
+                <option value="month">30D</option>
+                <option value="quarter">3M</option>
+                <option value="year">1Y</option>
+              </select>
+              <span className="bg-green-100 text-green-700 text-[9px] sm:text-xs px-1.5 py-0.5 rounded font-medium hidden sm:inline">Live</span>
             </div>
           </div>
+        </div>
 
-          {/* Mobile nav links - single row */}
-          <div className="md:hidden border-t border-gray-100 bg-gray-50">
-            <div className="container mx-auto px-2 py-1.5 flex justify-center gap-4">
-              <Link to="/" className="text-[10px] text-gray-600 hover:text-blue-600">🏠 Home</Link>
-              <Link to="/business" className="text-[10px] text-gray-600 hover:text-blue-600">💼 Business</Link>
-              <Link to="/sign-in" className="text-[10px] text-blue-600 font-medium">🔑 Sign In</Link>
-            </div>
+        {/* Nav bar: Links (responsive) */}
+        <div className="border-t border-gray-100 bg-gray-50">
+          <div className="container mx-auto px-2 sm:px-4 py-1.5 flex justify-center gap-3 sm:gap-6">
+            <Link to="/" className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 font-medium">🏠 Home</Link>
+            <Link to="/business" className="text-xs sm:text-sm text-gray-700 hover:text-blue-600">💼 Business</Link>
+            <Link to="/sign-in" className="text-xs sm:text-sm text-blue-600 font-medium">🔑 Sign In</Link>
           </div>
         </div>
         
         {/* Overview Metrics */}
-        <div className="w-full bg-white border-t border-gray-100">
-          <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-4 bg-white">
+        <div className="bg-white border-t border-gray-100">
+          <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
             <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
           </div>
         </div>
