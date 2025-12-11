@@ -187,26 +187,26 @@ export default function TourismDashboard() {
         {/* Tabs Navigation - Horizontal scroll on mobile */}
         <div className="w-full bg-white border-t border-gray-100 pb-2">
           <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 md:py-4 bg-white">
-            <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent -mx-3 px-3 sm:mx-0 sm:px-0">
+            <div className="flex gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent -mx-3 px-3 sm:mx-0 sm:px-0">
               {[
-                { id: 'overview', label: '📊 Overview', shortLabel: 'Overview' },
-                { id: 'destinations', label: '🗺️ Destinations', shortLabel: 'Places' },
-                { id: 'restaurants', label: '🍽️ Restaurants', shortLabel: 'Food' },
-                { id: 'accommodation', label: '🏨 Book Stay', shortLabel: 'Stay' },
-                { id: 'transport', label: '🚌 Transport', shortLabel: 'Transport' },
-                { id: 'events', label: '📅 Events', shortLabel: 'Events' },
+                { id: 'overview', label: '📊 Overview', shortLabel: '📊Overview' },
+                { id: 'destinations', label: '🗺️ Destinations', shortLabel: '🗺️Places' },
+                { id: 'restaurants', label: '🍽️ Restaurants', shortLabel: '🍽️Restau' },
+                { id: 'accommodation', label: '🏨 Book Stay', shortLabel: '🏨Stay' },
+                { id: 'transport', label: '🚌 Transport', shortLabel: '🚌Trans' },
+                { id: 'events', label: '📅 Events', shortLabel: '📅Events' },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-full border px-3 sm:px-4 md:px-6 py-2 text-xs sm:text-sm transition-all whitespace-nowrap flex-shrink-0 ${
+                  className={`rounded-full border px-2.5 sm:px-4 md:px-6 py-1.5 sm:py-2 text-[11px] sm:text-sm transition-all whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'border-gray-300 bg-white text-gray-900 hover:border-blue-400'
                   }`}
                 >
                   <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.shortLabel}</span>
+                  <span className="inline sm:hidden">{tab.shortLabel}</span>
                 </button>
               ))}
             </div>

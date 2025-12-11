@@ -134,13 +134,12 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
               <div className="p-1 sm:p-2 bg-blue-200 rounded-full">
                 <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-700" />
               </div>
-              <span className="hidden sm:inline">Comments</span>
-              <span className="sm:hidden">💬</span>
+              <span>Comments 💬</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-800">
             {metrics.totalComments >= 1000 ? (metrics.totalComments / 1000).toFixed(1) + 'K' : metrics.totalComments}
           </div>
         </CardContent>
@@ -154,13 +153,12 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
               <div className="p-1 sm:p-2 bg-rose-200 rounded-full">
                 <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-rose-700 fill-current" />
               </div>
-              <span className="hidden sm:inline">Likes</span>
-              <span className="sm:hidden">❤️</span>
+              <span>Likes ❤️</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-rose-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-rose-800">
             {metrics.totalLikes >= 1000 ? (metrics.totalLikes / 1000).toFixed(0) + 'K' : metrics.totalLikes}
           </div>
         </CardContent>
@@ -174,13 +172,12 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
               <div className="p-1 sm:p-2 bg-purple-200 rounded-full">
                 <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-purple-700" />
               </div>
-              <span className="hidden sm:inline">Posts</span>
-              <span className="sm:hidden">📝</span>
+              <span>Posts 📝</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-purple-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-800">
             {metrics.totalPosts >= 1000 ? (metrics.totalPosts / 1000).toFixed(1) + 'K' : metrics.totalPosts}
           </div>
         </CardContent>
@@ -194,19 +191,18 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
               <div className="p-1 sm:p-2 bg-green-200 rounded-full">
                 <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-700" />
               </div>
-              <span className="hidden sm:inline">Shares</span>
-              <span className="sm:hidden">📤</span>
+              <span>Shares 📤</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-green-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-green-800">
             {metrics.shares >= 1000 ? (metrics.shares / 1000).toFixed(1) + 'K' : metrics.shares}
           </div>
         </CardContent>
       </Card>
 
-      {/* Page Views Card - Beautiful Orange Theme */}
+      {/* Page Views Card - Beautiful Orange Theme - Full width on mobile */}
       <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow col-span-2 sm:col-span-1">
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
           <CardTitle className="text-xs sm:text-sm font-semibold text-orange-700 flex items-center justify-between">
@@ -214,13 +210,12 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
               <div className="p-1 sm:p-2 bg-orange-200 rounded-full">
                 <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-orange-700" />
               </div>
-              <span className="hidden sm:inline">Views</span>
-              <span className="sm:hidden">👁️</span>
+              <span>Views 👁️</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-orange-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-800">
             {metrics.pageViews >= 1000000 ? (metrics.pageViews / 1000000).toFixed(1) + 'M' : 
              metrics.pageViews >= 1000 ? (metrics.pageViews / 1000).toFixed(1) + 'K' : metrics.pageViews}
           </div>
