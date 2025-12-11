@@ -401,12 +401,12 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         <CardHeader className="p-3 sm:p-4 md:p-6">
           <CardTitle className="text-gray-900 flex items-center gap-2 text-base sm:text-lg">
             😊 Sentiment Analysis
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              How tourists feel about destinations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            How tourists feel about destinations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
             {sentimentData.length > 0 && sentimentData.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -459,7 +459,6 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
             </div>
           </CardContent>
         </Card>
-      </div>
 
       {/* Platform Engagement Comparison */}
       <Card className="bg-white border-gray-200 shadow-sm">

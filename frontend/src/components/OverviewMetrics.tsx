@@ -99,7 +99,7 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
   // Show loading state - Mobile responsive grid
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+      <div className="mobile-grid-2">
         {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i} className="bg-gray-50 border-gray-200 animate-pulse">
             <CardHeader className="pb-2 p-3 sm:p-4">
@@ -125,7 +125,7 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+    <div className="mobile-grid-2">
       {/* Comments Card - Beautiful Blue Theme */}
       <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">

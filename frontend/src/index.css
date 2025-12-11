@@ -54,6 +54,34 @@
   animation: fadeIn 0.3s ease-out forwards;
 }
 
+/* Force 2-column grid on mobile for metric cards */
+.mobile-grid-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.5rem !important;
+}
+
+@media (min-width: 640px) {
+  .mobile-grid-2 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-grid-2 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-grid-2 {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 1.5rem !important;
+  }
+}
+
 .animation-delay-2000 {
   animation-delay: 2s;
 }
