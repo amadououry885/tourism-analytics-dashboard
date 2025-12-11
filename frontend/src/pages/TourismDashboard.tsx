@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Badge } from '../components/ui/badge';
 import { OverviewMetrics } from '../components/OverviewMetrics';
 import { SocialMediaCharts } from '../components/SocialMediaCharts';
 import { PopularDestinations } from '../components/PopularDestinations';
@@ -9,24 +7,15 @@ import { EventsTimeline } from '../components/EventsTimeline';
 import { AccommodationStats } from '../components/AccommodationStats';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
 import { RestaurantVendors } from '../components/RestaurantVendors';
-import MapView from '../components/MapView';
 import AccommodationSearch from '../pages/accommodation/AccommodationSearch';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CitySelector } from '../components/CitySelector';
-import { Menu, X } from 'lucide-react';
-
-interface City {
-  id: number;
-  name: string;
-  slug: string;
-}
 
 export default function TourismDashboard() {
   const [searchParams] = useSearchParams();
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
   const [activeTab, setActiveTab] = useState('overview');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // ✨ Read URL parameters and switch tabs automatically
   useEffect(() => {
@@ -42,30 +31,34 @@ export default function TourismDashboard() {
     }
   }, [searchParams]);
 
-  // Close mobile menu when tab changes
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [activeTab]);
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - Sticky with solid background */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-lg">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="w-full bg-white">
-          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 bg-white">
+          {/* Main header row */}
+          <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-3 bg-white">
             <div className="flex items-center justify-between gap-2">
-              {/* Logo and Title */}
-              <div className="min-w-0 flex-shrink-0">
-                <h1 className="text-gray-900 text-sm sm:text-xl md:text-2xl font-bold">
-                  Kedah Tourism
-                </h1>
-                <p className="text-gray-600 text-[9px] sm:text-sm hidden xs:block">
-                  Real-time insights
-                </p>
+              {/* Logo */}
+              <h1 className="text-gray-900 text-sm sm:text-lg md:text-2xl font-bold whitespace-nowrap">
+                Kedah Tourism
+              </h1>
+
+              {/* Desktop Navigation - hidden on mobile */}
+              <div className="hidden md:flex items-center gap-3">
+                <Link to="/" className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium">
+                  Dashboard
+                </Link>
+                <Link to="/business" className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
+                  For Business
+                </Link>
+                <Link to="/sign-in" className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
+                  Sign In
+                </Link>
               </div>
 
-              {/* Mobile: Compact filters inline */}
-              <div className="flex lg:hidden items-center gap-1.5 flex-1 justify-end">
+              {/* Filters - visible on all screens */}
+              <div className="flex items-center gap-1 sm:gap-2">
                 <CitySelector 
                   selectedCity={selectedCity}
                   onCityChange={setSelectedCity}
@@ -73,100 +66,31 @@ export default function TourismDashboard() {
                 <select 
                   value={timeRange} 
                   onChange={(e) => setTimeRange(e.target.value)}
-                  className="bg-white text-gray-900 border border-gray-300 rounded-md px-1.5 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[70px]"
+                  className="bg-white text-gray-900 border border-gray-300 rounded px-1 sm:px-2 py-1 text-[10px] sm:text-xs focus:outline-none"
                 >
                   <option value="week">7D</option>
                   <option value="month">30D</option>
                   <option value="quarter">3M</option>
                   <option value="year">1Y</option>
                 </select>
-                <Badge className="bg-green-500/30 text-green-800 border-green-400/30 text-[9px] px-1.5 py-0.5">Live</Badge>
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-1.5 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors ml-1"
-                  aria-label="Toggle menu"
-                >
-                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-                </button>
+                <span className="bg-green-100 text-green-700 text-[9px] sm:text-xs px-1.5 py-0.5 rounded font-medium">Live</span>
               </div>
-              
-              {/* Desktop Navigation */}
-              <div className="hidden lg:flex items-center gap-2 xl:gap-4">
-                <Link
-                  to="/"
-                  className="px-3 xl:px-6 py-2 bg-white border-2 border-gray-900 hover:bg-gray-900 hover:text-white rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4 xl:w-5 xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  <span className="font-bold text-sm xl:text-base">Dashboard</span>
-                </Link>
-                <Link
-                  to="/business"
-                  className="px-3 xl:px-4 py-2 text-xs xl:text-sm bg-white border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
-                >
-                  For Business
-                </Link>
-                <Link
-                  to="/sign-in"
-                  className="px-3 xl:px-4 py-2 text-xs xl:text-sm bg-white border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
-                >
-                  Sign In
-                </Link>
-                <CitySelector 
-                  selectedCity={selectedCity}
-                  onCityChange={setSelectedCity}
-                />
-                <select 
-                  value={timeRange} 
-                  onChange={(e) => setTimeRange(e.target.value)}
-                  className="bg-white text-gray-900 border border-gray-300 rounded-lg px-2 xl:px-4 py-2 text-xs xl:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="week">7 Days</option>
-                  <option value="month">30 Days</option>
-                  <option value="quarter">3 Months</option>
-                  <option value="year">Year</option>
-                </select>
-                <Badge className="bg-green-500/30 text-green-800 border-green-400/30">Live</Badge>
-              </div>
+            </div>
+          </div>
+
+          {/* Mobile nav links - single row */}
+          <div className="md:hidden border-t border-gray-100 bg-gray-50">
+            <div className="container mx-auto px-2 py-1.5 flex justify-center gap-4">
+              <Link to="/" className="text-[10px] text-gray-600 hover:text-blue-600">🏠 Home</Link>
+              <Link to="/business" className="text-[10px] text-gray-600 hover:text-blue-600">💼 Business</Link>
+              <Link to="/sign-in" className="text-[10px] text-blue-600 font-medium">🔑 Sign In</Link>
             </div>
           </div>
         </div>
-
-        {/* Mobile Menu Dropdown - Only nav links, filters are inline now */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
-            <div className="container mx-auto px-3 py-3">
-              <div className="flex gap-2">
-                <Link
-                  to="/"
-                  className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center font-medium text-xs hover:bg-gray-100 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  🏠 Home
-                </Link>
-                <Link
-                  to="/business"
-                  className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center font-medium text-xs hover:bg-gray-100 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  💼 Business
-                </Link>
-                <Link
-                  to="/sign-in"
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-center font-medium text-xs hover:bg-blue-700 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  🔑 Sign In
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
         
         {/* Overview Metrics */}
         <div className="w-full bg-white border-t border-gray-100">
-          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 bg-white">
+          <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-4 bg-white">
             <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
           </div>
         </div>
