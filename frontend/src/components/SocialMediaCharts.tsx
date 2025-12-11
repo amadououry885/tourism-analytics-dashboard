@@ -209,8 +209,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         <CardHeader className="p-3 sm:p-4 md:p-6">
           <CardTitle className="text-gray-900 flex items-center gap-2 text-base sm:text-lg">
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-            <span className="hidden sm:inline">Social Media Engagement Trends</span>
-            <span className="sm:hidden">Engagement Trends</span>
+            Engagement Trends
           </CardTitle>
           <CardDescription className="text-gray-600 text-xs sm:text-sm">
             Track how tourists interact on social media

@@ -56,10 +56,10 @@ export default function TourismDashboard() {
             <div className="flex items-center justify-between">
               {/* Logo and Title */}
               <div className="flex-1 min-w-0">
-                <h1 className="text-gray-900 mb-0.5 md:mb-1 text-lg sm:text-xl md:text-2xl font-bold truncate">
+                <h1 className="text-gray-900 mb-0 text-base sm:text-xl md:text-2xl font-bold truncate">
                   Kedah Tourism
                 </h1>
-                <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">
+                <p className="text-gray-600 text-[10px] sm:text-sm">
                   Real-time insights and metrics
                 </p>
               </div>
