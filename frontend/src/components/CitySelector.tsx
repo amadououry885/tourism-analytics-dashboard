@@ -57,26 +57,24 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
   );
 
   return (
-    <div className="relative w-full max-w-xs">
-      {/* Dropdown Button */}
+    <div className="relative">
+      {/* Dropdown Button - Compact on mobile */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-between shadow-lg font-semibold"
+        className="px-2 sm:px-4 py-1.5 sm:py-3 bg-blue-600 text-white rounded-md sm:rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-between shadow-md sm:shadow-lg font-medium sm:font-semibold text-[10px] sm:text-sm min-w-[80px] sm:min-w-[140px]"
       >
-        <div className="flex items-center gap-2">
-          <MapPin className="w-5 h-5" />
-          <span>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <MapPin className="w-3 h-3 sm:w-5 sm:h-5" />
+          <span className="truncate max-w-[50px] sm:max-w-[100px]">
             {selectedCity && selectedCity !== 'all'
-              ? selectedCity
+              ? selectedCity.length > 8 ? selectedCity.substring(0, 8) + '...' : selectedCity
               : loading
-              ? '⏳ Loading Cities...'
-              : cities.length > 0
-              ? '🌍 All Cities'
-              : '❌ No cities found'}
+              ? '...'
+              : '🌍 All'}
           </span>
         </div>
         <ChevronDown
-          className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3 h-3 sm:w-5 sm:h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 

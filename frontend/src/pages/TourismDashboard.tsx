@@ -52,16 +52,42 @@ export default function TourismDashboard() {
       {/* Header - Sticky with solid background */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-lg">
         <div className="w-full bg-white">
-          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 bg-white">
-            <div className="flex items-center justify-between">
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 bg-white">
+            <div className="flex items-center justify-between gap-2">
               {/* Logo and Title */}
-              <div className="flex-1 min-w-0">
-                <h1 className="text-gray-900 mb-0 text-base sm:text-xl md:text-2xl font-bold truncate">
+              <div className="min-w-0 flex-shrink-0">
+                <h1 className="text-gray-900 text-sm sm:text-xl md:text-2xl font-bold">
                   Kedah Tourism
                 </h1>
-                <p className="text-gray-600 text-[10px] sm:text-sm">
-                  Real-time insights and metrics
+                <p className="text-gray-600 text-[9px] sm:text-sm hidden xs:block">
+                  Real-time insights
                 </p>
+              </div>
+
+              {/* Mobile: Compact filters inline */}
+              <div className="flex lg:hidden items-center gap-1.5 flex-1 justify-end">
+                <CitySelector 
+                  selectedCity={selectedCity}
+                  onCityChange={setSelectedCity}
+                />
+                <select 
+                  value={timeRange} 
+                  onChange={(e) => setTimeRange(e.target.value)}
+                  className="bg-white text-gray-900 border border-gray-300 rounded-md px-1.5 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[70px]"
+                >
+                  <option value="week">7D</option>
+                  <option value="month">30D</option>
+                  <option value="quarter">3M</option>
+                  <option value="year">1Y</option>
+                </select>
+                <Badge className="bg-green-500/30 text-green-800 border-green-400/30 text-[9px] px-1.5 py-0.5">Live</Badge>
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-1.5 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors ml-1"
+                  aria-label="Toggle menu"
+                >
+                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                </button>
               </div>
               
               {/* Desktop Navigation */}
@@ -103,75 +129,36 @@ export default function TourismDashboard() {
                 </select>
                 <Badge className="bg-green-500/30 text-green-800 border-green-400/30">Live</Badge>
               </div>
-
-              {/* Mobile Menu Button */}
-              <div className="flex lg:hidden items-center gap-2">
-                <Badge className="bg-green-500/30 text-green-800 border-green-400/30 text-xs">Live</Badge>
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors"
-                  aria-label="Toggle menu"
-                >
-                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                </button>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
+        {/* Mobile Menu Dropdown - Only nav links, filters are inline now */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
-            <div className="container mx-auto px-3 py-4 space-y-3">
-              {/* Navigation Links */}
-              <div className="flex flex-wrap gap-2">
+            <div className="container mx-auto px-3 py-3">
+              <div className="flex gap-2">
                 <Link
                   to="/"
-                  className="flex-1 min-w-[calc(50%-4px)] px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-center font-medium text-sm hover:bg-gray-100 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center font-medium text-xs hover:bg-gray-100 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  🏠 Dashboard
+                  🏠 Home
                 </Link>
                 <Link
                   to="/business"
-                  className="flex-1 min-w-[calc(50%-4px)] px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-center font-medium text-sm hover:bg-gray-100 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-center font-medium text-xs hover:bg-gray-100 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   💼 Business
                 </Link>
                 <Link
                   to="/sign-in"
-                  className="flex-1 min-w-[calc(50%-4px)] px-4 py-3 bg-blue-600 text-white rounded-lg text-center font-medium text-sm hover:bg-blue-700 transition-colors"
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-center font-medium text-xs hover:bg-blue-700 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   🔑 Sign In
                 </Link>
-              </div>
-              
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200">
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">City</label>
-                  <CitySelector 
-                    selectedCity={selectedCity}
-                    onCityChange={(city) => {
-                      setSelectedCity(city);
-                    }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">Time Range</label>
-                  <select 
-                    value={timeRange} 
-                    onChange={(e) => setTimeRange(e.target.value)}
-                    className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="week">Last 7 Days</option>
-                    <option value="month">Last 30 Days</option>
-                    <option value="quarter">Last 3 Months</option>
-                    <option value="year">Last Year</option>
-                  </select>
-                </div>
               </div>
             </div>
           </div>
