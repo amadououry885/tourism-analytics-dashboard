@@ -191,7 +191,7 @@ export default function TourismDashboard() {
               {[
                 { id: 'overview', label: '📊 Overview', shortLabel: '📊Overview' },
                 { id: 'destinations', label: '🗺️ Destinations', shortLabel: '🗺️Places' },
-                { id: 'restaurants', label: '🍽️ Restaurants', shortLabel: '🍽️Restau' },
+                { id: 'restaurants', label: '🍽️ Restaurants', shortLabel: '🍽️Food' },
                 { id: 'accommodation', label: '🏨 Book Stay', shortLabel: '🏨Stay' },
                 { id: 'transport', label: '🚌 Transport', shortLabel: '🚌Trans' },
                 { id: 'events', label: '📅 Events', shortLabel: '📅Events' },
@@ -205,8 +205,8 @@ export default function TourismDashboard() {
                       : 'border-gray-300 bg-white text-gray-900 hover:border-blue-400'
                   }`}
                 >
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="inline sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden sm:block">{tab.label}</span>
+                  <span className="block sm:hidden">{tab.shortLabel}</span>
                 </button>
               ))}
             </div>
