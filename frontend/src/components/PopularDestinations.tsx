@@ -436,7 +436,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                 </div>
               ) : (
                 <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                     {filteredDestinations.map((destination, index) => (
                       <DestinationCard
                         key={`${destination.name}-${index}`}
