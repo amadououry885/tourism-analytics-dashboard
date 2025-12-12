@@ -295,9 +295,9 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       </div>
 
       {/* RIGHT CONTENT - Restaurant Grid */}
-      <div className="flex-1 min-w-0 flex flex-col h-full">
+      <div className="flex-1 min-w-0">
         {/* Scrollable Card Container */}
-        <Card className="bg-white shadow-lg border-gray-200 flex flex-col h-full">
+        <Card className="bg-white shadow-lg border-gray-200" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
           <CardHeader className="border-b border-gray-200 pb-4 flex-shrink-0">
             <div className="flex justify-between items-center">
               <div>
@@ -322,10 +322,10 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
             </div>
           </CardHeader>
 
-          <CardContent className="p-6 flex-1 overflow-y-auto">
+          <CardContent className="p-6" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             {/* Scrollable Restaurant Grid */}
-            <div className="pr-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div style={{ flex: 1, overflowY: 'scroll', paddingRight: '8px' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
                 {sortedRestaurants.map((restaurant) => (
                   <Card 
                     key={restaurant.id} 
@@ -423,15 +423,15 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                       </div>
                     </CardContent>
                   </Card>
-            ))}
-          </div>
+                ))}
+              </div>
 
-          {/* No results */}
-          {sortedRestaurants.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No restaurants found matching your criteria.</p>
-            </div>
-          )}
+              {/* No results */}
+              {sortedRestaurants.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">No restaurants found matching your criteria.</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
