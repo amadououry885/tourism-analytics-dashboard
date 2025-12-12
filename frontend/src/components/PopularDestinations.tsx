@@ -338,10 +338,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Sidebar + Destinations Grid Layout */}
-      <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         {/* Sidebar Filters */}
-        <div className="lg:w-64 xl:w-72 flex-shrink-0">
-          <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200 lg:sticky lg:top-4">
+        <div className="w-full md:w-64 lg:w-72 flex-shrink-0">
+          <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200 md:sticky md:top-4">
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-gray-900 text-base flex items-center gap-2">
                 <Filter className="w-5 h-5 text-blue-600" />
