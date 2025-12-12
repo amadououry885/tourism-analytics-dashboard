@@ -339,10 +339,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Sidebar + Destinations Grid Layout */}
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem' }}>
         {/* Sidebar Filters */}
-        <div className="w-full md:w-64 lg:w-72 flex-shrink-0">
-          <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200 md:sticky md:top-4">
+        <div style={{ width: '280px', flexShrink: 0 }}>
+          <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200 sticky top-4">
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-gray-900 text-base flex items-center gap-2">
                 <Filter className="w-5 h-5 text-blue-600" />
@@ -423,7 +423,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         </div>
 
         {/* Destinations Grid */}
-        <div className="flex-1 min-w-0">
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Card className="bg-white border-gray-200 shadow-lg">
             <CardContent className="p-3 sm:p-4 md:p-6">
               {filteredDestinations.length === 0 ? (
@@ -435,8 +435,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   </div>
                 </div>
               ) : (
-                <div className="max-h-[600px] sm:max-h-[700px] md:max-h-[800px] overflow-y-auto pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+                <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filteredDestinations.map((destination, index) => (
                       <DestinationCard
                         key={`${destination.name}-${index}`}
