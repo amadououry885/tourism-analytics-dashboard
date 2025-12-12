@@ -337,12 +337,12 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Sidebar + Destinations Grid Layout */}
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem', alignItems: 'flex-start' }}>
         {/* Sidebar Filters */}
-        <div style={{ width: '280px', flexShrink: 0 }}>
-          <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200 sticky top-4">
+        <div style={{ width: '280px', flexShrink: 0 }} className="hidden lg:block">
+          <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200">
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-gray-900 text-base flex items-center gap-2">
                 <Filter className="w-5 h-5 text-blue-600" />
@@ -422,10 +422,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
           </Card>
         </div>
 
-        {/* Destinations Grid */}
+        {/* Destinations Grid - This part scrolls! */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <Card className="bg-white border-gray-200 shadow-lg">
-            <CardContent className="p-3 sm:p-4 md:p-6">
+          <Card className="bg-white border-gray-200 shadow-lg" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+            <CardContent className="p-3 sm:p-4 md:p-6" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               {filteredDestinations.length === 0 ? (
                 <div className="py-16">
                   <div className="text-center text-gray-500">
@@ -435,7 +435,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   </div>
                 </div>
               ) : (
-                <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
+                <div style={{ flex: 1, overflowY: 'scroll', paddingRight: '8px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                     {filteredDestinations.map((destination, index) => (
                       <DestinationCard
