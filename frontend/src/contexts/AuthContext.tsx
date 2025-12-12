@@ -59,8 +59,10 @@ interface LoginResponse {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Use environment variable for API URL (falls back to local development URL)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+// Use same API URL logic as api.ts service
+const API_BASE_URL = import.meta.env.DEV 
+  ? '/api'  // Vite proxy will forward to localhost:8000
+  : 'https://tourism-analytics-dashboard.onrender.com/api';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
