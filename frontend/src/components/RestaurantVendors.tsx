@@ -177,45 +177,31 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-full">
-      {/* Mobile Filter Toggle */}
-      <div className="lg:hidden flex items-center justify-between mb-2">
-        <h2 className="text-lg font-bold text-gray-900">
-          {sortedRestaurants.length} restaurants
-        </h2>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium"
-        >
-          <Search className="w-4 h-4" />
-          {showFilters ? 'Hide Filters' : 'Filters'}
-        </button>
-      </div>
-
-      {/* LEFT SIDEBAR - Filters (Hidden on mobile unless toggled) */}
-      <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-72 xl:w-80 flex-shrink-0 overflow-y-auto lg:pr-2`}>
-        <div className="space-y-4 lg:space-y-6">
+    <div className="flex gap-6 h-full">
+      {/* LEFT SIDEBAR - Filters (Always visible) */}
+      <div className="w-72 xl:w-80 flex-shrink-0 overflow-y-auto pr-2">
+        <div className="space-y-6">
           {/* Search Box */}
           <div>
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
                 placeholder="Search restaurants..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 sm:pl-10 h-10 sm:h-12 bg-white border-gray-300 text-gray-900 text-sm"
+                className="pl-10 h-12 bg-white border-gray-300 text-gray-900"
               />
             </div>
           </div>
 
           {/* Filters Card */}
           <Card className="bg-white shadow-md border-gray-200">
-            <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <CardContent className="p-6 space-y-6">
               {/* Categories */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">Categories</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-1 gap-1 sm:gap-2">
+                <h3 className="font-semibold text-gray-900 mb-3">Categories</h3>
+                <div className="space-y-2">
                   {cuisineTypes.slice(0, 6).map(cuisine => (
                     <label key={cuisine} className="flex items-center gap-2 cursor-pointer group">
                       <input
@@ -224,22 +210,22 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                         onChange={() => toggleCategory(cuisine)}
                         className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                       />
-                      <span className="text-xs sm:text-sm text-gray-700 group-hover:text-emerald-600 transition-colors truncate">{cuisine}</span>
+                      <span className="text-sm text-gray-700 group-hover:text-emerald-600 transition-colors">{cuisine}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 pt-4 sm:pt-6">
-                <h3 className="font-semibold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">Filters</h3>
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Filters</h3>
                 
                 {/* Price Range */}
-                <div className="mb-3 sm:mb-4">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Price Range</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
                   <select
                     value={selectedPriceRange}
                     onChange={(e) => setSelectedPriceRange(e.target.value)}
-                    className="w-full p-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full p-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="all">All Prices</option>
                     <option value="$">$ - Budget</option>
@@ -250,12 +236,12 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                 </div>
 
                 {/* Rating Filter */}
-                <div className="mb-3 sm:mb-4">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Minimum Rating</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
                   <select
                     value={minRating}
                     onChange={(e) => setMinRating(Number(e.target.value))}
-                    className="w-full p-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full p-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="0">All Ratings</option>
                     <option value="4.5">⭐ 4.5+ Stars</option>
@@ -264,9 +250,9 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                   </select>
                 </div>
 
-                {/* Amenities - Collapsed on mobile */}
-                <div className="hidden sm:block">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Amenities</label>
+                {/* Amenities */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
                   <div className="space-y-2">
                     {['WiFi', 'Parking', 'Halal', 'Delivery', 'Outdoor Seating'].map(amenity => (
                       <label key={amenity} className="flex items-center gap-2 cursor-pointer group">
@@ -282,7 +268,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                           }}
                           className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                         />
-                        <span className="text-xs sm:text-sm text-gray-700 group-hover:text-emerald-600 transition-colors">{amenity}</span>
+                        <span className="text-sm text-gray-700 group-hover:text-emerald-600 transition-colors">{amenity}</span>
                       </label>
                     ))}
                   </div>
@@ -298,9 +284,8 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                   setMinRating(0);
                   setSelectedAmenities([]);
                   setSelectedCategories([]);
-                  setShowFilters(false);
                 }}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-xs sm:text-sm font-medium"
+                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
               >
                 Clear All Filters
               </button>
@@ -313,41 +298,41 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       <div className="flex-1 min-w-0 flex flex-col h-full">
         {/* Scrollable Card Container */}
         <Card className="bg-white shadow-lg border-gray-200 flex flex-col h-full">
-          <CardHeader className="border-b border-gray-200 pb-3 sm:pb-4 flex-shrink-0 p-3 sm:p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
-              <div className="hidden lg:block">
-                <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+          <CardHeader className="border-b border-gray-200 pb-4 flex-shrink-0">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-2xl font-bold text-gray-900">
                   Restaurants {selectedCity !== 'all' && ` in ${cityNames[selectedCity]}`}
                 </CardTitle>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   {sortedRestaurants.length} restaurants found
                 </p>
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm w-full sm:w-auto"
+                className="px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="rating">Highest Rated</option>
                 <option value="name">Name (A-Z)</option>
                 <option value="reviews">Most Reviews</option>
-                <option value="price_asc">Price ↑</option>
-                <option value="price_desc">Price ↓</option>
+                <option value="price_asc">Price (Low to High)</option>
+                <option value="price_desc">Price (High to Low)</option>
               </select>
             </div>
           </CardHeader>
 
-          <CardContent className="p-3 sm:p-4 md:p-6 flex-1 overflow-y-auto">
+          <CardContent className="p-6 flex-1 overflow-y-auto">
             {/* Scrollable Restaurant Grid */}
-            <div className="pr-0 sm:pr-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+            <div className="pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {sortedRestaurants.map((restaurant) => (
                   <Card 
                     key={restaurant.id} 
                     className="bg-white border-gray-200 shadow-md overflow-hidden hover:shadow-xl transition-all group relative rounded-lg"
                   >
                     {/* Image Section */}
-                    <div className="h-36 sm:h-44 md:h-48 relative overflow-hidden">
+                    <div className="h-48 relative overflow-hidden">
                       <ImageWithFallback
                         src={restaurant.image}
                         alt={restaurant.name}
@@ -360,7 +345,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                       {/* Top Right - Favorite Button */}
                       <button
                         onClick={(e) => toggleFavorite(restaurant.id, e)}
-                        className="absolute top-2 sm:top-3 right-2 sm:right-3 w-7 h-7 sm:w-8 sm:h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-md flex items-center justify-center hover:scale-110 transition-transform z-10"
+                        className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-md flex items-center justify-center hover:scale-110 transition-transform z-10"
                       >
                         <Heart 
                           className={`h-4 w-4 ${favorites.has(restaurant.id) ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} 
