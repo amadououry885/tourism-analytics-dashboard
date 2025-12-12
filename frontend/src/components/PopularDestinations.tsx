@@ -336,122 +336,130 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Filters and Search */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-        <CardContent className="p-3 sm:p-4 md:pt-6">
-          <div className="space-y-3 sm:space-y-4">
+    <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+      {/* Sidebar Filters */}
+      <div className="lg:w-64 xl:w-72 flex-shrink-0">
+        <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200 lg:sticky lg:top-4">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-gray-900 text-base flex items-center gap-2">
+              <Filter className="w-5 h-5 text-blue-600" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-2 space-y-4">
             {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search destinations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
-              />
+            <div>
+              <label className="text-xs font-medium text-gray-700 mb-1.5 block">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search destinations..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                />
+              </div>
             </div>
 
-            {/* Filter Buttons Row */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3">
-              {/* Category Filter */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                  <span className="text-xs sm:text-sm font-medium text-gray-700">Category:</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {categories.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat || 'All')}
-                      className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                        selectedCategory === cat
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
+            {/* Category Filter */}
+            <div>
+              <label className="text-xs font-medium text-gray-700 mb-2 block">Category</label>
+              <div className="flex flex-wrap gap-1.5">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat || 'All')}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                      selectedCategory === cat
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Sort Dropdown */}
-              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto mt-2 sm:mt-0">
-                <span className="text-xs sm:text-sm font-medium text-gray-700">Sort:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg bg-white text-xs sm:text-sm font-medium focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="popularity">🔥 Popular</option>
-                  <option value="name">🔤 Name</option>
-                  <option value="rating">⭐ Rating</option>
-                </select>
-              </div>
+            {/* Sort Dropdown */}
+            <div>
+              <label className="text-xs font-medium text-gray-700 mb-1.5 block">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="popularity">🔥 Popular</option>
+                <option value="name">🔤 Name</option>
+                <option value="rating">⭐ Rating</option>
+              </select>
+            </div>
 
-              {/* Free Only Toggle */}
-              <label className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
+            {/* Free Only Toggle */}
+            <div>
+              <label className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
                 <input
                   type="checkbox"
                   checked={showFreeOnly}
                   onChange={(e) => setShowFreeOnly(e.target.checked)}
                   className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                 />
-                <span className="text-xs sm:text-sm font-medium text-gray-700">🎟️ Free</span>
+                <span className="text-sm font-medium text-gray-700">🎟️ Free Only</span>
               </label>
             </div>
 
             {/* Results Count */}
-            <div className="text-xs sm:text-sm text-gray-600">
-              Showing <span className="font-bold text-blue-600">{filteredDestinations.length}</span> of {topDestinations.length} destinations
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Destinations Grid - Single Scrollable Card */}
-      <Card className="bg-white border-gray-200 shadow-lg">
-        <CardContent className="p-3 sm:p-4 md:p-6">
-          {filteredDestinations.length === 0 ? (
-            <div className="py-16">
-              <div className="text-center text-gray-500">
-                <MapPin className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
-                <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-2">No destinations found</h3>
-                <p className="text-sm sm:text-base">Try adjusting your filters or search term</p>
+            <div className="pt-2 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing <span className="font-bold text-blue-600">{filteredDestinations.length}</span> of {topDestinations.length} destinations
               </div>
             </div>
-          ) : (
-            <div className="max-h-[600px] sm:max-h-[700px] md:max-h-[800px] overflow-y-auto pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-                {filteredDestinations.map((destination, index) => (
-                  <DestinationCard
-                    key={`${destination.name}-${index}`}
-                    destination={destination}
-                    rank={index + 1}
-                    isTrending={index < 3} // Top 3 are trending
-                    isNew={index === filteredDestinations.length - 1} // Last one is new
-                    onViewDetails={handleViewDetails}
-                  />
-                ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 space-y-4 md:space-y-6">
+        {/* Destinations Grid */}
+        <Card className="bg-white border-gray-200 shadow-lg">
+          <CardContent className="p-3 sm:p-4 md:p-6">
+            {filteredDestinations.length === 0 ? (
+              <div className="py-16">
+                <div className="text-center text-gray-500">
+                  <MapPin className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-2">No destinations found</h3>
+                  <p className="text-sm sm:text-base">Try adjusting your filters or search term</p>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            ) : (
+              <div className="max-h-[600px] sm:max-h-[700px] md:max-h-[800px] overflow-y-auto pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+                  {filteredDestinations.map((destination, index) => (
+                    <DestinationCard
+                      key={`${destination.name}-${index}`}
+                      destination={destination}
+                      rank={index + 1}
+                      isTrending={index < 3} // Top 3 are trending
+                      isNew={index === filteredDestinations.length - 1} // Last one is new
+                      onViewDetails={handleViewDetails}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Destination Detail Modal */}
-      <DestinationModal
-        key={selectedDestination?.id || 'modal'}
-        destination={selectedDestination}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+        {/* Destination Detail Modal */}
+        <DestinationModal
+          key={selectedDestination?.id || 'modal'}
+          destination={selectedDestination}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
 
-      {/* Post Distribution Pie Chart */}
-      <div className="grid grid-cols-1 gap-4 md:gap-6">
+        {/* Post Distribution Pie Chart */}
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="text-gray-900 text-base sm:text-lg">Post Distribution</CardTitle>
@@ -487,68 +495,68 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Comparison Chart */}
-      <Card className="bg-white border-gray-200 shadow-sm">
-        <CardHeader className="p-3 sm:p-4 md:p-6">
-          <CardTitle className="text-gray-900 text-base sm:text-lg">Social Engagement Comparison</CardTitle>
-          <CardDescription className="text-gray-900 text-xs sm:text-sm">Post counts across top destinations</CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
-          <ResponsiveContainer width="100%" height={250} className="sm:h-[350px]">
-            <BarChart data={topDestinations}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis dataKey="name" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  color: '#111827'
-                }}
-              />
-              <Legend />
-              <Bar dataKey="posts" fill="#10b981" radius={[8, 8, 0, 0]} name="Social Posts" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Least Visited Destinations */}
-      {leastVisited.length > 0 && (
+        {/* Comparison Chart */}
         <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900">Hidden Gems - Least Posted</CardTitle>
-            <CardDescription className="text-gray-900">Destinations with low social engagement</CardDescription>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-gray-900 text-base sm:text-lg">Social Engagement Comparison</CardTitle>
+            <CardDescription className="text-gray-900 text-xs sm:text-sm">Post counts across top destinations</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {leastVisited.map((destination) => (
-                <div key={destination.name} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-gray-900 font-medium">{destination.name}</h4>
-                    <Badge className="bg-orange-500/20 text-orange-700 border-orange-500/30">
-                      ⭐ {destination.rating?.toFixed(1) || '0.0'}
-                    </Badge>
-                  </div>
-                  <div className="space-y-1 text-sm text-gray-900">
-                    <div className="flex items-center justify-between">
-                      <span>Posts:</span>
-                      <span className="font-medium">{destination.posts?.toLocaleString() || '0'}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-orange-700 mt-2">
-                      <TrendingDown className="w-4 h-4" />
-                      <span className="text-xs">Potential for growth</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <ResponsiveContainer width="100%" height={250} className="sm:h-[350px]">
+              <BarChart data={topDestinations}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+                <XAxis dataKey="name" stroke="#6b7280" />
+                <YAxis stroke="#6b7280" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    color: '#111827'
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="posts" fill="#10b981" radius={[8, 8, 0, 0]} name="Social Posts" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
+
+        {/* Least Visited Destinations */}
+        {leastVisited.length > 0 && (
+          <Card className="bg-white border-gray-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-gray-900">Hidden Gems - Least Posted</CardTitle>
+              <CardDescription className="text-gray-900">Destinations with low social engagement</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {leastVisited.map((destination) => (
+                  <div key={destination.name} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-gray-900 font-medium">{destination.name}</h4>
+                      <Badge className="bg-orange-500/20 text-orange-700 border-orange-500/30">
+                        ⭐ {destination.rating?.toFixed(1) || '0.0'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-sm text-gray-900">
+                      <div className="flex items-center justify-between">
+                        <span>Posts:</span>
+                        <span className="font-medium">{destination.posts?.toLocaleString() || '0'}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-orange-700 mt-2">
+                        <TrendingDown className="w-4 h-4" />
+                        <span className="text-xs">Potential for growth</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }// Cache bust Sat Dec  6 06:56:25 AM +08 2025
