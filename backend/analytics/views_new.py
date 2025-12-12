@@ -205,6 +205,7 @@ class PopularPlacesView(APIView):
         prev_end = start
         prev_start = prev_end - timedelta(days=period_days)
         
+        # Get ALL places with optional engagement metrics (not just those with posts)
         places = (
             places_qs
             .annotate(
@@ -228,8 +229,8 @@ class PopularPlacesView(APIView):
                     filter=Q(posts__created_at__date__range=[prev_start, prev_end])
                 )
             )
-            .filter(posts_count__gt=0)
-            .order_by('-total_engagement')[:20]
+            # Removed: .filter(posts_count__gt=0) - now returns ALL places
+            .order_by('-total_engagement', '-posts_count', 'name')[:100]  # Increased limit to show all places
         )
         
         results = []

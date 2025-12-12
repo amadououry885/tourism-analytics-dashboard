@@ -117,7 +117,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         // ✅ Fetch places from analytics popular endpoint using axios
         let response;
         try {
-          response = await axios.get('/analytics/places/popular/');
+          response = await axios.get(`/analytics/places/popular/${cityParam}`);
           const data = response.data;
           console.log('✅ Response from analytics/places/popular/:', data);
 
