@@ -35,36 +35,36 @@ export default function TourismDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header - Sticky */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        {/* Top bar: Logo + Filters */}
-        <div className="container mx-auto px-2 sm:px-4 py-2">
+        {/* Top bar: Logo + Nav + Filters */}
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <h1 className="text-gray-900 text-base sm:text-xl font-bold">Kedah Tourism</h1>
+            <h1 className="text-gray-900 text-base sm:text-xl md:text-2xl font-bold">Kedah Tourism</h1>
             
-            {/* Right side: Filters */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Right side: Nav Links + Filters */}
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+              {/* Nav Links */}
+              <Link to="/" className="text-[10px] sm:text-xs md:text-sm text-gray-700 hover:text-blue-600 font-medium">🏠 Home</Link>
+              <Link to="/business" className="text-[10px] sm:text-xs md:text-sm text-gray-700 hover:text-blue-600 hidden sm:inline">💼 Business</Link>
+              <Link to="/sign-in" className="text-[10px] sm:text-xs md:text-sm text-blue-600 font-medium">🔑 Sign In</Link>
+              
+              {/* Divider */}
+              <span className="hidden sm:inline text-gray-300">|</span>
+              
+              {/* Filters */}
               <CitySelector selectedCity={selectedCity} onCityChange={setSelectedCity} />
               <select 
                 value={timeRange} 
                 onChange={(e) => setTimeRange(e.target.value)}
-                className="border border-gray-300 rounded px-1.5 py-1 text-[10px] sm:text-xs"
+                className="border border-gray-300 rounded px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs md:text-sm"
               >
                 <option value="week">7D</option>
                 <option value="month">30D</option>
                 <option value="quarter">3M</option>
                 <option value="year">1Y</option>
               </select>
-              <span className="bg-green-100 text-green-700 text-[9px] sm:text-xs px-1.5 py-0.5 rounded font-medium hidden sm:inline">Live</span>
+              <span className="bg-green-100 text-green-700 text-[9px] sm:text-xs px-1.5 py-0.5 rounded font-medium">Live</span>
             </div>
-          </div>
-        </div>
-
-        {/* Nav bar: Links (responsive) */}
-        <div className="border-t border-gray-100 bg-gray-50">
-          <div className="container mx-auto px-2 sm:px-4 py-1.5 flex justify-center gap-3 sm:gap-6">
-            <Link to="/" className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 font-medium">🏠 Home</Link>
-            <Link to="/business" className="text-xs sm:text-sm text-gray-700 hover:text-blue-600">💼 Business</Link>
-            <Link to="/sign-in" className="text-xs sm:text-sm text-blue-600 font-medium">🔑 Sign In</Link>
           </div>
         </div>
         
@@ -75,10 +75,10 @@ export default function TourismDashboard() {
           </div>
         </div>
         
-        {/* Tabs Navigation - Horizontal scroll on mobile */}
+        {/* Tabs Navigation - BIGGER */}
         <div className="w-full bg-white border-t border-gray-100 pb-2">
-          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2 md:py-4 bg-white">
-            <div className="flex gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent -mx-3 px-3 sm:mx-0 sm:px-0">
+          <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-3">
+            <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
               {[
                 { id: 'overview', label: '📊 Overview' },
                 { id: 'destinations', label: '🗺️ Places' },
@@ -90,10 +90,10 @@ export default function TourismDashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-full border px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 text-xs sm:text-sm transition-all whitespace-nowrap flex-shrink-0 ${
+                  className={`rounded-full border px-4 sm:px-5 md:px-8 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base md:text-lg font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-gray-300 bg-white text-gray-900 hover:border-blue-400'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                      : 'border-gray-300 bg-white text-gray-900 hover:border-blue-400 hover:bg-gray-50'
                   }`}
                 >
                   {tab.label}
