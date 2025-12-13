@@ -297,7 +297,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       {/* RIGHT CONTENT - Restaurant Grid */}
       <div className="flex-1 min-w-0">
         {/* Scrollable Card Container */}
-        <Card className="bg-white shadow-lg border-gray-200" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+        <Card className="bg-white shadow-lg border-gray-200" style={{ height: '750px', display: 'flex', flexDirection: 'column' }}>
           <CardHeader className="border-b border-gray-200 pb-4 flex-shrink-0">
             <div className="flex justify-between items-center">
               <div>
