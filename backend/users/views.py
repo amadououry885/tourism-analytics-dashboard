@@ -2,9 +2,9 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import User
+from .models import User, PasswordResetToken
 from .serializers import UserSerializer, UserRegistrationSerializer, UserApprovalSerializer
-from .emails import send_approval_email, send_rejection_email
+from .emails import send_approval_email, send_rejection_email, send_password_reset_email
 import logging
 
 logger = logging.getLogger(__name__)
@@ -172,4 +172,165 @@ def reject_user(request, user_id):
         return Response(
             {'error': 'User not found'},
             status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def request_password_reset(request):
+    """
+    Request a password reset email.
+    User provides their email, and if it exists, they receive a reset link.
+    
+    Request body:
+        {
+            "email": "user@example.com"
+        }
+    """
+    email = request.data.get('email', '').strip().lower()
+    
+    if not email:
+        return Response(
+            {'error': 'Email is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Always return success to prevent email enumeration attacks
+    success_message = 'If an account with this email exists, you will receive a password reset link shortly.'
+    
+    try:
+        user = User.objects.get(email__iexact=email)
+        
+        # Create reset token
+        reset_token = PasswordResetToken.create_token(user)
+        
+        # Determine frontend URL
+        frontend_url = request.data.get('frontend_url') or request.headers.get('Origin') or 'https://tourism-kedah.vercel.app'
+        
+        # Send reset email
+        email_sent = send_password_reset_email(user, reset_token.token, frontend_url)
+        
+        if email_sent:
+            logger.info(f"Password reset email sent to {email}")
+        else:
+            logger.warning(f"Failed to send password reset email to {email}")
+            
+    except User.DoesNotExist:
+        # Don't reveal that email doesn't exist
+        logger.info(f"Password reset requested for non-existent email: {email}")
+    
+    return Response({'message': success_message}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_reset_token(request):
+    """
+    Verify if a password reset token is valid.
+    
+    Request body:
+        {
+            "token": "reset_token_here"
+        }
+    """
+    token = request.data.get('token', '')
+    
+    if not token:
+        return Response(
+            {'error': 'Token is required', 'valid': False},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        reset_token = PasswordResetToken.objects.get(token=token)
+        
+        if reset_token.is_valid():
+            return Response({
+                'valid': True,
+                'message': 'Token is valid',
+                'email': reset_token.user.email
+            })
+        else:
+            return Response({
+                'valid': False,
+                'error': 'Token has expired or already been used'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except PasswordResetToken.DoesNotExist:
+        return Response({
+            'valid': False,
+            'error': 'Invalid token'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def confirm_password_reset(request):
+    """
+    Reset password using a valid token.
+    
+    Request body:
+        {
+            "token": "reset_token_here",
+            "password": "new_password",
+            "password_confirm": "new_password"
+        }
+    """
+    token = request.data.get('token', '')
+    password = request.data.get('password', '')
+    password_confirm = request.data.get('password_confirm', '')
+    
+    # Validate input
+    if not token:
+        return Response(
+            {'error': 'Token is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if not password:
+        return Response(
+            {'error': 'Password is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if password != password_confirm:
+        return Response(
+            {'error': 'Passwords do not match'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if len(password) < 8:
+        return Response(
+            {'error': 'Password must be at least 8 characters'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        reset_token = PasswordResetToken.objects.get(token=token)
+        
+        if not reset_token.is_valid():
+            return Response(
+                {'error': 'Token has expired or already been used'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update password
+        user = reset_token.user
+        user.set_password(password)
+        user.save()
+        
+        # Mark token as used
+        reset_token.used = True
+        reset_token.save()
+        
+        logger.info(f"Password reset successful for user {user.username}")
+        
+        return Response({
+            'message': 'Password reset successful. You can now login with your new password.'
+        }, status=status.HTTP_200_OK)
+        
+    except PasswordResetToken.DoesNotExist:
+        return Response(
+            {'error': 'Invalid token'},
+            status=status.HTTP_400_BAD_REQUEST
         )

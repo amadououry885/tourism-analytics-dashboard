@@ -200,6 +200,12 @@ const SignIn: React.FC = () => {
                   />
                 </div>
 
+                <div className="text-right">
+                  <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline font-medium">
+                    Forgot Password?
+                  </Link>
+                </div>
+
                 <button
                   type="submit"
                   disabled={isLoading}

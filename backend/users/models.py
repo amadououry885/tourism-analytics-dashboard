@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import secrets
+from datetime import timedelta
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -39,3 +42,38 @@ class User(AbstractUser):
             self.is_staff = True
             self.is_superuser = True
         super().save(*args, **kwargs)
+
+
+class PasswordResetToken(models.Model):
+    """
+    Stores password reset tokens for users.
+    Tokens expire after 1 hour for security.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reset_tokens')
+    token = models.CharField(max_length=100, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    used = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'password_reset_tokens'
+    
+    @classmethod
+    def create_token(cls, user):
+        """Create a new password reset token for a user"""
+        # Invalidate any existing tokens for this user
+        cls.objects.filter(user=user, used=False).update(used=True)
+        
+        # Generate secure token
+        token = secrets.token_urlsafe(32)
+        return cls.objects.create(user=user, token=token)
+    
+    def is_valid(self):
+        """Check if token is valid (not used and not expired)"""
+        if self.used:
+            return False
+        # Token expires after 1 hour
+        expiry_time = self.created_at + timedelta(hours=1)
+        return timezone.now() < expiry_time
+    
+    def __str__(self):
+        return f"Reset token for {self.user.username}"

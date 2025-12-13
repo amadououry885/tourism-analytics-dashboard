@@ -399,3 +399,147 @@ def send_rejection_email(user, reason=None):
     except Exception as e:
         logger.error(f"Failed to send rejection email to {user.email}: {str(e)}")
         return False
+
+
+def send_password_reset_email(user, token, frontend_url):
+    """
+    Send password reset email with secure link.
+    
+    Args:
+        user: User object requesting password reset
+        token: The password reset token
+        frontend_url: Base URL for the frontend app
+        
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        reset_link = f"{frontend_url}/reset-password?token={token}"
+        subject = '🔐 Reset Your Kedah Tourism Password'
+        
+        html_message = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 10px 10px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 24px;
+                }}
+                .content {{
+                    background: #ffffff;
+                    padding: 30px;
+                    border: 1px solid #e5e7eb;
+                    border-top: none;
+                    border-radius: 0 0 10px 10px;
+                }}
+                .button {{
+                    display: inline-block;
+                    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                    color: white !important;
+                    padding: 15px 30px;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    margin: 20px 0;
+                }}
+                .warning {{
+                    background: #fef3c7;
+                    border-left: 4px solid #f59e0b;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-radius: 4px;
+                }}
+                .footer {{
+                    text-align: center;
+                    padding: 20px;
+                    color: #6b7280;
+                    font-size: 12px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>🔐 Password Reset Request</h1>
+            </div>
+            <div class="content">
+                <p>Hi <strong>{user.first_name or user.username}</strong>,</p>
+                
+                <p>We received a request to reset your password for your Kedah Tourism account.</p>
+                
+                <p style="text-align: center;">
+                    <a href="{reset_link}" class="button">Reset My Password</a>
+                </p>
+                
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background: #f3f4f6; padding: 10px; border-radius: 4px; font-size: 12px;">
+                    {reset_link}
+                </p>
+                
+                <div class="warning">
+                    <strong>⚠️ Important:</strong>
+                    <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                        <li>This link will expire in <strong>1 hour</strong></li>
+                        <li>If you didn't request this reset, please ignore this email</li>
+                        <li>Your password won't change until you create a new one</li>
+                    </ul>
+                </div>
+                
+                <p>If you need help, contact us at <a href="mailto:support@kedahtourism.my">support@kedahtourism.my</a></p>
+            </div>
+            <div class="footer">
+                <p>© 2025 Kedah Tourism Analytics. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        plain_message = f"""
+        Password Reset Request
+        
+        Hi {user.first_name or user.username},
+        
+        We received a request to reset your password for your Kedah Tourism account.
+        
+        Click this link to reset your password:
+        {reset_link}
+        
+        This link will expire in 1 hour.
+        
+        If you didn't request this reset, please ignore this email.
+        
+        © 2025 Kedah Tourism Analytics
+        """
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        logger.info(f"Password reset email sent successfully to {user.email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send password reset email to {user.email}: {str(e)}")
+        return False
