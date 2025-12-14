@@ -422,10 +422,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
           </Card>
         </div>
 
-        {/* Destinations Grid - This part scrolls! */}
+        {/* Destinations Grid */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <Card className="bg-white border-gray-200 shadow-lg" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
-            <CardContent className="p-3 sm:p-4 md:p-6" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Card className="bg-white border-gray-200 shadow-lg">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               {filteredDestinations.length === 0 ? (
                 <div className="py-16">
                   <div className="text-center text-gray-500">
@@ -435,7 +435,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   </div>
                 </div>
               ) : (
-                <div style={{ flex: 1, overflowY: 'scroll', paddingRight: '8px' }}>
+                <div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                     {filteredDestinations.map((destination, index) => (
                       <DestinationCard

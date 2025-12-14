@@ -296,9 +296,9 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
 
       {/* RIGHT CONTENT - Restaurant Grid */}
       <div className="flex-1 min-w-0">
-        {/* Scrollable Card Container */}
-        <Card className="bg-white shadow-lg border-gray-200" style={{ height: '750px', display: 'flex', flexDirection: 'column' }}>
-          <CardHeader className="border-b border-gray-200 pb-4 flex-shrink-0">
+        {/* Restaurant Card Container */}
+        <Card className="bg-white shadow-lg border-gray-200">
+          <CardHeader className="border-b border-gray-200 pb-4">
             <div className="flex justify-between items-center">
               <div>
                 <CardTitle className="text-2xl font-bold text-gray-900">
@@ -322,9 +322,9 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
             </div>
           </CardHeader>
 
-          <CardContent className="p-6" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {/* Scrollable Restaurant Grid */}
-            <div style={{ flex: 1, overflowY: 'scroll', paddingRight: '8px' }}>
+          <CardContent className="p-6">
+            {/* Restaurant Grid */}
+            <div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
                 {sortedRestaurants.map((restaurant) => (
                   <Card 
