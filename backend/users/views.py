@@ -181,6 +181,7 @@ def request_password_reset(request):
     """
     Request a password reset email.
     User provides their email, and if it exists, they receive a reset link.
+    If multiple accounts share the same email, send reset links for ALL of them.
     
     Request body:
         {
@@ -198,24 +199,29 @@ def request_password_reset(request):
     # Always return success to prevent email enumeration attacks
     success_message = 'If an account with this email exists, you will receive a password reset link shortly.'
     
-    try:
-        user = User.objects.get(email__iexact=email)
-        
-        # Create reset token
-        reset_token = PasswordResetToken.create_token(user)
-        
+    # Find ALL users with this email (handles duplicates)
+    users = User.objects.filter(email__iexact=email)
+    
+    if users.exists():
         # Determine frontend URL
-        frontend_url = request.data.get('frontend_url') or request.headers.get('Origin') or 'https://tourism-kedah.vercel.app'
+        frontend_url = request.data.get('frontend_url') or request.headers.get('Origin') or 'https://tourism-analytics-dashboard.vercel.app'
         
-        # Send reset email
-        email_sent = send_password_reset_email(user, reset_token.token, frontend_url)
-        
-        if email_sent:
-            logger.info(f"Password reset email sent to {email}")
-        else:
-            logger.warning(f"Failed to send password reset email to {email}")
-            
-    except User.DoesNotExist:
+        # Send reset email for EACH user with this email
+        for user in users:
+            try:
+                # Create reset token
+                reset_token = PasswordResetToken.create_token(user)
+                
+                # Send reset email
+                email_sent = send_password_reset_email(user, reset_token.token, frontend_url)
+                
+                if email_sent:
+                    logger.info(f"Password reset email sent to {email} for user {user.username}")
+                else:
+                    logger.warning(f"Failed to send password reset email to {email} for user {user.username}")
+            except Exception as e:
+                logger.error(f"Error sending reset email for {user.username}: {str(e)}")
+    else:
         # Don't reveal that email doesn't exist
         logger.info(f"Password reset requested for non-existent email: {email}")
     
