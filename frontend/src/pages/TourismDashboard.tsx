@@ -16,6 +16,7 @@ export default function TourismDashboard() {
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
   const [activeTab, setActiveTab] = useState('overview');
+  // Force rebuild for color scheme update
 
   // ✨ Read URL parameters and switch tabs automatically
   useEffect(() => {
