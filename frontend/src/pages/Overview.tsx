@@ -53,12 +53,12 @@ const Overview: React.FC = () => {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-slate-100 min-h-screen">
       {/* Header Section with Navigation */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Kedah Tourism Analytics</h1>
-          <p className="text-gray-600">Real-time insights and performance metrics</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Kedah Tourism Analytics</h1>
+          <p className="text-slate-600">Real-time insights and performance metrics</p>
         </div>
         <HeaderNavTabs />
       </div>
@@ -71,13 +71,13 @@ const Overview: React.FC = () => {
           <select 
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
+            className="px-4 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium shadow-sm"
           >
             <option value="week">Last 7 Days</option>
             <option value="month">Last 30 Days</option>
             <option value="year">Last Year</option>
           </select>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm">
+          <button className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
             Live
           </button>

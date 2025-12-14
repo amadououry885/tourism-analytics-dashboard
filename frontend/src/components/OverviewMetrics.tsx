@@ -126,13 +126,13 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
 
   return (
     <div className="mobile-grid-2">
-      {/* Comments Card - Beautiful Blue Theme */}
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+      {/* Comments Card - Ocean Blue Theme */}
+      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-blue-700 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-blue-800 flex items-center justify-between">
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-blue-200 rounded-full">
-                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-700" />
+              <div className="p-1 sm:p-2 bg-blue-500 rounded-full">
+                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
               <span>Comments 💬</span>
             </div>
@@ -145,58 +145,58 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
         </CardContent>
       </Card>
 
-      {/* Likes Card - Beautiful Rose Theme */}
-      <Card className="bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200 shadow-md hover:shadow-lg transition-shadow">
+      {/* Likes Card - Coral Pink Theme */}
+      <Card className="bg-gradient-to-br from-pink-50 to-pink-100 border-pink-300 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-rose-700 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-pink-800 flex items-center justify-between">
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-rose-200 rounded-full">
-                <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-rose-700 fill-current" />
+              <div className="p-1 sm:p-2 bg-pink-500 rounded-full">
+                <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-current" />
               </div>
               <span>Likes ❤️</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-rose-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-pink-800">
             {metrics.totalLikes >= 1000 ? (metrics.totalLikes / 1000).toFixed(0) + 'K' : metrics.totalLikes}
           </div>
         </CardContent>
       </Card>
 
-      {/* Total Posts Card - Beautiful Purple Theme */}
-      <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-md hover:shadow-lg transition-shadow">
+      {/* Total Posts Card - Ocean Teal Theme */}
+      <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-300 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-purple-700 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-teal-800 flex items-center justify-between">
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-purple-200 rounded-full">
-                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-purple-700" />
+              <div className="p-1 sm:p-2 bg-teal-500 rounded-full">
+                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
               <span>Posts 📝</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-800">
             {metrics.totalPosts >= 1000 ? (metrics.totalPosts / 1000).toFixed(1) + 'K' : metrics.totalPosts}
           </div>
         </CardContent>
       </Card>
 
-      {/* Shares Card - Beautiful Green Theme */}
-      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-md hover:shadow-lg transition-shadow">
+      {/* Shares Card - Emerald Green Theme */}
+      <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300 shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-green-700 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold text-emerald-800 flex items-center justify-between">
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-green-200 rounded-full">
-                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-700" />
+              <div className="p-1 sm:p-2 bg-emerald-500 rounded-full">
+                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
               <span>Shares 📤</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-green-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-emerald-800">
             {metrics.shares >= 1000 ? (metrics.shares / 1000).toFixed(1) + 'K' : metrics.shares}
           </div>
         </CardContent>
