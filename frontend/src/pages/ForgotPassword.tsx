@@ -20,7 +20,7 @@ const ForgotPassword: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await api.post('/api/auth/password-reset/', { 
+      await api.post('/auth/password-reset/', { 
         email,
         frontend_url: window.location.origin 
       });

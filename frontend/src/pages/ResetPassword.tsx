@@ -29,7 +29,7 @@ const ResetPassword: React.FC = () => {
       }
 
       try {
-        const response = await api.post('/api/auth/password-reset/verify/', { token });
+        const response = await api.post('/auth/password-reset/verify/', { token });
         setIsTokenValid(response.data.valid);
         setUserEmail(response.data.email || '');
       } catch (error) {
@@ -63,7 +63,7 @@ const ResetPassword: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await api.post('/api/auth/password-reset/confirm/', {
+      await api.post('/auth/password-reset/confirm/', {
         token,
         password,
         password_confirm: passwordConfirm
