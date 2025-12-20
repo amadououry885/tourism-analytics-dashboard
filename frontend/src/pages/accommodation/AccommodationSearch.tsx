@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Filter, MapPin, DollarSign, Star, Home, X, ChevronDown, Sparkles, TrendingUp } from 'lucide-react';
-import { StayCard } from '../../components/StayCard';
+import { Search, Filter, MapPin, DollarSign, Star, Home, X, ChevronDown, Sparkles, TrendingUp, Navigation, Share2, Clock, Users, Wifi, Car } from 'lucide-react';
+import { MasterDetailLayout } from '../../components/MasterDetailLayout';
+import { ListItem } from '../../components/ListItem';
+import { DetailPanel } from '../../components/DetailPanel';
 import { Stay, HybridSearchResponse } from '../../types/stay';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -66,9 +68,37 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
   const [showFilters, setShowFilters] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'local' | 'external'>('all');
+  const [selectedStay, setSelectedStay] = useState<Stay | null>(null);
 
   // Auto-suggestions
   const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  // Auto-select first stay
+  useEffect(() => {
+    if (filteredStays.length > 0 && !selectedStay) {
+      setSelectedStay(filteredStays[0]);
+    }
+  }, [filteredStays, selectedStay]);
+
+  const handleSelectStay = (stay: Stay) => {
+    setSelectedStay(stay);
+  };
+
+  const handleGetDirections = () => {
+    if (selectedStay) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedStay.name + ' ' + selectedStay.district)}`, '_blank');
+    }
+  };
+
+  const handleShare = () => {
+    if (selectedStay && navigator.share) {
+      navigator.share({
+        title: selectedStay.name,
+        text: `Check out ${selectedStay.name} in ${selectedStay.district}`,
+        url: window.location.href
+      }).catch(() => {});
+    }
+  };
 
   // Sync district filter when selectedCity changes
   useEffect(() => {
@@ -635,14 +665,180 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
               </div>
             </div>
 
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredStays.map((stay) => (
-                <div key={stay.id} className="transform transition-all hover:scale-105">
-                  <StayCard stay={stay} />
+            {/* Master-Detail Layout */}
+            <MasterDetailLayout
+              leftPanel={
+                <div className="bg-white">
+                  {filteredStays.map((stay, index) => (
+                    <ListItem
+                      key={stay.id || index}
+                      title={stay.name}
+                      subtitle={`${stay.district} • ${stay.type || 'Accommodation'}`}
+                      metrics={[
+                        { 
+                          label: 'Price', 
+                          value: `RM ${stay.price_per_night || 'N/A'}`,
+                          icon: <DollarSign className="w-3 h-3" />
+                        },
+                        { 
+                          label: 'Rating', 
+                          value: stay.rating ? `${stay.rating.toFixed(1)} ★` : 'N/A',
+                          icon: <Star className="w-3 h-3" />
+                        },
+                        { 
+                          label: 'Amenities', 
+                          value: stay.amenities?.length || 0,
+                          icon: <Wifi className="w-3 h-3" />
+                        }
+                      ]}
+                      badge={
+                        stay.is_internal ? (
+                          <Badge className="bg-green-100 text-green-700 border-green-300">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Local Partner
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                            External
+                          </Badge>
+                        )
+                      }
+                      isSelected={selectedStay?.id === stay.id}
+                      onClick={() => handleSelectStay(stay)}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              }
+              rightPanel={
+                selectedStay ? (
+                  <DetailPanel
+                    title={selectedStay.name}
+                    subtitle={`${selectedStay.district} • ${selectedStay.type || 'Accommodation'}`}
+                    image={selectedStay.image_url}
+                    actions={
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleGetDirections}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        >
+                          <Navigation className="w-5 h-5" />
+                          Get Directions
+                        </button>
+                        <button
+                          onClick={handleShare}
+                          className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          <Share2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    }
+                  >
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                        <DollarSign className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                        <div className="text-2xl font-bold text-green-900">RM {selectedStay.price_per_night || 'N/A'}</div>
+                        <div className="text-xs text-green-600 font-medium">Per Night</div>
+                      </div>
+                      <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600 fill-yellow-600" />
+                        <div className="text-2xl font-bold text-yellow-900">{selectedStay.rating?.toFixed(1) || 'N/A'}</div>
+                        <div className="text-xs text-yellow-600 font-medium">Rating</div>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                        <div className="text-2xl font-bold text-blue-900">{selectedStay.reviews || 0}</div>
+                        <div className="text-xs text-blue-600 font-medium">Reviews</div>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    {selectedStay.description && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
+                        <p className="text-gray-600 leading-relaxed">{selectedStay.description}</p>
+                      </div>
+                    )}
+
+                    {/* Source Badge */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Source</h3>
+                      {selectedStay.is_internal ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-300 text-sm px-4 py-2">
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          Local Partner - Verified by Tourism Kedah
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-sm px-4 py-2">
+                          External Source - {selectedStay.source || 'Third Party'}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Location */}
+                    {(selectedStay.district || selectedStay.landmark) && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Location</h3>
+                        <div className="space-y-2">
+                          {selectedStay.district && (
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <MapPin className="w-4 h-4" />
+                              <span>{selectedStay.district}</span>
+                            </div>
+                          )}
+                          {selectedStay.landmark && (
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Home className="w-4 h-4" />
+                              <span>Near {selectedStay.landmark}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Amenities */}
+                    {selectedStay.amenities && selectedStay.amenities.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Amenities</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {selectedStay.amenities.map((amenity, idx) => {
+                            const amenityInfo = AMENITIES.find(a => a.name === amenity);
+                            return (
+                              <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <span className="text-xl">{amenityInfo?.icon || '✓'}</span>
+                                <span className="text-sm font-medium text-gray-700">{amenity}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Contact Info */}
+                    {selectedStay.contact_phone && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact</h3>
+                        <a
+                          href={`tel:${selectedStay.contact_phone}`}
+                          className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium"
+                        >
+                          <Clock className="w-4 h-4" />
+                          {selectedStay.contact_phone}
+                        </a>
+                      </div>
+                    )}
+                  </DetailPanel>
+                ) : (
+                  <div className="h-full flex items-center justify-center p-8 text-center">
+                    <div>
+                      <Home className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">Select an accommodation</h3>
+                      <p className="text-gray-500">Choose a stay from the list to view details</p>
+                    </div>
+                  </div>
+                )
+              }
+            />
 
             {/* Show More / Pagination placeholder */}
             {filteredStays.length > 9 && (
