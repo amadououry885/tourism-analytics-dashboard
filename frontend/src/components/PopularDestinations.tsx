@@ -3,10 +3,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { MapPin, TrendingUp, TrendingDown, Filter, Search, SortAsc, SortDesc } from 'lucide-react';
+import { MapPin, TrendingUp, TrendingDown, Filter, Search, SortAsc, SortDesc, Star, MessageCircle, Navigation, Share2, DollarSign, Globe, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DestinationCard } from './DestinationCard';
-import { DestinationModal } from './DestinationModal';
+import { MasterDetailLayout } from './MasterDetailLayout';
+import { ListItem } from './ListItem';
+import { DetailPanel } from './DetailPanel';
 
 interface PopularDestinationsProps {
   timeRange?: string;
@@ -72,7 +73,6 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   const [sortBy, setSortBy] = useState<'popularity' | 'name' | 'rating'>('popularity');
   const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchDestinations = useCallback(async () => {
     setLoading(true);
@@ -331,139 +331,311 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   ).sort();
   const categories = ['All', ...uniqueCategories];
 
-  const handleViewDetails = (destination: Destination) => {
+  // Auto-select first destination when filtered list changes
+  useEffect(() => {
+    if (filteredDestinations.length > 0 && !selectedDestination) {
+      setSelectedDestination(filteredDestinations[0]);
+    }
+  }, [filteredDestinations]);
+
+  const handleSelectDestination = (destination: Destination) => {
     setSelectedDestination(destination);
-    setIsModalOpen(true);
+  };
+
+  const handleGetDirections = () => {
+    if (!selectedDestination) return;
+    if (selectedDestination.latitude && selectedDestination.longitude) {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedDestination.latitude},${selectedDestination.longitude}`, '_blank');
+    } else {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedDestination.name + ' ' + selectedDestination.city)}`, '_blank');
+    }
+  };
+
+  const handleShare = () => {
+    if (!selectedDestination) return;
+    if (navigator.share) {
+      navigator.share({
+        title: selectedDestination.name,
+        text: `Check out ${selectedDestination.name} in ${selectedDestination.city}!`,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Sidebar + Destinations Grid Layout */}
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem', alignItems: 'flex-start' }}>
-        {/* Sidebar Filters */}
-        <div style={{ width: '280px', flexShrink: 0 }} className="hidden lg:block">
-          <Card className="bg-gradient-to-b from-blue-50 to-purple-50 border-blue-200">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-gray-900 text-base flex items-center gap-2">
-                <Filter className="w-5 h-5 text-blue-600" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-2 space-y-4">
-              {/* Search Bar */}
-              <div>
-                <label className="text-xs font-medium text-gray-700 mb-1.5 block">Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search destinations..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
-                  />
-                </div>
+      {/* Filters Bar */}
+      <Card className="bg-white" style={{ border: '1px solid #E5E7EB' }}>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search destinations..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                />
               </div>
+            </div>
 
-              {/* Category Filter */}
-              <div>
-                <label className="text-xs font-medium text-gray-700 mb-2 block">Category</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {categories.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat || 'All')}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                        selectedCategory === cat
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sort Dropdown */}
-              <div>
-                <label className="text-xs font-medium text-gray-700 mb-1.5 block">Sort By</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat || 'All')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    selectedCategory === cat
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
                 >
-                  <option value="popularity">🔥 Popular</option>
-                  <option value="name">🔤 Name</option>
-                  <option value="rating">⭐ Rating</option>
-                </select>
-              </div>
+                  {cat}
+                </button>
+              ))}
+            </div>
 
-              {/* Free Only Toggle */}
-              <div>
-                <label className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="checkbox"
-                    checked={showFreeOnly}
-                    onChange={(e) => setShowFreeOnly(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">🎟️ Free Only</span>
-                </label>
-              </div>
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="popularity">🔥 Popular</option>
+              <option value="name">🔤 Name</option>
+              <option value="rating">⭐ Rating</option>
+            </select>
 
-              {/* Results Count */}
-              <div className="pt-2 border-t border-gray-200">
-                <div className="text-sm text-gray-600">
-                  Showing <span className="font-bold text-blue-600">{filteredDestinations.length}</span> of {topDestinations.length} destinations
+            {/* Free Only */}
+            <label className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={showFreeOnly}
+                onChange={(e) => setShowFreeOnly(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">🎟️ Free Only</span>
+            </label>
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-600 ml-auto">
+              <span className="font-bold text-blue-600">{filteredDestinations.length}</span> destinations
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Master-Detail Layout */}
+      <MasterDetailLayout
+        leftPanel={
+          <div className="bg-white">
+            {filteredDestinations.length === 0 ? (
+              <div className="p-8 text-center">
+                <MapPin className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-bold text-gray-700 mb-2">No destinations found</h3>
+                <p className="text-sm text-gray-500">Try adjusting your filters</p>
+              </div>
+            ) : (
+              filteredDestinations.map((destination, index) => (
+                <ListItem
+                  key={destination.id || index}
+                  title={destination.name}
+                  subtitle={`${destination.city || ''} ${destination.category ? '• ' + destination.category : ''}`}
+                  metrics={[
+                    { 
+                      label: 'Posts', 
+                      value: destination.posts || 0,
+                      icon: <MessageCircle className="w-3 h-3" />
+                    },
+                    { 
+                      label: 'Rating', 
+                      value: destination.rating ? `${destination.rating.toFixed(1)} ★` : 'N/A',
+                      icon: <Star className="w-3 h-3" />
+                    }
+                  ]}
+                  badge={
+                    destination.is_free && (
+                      <Badge className="bg-green-100 text-green-700 border-green-300">
+                        Free
+                      </Badge>
+                    )
+                  }
+                  isSelected={selectedDestination?.id === destination.id || selectedDestination?.name === destination.name}
+                  onClick={() => handleSelectDestination(destination)}
+                />
+              ))
+            )}
+          </div>
+        }
+        rightPanel={
+          selectedDestination ? (
+            <DetailPanel
+              title={selectedDestination.name}
+              subtitle={`${selectedDestination.city || 'Kedah'} • ${selectedDestination.category || 'Attraction'}`}
+              image={selectedDestination.image_url}
+              actions={
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleGetDirections}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <Navigation className="w-5 h-5" />
+                    Get Directions
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              }
+            >
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <MessageCircle className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <div className="text-2xl font-bold text-blue-900">{selectedDestination.posts || 0}</div>
+                  <div className="text-xs text-blue-600 font-medium">Posts</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <TrendingUp className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+                  <div className="text-2xl font-bold text-purple-900">{selectedDestination.engagement || 0}</div>
+                  <div className="text-xs text-purple-600 font-medium">Engagement</div>
+                </div>
+                <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600" />
+                  <div className="text-2xl font-bold text-yellow-900">{selectedDestination.rating?.toFixed(1) || 'N/A'}</div>
+                  <div className="text-xs text-yellow-600 font-medium">Rating</div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Destinations Grid */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Card className="bg-white shadow-lg" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              {filteredDestinations.length === 0 ? (
-                <div className="py-16">
-                  <div className="text-center" style={{ color: '#94A3B8' }}>
-                    <MapPin className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4" style={{ color: '#CBD5E1' }} />
-                    <h3 className="text-lg sm:text-xl font-bold mb-2" style={{ color: '#475569' }}>No destinations found</h3>
-                    <p className="text-sm sm:text-base">Try adjusting your filters or search term</p>
-                  </div>
-                </div>
-              ) : (
+              {/* Description */}
+              {selectedDestination.description && (
                 <div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                    {filteredDestinations.map((destination, index) => (
-                      <DestinationCard
-                        key={`${destination.name}-${index}`}
-                        destination={destination}
-                        rank={index + 1}
-                        isTrending={index < 3}
-                        isNew={index === filteredDestinations.length - 1}
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
+                  <p className="text-gray-600 leading-relaxed">{selectedDestination.description}</p>
+                </div>
+              )}
+
+              {/* Pricing */}
+              {(selectedDestination.is_free || selectedDestination.price) && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Pricing</h3>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    {selectedDestination.is_free ? (
+                      <span className="text-green-600 font-semibold">Free Entry</span>
+                    ) : (
+                      <span className="text-gray-700 font-semibold">
+                        {selectedDestination.currency || 'RM'} {selectedDestination.price}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
 
-      {/* Destination Detail Modal */}
-      <DestinationModal
-        key={selectedDestination?.id || 'modal'}
-        destination={selectedDestination}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+              {/* Contact Information */}
+              {(selectedDestination.contact_phone || selectedDestination.contact_email || selectedDestination.address) && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+                  <div className="space-y-2">
+                    {selectedDestination.contact_phone && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Phone className="w-4 h-4" />
+                        <span>{selectedDestination.contact_phone}</span>
+                      </div>
+                    )}
+                    {selectedDestination.contact_email && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Mail className="w-4 h-4" />
+                        <span>{selectedDestination.contact_email}</span>
+                      </div>
+                    )}
+                    {selectedDestination.address && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>{selectedDestination.address}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Opening Hours */}
+              {selectedDestination.opening_hours && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Opening Hours</h3>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Clock className="w-4 h-4" />
+                    <span>{selectedDestination.opening_hours}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* External Links */}
+              {(selectedDestination.wikipedia_url || selectedDestination.official_website || selectedDestination.tripadvisor_url) && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">External Links</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedDestination.official_website && (
+                      <a
+                        href={selectedDestination.official_website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                      >
+                        <Globe className="w-4 h-4" />
+                        Official Website
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    {selectedDestination.wikipedia_url && (
+                      <a
+                        href={selectedDestination.wikipedia_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                      >
+                        Wikipedia
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    {selectedDestination.tripadvisor_url && (
+                      <a
+                        href={selectedDestination.tripadvisor_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
+                      >
+                        TripAdvisor
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </DetailPanel>
+          ) : (
+            <div className="h-full flex items-center justify-center p-8 text-center">
+              <div>
+                <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Select a destination</h3>
+                <p className="text-gray-500">Choose a destination from the list to view details</p>
+              </div>
+            </div>
+          )
+        }
       />
 
-      {/* Post Distribution Pie Chart */}
+      {/* Top Destinations - Social Media Stats */}      {/* Post Distribution Pie Chart */}
       <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="p-3 sm:p-4 md:p-6">
           <CardTitle className="text-base sm:text-lg" style={{ color: '#0F172A' }}>Post Distribution</CardTitle>

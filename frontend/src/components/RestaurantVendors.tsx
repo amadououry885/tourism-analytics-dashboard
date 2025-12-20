@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { MapPin, Star, Users, Search, Heart, Clock, X } from 'lucide-react';
+import { MapPin, Star, Users, Search, Heart, Clock, X, Phone, Mail, ExternalLink, Navigation, Share2, DollarSign } from 'lucide-react';
 import { Input } from './ui/input';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { RestaurantModal } from './RestaurantModal';
+import { MasterDetailLayout } from './MasterDetailLayout';
+import { ListItem } from './ListItem';
+import { DetailPanel } from './DetailPanel';
 import demoData from '../data/restaurants.demo.json';
 
 // City name mappings for display
@@ -50,19 +52,35 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   const [sortBy, setSortBy] = useState('rating');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const handleRestaurantClick = (restaurant: Restaurant) => {
+  // Auto-select first restaurant
+  useEffect(() => {
+    if (restaurants.length > 0 && !selectedRestaurant) {
+      setSelectedRestaurant(restaurants[0]);
+    }
+  }, [restaurants, selectedRestaurant]);
+
+  const handleSelectRestaurant = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
-    setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedRestaurant(null);
+  const handleGetDirections = () => {
+    if (selectedRestaurant) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedRestaurant.name + ' ' + selectedRestaurant.city)}`, '_blank');
+    }
+  };
+
+  const handleShare = () => {
+    if (selectedRestaurant && navigator.share) {
+      navigator.share({
+        title: selectedRestaurant.name,
+        text: `Check out ${selectedRestaurant.name} - ${selectedRestaurant.specialty}`,
+        url: window.location.href
+      }).catch(() => {});
+    }
   };
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
@@ -177,275 +195,272 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   }
 
   return (
-    <div className="flex gap-6 h-full">
-      {/* LEFT SIDEBAR - Filters (Always visible) */}
-      <div className="w-72 xl:w-80 flex-shrink-0 overflow-y-auto pr-2">
-        <div className="space-y-6">
-          {/* Search Box */}
-          <div>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search restaurants..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 bg-white border-gray-300 text-gray-900"
-              />
+    <div className="space-y-6">
+      {/* Filters Bar */}
+      <Card className="bg-white" style={{ border: '1px solid #E5E7EB' }}>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search restaurants..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2">
+              {cuisineTypes.slice(0, 5).map(cuisine => (
+                <button
+                  key={cuisine}
+                  onClick={() => toggleCategory(cuisine)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    selectedCategories.includes(cuisine)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  {cuisine}
+                </button>
+              ))}
+            </div>
+
+            {/* Price Range */}
+            <select
+              value={selectedPriceRange}
+              onChange={(e) => setSelectedPriceRange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Prices</option>
+              <option value="$">$ Budget</option>
+              <option value="$$">$$ Moderate</option>
+              <option value="$$$">$$$ Expensive</option>
+            </select>
+
+            {/* Rating */}
+            <select
+              value={minRating}
+              onChange={(e) => setMinRating(Number(e.target.value))}
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="0">All Ratings</option>
+              <option value="4.5">⭐ 4.5+ Stars</option>
+              <option value="4">⭐ 4+ Stars</option>
+              <option value="3">⭐ 3+ Stars</option>
+            </select>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="rating">Highest Rated</option>
+              <option value="name">Name (A-Z)</option>
+              <option value="reviews">Most Reviews</option>
+              <option value="price_asc">Price (Low to High)</option>
+              <option value="price_desc">Price (High to Low)</option>
+            </select>
+
+            {/* Clear Filters */}
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedCuisine('all');
+                setSelectedPriceRange('all');
+                setMinRating(0);
+                setSelectedCategories([]);
+              }}
+              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            >
+              Clear
+            </button>
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-600 ml-auto">
+              <span className="font-bold text-blue-600">{sortedRestaurants.length}</span> restaurants
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Filters Card */}
-          <Card className="bg-white shadow-md" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
-            <CardContent className="p-6 space-y-6">
-              {/* Categories */}
-              <div>
-                <h3 className="font-semibold mb-3" style={{ color: '#0F172A' }}>Categories</h3>
-                <div className="space-y-2">
-                  {cuisineTypes.slice(0, 6).map(cuisine => (
-                    <label key={cuisine} className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(cuisine)}
-                        onChange={() => toggleCategory(cuisine)}
-                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+      {/* Master-Detail Layout */}
+      <MasterDetailLayout
+        leftPanel={
+          <div className="bg-white">
+            {sortedRestaurants.length === 0 ? (
+              <div className="p-8 text-center">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-bold text-gray-700 mb-2">No restaurants found</h3>
+                <p className="text-sm text-gray-500">Try adjusting your filters</p>
+              </div>
+            ) : (
+              sortedRestaurants.map((restaurant, index) => (
+                <ListItem
+                  key={restaurant.id || index}
+                  title={restaurant.name}
+                  subtitle={`${restaurant.cuisine} • ${cityNames[restaurant.city] || restaurant.city}`}
+                  metrics={[
+                    { 
+                      label: 'Rating', 
+                      value: `${restaurant.rating.toFixed(1)} ★`,
+                      icon: <Star className="w-3 h-3" />
+                    },
+                    { 
+                      label: 'Reviews', 
+                      value: restaurant.reviews || 0,
+                      icon: <Users className="w-3 h-3" />
+                    },
+                    { 
+                      label: 'Price', 
+                      value: restaurant.priceRange,
+                      icon: <DollarSign className="w-3 h-3" />
+                    }
+                  ]}
+                  badge={
+                    restaurant.isLive && (
+                      <Badge className="bg-green-100 text-green-700 border-green-300">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Open
+                      </Badge>
+                    )
+                  }
+                  rightContent={
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(restaurant.id, e);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <Heart 
+                        className={`w-4 h-4 ${favorites.has(restaurant.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
                       />
-                      <span className="text-sm group-hover:text-emerald-600 transition-colors" style={{ color: '#475569' }}>{cuisine}</span>
-                    </label>
-                  ))}
+                    </button>
+                  }
+                  isSelected={selectedRestaurant?.id === restaurant.id}
+                  onClick={() => handleSelectRestaurant(restaurant)}
+                />
+              ))
+            )}
+          </div>
+        }
+        rightPanel={
+          selectedRestaurant ? (
+            <DetailPanel
+              title={selectedRestaurant.name}
+              subtitle={`${selectedRestaurant.cuisine} • ${cityNames[selectedRestaurant.city] || selectedRestaurant.city}`}
+              image={selectedRestaurant.image}
+              actions={
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleGetDirections}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <Navigation className="w-5 h-5" />
+                    Get Directions
+                  </button>
+                  <button
+                    onClick={() => toggleFavorite(selectedRestaurant.id, {} as any)}
+                    className="px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <Heart 
+                      className={`w-5 h-5 ${favorites.has(selectedRestaurant.id) ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
+                    />
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              }
+            >
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600 fill-yellow-600" />
+                  <div className="text-2xl font-bold text-yellow-900">{selectedRestaurant.rating.toFixed(1)}</div>
+                  <div className="text-xs text-yellow-600 font-medium">Rating</div>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <div className="text-2xl font-bold text-blue-900">{selectedRestaurant.reviews || 0}</div>
+                  <div className="text-xs text-blue-600 font-medium">Reviews</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                  <DollarSign className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                  <div className="text-2xl font-bold text-green-900">{selectedRestaurant.priceRange}</div>
+                  <div className="text-xs text-green-600 font-medium">Price Range</div>
                 </div>
               </div>
 
-              <div className="pt-6" style={{ borderTop: '1px solid #E4E9F2' }}>
-                <h3 className="font-semibold mb-3" style={{ color: '#0F172A' }}>Filters</h3>
-                
-                {/* Price Range */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#475569' }}>Price Range</label>
-                  <select
-                    value={selectedPriceRange}
-                    onChange={(e) => setSelectedPriceRange(e.target.value)}
-                    className="w-full p-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    style={{ border: '1px solid #E4E9F2', color: '#0F172A' }}
-                  >
-                    <option value="all">All Prices</option>
-                    <option value="$">$ - Budget</option>
-                    <option value="$$">$$ - Moderate</option>
-                    <option value="$$$">$$$ - Expensive</option>
-                    <option value="$$$$">$$$$ - Fine Dining</option>
-                  </select>
-                </div>
-
-                {/* Rating Filter */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#475569' }}>Minimum Rating</label>
-                  <select
-                    value={minRating}
-                    onChange={(e) => setMinRating(Number(e.target.value))}
-                    className="w-full p-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    style={{ border: '1px solid #E4E9F2', color: '#0F172A' }}
-                  >
-                    <option value="0">All Ratings</option>
-                    <option value="4.5">⭐ 4.5+ Stars</option>
-                    <option value="4">⭐ 4+ Stars</option>
-                    <option value="3">⭐ 3+ Stars</option>
-                  </select>
-                </div>
-
-                {/* Amenities */}
+              {/* Specialty */}
+              {selectedRestaurant.specialty && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-                  <div className="space-y-2">
-                    {['WiFi', 'Parking', 'Halal', 'Delivery', 'Outdoor Seating'].map(amenity => (
-                      <label key={amenity} className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={selectedAmenities.includes(amenity)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedAmenities([...selectedAmenities, amenity]);
-                            } else {
-                              setSelectedAmenities(selectedAmenities.filter(a => a !== amenity));
-                            }
-                          }}
-                          className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                        />
-                        <span className="text-sm text-gray-700 group-hover:text-emerald-600 transition-colors">{amenity}</span>
-                      </label>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Specialty</h3>
+                  <p className="text-gray-600 leading-relaxed">{selectedRestaurant.specialty}</p>
+                </div>
+              )}
+
+              {/* Star Rating Display */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Rating Details</h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, index) => (
+                      <Star
+                        key={index}
+                        className={`h-5 w-5 ${
+                          index < Math.floor(selectedRestaurant.rating)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : index < selectedRestaurant.rating
+                            ? 'text-yellow-400 fill-yellow-200'
+                            : 'text-gray-300 fill-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-gray-600">
+                    {selectedRestaurant.rating.toFixed(1)} out of 5
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Based on {selectedRestaurant.reviews} reviews
+                </p>
+              </div>
+
+              {/* Badges */}
+              {selectedRestaurant.badges && selectedRestaurant.badges.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Features</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRestaurant.badges.map((badge, idx) => (
+                      <Badge key={idx} className="bg-blue-100 text-blue-700 border-blue-300">
+                        {badge}
+                      </Badge>
                     ))}
                   </div>
                 </div>
-              </div>
-
-              {/* Clear Filters */}
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCuisine('all');
-                  setSelectedPriceRange('all');
-                  setMinRating(0);
-                  setSelectedAmenities([]);
-                  setSelectedCategories([]);
-                }}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-              >
-                Clear All Filters
-              </button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* RIGHT CONTENT - Restaurant Grid */}
-      <div className="flex-1 min-w-0">
-        {/* Restaurant Card Container */}
-        <Card className="bg-white shadow-lg" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
-          <CardHeader className="pb-4" style={{ borderBottom: '1px solid #E4E9F2' }}>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-2xl font-bold" style={{ color: '#0F172A' }}>
-                  Restaurants {selectedCity !== 'all' && ` in ${cityNames[selectedCity]}`}
-                </CardTitle>
-                <p className="text-sm mt-1" style={{ color: '#475569' }}>
-                  {sortedRestaurants.length} restaurants found
-                </p>
-              </div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 bg-white rounded-lg focus:outline-none focus:ring-2"
-                style={{ border: '1px solid #E4E9F2', color: '#0F172A', focusRingColor: '#22C55E' }}
-              >
-                <option value="rating">Highest Rated</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="reviews">Most Reviews</option>
-                <option value="price_asc">Price (Low to High)</option>
-                <option value="price_desc">Price (High to Low)</option>
-              </select>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-6">
-            {/* Restaurant Grid */}
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
-                {sortedRestaurants.map((restaurant) => (
-                  <Card 
-                    key={restaurant.id} 
-                    className="bg-white shadow-md overflow-hidden hover:shadow-xl transition-all group relative rounded-lg"
-                    style={{ border: '1px solid #E4E9F2' }}
-                  >
-                    {/* Image Section */}
-                    <div className="h-48 relative overflow-hidden">
-                      <ImageWithFallback
-                        src={restaurant.image}
-                        alt={restaurant.name}
-                        width={400}
-                        height={192}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                        style={{ height: '100%', minHeight: '100%', maxHeight: '100%' }}
-                      />
-                      
-                      {/* Top Right - Favorite Button */}
-                      <button
-                        onClick={(e) => toggleFavorite(restaurant.id, e)}
-                        className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-md flex items-center justify-center hover:scale-110 transition-transform z-10"
-                      >
-                        <Heart 
-                          className={`h-4 w-4 ${favorites.has(restaurant.id) ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} 
-                        />
-                      </button>
-                    </div>
-
-                    {/* Content Section */}
-                    <CardContent className="p-4">
-                      <div className="space-y-2">
-                        {/* Restaurant Name & Status */}
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="text-base font-bold text-gray-900 line-clamp-1 flex-1">
-                            {restaurant.name}
-                          </h3>
-                          {/* Open/Closed Status */}
-                          {Math.random() > 0.3 ? (
-                            <span className="flex items-center gap-1 text-xs font-semibold text-green-600 whitespace-nowrap">
-                              <Clock className="h-3 w-3" />
-                              Open
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-xs font-semibold text-red-600 whitespace-nowrap">
-                              <Clock className="h-3 w-3" />
-                              Closed
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Cuisine Type */}
-                        <p className="text-sm text-gray-600">
-                          {restaurant.cuisine}
-                        </p>
-                        
-                        {/* Location */}
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5 text-gray-500" />
-                          <span className="text-xs text-gray-600">{cityNames[restaurant.city]}</span>
-                        </div>
-                        
-                        {/* Star Rating */}
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(5)].map((_, index) => (
-                            <Star
-                              key={index}
-                              className={`h-4 w-4 ${
-                                index < Math.floor(restaurant.rating)
-                                  ? 'text-yellow-400 fill-yellow-400'
-                                  : index < restaurant.rating
-                                  ? 'text-yellow-400 fill-yellow-200'
-                                  : 'text-gray-300 fill-gray-300'
-                              }`}
-                            />
-                          ))}
-                          <span className="ml-1 text-xs text-gray-600">
-                            {restaurant.reviews ? `${restaurant.reviews}` : ''}
-                          </span>
-                        </div>
-                        
-                        {/* Price */}
-                        <p className="text-lg font-bold text-gray-900">
-                          {restaurant.priceRange}
-                        </p>
-
-                        {/* View Menu Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRestaurantClick(restaurant);
-                          }}
-                          className="w-full mt-2 px-3 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
-                        >
-                          View Menu
-                        </button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* No results */}
-              {sortedRestaurants.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-gray-500">No restaurants found matching your criteria.</p>
-                </div>
               )}
+            </DetailPanel>
+          ) : (
+            <div className="h-full flex items-center justify-center p-8 text-center">
+              <div>
+                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Select a restaurant</h3>
+                <p className="text-gray-500">Choose a restaurant from the list to view details</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Restaurant Modal */}
-      <RestaurantModal 
-        restaurant={selectedRestaurant}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
+          )
+        }
       />
     </div>
   );
