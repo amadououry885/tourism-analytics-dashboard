@@ -233,12 +233,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
-    return <div className="text-gray-900">Loading events...</div>;
-  }
-
-  // Advanced filtering and sorting logic
-  
+  // Advanced filtering and sorting logic - MUST be before early return
   const filteredEvents = useMemo(() => {
     return events
       .filter(event => {
@@ -283,7 +278,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
             return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
         }
       });
-  }, [events, searchTerm, selectedCity, selectedEventType, dateFilter, sortBy]);
+  }, [events, searchTerm, selectedCity, selectedEventType, dateFilter, sortBy, now]);
 
   // Auto-select first event from filtered list
   useEffect(() => {
@@ -295,7 +290,11 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
     } else if (selectedEvent !== null) {
       setSelectedEvent(null);
     }
-  }, [filteredEvents]);
+  }, [filteredEvents, selectedEvent]);
+
+  if (loading) {
+    return <div className="text-gray-900">Loading events...</div>;
+  }
 
   // Get unique event types for filter
   const uniqueEventTypes = Array.from(

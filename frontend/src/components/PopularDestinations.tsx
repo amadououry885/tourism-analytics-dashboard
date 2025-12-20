@@ -239,6 +239,60 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     fetchTopDestinations();
   }, [selectedCity, timeRange]);
 
+  // Filtering and sorting logic - MUST be before early returns
+  const filteredDestinations = useMemo(() => {
+    return topDestinations
+      .filter(dest => {
+        // Search filter
+        if (searchTerm && !dest.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        // Category filter
+        if (selectedCategory !== 'All' && dest.category !== selectedCategory) {
+          return false;
+        }
+        // Free only filter
+        if (showFreeOnly && !dest.is_free) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'name':
+            return a.name.localeCompare(b.name);
+          case 'rating':
+            return (b.rating || 0) - (a.rating || 0);
+          case 'popularity':
+          default:
+            return (b.posts || 0) - (a.posts || 0);
+        }
+      });
+  }, [topDestinations, searchTerm, selectedCategory, showFreeOnly, sortBy]);
+
+  // Get unique categories (case-insensitive to avoid duplicates like "city" and "City")
+  const uniqueCategories = useMemo(() => Array.from(
+    new Set(
+      topDestinations
+        .map(d => d.category)
+        .filter(Boolean)
+        .map(cat => cat!.charAt(0).toUpperCase() + cat!.slice(1).toLowerCase())
+    )
+  ).sort(), [topDestinations]);
+  const categories = ['All', ...uniqueCategories];
+
+  // Auto-select first destination when filtered list changes
+  useEffect(() => {
+    if (filteredDestinations.length > 0) {
+      // Only set if no selection or current selection not in filtered list
+      if (!selectedDestination || !filteredDestinations.find(d => d.id === selectedDestination.id)) {
+        setSelectedDestination(filteredDestinations[0]);
+      }
+    } else if (selectedDestination !== null) {
+      setSelectedDestination(null);
+    }
+  }, [filteredDestinations, selectedDestination]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -290,60 +344,6 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       </div>
     );
   }
-
-  // Filtering and sorting logic
-  const filteredDestinations = useMemo(() => {
-    return topDestinations
-      .filter(dest => {
-        // Search filter
-        if (searchTerm && !dest.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-          return false;
-        }
-        // Category filter
-        if (selectedCategory !== 'All' && dest.category !== selectedCategory) {
-          return false;
-        }
-        // Free only filter
-        if (showFreeOnly && !dest.is_free) {
-          return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        switch (sortBy) {
-          case 'name':
-            return a.name.localeCompare(b.name);
-          case 'rating':
-            return (b.rating || 0) - (a.rating || 0);
-          case 'popularity':
-          default:
-            return (b.posts || 0) - (a.posts || 0);
-        }
-      });
-  }, [topDestinations, searchTerm, selectedCategory, showFreeOnly, sortBy]);
-
-  // Get unique categories (case-insensitive to avoid duplicates like "city" and "City")
-  const uniqueCategories = Array.from(
-    new Set(
-      topDestinations
-        .map(d => d.category)
-        .filter(Boolean)
-        .map(cat => cat!.charAt(0).toUpperCase() + cat!.slice(1).toLowerCase())
-    )
-  ).sort();
-  const categories = ['All', ...uniqueCategories];
-
-  // Auto-select first destination when filtered list changes
-  useEffect(() => {
-    if (filteredDestinations.length > 0) {
-      // Only set if no selection or current selection not in filtered list
-      if (!selectedDestination || !filteredDestinations.find(d => d.id === selectedDestination.id)) {
-        setSelectedDestination(filteredDestinations[0]);
-      }
-    } else if (selectedDestination !== null) {
-      setSelectedDestination(null);
-    }
-  }, [filteredDestinations]);
 
   const handleSelectDestination = (destination: Destination) => {
     setSelectedDestination(destination);
