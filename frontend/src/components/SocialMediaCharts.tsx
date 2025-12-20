@@ -20,11 +20,11 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, trend, icon, color }) => (
-  <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+  <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
     <CardContent className="pt-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-sm font-medium" style={{ color: '#475569' }}>{title}</p>
           <p className={`text-2xl font-bold mt-2 ${color}`}>{value}</p>
           {change && (
             <p className={`text-xs mt-1 flex items-center gap-1 ${
@@ -155,7 +155,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
   if (loading) {
     return (
       <div className="space-y-6">
-        <Card className="bg-gray-50 border-gray-200 animate-pulse">
+        <Card className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2' }}>
           <CardHeader>
             <div className="h-6 bg-gray-300 rounded w-1/3"></div>
           </CardHeader>
@@ -205,13 +205,13 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Main Engagement Chart */}
-      <Card className="bg-white border-gray-200 shadow-sm">
+      <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="p-3 sm:p-4 md:p-6">
-          <CardTitle className="text-gray-900 flex items-center gap-2 text-base sm:text-lg">
-            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg" style={{ color: '#0F172A' }}>
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: '#2563EB' }} />
             Engagement Trends
           </CardTitle>
-          <CardDescription className="text-gray-600 text-xs sm:text-sm">
+          <CardDescription className="text-xs sm:text-sm" style={{ color: '#475569' }}>
             Track how tourists interact on social media
           </CardDescription>
         </CardHeader>
@@ -232,7 +232,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#EAEFF6" />
               <XAxis 
                 dataKey="date" 
                 stroke="#6b7280"
@@ -265,7 +265,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
                 type="monotone" 
                 dataKey="likes" 
                 stroke="#ec4899" 
-                strokeWidth={2}
+                strokeWidth={2.5}
                 dot={{ fill: '#ec4899', r: 2 }}
                 activeDot={{ r: 4 }}
                 fill="url(#colorLikes)"
@@ -274,7 +274,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
                 type="monotone" 
                 dataKey="comments" 
                 stroke="#3b82f6" 
-                strokeWidth={2}
+                strokeWidth={2.5}
                 dot={{ fill: '#3b82f6', r: 2 }}
                 activeDot={{ r: 4 }}
                 fill="url(#colorComments)"
@@ -282,9 +282,9 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
               <Line 
                 type="monotone" 
                 dataKey="shares" 
-                stroke="#10b981" 
-                strokeWidth={2}
-                dot={{ fill: '#10b981', r: 2 }}
+                stroke="#22c55e" 
+                strokeWidth={2.5}
+                dot={{ fill: '#22c55e', r: 2 }}
                 activeDot={{ r: 4 }}
                 fill="url(#colorShares)"
               />

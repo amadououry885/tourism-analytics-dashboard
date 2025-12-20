@@ -243,9 +243,9 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white border-gray-200 shadow-sm">
+          <Card className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
             <CardContent className="p-6">
-              <div className="animate-pulse space-y-4">
+              <div className="space-y-4">
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 <div className="space-y-2">
                   <div className="h-3 bg-gray-200 rounded"></div>
@@ -254,9 +254,9 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white border-gray-200 shadow-sm">
+          <Card className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
             <CardContent className="p-6">
-              <div className="animate-pulse">
+              <div>
                 <div className="w-full h-64 bg-gray-200 rounded"></div>
               </div>
             </CardContent>
@@ -424,13 +424,13 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         {/* Destinations Grid */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <Card className="bg-white border-gray-200 shadow-lg">
+          <Card className="bg-white shadow-lg" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
             <CardContent className="p-3 sm:p-4 md:p-6">
               {filteredDestinations.length === 0 ? (
                 <div className="py-16">
-                  <div className="text-center text-gray-500">
-                    <MapPin className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-2">No destinations found</h3>
+                  <div className="text-center" style={{ color: '#94A3B8' }}>
+                    <MapPin className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4" style={{ color: '#CBD5E1' }} />
+                    <h3 className="text-lg sm:text-xl font-bold mb-2" style={{ color: '#475569' }}>No destinations found</h3>
                     <p className="text-sm sm:text-base">Try adjusting your filters or search term</p>
                   </div>
                 </div>
@@ -464,10 +464,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       />
 
       {/* Post Distribution Pie Chart */}
-      <Card className="bg-white border-gray-200 shadow-sm">
+      <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="p-3 sm:p-4 md:p-6">
-          <CardTitle className="text-gray-900 text-base sm:text-lg">Post Distribution</CardTitle>
-          <CardDescription className="text-gray-900 text-xs sm:text-sm">Social engagement breakdown by destination</CardDescription>
+          <CardTitle className="text-base sm:text-lg" style={{ color: '#0F172A' }}>Post Distribution</CardTitle>
+          <CardDescription className="text-xs sm:text-sm" style={{ color: '#475569' }}>Social engagement breakdown by destination</CardDescription>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">

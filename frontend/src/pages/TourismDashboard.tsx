@@ -33,7 +33,7 @@ export default function TourismDashboard() {
   }, [searchParams]);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-slate-100">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#F7F9FC' }}>
       {/* Header - Fixed */}
       <header className="flex-shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg z-50">
         {/* Top bar: Logo + Nav + Filters */}
@@ -76,7 +76,7 @@ export default function TourismDashboard() {
           </div>
         </div>
         
-        {/* Tabs Navigation - BIGGER */}
+        {/* Tabs Navigation - Professional */}
         <div className="w-full bg-white border-t border-slate-200 pb-2">
           <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-3">
             <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
@@ -91,11 +91,18 @@ export default function TourismDashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-full border px-4 sm:px-5 md:px-8 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base md:text-lg font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                  className={`px-4 sm:px-5 md:px-8 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base md:text-lg font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id
-                      ? 'bg-blue-700 text-white border-blue-700 shadow-lg'
-                      : 'border-slate-300 bg-white text-slate-700 hover:border-teal-500 hover:bg-slate-50'
+                      ? 'text-white border-none shadow-sm'
+                      : 'bg-transparent border-none hover:text-slate-900'
                   }`}
+                  style={activeTab === tab.id ? {
+                    backgroundColor: '#2563EB',
+                    borderRadius: '10px'
+                  } : {
+                    backgroundColor: 'transparent',
+                    color: '#64748B'
+                  }}
                 >
                   {tab.label}
                 </button>

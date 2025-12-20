@@ -59,7 +59,7 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
 
   if (loading) {
     return (
-      <Card className="bg-gray-50 border-gray-200 animate-pulse">
+      <Card className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2' }}>
         <CardHeader>
           <div className="h-6 bg-gray-200 rounded w-48"></div>
         </CardHeader>
@@ -89,21 +89,21 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
 
   return (
     <>
-      <Card className="bg-white border-gray-200 shadow-sm">
+      <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader>
-          <CardTitle className="text-gray-900">Sentiment Analysis</CardTitle>
-          <CardDescription className="text-gray-900">Overall visitor sentiment from social media</CardDescription>
+          <CardTitle style={{ color: '#0F172A' }}>Sentiment Analysis</CardTitle>
+          <CardDescription style={{ color: '#475569' }}>Overall visitor sentiment from social media</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-3 mb-4">
             {sentimentData.map((item) => {
               const Icon = item.name === 'Positive' ? Smile : item.name === 'Neutral' ? Meh : Frown;
               return (
-                <div key={item.name} className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div key={item.name} className="text-center p-3 rounded-lg" style={{ backgroundColor: '#F7F9FC', border: '1px solid #E4E9F2' }}>
                   <Icon className="w-6 h-6 mx-auto mb-1" style={{ color: item.color }} />
-                  <p className="text-xl font-bold text-gray-900 mb-0.5">{item.value}%</p>
-                  <p className="text-xs text-gray-600">{item.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{item.count.toLocaleString()}</p>
+                  <p className="text-xl font-bold mb-0.5" style={{ color: '#0F172A' }}>{item.value}%</p>
+                  <p className="text-xs" style={{ color: '#475569' }}>{item.name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{item.count.toLocaleString()}</p>
                 </div>
               );
             })}
@@ -140,15 +140,15 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
 
       {detailed && (
         <>
-          <Card className="bg-white border-gray-200 shadow-sm">
+          <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
             <CardHeader>
-              <CardTitle className="text-gray-900">Sentiment by Category</CardTitle>
-              <CardDescription className="text-gray-900">Breakdown across different tourism aspects</CardDescription>
+              <CardTitle style={{ color: '#0F172A' }}>Sentiment by Category</CardTitle>
+              <CardDescription style={{ color: '#475569' }}>Breakdown across different tourism aspects</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={categorysentiment}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#EAEFF6" opacity={0.3} />
                   <XAxis dataKey="category" stroke="#6b7280" />
                   <YAxis stroke="#6b7280" />
                   <Tooltip 
@@ -168,21 +168,21 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-gray-200 shadow-sm">
+          <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
             <CardHeader>
-              <CardTitle className="text-gray-900">Top Keywords & Phrases</CardTitle>
-              <CardDescription className="text-gray-900">Most mentioned terms in reviews and posts</CardDescription>
+              <CardTitle style={{ color: '#0F172A' }}>Top Keywords & Phrases</CardTitle>
+              <CardDescription style={{ color: '#475569' }}>Most mentioned terms in reviews and posts</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {topKeywords.map((keyword) => (
-                  <div key={keyword.word} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div key={keyword.word} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#F7F9FC', border: '1px solid #E4E9F2' }}>
                     <div className="flex items-center gap-3">
-                      <MessageSquare className="w-4 h-4 text-gray-900" />
-                      <span className="text-gray-900">{keyword.word}</span>
+                      <MessageSquare className="w-4 h-4" style={{ color: '#0F172A' }} />
+                      <span style={{ color: '#0F172A' }}>{keyword.word}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-900">{keyword.count.toLocaleString()} mentions</span>
+                      <span style={{ color: '#0F172A' }}>{keyword.count.toLocaleString()} mentions</span>
                       <Badge className={
                         keyword.sentiment === 'positive' 
                           ? 'bg-green-500/20 text-green-700 border-green-500/30'

@@ -113,15 +113,15 @@ export function AccommodationStats({ selectedCity, timeRange }: AccommodationSta
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
       {/* Accommodation Overview Chart */}
-      <Card className="lg:col-span-2 bg-white border-gray-200 shadow-sm">
+      <Card className="lg:col-span-2 bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="p-3 sm:p-4 md:p-6">
-          <CardTitle className="text-gray-900 text-base sm:text-lg">Accommodation Statistics</CardTitle>
-          <CardDescription className="text-gray-900 text-xs sm:text-sm">Occupancy rates and average ratings by type</CardDescription>
+          <CardTitle className="text-base sm:text-lg" style={{ color: '#0F172A' }}>Accommodation Statistics</CardTitle>
+          <CardDescription className="text-xs sm:text-sm" style={{ color: '#475569' }}>Occupancy rates and average ratings by type</CardDescription>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           <ResponsiveContainer width="100%" height={200} className="sm:h-[250px] md:h-[300px]">
             <BarChart data={accommodationData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#EAEFF6" opacity={0.3} />
               <XAxis dataKey="type" stroke="#6b7280" tick={{ fontSize: 10 }} />
               <YAxis stroke="#6b7280" tick={{ fontSize: 10 }} />
               <Tooltip 
@@ -141,10 +141,10 @@ export function AccommodationStats({ selectedCity, timeRange }: AccommodationSta
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mt-4 sm:mt-6">
             {accommodationData.map((item) => (
-              <div key={item.type} className="text-center p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-xs sm:text-sm text-gray-900 mb-1 truncate">{item.type}</p>
-                <p className="text-xs sm:text-sm text-gray-700 mb-1">RM {item.avgPrice}</p>
-                <div className="flex items-center justify-center gap-1 text-[10px] sm:text-xs text-yellow-700">
+              <div key={item.type} className="text-center p-2 sm:p-3 rounded-lg" style={{ backgroundColor: '#F7F9FC', border: '1px solid #E4E9F2' }}>
+                <p className="text-xs sm:text-sm mb-1 truncate" style={{ color: '#0F172A' }}>{item.type}</p>
+                <p className="text-xs sm:text-sm mb-1" style={{ color: '#475569' }}>RM {item.avgPrice}</p>
+                <div className="flex items-center justify-center gap-1 text-[10px] sm:text-xs" style={{ color: '#F59E0B' }}>
                   <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-yellow-400" />
                   <span>{item.avgRating}</span>
                 </div>
@@ -155,23 +155,23 @@ export function AccommodationStats({ selectedCity, timeRange }: AccommodationSta
       </Card>
 
       {/* Top Rated Stays */}
-      <Card className="bg-white border-gray-200 shadow-sm">
+      <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="p-3 sm:p-4 md:p-6">
-          <CardTitle className="text-gray-900 text-base sm:text-lg">Top Rated Stays</CardTitle>
-          <CardDescription className="text-gray-900 text-xs sm:text-sm">Most popular accommodations</CardDescription>
+          <CardTitle className="text-base sm:text-lg" style={{ color: '#0F172A' }}>Top Rated Stays</CardTitle>
+          <CardDescription className="text-xs sm:text-sm" style={{ color: '#475569' }}>Most popular accommodations</CardDescription>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
           <div className="space-y-2 sm:space-y-3">
             {topStays.slice(0, 5).map((stay, index) => (
-              <div key={stay.name} className="p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div key={stay.name} className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: '#F7F9FC', border: '1px solid #E4E9F2' }}>
                 <div className="flex items-start gap-2 sm:gap-3">
-                  <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-blue-500/20 text-gray-900 flex-shrink-0 text-xs sm:text-sm">
+                  <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm flex-shrink-0" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)', color: '#0F172A' }}>
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h5 className="text-gray-700 text-xs sm:text-sm mb-1 truncate">{stay.name}</h5>
+                    <h5 className="text-xs sm:text-sm mb-1 truncate" style={{ color: '#475569' }}>{stay.name}</h5>
                     <div className="flex items-center gap-1 sm:gap-2 mb-1">
-                      <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-yellow-700">
+                      <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs" style={{ color: '#F59E0B' }}>
                         <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-yellow-400" />
                         <span>{stay.rating}</span>
                       </div>

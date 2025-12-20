@@ -126,12 +126,12 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
 
   return (
     <div className="mobile-grid-2">
-      {/* Comments Card - Ocean Blue Theme */}
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 shadow-md hover:shadow-lg transition-shadow">
+      {/* Comments Card - Professional White Design */}
+      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-blue-800 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-blue-500 rounded-full">
+              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#3B82F6' }}>
                 <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
               <span>Comments 💬</span>
@@ -139,18 +139,18 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
             {metrics.totalComments >= 1000 ? (metrics.totalComments / 1000).toFixed(1) + 'K' : metrics.totalComments}
           </div>
         </CardContent>
       </Card>
 
-      {/* Likes Card - Coral Pink Theme */}
-      <Card className="bg-gradient-to-br from-pink-50 to-pink-100 border-pink-300 shadow-md hover:shadow-lg transition-shadow">
+      {/* Likes Card - Professional White Design */}
+      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-pink-800 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-pink-500 rounded-full">
+              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#EC4899' }}>
                 <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-current" />
               </div>
               <span>Likes ❤️</span>
@@ -158,18 +158,18 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-pink-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
             {metrics.totalLikes >= 1000 ? (metrics.totalLikes / 1000).toFixed(0) + 'K' : metrics.totalLikes}
           </div>
         </CardContent>
       </Card>
 
-      {/* Total Posts Card - Ocean Teal Theme */}
-      <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-300 shadow-md hover:shadow-lg transition-shadow">
+      {/* Total Posts Card - Professional White Design */}
+      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-teal-800 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-teal-500 rounded-full">
+              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#14B8A6' }}>
                 <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
               <span>Posts 📝</span>
@@ -177,18 +177,18 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-teal-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
             {metrics.totalPosts >= 1000 ? (metrics.totalPosts / 1000).toFixed(1) + 'K' : metrics.totalPosts}
           </div>
         </CardContent>
       </Card>
 
-      {/* Shares Card - Emerald Green Theme */}
-      <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300 shadow-md hover:shadow-lg transition-shadow">
+      {/* Shares Card - Professional White Design */}
+      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-emerald-800 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-emerald-500 rounded-full">
+              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#22C55E' }}>
                 <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
               <span>Shares 📤</span>
@@ -196,26 +196,26 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-emerald-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
             {metrics.shares >= 1000 ? (metrics.shares / 1000).toFixed(1) + 'K' : metrics.shares}
           </div>
         </CardContent>
       </Card>
 
-      {/* Page Views Card - Beautiful Orange Theme - Full width on mobile */}
-      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-md hover:shadow-lg transition-shadow col-span-2 sm:col-span-1">
+      {/* Page Views Card - Professional White Design - Full width on mobile */}
+      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 col-span-2 sm:col-span-1" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold text-orange-700 flex items-center justify-between">
+          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
             <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 bg-orange-200 rounded-full">
-                <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-orange-700" />
+              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#F59E0B' }}>
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
               <span>Views 👁️</span>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-800">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
             {metrics.pageViews >= 1000000 ? (metrics.pageViews / 1000000).toFixed(1) + 'M' : 
              metrics.pageViews >= 1000 ? (metrics.pageViews / 1000).toFixed(1) + 'K' : metrics.pageViews}
           </div>

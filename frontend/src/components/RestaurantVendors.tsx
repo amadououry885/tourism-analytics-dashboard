@@ -196,11 +196,11 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
           </div>
 
           {/* Filters Card */}
-          <Card className="bg-white shadow-md border-gray-200">
+          <Card className="bg-white shadow-md" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
             <CardContent className="p-6 space-y-6">
               {/* Categories */}
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Categories</h3>
+                <h3 className="font-semibold mb-3" style={{ color: '#0F172A' }}>Categories</h3>
                 <div className="space-y-2">
                   {cuisineTypes.slice(0, 6).map(cuisine => (
                     <label key={cuisine} className="flex items-center gap-2 cursor-pointer group">
@@ -210,22 +210,23 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                         onChange={() => toggleCategory(cuisine)}
                         className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                       />
-                      <span className="text-sm text-gray-700 group-hover:text-emerald-600 transition-colors">{cuisine}</span>
+                      <span className="text-sm group-hover:text-emerald-600 transition-colors" style={{ color: '#475569' }}>{cuisine}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Filters</h3>
+              <div className="pt-6" style={{ borderTop: '1px solid #E4E9F2' }}>
+                <h3 className="font-semibold mb-3" style={{ color: '#0F172A' }}>Filters</h3>
                 
                 {/* Price Range */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#475569' }}>Price Range</label>
                   <select
                     value={selectedPriceRange}
                     onChange={(e) => setSelectedPriceRange(e.target.value)}
-                    className="w-full p-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ border: '1px solid #E4E9F2', color: '#0F172A' }}
                   >
                     <option value="all">All Prices</option>
                     <option value="$">$ - Budget</option>
@@ -237,11 +238,12 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
 
                 {/* Rating Filter */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#475569' }}>Minimum Rating</label>
                   <select
                     value={minRating}
                     onChange={(e) => setMinRating(Number(e.target.value))}
-                    className="w-full p-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ border: '1px solid #E4E9F2', color: '#0F172A' }}
                   >
                     <option value="0">All Ratings</option>
                     <option value="4.5">⭐ 4.5+ Stars</option>
@@ -297,21 +299,22 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       {/* RIGHT CONTENT - Restaurant Grid */}
       <div className="flex-1 min-w-0">
         {/* Restaurant Card Container */}
-        <Card className="bg-white shadow-lg border-gray-200">
-          <CardHeader className="border-b border-gray-200 pb-4">
+        <Card className="bg-white shadow-lg" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+          <CardHeader className="pb-4" style={{ borderBottom: '1px solid #E4E9F2' }}>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle className="text-2xl font-bold text-gray-900">
+                <CardTitle className="text-2xl font-bold" style={{ color: '#0F172A' }}>
                   Restaurants {selectedCity !== 'all' && ` in ${cityNames[selectedCity]}`}
                 </CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm mt-1" style={{ color: '#475569' }}>
                   {sortedRestaurants.length} restaurants found
                 </p>
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="px-4 py-2 bg-white rounded-lg focus:outline-none focus:ring-2"
+                style={{ border: '1px solid #E4E9F2', color: '#0F172A', focusRingColor: '#22C55E' }}
               >
                 <option value="rating">Highest Rated</option>
                 <option value="name">Name (A-Z)</option>
@@ -329,7 +332,8 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                 {sortedRestaurants.map((restaurant) => (
                   <Card 
                     key={restaurant.id} 
-                    className="bg-white border-gray-200 shadow-md overflow-hidden hover:shadow-xl transition-all group relative rounded-lg"
+                    className="bg-white shadow-md overflow-hidden hover:shadow-xl transition-all group relative rounded-lg"
+                    style={{ border: '1px solid #E4E9F2' }}
                   >
                     {/* Image Section */}
                     <div className="h-48 relative overflow-hidden">
