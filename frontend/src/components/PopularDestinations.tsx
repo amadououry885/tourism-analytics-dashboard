@@ -1,5 +1,5 @@
 // Cache bust: Fri Dec 13 2025
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -292,33 +292,35 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   }
 
   // Filtering and sorting logic
-  const filteredDestinations = topDestinations
-    .filter(dest => {
-      // Search filter
-      if (searchTerm && !dest.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      // Category filter
-      if (selectedCategory !== 'All' && dest.category !== selectedCategory) {
-        return false;
-      }
-      // Free only filter
-      if (showFreeOnly && !dest.is_free) {
-        return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'rating':
-          return (b.rating || 0) - (a.rating || 0);
-        case 'popularity':
-        default:
-          return (b.posts || 0) - (a.posts || 0);
-      }
-    });
+  const filteredDestinations = useMemo(() => {
+    return topDestinations
+      .filter(dest => {
+        // Search filter
+        if (searchTerm && !dest.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        // Category filter
+        if (selectedCategory !== 'All' && dest.category !== selectedCategory) {
+          return false;
+        }
+        // Free only filter
+        if (showFreeOnly && !dest.is_free) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'name':
+            return a.name.localeCompare(b.name);
+          case 'rating':
+            return (b.rating || 0) - (a.rating || 0);
+          case 'popularity':
+          default:
+            return (b.posts || 0) - (a.posts || 0);
+        }
+      });
+  }, [topDestinations, searchTerm, selectedCategory, showFreeOnly, sortBy]);
 
   // Get unique categories (case-insensitive to avoid duplicates like "city" and "City")
   const uniqueCategories = Array.from(

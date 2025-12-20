@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -147,39 +147,43 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   }, [selectedCity]);
 
   // Filter and search logic
-  const filteredRestaurants = restaurants.filter((restaurant) => {
-    const matchesSearch = restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      restaurant.specialty.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCuisine = selectedCuisine === 'all' || restaurant.cuisine === selectedCuisine;
-    
-    const matchesCity = selectedCity === 'all' || restaurant.city === selectedCity;
-    
-    const matchesPriceRange = selectedPriceRange === 'all' || restaurant.priceRange === selectedPriceRange;
-    
-    const matchesRating = restaurant.rating >= minRating;
-    
-    return matchesSearch && matchesCuisine && matchesCity && matchesPriceRange && matchesRating;
-  });
+  const filteredRestaurants = useMemo(() => {
+    return restaurants.filter((restaurant) => {
+      const matchesSearch = restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        restaurant.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCuisine = selectedCuisine === 'all' || restaurant.cuisine === selectedCuisine;
+      
+      const matchesCity = selectedCity === 'all' || restaurant.city === selectedCity;
+      
+      const matchesPriceRange = selectedPriceRange === 'all' || restaurant.priceRange === selectedPriceRange;
+      
+      const matchesRating = restaurant.rating >= minRating;
+      
+      return matchesSearch && matchesCuisine && matchesCity && matchesPriceRange && matchesRating;
+    });
+  }, [restaurants, searchQuery, selectedCuisine, selectedCity, selectedPriceRange, minRating]);
 
   // Sort restaurants
-  const sortedRestaurants = [...filteredRestaurants].sort((a, b) => {
-    switch (sortBy) {
-      case 'rating':
-        return b.rating - a.rating;
-      case 'price_asc':
-        return a.priceRange.length - b.priceRange.length;
-      case 'price_desc':
-        return b.priceRange.length - a.priceRange.length;
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'reviews':
-        return b.reviews - a.reviews;
-      default:
-        return 0;
-    }
-  });
+  const sortedRestaurants = useMemo(() => {
+    return [...filteredRestaurants].sort((a, b) => {
+      switch (sortBy) {
+        case 'rating':
+          return b.rating - a.rating;
+        case 'price_asc':
+          return a.priceRange.length - b.priceRange.length;
+        case 'price_desc':
+          return b.priceRange.length - a.priceRange.length;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'reviews':
+          return b.reviews - a.reviews;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredRestaurants, sortBy]);
 
   // Get unique cuisines for the filter
   const cuisineTypes = Array.from(new Set(restaurants.map(r => r.cuisine)));

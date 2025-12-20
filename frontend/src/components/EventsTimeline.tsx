@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api'; // Use configured API instance instead of raw axios
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -244,49 +244,51 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   // Advanced filtering and sorting logic
   const now = new Date();
   
-  const filteredEvents = events
-    .filter(event => {
-      // Search filter
-      if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !event.description.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !(event.location_name || '').toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      // City filter
-      if (selectedCity !== 'all' && event.city !== selectedCity) {
-        return false;
-      }
-      
-      // Event type filter
-      if (selectedEventType !== 'all' && !event.tags.some(tag => tag.toLowerCase() === selectedEventType.toLowerCase())) {
-        return false;
-      }
-      
-      // Date filter
-      const eventDate = new Date(event.start_date);
-      if (dateFilter === 'upcoming' && eventDate <= now) {
-        return false;
-      }
-      if (dateFilter === 'past' && eventDate > now) {
-        return false;
-      }
-      
-      return true;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.title.localeCompare(b.title);
-        case 'attendance':
-          const aAttendance = a.actual_attendance || a.expected_attendance || 0;
-          const bAttendance = b.actual_attendance || b.expected_attendance || 0;
-          return bAttendance - aAttendance;
-        case 'date':
-        default:
-          return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
-      }
-    });
+  const filteredEvents = useMemo(() => {
+    return events
+      .filter(event => {
+        // Search filter
+        if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            !event.description.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            !(event.location_name || '').toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        
+        // City filter
+        if (selectedCity !== 'all' && event.city !== selectedCity) {
+          return false;
+        }
+        
+        // Event type filter
+        if (selectedEventType !== 'all' && !event.tags.some(tag => tag.toLowerCase() === selectedEventType.toLowerCase())) {
+          return false;
+        }
+        
+        // Date filter
+        const eventDate = new Date(event.start_date);
+        if (dateFilter === 'upcoming' && eventDate <= now) {
+          return false;
+        }
+        if (dateFilter === 'past' && eventDate > now) {
+          return false;
+        }
+        
+        return true;
+      })
+      .sort((a, b) => {
+        switch (sortBy) {
+          case 'name':
+            return a.title.localeCompare(b.title);
+          case 'attendance':
+            const aAttendance = a.actual_attendance || a.expected_attendance || 0;
+            const bAttendance = b.actual_attendance || b.expected_attendance || 0;
+            return bAttendance - aAttendance;
+          case 'date':
+          default:
+            return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+        }
+      });
+  }, [events, searchTerm, selectedCity, selectedEventType, dateFilter, sortBy]);
 
   // Get unique event types for filter
   const uniqueEventTypes = Array.from(
