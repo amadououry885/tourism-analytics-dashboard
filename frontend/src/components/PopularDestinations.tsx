@@ -335,12 +335,15 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
   // Auto-select first destination when filtered list changes
   useEffect(() => {
-    if (filteredDestinations.length > 0 && !selectedDestination) {
-      setSelectedDestination(filteredDestinations[0]);
-    } else if (filteredDestinations.length === 0 && selectedDestination !== null) {
+    if (filteredDestinations.length > 0) {
+      // Only set if no selection or current selection not in filtered list
+      if (!selectedDestination || !filteredDestinations.find(d => d.id === selectedDestination.id)) {
+        setSelectedDestination(filteredDestinations[0]);
+      }
+    } else if (selectedDestination !== null) {
       setSelectedDestination(null);
     }
-  }, [filteredDestinations, selectedDestination]);
+  }, [filteredDestinations]);
 
   const handleSelectDestination = (destination: Destination) => {
     setSelectedDestination(destination);

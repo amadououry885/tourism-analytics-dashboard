@@ -135,12 +135,15 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
 
   // Auto-select first event from filtered list
   useEffect(() => {
-    if (filteredEvents.length > 0 && !selectedEvent) {
-      setSelectedEvent(filteredEvents[0]);
-    } else if (filteredEvents.length === 0 && selectedEvent !== null) {
+    if (filteredEvents.length > 0) {
+      // Only set if no selection or current selection not in filtered list
+      if (!selectedEvent || !filteredEvents.find(e => e.id === selectedEvent.id)) {
+        setSelectedEvent(filteredEvents[0]);
+      }
+    } else if (selectedEvent !== null) {
       setSelectedEvent(null);
     }
-  }, [filteredEvents, selectedEvent]);
+  }, [filteredEvents]);
 
   const handleSelectEvent = (event: Event) => {
     setSelectedEvent(event);
