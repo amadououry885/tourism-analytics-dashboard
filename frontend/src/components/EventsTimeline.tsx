@@ -696,7 +696,6 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
           )
         }
       />
-      />
 
       {/* Event Attendance Trend */}
       {attendanceTrend.length > 0 && (
