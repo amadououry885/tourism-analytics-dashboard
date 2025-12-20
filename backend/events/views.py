@@ -80,19 +80,42 @@ class EventViewSet(viewsets.ModelViewSet):
         if end_before:
             qs = qs.filter(end_date__lte=end_before)
         
-        # ✨ UPDATED: By default, hide parent recurring events (show only instances or one-time events)
-        # Parent events are templates, not actual occurrences
+        # ✨ UPDATED: By default, show all non-recurring events AND recurring instances
         if hide_instances == "1":
             # Admin view: show only parent events (templates), hide instances
             qs = qs.filter(is_recurring_instance=False)
         else:
-            # Default user view: show instances OR non-recurring events (hide parent templates)
+            # Default user view: show instances OR non-recurring events
+            # Also auto-generate upcoming instances for recurring events
+            self._ensure_recurring_instances(qs)
+            
             qs = qs.filter(
                 Q(is_recurring_instance=True) |  # Show recurring instances
                 Q(recurrence_type='none')         # Show one-time events
             )
 
         return qs
+    
+    def _ensure_recurring_instances(self, queryset):
+        """Ensure recurring events have upcoming instances generated"""
+        from datetime import timedelta
+        
+        # Find parent recurring events that need instances
+        parent_events = Event.objects.filter(
+            recurrence_type__in=['daily', 'weekly', 'monthly', 'yearly'],
+            is_recurring_instance=False
+        )
+        
+        for event in parent_events:
+            # Check if there are any future instances
+            future_instances = Event.objects.filter(
+                parent_event=event,
+                start_date__gte=now()
+            ).count()
+            
+            # If no future instances, generate some
+            if future_instances == 0:
+                event.generate_recurring_instances(count=6)  # Generate next 6 occurrences
     
     # ✨ NEW: Happening Now Endpoint
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
