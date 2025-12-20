@@ -78,7 +78,7 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
     if (filteredStays.length > 0 && !selectedStay) {
       setSelectedStay(filteredStays[0]);
     }
-  }, [filteredStays, selectedStay]);
+  }, [filteredStays]);
 
   const handleSelectStay = (stay: Stay) => {
     setSelectedStay(stay);
@@ -682,7 +682,7 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                         },
                         { 
                           label: 'Rating', 
-                          value: stay.rating ? `${stay.rating.toFixed(1)} ★` : 'N/A',
+                          value: stay.rating && typeof stay.rating === 'number' ? `${stay.rating.toFixed(1)} ★` : 'N/A',
                           icon: <Star className="w-3 h-3" />
                         },
                         { 
@@ -742,7 +742,7 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                       </div>
                       <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                         <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600 fill-yellow-600" />
-                        <div className="text-2xl font-bold text-yellow-900">{selectedStay.rating?.toFixed(1) || 'N/A'}</div>
+                        <div className="text-2xl font-bold text-yellow-900">{selectedStay.rating && typeof selectedStay.rating === 'number' ? selectedStay.rating.toFixed(1) : 'N/A'}</div>
                         <div className="text-xs text-yellow-600 font-medium">Rating</div>
                       </div>
                       <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">

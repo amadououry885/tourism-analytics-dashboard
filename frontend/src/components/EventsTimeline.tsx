@@ -135,7 +135,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
     if (events.length > 0 && !selectedEvent) {
       setSelectedEvent(events[0]);
     }
-  }, [events, selectedEvent]);
+  }, [events]);
 
   const handleSelectEvent = (event: Event) => {
     setSelectedEvent(event);

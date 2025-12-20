@@ -92,7 +92,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       // If the fetch failed locally, give a helpful hint to the developer/user
       const hint =
         msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
-          ? `Unable to reach backend at ${import.meta.env.VITE_API_URL || 'http://localhost:8000'}. Please check your connection.`
+          ? 'Unable to reach backend. Please check your connection.'
           : '';
       setError(msg + (hint ? ` — ${hint}` : ''));
       console.error('Error fetching popular destinations:', err);
@@ -227,7 +227,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         // If the fetch failed locally, give a helpful hint to the developer/user
         const hint =
           msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ECONNREFUSED')
-            ? `Unable to reach backend at ${import.meta.env.VITE_API_URL || 'http://localhost:8000'}. Please check your connection.`
+            ? 'Unable to reach backend. Please check your connection.'
             : '';
         setError(msg + (hint ? ` — ${hint}` : ''));
         console.error('Error fetching popular destinations:', err);
@@ -456,7 +456,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                     },
                     { 
                       label: 'Rating', 
-                      value: destination.rating ? `${destination.rating.toFixed(1)} ★` : 'N/A',
+                      value: destination.rating && typeof destination.rating === 'number' ? `${destination.rating.toFixed(1)} ★` : 'N/A',
                       icon: <Star className="w-3 h-3" />
                     }
                   ]}
@@ -512,7 +512,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                   <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600" />
-                  <div className="text-2xl font-bold text-yellow-900">{selectedDestination.rating?.toFixed(1) || 'N/A'}</div>
+                  <div className="text-2xl font-bold text-yellow-900">{selectedDestination.rating && typeof selectedDestination.rating === 'number' ? selectedDestination.rating.toFixed(1) : 'N/A'}</div>
                   <div className="text-xs text-yellow-600 font-medium">Rating</div>
                 </div>
               </div>
@@ -713,7 +713,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-gray-900 font-medium">{destination.name}</h4>
                     <Badge className="bg-orange-500/20 text-orange-700 border-orange-500/30">
-                      ⭐ {destination.rating?.toFixed(1) || '0.0'}
+                      ⭐ {destination.rating && typeof destination.rating === 'number' ? destination.rating.toFixed(1) : '0.0'}
                     </Badge>
                   </div>
                   <div className="space-y-1 text-sm text-gray-900">

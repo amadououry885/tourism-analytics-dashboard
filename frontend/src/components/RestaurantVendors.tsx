@@ -61,7 +61,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
     if (restaurants.length > 0 && !selectedRestaurant) {
       setSelectedRestaurant(restaurants[0]);
     }
-  }, [restaurants, selectedRestaurant]);
+  }, [restaurants]);
 
   const handleSelectRestaurant = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -309,7 +309,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                   metrics={[
                     { 
                       label: 'Rating', 
-                      value: `${restaurant.rating.toFixed(1)} ★`,
+                      value: typeof restaurant.rating === 'number' ? `${restaurant.rating.toFixed(1)} ★` : 'N/A',
                       icon: <Star className="w-3 h-3" />
                     },
                     { 
@@ -387,7 +387,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                   <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600 fill-yellow-600" />
-                  <div className="text-2xl font-bold text-yellow-900">{selectedRestaurant.rating.toFixed(1)}</div>
+                  <div className="text-2xl font-bold text-yellow-900">{typeof selectedRestaurant.rating === 'number' ? selectedRestaurant.rating.toFixed(1) : 'N/A'}</div>
                   <div className="text-xs text-yellow-600 font-medium">Rating</div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -429,7 +429,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                     ))}
                   </div>
                   <span className="text-gray-600">
-                    {selectedRestaurant.rating.toFixed(1)} out of 5
+                    {typeof selectedRestaurant.rating === 'number' ? selectedRestaurant.rating.toFixed(1) : 'N/A'} out of 5
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
