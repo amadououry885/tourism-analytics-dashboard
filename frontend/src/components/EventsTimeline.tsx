@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import api from '../services/api'; // Use configured API instance instead of raw axios
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Calendar, MapPin, Users, TrendingUp, Filter, Search } from 'lucide-react';
+import { Calendar, MapPin, Users, TrendingUp, Filter, Search, Clock, Navigation, Share2, ExternalLink } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { EventCard } from './EventCard';
-import { PastEventCard } from './PastEventCard';
-import { EventModal } from './EventModal';
+import { MasterDetailLayout } from './MasterDetailLayout';
+import { ListItem } from './ListItem';
+import { DetailPanel } from './DetailPanel';
 
 interface EventsTimelineProps {
   timeRange?: string;
@@ -127,9 +127,35 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'attendance'>('date');
   const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [dateFilter, setDateFilter] = useState<'all' | 'upcoming' | 'past'>('all');
-  const [selectedModal, setSelectedModal] = useState<Event | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [shouldScrollToImage, setShouldScrollToImage] = useState(false); // ✨ NEW: Track if JOIN US was clicked
+
+  // Auto-select first event
+  useEffect(() => {
+    if (events.length > 0 && !selectedEvent) {
+      setSelectedEvent(events[0]);
+    }
+  }, [events, selectedEvent]);
+
+  const handleSelectEvent = (event: Event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleGetDirections = () => {
+    if (selectedEvent && selectedEvent.location_name) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.location_name + ' ' + (selectedEvent.city || ''))}`, '_blank');
+    }
+  };
+
+  const handleShare = () => {
+    if (selectedEvent && navigator.share) {
+      navigator.share({
+        title: selectedEvent.title,
+        text: `Join ${selectedEvent.title} on ${new Date(selectedEvent.start_date).toLocaleDateString()}`,
+        url: window.location.href
+      }).catch(() => {});
+    }
+  };
 
   // ✨ NEW: Fetch happening now events
   const fetchHappeningNow = async () => {
@@ -488,113 +514,190 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         </CardContent>
       </Card>
 
-      {/* ✨ UPCOMING EVENTS - With JOIN US Buttons */}
-      {filteredEvents.filter(event => new Date(event.start_date) >= now).length > 0 && (
-        <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
-                <Calendar className="w-6 h-6 text-white" />
+      {/* Master-Detail Layout for All Events */}
+      <MasterDetailLayout
+        leftPanel={
+          <div className="bg-white">
+            {filteredEvents.length === 0 ? (
+              <div className="p-8 text-center">
+                <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-bold text-gray-700 mb-2">No events found</h3>
+                <p className="text-sm text-gray-500">Try adjusting your filters</p>
               </div>
-              <div>
-                <CardTitle className="text-gray-900 text-2xl">Upcoming Events</CardTitle>
-                <CardDescription className="text-gray-700">
-                  {filteredEvents.filter(event => new Date(event.start_date) >= now).length} events you can join
-                </CardDescription>
+            ) : (
+              filteredEvents.map((event, index) => {
+                const eventDate = new Date(event.start_date);
+                const isPast = eventDate < now;
+                const isHappeningNow = event.is_happening_now || eventDate.toDateString() === now.toDateString();
+                
+                return (
+                  <ListItem
+                    key={event.id || index}
+                    title={event.title}
+                    subtitle={`${event.location_name || event.city || 'Kedah'} • ${eventDate.toLocaleDateString()}`}
+                    metrics={[
+                      { 
+                        label: 'Expected', 
+                        value: event.expected_attendance || 0,
+                        icon: <Users className="w-3 h-3" />
+                      },
+                      { 
+                        label: 'Actual', 
+                        value: event.actual_attendance || 0,
+                        icon: <TrendingUp className="w-3 h-3" />
+                      }
+                    ]}
+                    badge={
+                      isHappeningNow ? (
+                        <Badge className="bg-green-100 text-green-700 border-green-300 animate-pulse">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Live Now
+                        </Badge>
+                      ) : isPast ? (
+                        <Badge className="bg-gray-100 text-gray-700 border-gray-300">
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                          Upcoming
+                        </Badge>
+                      )
+                    }
+                    isSelected={selectedEvent?.id === event.id}
+                    onClick={() => handleSelectEvent(event)}
+                  />
+                );
+              })
+            )}
+          </div>
+        }
+        rightPanel={
+          selectedEvent ? (
+            <DetailPanel
+              title={selectedEvent.title}
+              subtitle={`${selectedEvent.location_name || selectedEvent.city || 'Kedah'} • ${new Date(selectedEvent.start_date).toLocaleDateString()}`}
+              image={selectedEvent.image_url}
+              actions={
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleGetDirections}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <Navigation className="w-5 h-5" />
+                    Get Directions
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
+              }
+            >
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <div className="text-2xl font-bold text-blue-900">{selectedEvent.expected_attendance || 0}</div>
+                  <div className="text-xs text-blue-600 font-medium">Expected</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                  <TrendingUp className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                  <div className="text-2xl font-bold text-green-900">{selectedEvent.actual_attendance || 0}</div>
+                  <div className="text-xs text-green-600 font-medium">Actual</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+                  <div className="text-2xl font-bold text-purple-900">{selectedEvent.max_capacity || 'N/A'}</div>
+                  <div className="text-xs text-purple-600 font-medium">Capacity</div>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-green-500 scrollbar-track-green-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents
-                  .filter(event => new Date(event.start_date) >= now)
-                  .map((event, index) => {
-                    const eventDate = new Date(event.start_date);
-                    const isHappeningNow = eventDate.toDateString() === now.toDateString();
-                    const isNew = event.id ? event.id > events.length - 2 : false;
-                    
-                    return (
-                      <EventCard
-                        key={event.id}
-                        event={event}
-                        rank={index + 1}
-                        isHappeningNow={isHappeningNow}
-                        isNew={isNew}
-                        isFree={true}
-                        onViewDetails={handleViewDetails}
-                      />
-                    );
-                  })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* ✨ PAST EVENTS - Event Reports, No JOIN US */}
-      {filteredEvents.filter(event => new Date(event.start_date) < now).length > 0 && (
-        <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-slate-700 rounded-full flex items-center justify-center shadow-md">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-gray-900 text-2xl">Past Events</CardTitle>
-                <CardDescription className="text-gray-700">
-                  {filteredEvents.filter(event => new Date(event.start_date) < now).length} completed events with attendance reports
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents
-                  .filter(event => new Date(event.start_date) < now)
-                  .map((event, index) => {
-                    return (
-                      <PastEventCard
-                        key={event.id}
-                        event={event}
-                        rank={index + 1}
-                        onViewDetails={handleViewDetails}
-                      />
-                    );
-                  })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              {/* Description */}
+              {selectedEvent.description && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">About This Event</h3>
+                  <p className="text-gray-600 leading-relaxed">{selectedEvent.description}</p>
+                </div>
+              )}
 
-      {/* No Events Message */}
-      {filteredEvents.length === 0 && (
-        <Card className="bg-white border-gray-200 shadow-lg">
-          <CardContent className="p-6">
-            <div className="py-16">
-              <div className="text-center text-gray-500">
+              {/* Event Details */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Event Details</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {new Date(selectedEvent.start_date).toLocaleDateString()}
+                      {selectedEvent.end_date && ` - ${new Date(selectedEvent.end_date).toLocaleDateString()}`}
+                    </span>
+                  </div>
+                  {selectedEvent.location_name && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>{selectedEvent.location_name}, {selectedEvent.city || 'Kedah'}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Tags */}
+              {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Categories</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEvent.tags.map((tag, idx) => (
+                      <Badge key={idx} className="bg-blue-100 text-blue-700 border-blue-300">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Capacity Info */}
+              {(selectedEvent.max_capacity || selectedEvent.spots_remaining !== undefined) && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Capacity Information</h3>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    {selectedEvent.max_capacity && (
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600">Max Capacity:</span>
+                        <span className="font-semibold text-gray-900">{selectedEvent.max_capacity}</span>
+                      </div>
+                    )}
+                    {selectedEvent.attendee_count !== undefined && (
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600">Current Attendance:</span>
+                        <span className="font-semibold text-gray-900">{selectedEvent.attendee_count}</span>
+                      </div>
+                    )}
+                    {selectedEvent.spots_remaining !== null && selectedEvent.spots_remaining !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Spots Remaining:</span>
+                        <span className={`font-semibold ${selectedEvent.is_full ? 'text-red-600' : 'text-green-600'}`}>
+                          {selectedEvent.is_full ? 'Full' : selectedEvent.spots_remaining}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </DetailPanel>
+          ) : (
+            <div className="h-full flex items-center justify-center p-8 text-center">
+              <div>
                 <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-xl font-bold text-gray-700 mb-2">No events found</h3>
-                <p>Try adjusting your filters or search term</p>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">Select an event</h3>
+                <p className="text-gray-500">Choose an event from the list to view details</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Event Detail Modal - ✨ Added scrollToRegistration prop */}
-      <EventModal
-        event={selectedModal}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setShouldScrollToImage(false); // Reset scroll flag
-        }}
-        scrollToRegistration={shouldScrollToImage}
-        onRegistrationModalOpen={() => setShouldScrollToImage(false)}
+          )
+        }
       />
+      />
+
       {/* Event Attendance Trend */}
       {attendanceTrend.length > 0 && (
         <Card className="bg-white border-gray-200 shadow-sm">
