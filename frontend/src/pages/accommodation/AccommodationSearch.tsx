@@ -77,6 +77,8 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
   useEffect(() => {
     if (filteredStays.length > 0 && !selectedStay) {
       setSelectedStay(filteredStays[0]);
+    } else if (filteredStays.length === 0) {
+      setSelectedStay(null);
     }
   }, [filteredStays]);
 

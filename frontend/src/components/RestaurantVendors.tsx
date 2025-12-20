@@ -56,13 +56,6 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  // Auto-select first restaurant
-  useEffect(() => {
-    if (restaurants.length > 0 && !selectedRestaurant) {
-      setSelectedRestaurant(restaurants[0]);
-    }
-  }, [restaurants]);
-
   const handleSelectRestaurant = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
   };
@@ -184,6 +177,15 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       }
     });
   }, [filteredRestaurants, sortBy]);
+
+  // Auto-select first restaurant
+  useEffect(() => {
+    if (sortedRestaurants.length > 0 && !selectedRestaurant) {
+      setSelectedRestaurant(sortedRestaurants[0]);
+    } else if (sortedRestaurants.length === 0) {
+      setSelectedRestaurant(null);
+    }
+  }, [sortedRestaurants]);
 
   // Get unique cuisines for the filter
   const cuisineTypes = Array.from(new Set(restaurants.map(r => r.cuisine)));

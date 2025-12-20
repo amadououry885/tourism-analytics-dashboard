@@ -337,6 +337,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   useEffect(() => {
     if (filteredDestinations.length > 0 && !selectedDestination) {
       setSelectedDestination(filteredDestinations[0]);
+    } else if (filteredDestinations.length === 0) {
+      setSelectedDestination(null);
     }
   }, [filteredDestinations]);
 

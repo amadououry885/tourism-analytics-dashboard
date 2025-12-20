@@ -130,12 +130,17 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [shouldScrollToImage, setShouldScrollToImage] = useState(false); // ✨ NEW: Track if JOIN US was clicked
 
-  // Auto-select first event
+  // Calculate now once to avoid recreation
+  const now = useMemo(() => new Date(), []);
+
+  // Auto-select first event from filtered list
   useEffect(() => {
-    if (events.length > 0 && !selectedEvent) {
-      setSelectedEvent(events[0]);
+    if (filteredEvents.length > 0 && !selectedEvent) {
+      setSelectedEvent(filteredEvents[0]);
+    } else if (filteredEvents.length === 0) {
+      setSelectedEvent(null);
     }
-  }, [events]);
+  }, [filteredEvents]);
 
   const handleSelectEvent = (event: Event) => {
     setSelectedEvent(event);
@@ -242,7 +247,6 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   }
 
   // Advanced filtering and sorting logic
-  const now = new Date();
   
   const filteredEvents = useMemo(() => {
     return events
