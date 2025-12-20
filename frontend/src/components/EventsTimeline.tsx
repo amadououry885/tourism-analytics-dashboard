@@ -133,18 +133,6 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   // Calculate now once to avoid recreation
   const now = useMemo(() => new Date(), []);
 
-  // Auto-select first event from filtered list
-  useEffect(() => {
-    if (filteredEvents.length > 0) {
-      // Only set if no selection or current selection not in filtered list
-      if (!selectedEvent || !filteredEvents.find(e => e.id === selectedEvent.id)) {
-        setSelectedEvent(filteredEvents[0]);
-      }
-    } else if (selectedEvent !== null) {
-      setSelectedEvent(null);
-    }
-  }, [filteredEvents]);
-
   const handleSelectEvent = (event: Event) => {
     setSelectedEvent(event);
   };
@@ -296,6 +284,18 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         }
       });
   }, [events, searchTerm, selectedCity, selectedEventType, dateFilter, sortBy]);
+
+  // Auto-select first event from filtered list
+  useEffect(() => {
+    if (filteredEvents.length > 0) {
+      // Only set if no selection or current selection not in filtered list
+      if (!selectedEvent || !filteredEvents.find(e => e.id === selectedEvent.id)) {
+        setSelectedEvent(filteredEvents[0]);
+      }
+    } else if (selectedEvent !== null) {
+      setSelectedEvent(null);
+    }
+  }, [filteredEvents]);
 
   // Get unique event types for filter
   const uniqueEventTypes = Array.from(
