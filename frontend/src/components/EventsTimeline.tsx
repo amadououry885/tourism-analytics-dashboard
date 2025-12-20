@@ -137,10 +137,10 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   useEffect(() => {
     if (filteredEvents.length > 0 && !selectedEvent) {
       setSelectedEvent(filteredEvents[0]);
-    } else if (filteredEvents.length === 0) {
+    } else if (filteredEvents.length === 0 && selectedEvent !== null) {
       setSelectedEvent(null);
     }
-  }, [filteredEvents]);
+  }, [filteredEvents, selectedEvent]);
 
   const handleSelectEvent = (event: Event) => {
     setSelectedEvent(event);

@@ -182,10 +182,10 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   useEffect(() => {
     if (sortedRestaurants.length > 0 && !selectedRestaurant) {
       setSelectedRestaurant(sortedRestaurants[0]);
-    } else if (sortedRestaurants.length === 0) {
+    } else if (sortedRestaurants.length === 0 && selectedRestaurant !== null) {
       setSelectedRestaurant(null);
     }
-  }, [sortedRestaurants]);
+  }, [sortedRestaurants, selectedRestaurant]);
 
   // Get unique cuisines for the filter
   const cuisineTypes = Array.from(new Set(restaurants.map(r => r.cuisine)));
