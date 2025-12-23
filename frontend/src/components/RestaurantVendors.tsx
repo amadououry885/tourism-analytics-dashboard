@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { MapPin, Star, Users, Search, Heart, Clock, X, Phone, Mail, ExternalLink, Navigation, Share2, DollarSign } from 'lucide-react';
@@ -103,33 +103,45 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       try {
         setIsLoading(true);
         
-        // ✅ BUILD CITY FILTER PARAMETER
-        const cityParam = selectedCity && selectedCity !== 'all' ? `?city=${selectedCity}` : '';
+        console.log('[RestaurantVendors] Fetching vendors from:', api.defaults.baseURL + '/vendors/');
         
-        // Fetch vendors - WITH CITY FILTER
-        const response = await axios.get(`/vendors/${cityParam}`);
-        const vendors = response.data.results || [];
+        // Build query params
+        const params = new URLSearchParams();
+        if (selectedCity && selectedCity !== 'all') {
+          params.append('city', selectedCity);
+        }
         
-        // Transform vendor data to restaurant format
+        // Fetch vendors from backend
+        const response = await api.get(`/vendors/?${params.toString()}`);
+        const vendors = response.data.results || response.data || [];
+        
+        console.log('[RestaurantVendors] Received vendors:', vendors.length);
+        
+        // Transform vendor data to restaurant format matching backend Vendor model
         const backendRestaurants = vendors.map((vendor: any) => ({
-          id: vendor.id + 1000, // Offset IDs to avoid conflicts with demo data
+          id: vendor.id,
           name: vendor.name,
           cuisine: vendor.cuisines?.[0] || 'General',
           rating: vendor.rating_average || 4.0,
           reviews: vendor.total_reviews || 0,
-          priceRange: '$$', // Default price range since it's not in API
-          specialty: vendor.cuisines?.join(', ') || 'Local cuisine',
+          priceRange: vendor.price_range || '$$',
+          specialty: vendor.description || vendor.cuisines?.join(', ') || 'Local cuisine',
           location: vendor.city || 'Kedah',
           city: vendor.city?.toLowerCase().replace(/\s+/g, '-') || 'kedah',
-          image: `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`, // Default image
-          visitors: Math.floor(Math.random() * 20000) + 1000 // Generate random visitor count
+          image: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0] || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`,
+          visitors: Math.floor(Math.random() * 20000) + 1000, // Mock visitor count
+          badges: vendor.amenities?.halal_certified ? ['Halal'] : []
         }));
         
-        // Merge backend data with demo data to keep all cities represented
-        const allRestaurants = [...demoData.results, ...backendRestaurants];
-        setRestaurants(allRestaurants);
+        // If backend has data, use it; otherwise keep demo data
+        if (backendRestaurants.length > 0) {
+          console.log('[RestaurantVendors] Using backend data');
+          setRestaurants(backendRestaurants);
+        } else {
+          console.warn('[RestaurantVendors] No backend data, keeping demo');
+        }
       } catch (err) {
-        console.error('Error fetching vendors:', err);
+        console.error('[RestaurantVendors] Error fetching vendors:', err);
         // Keep demo data on error
       } finally {
         setIsLoading(false);

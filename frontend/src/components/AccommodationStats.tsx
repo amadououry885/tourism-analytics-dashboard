@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Building2, Star, TrendingUp } from 'lucide-react';
@@ -40,20 +40,39 @@ export function AccommodationStats({ selectedCity, timeRange }: AccommodationSta
     const fetchStays = async () => {
       try {
         setLoading(true);
+        
+        console.log('[AccommodationStats] Fetching stays from:', api.defaults.baseURL + '/stays/');
+        
         const params = new URLSearchParams();
         if (selectedCity && selectedCity !== 'all') {
           params.append('district', selectedCity);
         }
 
-        const response = await axios.get(`/stays/?${params.toString()}`);
-        const backendStays = response.data.results || [];
+        const response = await api.get(`/stays/?${params.toString()}`);
+        const backendStays = response.data.results || response.data || [];
+        
+        console.log('[AccommodationStats] Received stays:', backendStays.length);
+        
+        // Transform backend Stay model to component format
+        const transformedStays = backendStays.map((stay: any) => ({
+          id: stay.id,
+          name: stay.name,
+          type: stay.type || 'Hotel',
+          district: stay.district || stay.city || 'Kedah',
+          rating: stay.rating,
+          priceNight: stay.price_per_night?.toString() || '0',
+          amenities: stay.amenities || []
+        }));
         
         // If backend has data, use it; otherwise keep demo data
-        if (backendStays.length > 0) {
-          setStays(backendStays);
+        if (transformedStays.length > 0) {
+          console.log('[AccommodationStats] Using backend data');
+          setStays(transformedStays);
+        } else {
+          console.warn('[AccommodationStats] No backend data, keeping demo');
         }
       } catch (error) {
-        console.error('Error fetching stays:', error);
+        console.error('[AccommodationStats] Error fetching stays:', error);
         // Keep demo data on error
       } finally {
         setLoading(false);
