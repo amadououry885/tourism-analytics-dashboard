@@ -136,18 +136,328 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
       try {
         setLoading(true);
         
-        console.log('[MapView] Fetching places from:', api.defaults.baseURL + '/places/');\n        \n        const params = new URLSearchParams();\n        if (selectedCity && selectedCity !== 'all') {\n          params.append('city', selectedCity);\n        }\n        \n        const response = await api.get(`/places/?${params.toString()}`);\n        const backendPlaces = response.data.results || response.data || [];\n        \n        console.log('[MapView] Received places:', backendPlaces.length);\n        \n        if (backendPlaces.length > 0) {\n          console.log('[MapView] Using backend data');\n          setPlaces(backendPlaces);\n        } else {\n          console.warn('[MapView] No backend data, keeping demo');\n        }\n      } catch (error) {\n        console.error('[MapView] Error fetching places:', error);\n        // Keep demo data on error\n      } finally {\n        setLoading(false);\n      }\n    };\n\n    fetchPlaces();\n  }, [selectedCity]);
+        console.log('[MapView] Fetching places from:', api.defaults.baseURL + '/places/');
+        
+        const params = new URLSearchParams();
+        if (selectedCity && selectedCity !== 'all') {
+          params.append('city', selectedCity);
+        }
+        
+        const response = await api.get(`/places/?${params.toString()}`);
+        const backendPlaces = response.data.results || response.data || [];
+        
+        console.log('[MapView] Received places:', backendPlaces.length);
+        
+        if (backendPlaces.length > 0) {
+          console.log('[MapView] Using backend data');
+          setPlaces(backendPlaces);
+        } else {
+          console.warn('[MapView] No backend data, keeping demo');
+        }
+      } catch (error) {
+        console.error('[MapView] Error fetching places:', error);
+        // Keep demo data on error
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredPlaces = useMemo(() => {\n    return places.filter(place => {\n      const matchesSearch = searchTerm === '' || \n        place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||\n        place.description.toLowerCase().includes(searchTerm.toLowerCase());\n      \n      const matchesCategory = selectedCategory === 'all' || place.category === selectedCategory;\n      \n      return matchesSearch && matchesCategory;\n    });\n  }, [places, searchTerm, selectedCategory]);
+    fetchPlaces();
+  }, [selectedCity]);
 
-  const handleSelectPlace = (place: Place) => {\n    setSelectedPlace(place);\n  };\n\n  const handleGetDirections = () => {\n    if (selectedPlace) {\n      if (selectedPlace.google_maps_url) {\n        window.open(selectedPlace.google_maps_url, '_blank');\n      } else if (selectedPlace.latitude && selectedPlace.longitude) {\n        window.open(`https://www.google.com/maps/search/?api=1&query=${selectedPlace.latitude},${selectedPlace.longitude}`, '_blank');\n      } else {\n        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedPlace.name + ' ' + selectedPlace.city)}`, '_blank');\n      }\n    }\n  };\n\n  const handleShare = () => {\n    if (selectedPlace && navigator.share) {\n      navigator.share({\n        title: selectedPlace.name,\n        text: selectedPlace.description,\n        url: window.location.href\n      }).catch(() => {});\n    }\n  };
+  const filteredPlaces = useMemo(() => {
+    return places.filter(place => {
+      const matchesSearch = searchTerm === '' || 
+        place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        place.description.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || place.category === selectedCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [places, searchTerm, selectedCategory]);
 
-  const markers = filteredPlaces\n    .filter(place => place.latitude && place.longitude)\n    .map(place => ({ \n      position: [place.latitude!, place.longitude!] as [number, number], \n      title: place.name,\n      id: place.id\n    }));
+  const handleSelectPlace = (place: Place) => {
+    setSelectedPlace(place);
+  };
+
+  const handleGetDirections = () => {
+    if (selectedPlace) {
+      if (selectedPlace.google_maps_url) {
+        window.open(selectedPlace.google_maps_url, '_blank');
+      } else if (selectedPlace.latitude && selectedPlace.longitude) {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${selectedPlace.latitude},${selectedPlace.longitude}`, '_blank');
+      } else {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedPlace.name + ' ' + selectedPlace.city)}`, '_blank');
+      }
+    }
+  };
+
+  const handleShare = () => {
+    if (selectedPlace && navigator.share) {
+      navigator.share({
+        title: selectedPlace.name,
+        text: selectedPlace.description,
+        url: window.location.href
+      }).catch(() => {});
+    }
+  };
+
+  const markers = filteredPlaces
+    .filter(place => place.latitude && place.longitude)
+    .map(place => ({ 
+      position: [place.latitude!, place.longitude!] as [number, number], 
+      title: place.name,
+      id: place.id
+    }));
 
   const categories = ['all', ...Array.from(new Set(places.map(p => p.category)))];
 
-  // Render place item for list\n  const renderPlaceItem = (place: Place) => (\n    <ListItem\n      key={place.id}\n      isActive={selectedPlace?.id === place.id}\n      onClick={() => handleSelectPlace(place)}\n    >\n      <div className=\"flex gap-3\">\n        {place.image_url && (\n          <img \n            src={place.image_url} \n            alt={place.name}\n            className=\"w-16 h-16 object-cover rounded-lg flex-shrink-0\"\n          />\n        )}\n        <div className=\"flex-1 min-w-0\">\n          <h3 className=\"font-semibold text-gray-900 truncate\">{place.name}</h3>\n          <p className=\"text-sm text-gray-600 line-clamp-2\">{place.description}</p>\n          <div className=\"flex items-center gap-2 mt-1\">\n            <Badge variant=\"secondary\" className=\"text-xs\">{place.category}</Badge>\n            <span className=\"text-xs text-gray-500\">{place.city}</span>\n            {!place.is_free && place.price && (\n              <span className=\"text-xs text-green-600 font-medium\">\n                {place.currency || 'MYR'} {place.price}\n              </span>\n            )}\n            {place.is_free && (\n              <Badge variant=\"outline\" className=\"text-xs text-green-600 border-green-600\">Free</Badge>\n            )}\n          </div>\n        </div>\n      </div>\n    </ListItem>\n  );
+  // Render place item for list
+  const renderPlaceItem = (place: Place) => (
+    <ListItem
+      key={place.id}
+      isActive={selectedPlace?.id === place.id}
+      onClick={() => handleSelectPlace(place)}
+    >
+      <div className=\"flex gap-3\">
+        {place.image_url && (
+          <img 
+            src={place.image_url} 
+            alt={place.name}
+            className=\"w-16 h-16 object-cover rounded-lg flex-shrink-0\"
+          />
+        )}
+        <div className=\"flex-1 min-w-0\">
+          <h3 className=\"font-semibold text-gray-900 truncate\">{place.name}</h3>
+          <p className=\"text-sm text-gray-600 line-clamp-2\">{place.description}</p>
+          <div className=\"flex items-center gap-2 mt-1\">
+            <Badge variant=\"secondary\" className=\"text-xs\">{place.category}</Badge>
+            <span className=\"text-xs text-gray-500\">{place.city}</span>
+            {!place.is_free && place.price && (
+              <span className=\"text-xs text-green-600 font-medium\">
+                {place.currency || 'MYR'} {place.price}
+              </span>
+            )}
+            {place.is_free && (
+              <Badge variant=\"outline\" className=\"text-xs text-green-600 border-green-600\">Free</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+    </ListItem>
+  );
 
-  // Render place details panel\n  const renderPlaceDetails = () => {\n    if (!selectedPlace) {\n      return (\n        <div className=\"flex items-center justify-center h-full text-gray-500\">\n          <div className=\"text-center\">\n            <MapPin className=\"w-16 h-16 mx-auto mb-4 text-gray-300\" />\n            <p>Select a place to view details</p>\n          </div>\n        </div>\n      );\n    }\n\n    return (\n      <DetailPanel\n        title={selectedPlace.name}\n        onGetDirections={handleGetDirections}\n        onShare={handleShare}\n      >\n        {selectedPlace.image_url && (\n          <img \n            src={selectedPlace.image_url} \n            alt={selectedPlace.name}\n            className=\"w-full h-64 object-cover rounded-lg mb-4\"\n          />\n        )}\n        \n        <div className=\"space-y-4\">\n          <div>\n            <h4 className=\"font-semibold text-gray-900 mb-2\">Description</h4>\n            <p className=\"text-gray-600\">{selectedPlace.description}</p>\n          </div>\n\n          <div className=\"grid grid-cols-2 gap-4\">\n            <div>\n              <h4 className=\"font-semibold text-gray-900 mb-2\">Category</h4>\n              <Badge>{selectedPlace.category}</Badge>\n            </div>\n            <div>\n              <h4 className=\"font-semibold text-gray-900 mb-2\">Location</h4>\n              <p className=\"text-gray-600\">{selectedPlace.city}{selectedPlace.state && `, ${selectedPlace.state}`}</p>\n            </div>\n          </div>\n\n          {selectedPlace.opening_hours && (\n            <div>\n              <h4 className=\"font-semibold text-gray-900 mb-2 flex items-center gap-2\">\n                <Clock className=\"w-4 h-4\" />\n                Opening Hours\n              </h4>\n              <p className=\"text-gray-600\">{selectedPlace.opening_hours}</p>\n            </div>\n          )}\n\n          <div>\n            <h4 className=\"font-semibold text-gray-900 mb-2 flex items-center gap-2\">\n              <DollarSign className=\"w-4 h-4\" />\n              Pricing\n            </h4>\n            {selectedPlace.is_free ? (\n              <Badge variant=\"outline\" className=\"text-green-600 border-green-600\">Free Entry</Badge>\n            ) : (\n              <p className=\"text-gray-900 font-semibold\">\n                {selectedPlace.currency || 'MYR'} {selectedPlace.price}\n              </p>\n            )}\n          </div>\n\n          {selectedPlace.address && (\n            <div>\n              <h4 className=\"font-semibold text-gray-900 mb-2\">Address</h4>\n              <p className=\"text-gray-600\">{selectedPlace.address}</p>\n            </div>\n          )}\n\n          {selectedPlace.contact_phone && (\n            <div>\n              <h4 className=\"font-semibold text-gray-900 mb-2\">Contact</h4>\n              <p className=\"text-gray-600\">{selectedPlace.contact_phone}</p>\n              {selectedPlace.contact_email && (\n                <p className=\"text-gray-600\">{selectedPlace.contact_email}</p>\n              )}\n            </div>\n          )}\n\n          {selectedPlace.best_time_to_visit && (\n            <div>\n              <h4 className=\"font-semibold text-gray-900 mb-2\">Best Time to Visit</h4>\n              <p className=\"text-gray-600\">{selectedPlace.best_time_to_visit}</p>\n            </div>\n          )}\n\n          {(selectedPlace.official_website || selectedPlace.tripadvisor_url || selectedPlace.wikipedia_url) && (\n            <div>\n              <h4 className=\"font-semibold text-gray-900 mb-2\">Links</h4>\n              <div className=\"flex flex-wrap gap-2\">\n                {selectedPlace.official_website && (\n                  <a href={selectedPlace.official_website} target=\"_blank\" rel=\"noopener noreferrer\" \n                     className=\"inline-flex items-center gap-1 text-blue-600 hover:underline text-sm\">\n                    <ExternalLink className=\"w-3 h-3\" />\n                    Official Website\n                  </a>\n                )}\n                {selectedPlace.tripadvisor_url && (\n                  <a href={selectedPlace.tripadvisor_url} target=\"_blank\" rel=\"noopener noreferrer\"\n                     className=\"inline-flex items-center gap-1 text-blue-600 hover:underline text-sm\">\n                    <ExternalLink className=\"w-3 h-3\" />\n                    TripAdvisor\n                  </a>\n                )}\n                {selectedPlace.wikipedia_url && (\n                  <a href={selectedPlace.wikipedia_url} target=\"_blank\" rel=\"noopener noreferrer\"\n                     className=\"inline-flex items-center gap-1 text-blue-600 hover:underline text-sm\">\n                    <ExternalLink className=\"w-3 h-3\" />\n                    Wikipedia\n                  </a>\n                )}\n              </div>\n            </div>\n          )}\n        </div>\n      </DetailPanel>\n    );\n  };
+  // Render place details panel
+  const renderPlaceDetails = () => {
+    if (!selectedPlace) {
+      return (
+        <div className=\"flex items-center justify-center h-full text-gray-500\">
+          <div className=\"text-center\">
+            <MapPin className=\"w-16 h-16 mx-auto mb-4 text-gray-300\" />
+            <p>Select a place to view details</p>
+          </div>
+        </div>
+      );
+    }
 
-  return (\n    <MasterDetailLayout\n      title=\"Places & Attractions\"\n      subtitle={`${filteredPlaces.length} places in ${selectedCity === 'all' ? 'Kedah' : selectedCity}`}\n      searchPlaceholder=\"Search places...\"\n      searchValue={searchTerm}\n      onSearchChange={setSearchTerm}\n      filters={\n        <div className=\"flex gap-2 flex-wrap\">\n          {categories.map(cat => (\n            <button\n              key={cat}\n              onClick={() => setSelectedCategory(cat)}\n              className={`px-3 py-1 rounded-full text-sm transition-colors ${\n                selectedCategory === cat \n                  ? 'bg-blue-600 text-white' \n                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'\n              }`}\n            >\n              {cat === 'all' ? 'All' : cat}\n            </button>\n          ))}\n        </div>\n      }\n      listContent={\n        <>\n          {/* Map Preview */}\n          <div className=\"mb-4\">\n            <div className=\"relative w-full h-64 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden\">\n              <MapContainer \n                center={selectedPlace && selectedPlace.latitude && selectedPlace.longitude \n                  ? [selectedPlace.latitude, selectedPlace.longitude] \n                  : center} \n                zoom={selectedPlace ? 12 : zoom} \n                scrollWheelZoom={false}\n                style={{ height: '100%', width: '100%' }}\n                key={`map-${selectedPlace?.id || 'default'}`}\n              >\n                <SetViewOnChange \n                  center={selectedPlace && selectedPlace.latitude && selectedPlace.longitude \n                    ? [selectedPlace.latitude, selectedPlace.longitude] \n                    : center} \n                  zoom={selectedPlace ? 12 : zoom} \n                />\n                <TileLayer\n                  attribution='&copy; OpenStreetMap contributors'\n                  url=\"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png\"\n                />\n                {markers.map((m, index) => (\n                  <Marker key={`marker-${m.id}-${index}`} position={m.position}>\n                    <Popup>{m.title}</Popup>\n                  </Marker>\n                ))}\n              </MapContainer>\n            </div>\n          </div>\n          \n          {/* Places List */}\n          {loading ? (\n            <div className=\"text-center py-8 text-gray-500\">Loading places...</div>\n          ) : filteredPlaces.length === 0 ? (\n            <div className=\"text-center py-8 text-gray-500\">No places found</div>\n          ) : (\n            filteredPlaces.map(renderPlaceItem)\n          )}\n        </>\n      }\n      detailContent={renderPlaceDetails()}\n    />\n  );\n};\n\nexport default MapView;
+    return (
+      <DetailPanel
+        title={selectedPlace.name}
+        onGetDirections={handleGetDirections}
+        onShare={handleShare}
+      >
+        {selectedPlace.image_url && (
+          <img 
+            src={selectedPlace.image_url} 
+            alt={selectedPlace.name}
+            className=\"w-full h-64 object-cover rounded-lg mb-4\"
+          />
+        )}
+        
+        <div className=\"space-y-4\">
+          <div>
+            <h4 className=\"font-semibold text-gray-900 mb-2\">Description</h4>
+            <p className=\"text-gray-600\">{selectedPlace.description}</p>
+          </div>
+
+          <div className=\"grid grid-cols-2 gap-4\">
+            <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2\">Category</h4>
+              <Badge>{selectedPlace.category}</Badge>
+            </div>
+            <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2\">Location</h4>
+              <p className=\"text-gray-600\">{selectedPlace.city}{selectedPlace.state && `, ${selectedPlace.state}`}</p>
+            </div>
+          </div>
+
+          {selectedPlace.opening_hours && (
+            <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2 flex items-center gap-2\">
+                <Clock className=\"w-4 h-4\" />
+                Opening Hours
+              </h4>
+              <p className=\"text-gray-600\">{selectedPlace.opening_hours}</p>
+            </div>
+          )}
+
+          <div>
+            <h4 className=\"font-semibold text-gray-900 mb-2 flex items-center gap-2\">
+              <DollarSign className=\"w-4 h-4\" />
+              Pricing
+            </h4>
+            {selectedPlace.is_free ? (
+              <Badge variant=\"outline\" className=\"text-green-600 border-green-600\">Free Entry</Badge>
+            ) : (
+              <p className=\"text-gray-900 font-semibold\">
+                {selectedPlace.currency || 'MYR'} {selectedPlace.price}
+              </p>
+            )}
+          </div>
+
+          {selectedPlace.address && (
+            <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2\">Address</h4>
+              <p className=\"text-gray-600\">{selectedPlace.address}</p>
+            </div>
+          )}
+
+          {selectedPlace.contact_phone && (
+            <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2\">Contact</h4>
+              <p className=\"text-gray-600\">{selectedPlace.contact_phone}</p>
+              {selectedPlace.contact_email && (
+                <p className=\"text-gray-600\">{selectedPlace.contact_email}</p>
+              )}
+            </div>
+          )}
+
+          {selectedPlace.best_time_to_visit && (
+            <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2\">Best Time to Visit</h4>
+              <p className=\"text-gray-600\">{selectedPlace.best_time_to_visit}</p>
+            </div>
+          )}
+
+          {selectedPlace.amenities && Object.keys(selectedPlace.amenities).length > 0 && (
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Amenities</h4>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(selectedPlace.amenities).map(([key, value]) => (
+                  value && (
+                    <Badge key={key} variant="outline" className="text-xs">
+                      {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </Badge>
+                  )
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(selectedPlace.official_website || selectedPlace.tripadvisor_url || selectedPlace.wikipedia_url) && (
+            <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2\">Links</h4>
+              <div className=\"flex flex-wrap gap-2\">
+                {selectedPlace.official_website && (
+                  <a href={selectedPlace.official_website} target=\"_blank\" rel=\"noopener noreferrer\" 
+                     className=\"inline-flex items-center gap-1 text-blue-600 hover:underline text-sm\">
+                    <ExternalLink className=\"w-3 h-3\" />
+                    Official Website
+                  </a>
+                )}
+                {selectedPlace.tripadvisor_url && (
+                  <a href={selectedPlace.tripadvisor_url} target=\"_blank\" rel=\"noopener noreferrer\"
+                     className=\"inline-flex items-center gap-1 text-blue-600 hover:underline text-sm\">
+                    <ExternalLink className=\"w-3 h-3\" />
+                    TripAdvisor
+                  </a>
+                )}
+                {selectedPlace.wikipedia_url && (
+                  <a href={selectedPlace.wikipedia_url} target=\"_blank\" rel=\"noopener noreferrer\"
+                     className=\"inline-flex items-center gap-1 text-blue-600 hover:underline text-sm\">
+                    <ExternalLink className=\"w-3 h-3\" />
+                    Wikipedia
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </DetailPanel>
+    );
+  };
+
+  return (
+    <MasterDetailLayout
+      title=\"Places & Attractions\"
+      subtitle={`${filteredPlaces.length} places in ${selectedCity === 'all' ? 'Kedah' : selectedCity}`}
+      searchPlaceholder=\"Search places...\"
+      searchValue={searchTerm}
+      onSearchChange={setSearchTerm}
+      filters={
+        <div className=\"flex gap-2 flex-wrap\">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                selectedCategory === cat 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {cat === 'all' ? 'All' : cat}
+            </button>
+          ))}
+        </div>
+      }
+      listContent={
+        <>
+          {/* Map Preview */}
+          <div className=\"mb-4\">
+            <div className=\"relative w-full h-64 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden\">
+              <MapContainer 
+                center={selectedPlace && selectedPlace.latitude && selectedPlace.longitude 
+                  ? [selectedPlace.latitude, selectedPlace.longitude] 
+                  : center} 
+                zoom={selectedPlace ? 12 : zoom} 
+                scrollWheelZoom={false}
+                style={{ height: '100%', width: '100%' }}
+                key={`map-${selectedPlace?.id || 'default'}`}
+              >
+                <SetViewOnChange 
+                  center={selectedPlace && selectedPlace.latitude && selectedPlace.longitude 
+                    ? [selectedPlace.latitude, selectedPlace.longitude] 
+                    : center} 
+                  zoom={selectedPlace ? 12 : zoom} 
+                />
+                <TileLayer
+                  attribution='&copy; OpenStreetMap contributors'
+                  url=\"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png\"
+                />
+                {markers.map((m, index) => (
+                  <Marker key={`marker-${m.id}-${index}`} position={m.position}>
+                    <Popup>{m.title}</Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </div>
+          </div>
+          
+          {/* Places List */}
+          {loading ? (
+            <div className=\"text-center py-8 text-gray-500\">Loading places...</div>
+          ) : filteredPlaces.length === 0 ? (
+            <div className=\"text-center py-8 text-gray-500\">No places found</div>
+          ) : (
+            filteredPlaces.map(renderPlaceItem)
+          )}
+        </>
+      }
+      detailContent={renderPlaceDetails()}
+    />
+  );
+};
+
+export default MapView;
