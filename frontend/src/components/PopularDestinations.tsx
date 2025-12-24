@@ -526,143 +526,128 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                 </div>
               </div>
 
-              {/* About Section */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-start gap-2 mb-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-blue-600 text-xs font-bold">ℹ</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">About</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {selectedDestination.description || "Description not yet published."}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {/* Place Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Place Details</h3>
 
-              {/* Visiting Information */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Visiting Information</h3>
-                <div className="space-y-3">
-                  {/* Pricing */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <DollarSign className="w-4 h-4" />
-                      <span>Pricing:</span>
+                {/* About */}
+                <div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs font-bold">ℹ</span>
                     </div>
-                    <div className="text-sm font-medium">
-                      {selectedDestination.is_free ? (
-                        <span className="text-green-600">Free Entry</span>
-                      ) : selectedDestination.price ? (
-                        <span className="text-gray-900">
-                          {selectedDestination.currency || 'RM'} {selectedDestination.price}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">Not publicly listed</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Opening Hours */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>Opening hours:</span>
-                    </div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {selectedDestination.opening_hours || (
-                        <span className="text-gray-500">Not public listed</span>
-                      )}
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 mb-1">About</h4>
+                      <p className="text-sm text-gray-600">
+                        {selectedDestination.description || "Description not yet published."}
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Contact & Location */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Contact & Location</h3>
-                <div className="space-y-3">
-                  {/* Contact Details */}
-                  <div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      <Phone className="w-4 h-4" />
-                      <span>Contact details:</span>
+                {/* Visiting Information */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Visiting Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <DollarSign className="w-4 h-4" />
+                        <span>Pricing:</span>
+                      </div>
+                      <span className="font-medium text-gray-900">
+                        {selectedDestination.is_free ? (
+                          "Free Entry"
+                        ) : selectedDestination.price ? (
+                          `${selectedDestination.currency || 'RM'} ${selectedDestination.price}`
+                        ) : (
+                          "Not publicly listed"
+                        )}
+                      </span>
                     </div>
-                    <div className="text-sm font-medium text-gray-900 ml-6">
-                      {selectedDestination.contact_phone || selectedDestination.contact_email ? (
-                        <div className="space-y-1">
-                          {selectedDestination.contact_phone && <div>{selectedDestination.contact_phone}</div>}
-                          {selectedDestination.contact_email && <div>{selectedDestination.contact_email}</div>}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <span>Opening hours:</span>
+                      </div>
+                      <span className="font-medium text-gray-900">
+                        {selectedDestination.opening_hours || "Not public listed"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact & Location */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Contact & Location</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Phone className="w-4 h-4" />
+                        <span>Contact details:</span>
+                      </div>
+                      <span className="font-medium text-gray-900">
+                        {selectedDestination.contact_phone || selectedDestination.contact_email || "Not provided"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>Address:</span>
+                      </div>
+                      <span className="font-medium text-gray-900">
+                        {selectedDestination.address || "Not provided"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* External Resources */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">External Resources</h4>
+                  <div className="text-sm">
+                    <div className="flex items-center gap-2 text-gray-600 mb-2">
+                      <Globe className="w-4 h-4" />
+                      <span>Official links:</span>
+                    </div>
+                    <div className="ml-6">
+                      {(selectedDestination.official_website || selectedDestination.wikipedia_url || selectedDestination.tripadvisor_url) ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedDestination.official_website && (
+                            <a
+                              href={selectedDestination.official_website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-xs"
+                            >
+                              Website
+                            </a>
+                          )}
+                          {selectedDestination.wikipedia_url && (
+                            <a
+                              href={selectedDestination.wikipedia_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-xs"
+                            >
+                              Wikipedia
+                            </a>
+                          )}
+                          {selectedDestination.tripadvisor_url && (
+                            <a
+                              href={selectedDestination.tripadvisor_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-xs"
+                            >
+                              TripAdvisor
+                            </a>
+                          )}
                         </div>
                       ) : (
-                        <span className="text-gray-500">Not provided</span>
+                        <span className="text-gray-600">Not available</span>
                       )}
                     </div>
                   </div>
-
-                  {/* Address */}
-                  <div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>Address:</span>
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 ml-6">
-                      {selectedDestination.address || (
-                        <span className="text-gray-500">Not provided</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* External Resources */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">External Resources</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                  <Globe className="w-4 h-4" />
-                  <span>Official links:</span>
-                </div>
-                <div className="ml-6">
-                  {(selectedDestination.official_website || selectedDestination.wikipedia_url || selectedDestination.tripadvisor_url) ? (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDestination.official_website && (
-                        <a
-                          href={selectedDestination.official_website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-xs font-medium"
-                        >
-                          Website
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                      {selectedDestination.wikipedia_url && (
-                        <a
-                          href={selectedDestination.wikipedia_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-xs font-medium"
-                        >
-                          Wikipedia
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                      {selectedDestination.tripadvisor_url && (
-                        <a
-                          href={selectedDestination.tripadvisor_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors text-xs font-medium"
-                        >
-                          TripAdvisor
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-sm font-medium text-gray-500">Not available</span>
-                  )}
                 </div>
               </div>
             </DetailPanel>
