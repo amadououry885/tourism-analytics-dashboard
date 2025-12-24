@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Loader2, User, Mail, Phone, Calendar, FileText, Users, MapPin } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { X, Check, Loader2, User, Mail, Phone, Calendar, FileText, Users, MapPin } from 'lucide-react';
 import api from '../services/api';
 
 interface Event {
@@ -248,62 +248,105 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
 
   if (!isOpen) return null;
 
-  // Create modal content
+  // Modal content
   const modalContent = (
-    <div 
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(4px)',
+    <>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        zIndex: 999999,
       }}
       onClick={onClose}
     >
       <div 
-        className="relative bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl"
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '16px',
+          width: '100%',
+          maxWidth: '480px',
+          maxHeight: '90vh',
+          overflow: 'hidden',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 z-10">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
+        <div style={{
+          background: 'linear-gradient(to right, #16a34a, #15803d)',
+          color: 'white',
+          padding: '24px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Users style={{ width: '20px', height: '20px', color: 'white' }} />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Join Event</h2>
-                <p className="text-green-100 text-sm truncate max-w-[250px]">{event.title}</p>
+                <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Join Event</h2>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: '4px 0 0 0', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.title}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              style={{
+                color: 'white',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderRadius: '50%',
+                padding: '8px',
+                cursor: 'pointer',
+              }}
             >
-              <X className="w-6 h-6" />
+              <X style={{ width: '24px', height: '24px' }} />
             </button>
           </div>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="overflow-y-auto max-h-[calc(90vh-100px)] p-6 bg-gray-50">
+        <div style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 100px)', padding: '24px', backgroundColor: '#f9fafb' }}>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+              <Loader2 style={{ width: '32px', height: '32px', color: '#16a34a', animation: 'spin 1s linear infinite' }} />
             </div>
           ) : success ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-green-600" />
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <div style={{ width: '64px', height: '64px', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Check style={{ width: '32px', height: '32px', color: '#16a34a' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Registration Successful!</h3>
-              <p className="text-gray-600">{formConfig?.confirmation_message}</p>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>Registration Successful!</h3>
+              <p style={{ color: '#4b5563' }}>{formConfig?.confirmation_message}</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div>
               {/* Event Info */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Calendar className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm">
+              <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#374151', marginBottom: '12px' }}>
+                  <Calendar style={{ width: '16px', height: '16px', color: '#2563eb' }} />
+                  <span style={{ fontSize: '14px' }}>
                     {new Date(event.start_date).toLocaleDateString('en-US', { 
                       weekday: 'long', 
                       year: 'numeric', 
@@ -312,72 +355,95 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
                     })}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <MapPin className="w-4 h-4 text-red-600" />
-                  <span className="text-sm">{event.location_name || event.city || 'Location TBA'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#374151' }}>
+                  <MapPin style={{ width: '16px', height: '16px', color: '#dc2626' }} />
+                  <span style={{ fontSize: '14px' }}>{event.location_name || event.city || 'Location TBA'}</span>
                 </div>
               </div>
 
               {/* Registration Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit}>
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '16px' }}>
                     {error}
                   </div>
                 )}
 
-                <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+                <div style={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb', padding: '16px', marginBottom: '16px' }}>
                   {formConfig?.fields
                     .sort((a, b) => a.order - b.order)
                     .map((field) => (
-                      <div key={field.id}>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                      <div key={field.id} style={{ marginBottom: '16px' }}>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
                           {field.label}
-                          {field.is_required && <span className="text-red-500 ml-1">*</span>}
+                          {field.is_required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
                         </label>
                         {renderField(field)}
                         {field.help_text && (
-                          <p className="text-xs text-gray-500 mt-1">{field.help_text}</p>
+                          <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>{field.help_text}</p>
                         )}
                       </div>
                     ))}
                 </div>
 
                 {/* Info Box */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex gap-3">
-                    <div className="text-blue-600 mt-0.5">
-                      <FileText className="w-4 h-4" />
+                <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ color: '#2563eb', marginTop: '2px' }}>
+                      <FileText style={{ width: '16px', height: '16px' }} />
                     </div>
-                    <div className="text-sm text-blue-900">
-                      <p className="font-semibold mb-1">Confirmation</p>
-                      <p className="text-blue-700">You'll receive a confirmation email with event details.</p>
+                    <div style={{ fontSize: '14px', color: '#1e40af' }}>
+                      <p style={{ fontWeight: '600', marginBottom: '4px' }}>Confirmation</p>
+                      <p style={{ color: '#1d4ed8' }}>You'll receive a confirmation email with event details.</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-2">
+                <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
                   <button
                     type="button"
                     onClick={onClose}
-                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      border: '1px solid #d1d5db',
+                      backgroundColor: 'white',
+                      color: '#374151',
+                      borderRadius: '8px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all font-semibold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      background: 'linear-gradient(to right, #16a34a, #15803d)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      opacity: submitting ? 0.5 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
                   >
                     {submitting ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} />
                         Registering...
                       </>
                     ) : (
                       <>
-                        <Check className="w-5 h-5" />
+                        <Check style={{ width: '20px', height: '20px' }} />
                         Confirm
                       </>
                     )}
@@ -389,8 +455,10 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
         </div>
       </div>
     </div>
+    </>
   );
 
-  // Use createPortal to render at document.body level
+  // Use createPortal to render at document.body level - this ensures modal
+  // is not affected by any parent CSS (transforms, overflow, stacking contexts)
   return createPortal(modalContent, document.body);
 }
