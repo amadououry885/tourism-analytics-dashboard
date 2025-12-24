@@ -665,8 +665,6 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   )}
                 </div>
               </div>
-                )}
-              </div>
             </DetailPanel>
           ) : (
             <div className="h-full flex items-center justify-center p-8 text-center">
