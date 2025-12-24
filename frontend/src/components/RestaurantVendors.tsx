@@ -345,8 +345,8 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
 
       {/* Master-Detail Layout */}
       <MasterDetailLayout
-        leftPanelWidth="w-1/2"
-        rightPanelWidth="w-1/2"
+        leftPanelWidth="w-2/5"
+        rightPanelWidth="w-3/5"
         leftPanel={
           <div className="bg-white">
             {sortedRestaurants.length === 0 ? (
