@@ -89,8 +89,12 @@ export function MasterDetailLayout({
   }
 
   // Legacy layout for backward compatibility
+  const containerStyle = className?.includes('h-full') 
+    ? { height: '100%' } 
+    : { height: 'calc(100vh - 300px)' };
+    
   return (
-    <div className={`flex ${className}`} style={className?.includes('h-full') ? undefined : { height: 'calc(100vh - 300px)' }}>
+    <div className={`flex ${className}`} style={containerStyle}>
       {/* Left Panel - Master List */}
       <div 
         className={`${leftPanelWidth} overflow-y-auto flex-shrink-0`}
