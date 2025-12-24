@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { MapPin, Star, Users, Search, Heart, Clock, X, Phone, Mail, ExternalLink, Navigation, Share2, DollarSign, CalendarPlus } from 'lucide-react';
+import { MapPin, Star, Users, Search, Heart, Clock, X, Phone, Mail, ExternalLink, Navigation, Share2, DollarSign, CalendarPlus, Utensils, Flame, Leaf } from 'lucide-react';
 import { Input } from './ui/input';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MasterDetailLayout } from './MasterDetailLayout';
@@ -36,6 +36,19 @@ interface Restaurant {
   badges?: string[];
 }
 
+// Interface for menu items
+interface MenuItem {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  price: string;
+  is_available: boolean;
+  is_vegetarian: boolean;
+  is_halal: boolean;
+  spiciness_level: number;
+}
+
 interface RestaurantVendorsProps {
   timeRange?: string;
   selectedCity: string;
@@ -57,6 +70,26 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(false);
+
+  // Fetch menu when restaurant is selected
+  useEffect(() => {
+    if (selectedRestaurant) {
+      setIsLoadingMenu(true);
+      api.get(`/vendors/${selectedRestaurant.id}/menu/`)
+        .then(res => {
+          setMenuItems(res.data || []);
+        })
+        .catch(err => {
+          console.error('Error fetching menu:', err);
+          setMenuItems([]);
+        })
+        .finally(() => setIsLoadingMenu(false));
+    } else {
+      setMenuItems([]);
+    }
+  }, [selectedRestaurant]);
 
   const handleSelectRestaurant = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
@@ -472,6 +505,64 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                   </div>
                 </div>
               )}
+
+              {/* Menu Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Utensils className="w-5 h-5 text-orange-500" />
+                  Menu
+                </h3>
+                {isLoadingMenu ? (
+                  <div className="text-center py-4 text-gray-500">Loading menu...</div>
+                ) : menuItems.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {/* Group by category */}
+                    {Object.entries(
+                      menuItems.reduce((acc, item) => {
+                        if (!acc[item.category]) acc[item.category] = [];
+                        acc[item.category].push(item);
+                        return acc;
+                      }, {} as Record<string, MenuItem[]>)
+                    ).map(([category, items]) => (
+                      <div key={category}>
+                        <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">{category}</h4>
+                        <div className="space-y-2">
+                          {items.map((item) => (
+                            <div 
+                              key={item.id} 
+                              className="flex justify-between items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-900">{item.name}</span>
+                                  {item.is_vegetarian && (
+                                    <Leaf className="w-4 h-4 text-green-500" title="Vegetarian" />
+                                  )}
+                                  {item.spiciness_level > 0 && (
+                                    <span className="flex items-center" title={`Spiciness: ${item.spiciness_level}/5`}>
+                                      {[...Array(Math.min(item.spiciness_level, 3))].map((_, i) => (
+                                        <Flame key={i} className="w-3 h-3 text-red-500" />
+                                      ))}
+                                    </span>
+                                  )}
+                                </div>
+                                {item.description && (
+                                  <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                                )}
+                              </div>
+                              <span className="font-semibold text-orange-600 ml-3">
+                                RM {parseFloat(item.price).toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No menu available</p>
+                )}
+              </div>
 
               {/* Reservation Button */}
               <div className="pt-4 border-t border-gray-200">
