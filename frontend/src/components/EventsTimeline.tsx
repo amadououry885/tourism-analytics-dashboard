@@ -832,15 +832,11 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
                         </button>
                       ) : (
                         <button
-                          onClick={handleRegister}
-                          disabled={selectedEvent.is_full || actionLoading === 'register'}
+                          onClick={() => setIsRegistrationModalOpen(true)}
+                          disabled={selectedEvent.is_full}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                         >
-                          {actionLoading === 'register' ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <Users className="w-5 h-5" />
-                          )}
+                          <Users className="w-5 h-5" />
                           {selectedEvent.is_full ? 'Event Full' : 'JOIN US'}
                         </button>
                       )
