@@ -547,7 +547,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                 {/* Visiting Information */}
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Visiting Information</h4>
-                  <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 text-sm">
                       <DollarSign className="w-4 h-4 text-gray-600" />
                       <span className="text-gray-600">Pricing:</span>
@@ -574,7 +574,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                 {/* Contact & Location */}
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Contact & Location</h4>
-                  <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="w-4 h-4 text-gray-600" />
                       <span className="text-gray-600">Contact details:</span>
