@@ -21,10 +21,10 @@ export function DetailPanel({
   showCloseButton = false
 }: DetailPanelProps) {
   return (
-    <div className="h-full bg-white">
+    <div className="h-full w-full bg-white">
       {/* Header with optional image */}
       {image && (
-        <div className="relative h-64 bg-gradient-to-br from-blue-500 to-purple-500">
+        <div className="relative h-64 w-full bg-gradient-to-br from-blue-500 to-purple-500">
           <img
             src={image}
             alt={title}
@@ -44,8 +44,8 @@ export function DetailPanel({
         </div>
       )}
 
-      {/* Content - constrained width for consistent card sizes */}
-      <div className="p-6 max-w-2xl">
+      {/* Content - full width */}
+      <div className="p-6 w-full">
         {/* Title Section */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -59,7 +59,7 @@ export function DetailPanel({
         </div>
 
         {/* Main Content */}
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           {children}
         </div>
 

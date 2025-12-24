@@ -104,15 +104,17 @@ export function MasterDetailLayout({
         {leftPanel}
       </div>
 
-      {/* Right Panel - Fixed, only content scrolls */}
+      {/* Right Panel - Fixed width, content stretches to fill */}
       <div 
-        className={`${rightPanelWidth} bg-white flex-shrink-0`}
+        className={`${rightPanelWidth} bg-white flex-shrink-0 flex flex-col`}
         style={{
           height: '100%',
           overflowY: 'auto'
         }}
       >
-        {rightPanel}
+        <div className="flex-1 w-full">
+          {rightPanel}
+        </div>
       </div>
     </div>
   );
