@@ -22,7 +22,7 @@ import {
   Phone,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import api from '../../services/api';
 
 interface Restaurant {
   id: number;
@@ -140,8 +140,8 @@ export default function VendorDashboardNew() {
     try {
       setLoading(true);
       const [restaurantsRes, menuRes] = await Promise.all([
-        axios.get('/vendors/'),
-        axios.get('/vendors/menu-items/'),
+        api.get('/vendors/'),
+        api.get('/vendors/menu-items/'),
       ]);
       
       const vendorData = restaurantsRes.data.results || [];
@@ -174,7 +174,7 @@ export default function VendorDashboardNew() {
   const handleDeleteRestaurant = async (id: number) => {
     if (!confirm('Are you sure you want to delete this restaurant?')) return;
     try {
-      await axios.delete(`/api/vendors/${id}/`);
+      await api.delete(`/vendors/${id}/`);
       await fetchData();
     } catch (error) {
       console.error('Error deleting restaurant:', error);
@@ -184,7 +184,7 @@ export default function VendorDashboardNew() {
 
   const handleToggleStatus = async (id: number, currentStatus: boolean) => {
     try {
-      await axios.patch(`/api/vendors/${id}/`, { is_active: !currentStatus });
+      await api.patch(`/vendors/${id}/`, { is_active: !currentStatus });
       await fetchData();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -206,10 +206,10 @@ export default function VendorDashboardNew() {
       };
 
       if (editingRestaurant) {
-        await axios.put(`/api/vendors/${editingRestaurant}/`, payload);
+        await api.put(`/vendors/${editingRestaurant}/`, payload);
         alert('Restaurant updated successfully!');
       } else {
-        await axios.post('/vendors/', payload);
+        await api.post('/vendors/', payload);
         alert('Restaurant added successfully!');
       }
       
@@ -250,7 +250,7 @@ export default function VendorDashboardNew() {
   const handleEditRestaurant = (restaurant: Restaurant) => {
     setEditingRestaurant(restaurant.id);
     // Load restaurant data into form
-    axios.get(`/api/vendors/${restaurant.id}/`).then(res => {
+    api.get(`/vendors/${restaurant.id}/`).then(res => {
       const data = res.data;
       setRestaurantForm({
         name: data.name || '',
@@ -296,7 +296,7 @@ export default function VendorDashboardNew() {
         price: parseFloat(menuForm.price),
         spiciness_level: menuForm.spiciness_level,
       };
-      await axios.post('/vendors/menu-items/', payload);
+      await api.post('/vendors/menu-items/', payload);
       alert('Menu item added successfully!');
       setMenuForm({
         restaurant: '',
@@ -321,7 +321,7 @@ export default function VendorDashboardNew() {
   const handleDeleteMenuItem = async (id: number) => {
     if (!confirm('Are you sure you want to delete this menu item?')) return;
     try {
-      await axios.delete(`/api/vendors/menu-items/${id}/`);
+      await api.delete(`/vendors/menu-items/${id}/`);
       await fetchData();
     } catch (error) {
       console.error('Error deleting menu item:', error);
@@ -331,7 +331,7 @@ export default function VendorDashboardNew() {
 
   const handleToggleMenuAvailability = async (id: number, currentStatus: boolean) => {
     try {
-      await axios.patch(`/api/vendors/menu-items/${id}/`, { is_available: !currentStatus });
+      await api.patch(`/vendors/menu-items/${id}/`, { is_available: !currentStatus });
       await fetchData();
     } catch (error) {
       console.error('Error updating menu item:', error);

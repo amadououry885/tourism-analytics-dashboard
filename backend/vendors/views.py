@@ -109,11 +109,22 @@ class VendorViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def make_reservation(self, request, pk=None):
+        """Create a reservation and send confirmation email"""
+        from .emails import send_reservation_confirmation
+        
         vendor = self.get_object()
         serializer = ReservationSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(vendor=vendor)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            reservation = serializer.save(vendor=vendor)
+            
+            # Send confirmation email
+            email_sent = send_reservation_confirmation(reservation)
+            
+            return Response({
+                'reservation': serializer.data,
+                'email_sent': email_sent,
+                'message': 'Reservation created successfully!'
+            }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
