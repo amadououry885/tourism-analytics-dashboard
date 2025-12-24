@@ -509,7 +509,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               }
             >
               {/* Metrics Grid */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4 w-full">
                 <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <MessageCircle className="w-6 h-6 mx-auto mb-2 text-blue-600" />
                   <div className="text-2xl font-bold text-blue-900">{selectedDestination.posts || 0}</div>
