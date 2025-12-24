@@ -373,7 +373,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   };
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
+    <div className="flex flex-col h-full">
       {/* Filters Bar */}
       <Card className="bg-white flex-shrink-0" style={{ border: '1px solid #E5E7EB' }}>
         <CardContent className="p-4">
