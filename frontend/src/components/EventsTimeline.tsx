@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api'; // Use configured API instance instead of raw axios
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Calendar, MapPin, Users, TrendingUp, Filter, Search, Clock, Navigation, Share2, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Users, TrendingUp, Filter, Search, Clock, Navigation, Share2, ExternalLink, Bell, BellOff, UserCheck, UserX, Home, Utensils, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { MasterDetailLayout } from './MasterDetailLayout';
 import { ListItem } from './ListItem';
 import { DetailPanel } from './DetailPanel';
+import { EventRegistrationModal } from './EventRegistrationModal';
 
 interface EventsTimelineProps {
   timeRange?: string;
@@ -197,6 +198,12 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const [shouldScrollToImage, setShouldScrollToImage] = useState(false); // ✨ NEW: Track if JOIN US was clicked
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [registrationForm, setRegistrationForm] = useState({ name: '', email: '', phone: '' });
+  
+  // ✨ NEW: API action states
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [nearbyStays, setNearbyStays] = useState<any[]>([]);
+  const [nearbyRestaurants, setNearbyRestaurants] = useState<any[]>([]);
+  const [userReminders, setUserReminders] = useState<string[]>([]);
 
   // Calculate now once to avoid recreation
   const now = useMemo(() => new Date(), []);
@@ -227,6 +234,132 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         text: `Join ${selectedEvent.title} on ${new Date(selectedEvent.start_date).toLocaleDateString()}`,
         url: window.location.href
       }).catch(() => {});
+    }
+  };
+
+  // ✨ NEW: Handle user registration via API
+  const handleRegister = async () => {
+    if (!selectedEvent) return;
+    
+    setActionLoading('register');
+    try {
+      const response = await api.post(`/events/${selectedEvent.id}/register/`);
+      // Update local event state
+      setEvents(prev => prev.map(e => 
+        e.id === selectedEvent.id 
+          ? { ...e, user_registered: true, attendee_count: response.data.attendee_count, spots_remaining: response.data.spots_remaining }
+          : e
+      ));
+      setSelectedEvent(prev => prev ? { ...prev, user_registered: true, attendee_count: response.data.attendee_count, spots_remaining: response.data.spots_remaining } : null);
+      alert('Successfully registered for event!');
+    } catch (error: any) {
+      console.error('Registration failed:', error);
+      // If not authenticated, open the registration modal for guest registration
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        setIsRegistrationModalOpen(true);
+      } else {
+        alert(error.response?.data?.error || 'Registration failed. Please try again.');
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // ✨ NEW: Handle user unregistration via API
+  const handleUnregister = async () => {
+    if (!selectedEvent) return;
+    
+    if (!confirm('Are you sure you want to cancel your registration?')) return;
+    
+    setActionLoading('unregister');
+    try {
+      const response = await api.post(`/events/${selectedEvent.id}/unregister/`);
+      // Update local event state
+      setEvents(prev => prev.map(e => 
+        e.id === selectedEvent.id 
+          ? { ...e, user_registered: false, attendee_count: response.data.attendee_count, spots_remaining: response.data.spots_remaining }
+          : e
+      ));
+      setSelectedEvent(prev => prev ? { ...prev, user_registered: false, attendee_count: response.data.attendee_count, spots_remaining: response.data.spots_remaining } : null);
+      alert('Registration cancelled successfully.');
+    } catch (error: any) {
+      console.error('Unregistration failed:', error);
+      alert(error.response?.data?.error || 'Failed to cancel registration.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // ✨ NEW: Handle set reminder via API
+  const handleSetReminder = async (reminderTime: '1_week' | '1_day' | '1_hour') => {
+    if (!selectedEvent) return;
+    
+    setActionLoading('reminder');
+    try {
+      await api.post(`/events/${selectedEvent.id}/set_reminder/`, { reminder_time: reminderTime });
+      setUserReminders(prev => [...prev, reminderTime]);
+      setSelectedEvent(prev => prev ? { ...prev, user_has_reminder: true } : null);
+      alert(`Reminder set for ${reminderTime.replace('_', ' ')} before the event!`);
+    } catch (error: any) {
+      console.error('Set reminder failed:', error);
+      if (error.response?.status === 401) {
+        alert('Please login to set reminders.');
+      } else {
+        alert(error.response?.data?.error || 'Failed to set reminder.');
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // ✨ NEW: Handle remove reminder via API
+  const handleRemoveReminder = async () => {
+    if (!selectedEvent) return;
+    
+    setActionLoading('reminder');
+    try {
+      await api.delete(`/events/${selectedEvent.id}/remove_reminder/`);
+      setUserReminders([]);
+      setSelectedEvent(prev => prev ? { ...prev, user_has_reminder: false } : null);
+      alert('Reminder removed.');
+    } catch (error: any) {
+      console.error('Remove reminder failed:', error);
+      alert(error.response?.data?.error || 'Failed to remove reminder.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // ✨ NEW: Fetch nearby stays for selected event
+  const fetchNearbyStays = async (eventId: number) => {
+    try {
+      const response = await api.get(`/events/${eventId}/nearby_stays/`);
+      setNearbyStays(response.data.stays || []);
+    } catch (error) {
+      console.warn('Could not fetch nearby stays:', error);
+      setNearbyStays([]);
+    }
+  };
+
+  // ✨ NEW: Fetch nearby restaurants for selected event
+  const fetchNearbyRestaurants = async (eventId: number) => {
+    try {
+      const response = await api.get(`/events/${eventId}/nearby_restaurants/`);
+      setNearbyRestaurants(response.data.restaurants || []);
+    } catch (error) {
+      console.warn('Could not fetch nearby restaurants:', error);
+      setNearbyRestaurants([]);
+    }
+  };
+
+  // ✨ NEW: Fetch user's reminders for selected event
+  const fetchUserReminders = async (eventId: number) => {
+    try {
+      const response = await api.get(`/events/${eventId}/my_reminders/`);
+      setUserReminders(response.data.map((r: any) => r.reminder_time));
+    } catch (error) {
+      // User not authenticated or no reminders
+      setUserReminders([]);
     }
   };
 
@@ -368,6 +501,15 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
       setSelectedEvent(null);
     }
   }, [filteredEvents, selectedEvent]);
+
+  // ✨ NEW: Fetch nearby places and reminders when event is selected
+  useEffect(() => {
+    if (selectedEvent?.id) {
+      fetchNearbyStays(selectedEvent.id);
+      fetchNearbyRestaurants(selectedEvent.id);
+      fetchUserReminders(selectedEvent.id);
+    }
+  }, [selectedEvent?.id]);
 
   if (loading) {
     return <div className="text-gray-900">Loading events...</div>;
@@ -663,31 +805,109 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
               subtitle={`${selectedEvent.location_name || selectedEvent.city || 'Kedah'} • ${new Date(selectedEvent.start_date).toLocaleDateString()}`}
               image={selectedEvent.image_url}
               actions={
-                <div className="flex gap-3">
-                  {/* JOIN US Button - Only for upcoming events */}
-                  {new Date(selectedEvent.start_date) > now && (
-                    <button
-                      onClick={() => setIsRegistrationModalOpen(true)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg transform hover:scale-105 font-semibold"
-                      disabled={selectedEvent.is_full}
-                    >
-                      <Users className="w-5 h-5" />
-                      {selectedEvent.is_full ? 'Event Full' : 'JOIN US'}
-                    </button>
+                <div className="space-y-3">
+                  {/* Registration Status Badge */}
+                  {selectedEvent.user_registered && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <UserCheck className="w-5 h-5 text-green-600" />
+                      <span className="text-green-700 font-medium">You are registered for this event</span>
+                    </div>
                   )}
-                  <button
-                    onClick={handleGetDirections}
-                    className={`${new Date(selectedEvent.start_date) > now ? 'flex-1' : 'flex-[2]'} flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium`}
-                  >
-                    <Navigation className="w-5 h-5" />
-                    Get Directions
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </button>
+                  
+                  <div className="flex gap-3">
+                    {/* JOIN US / Unregister Button - Only for upcoming events */}
+                    {new Date(selectedEvent.start_date) > now && (
+                      selectedEvent.user_registered ? (
+                        <button
+                          onClick={handleUnregister}
+                          disabled={actionLoading === 'unregister'}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-100 text-red-700 border border-red-300 rounded-lg hover:bg-red-200 transition-all font-medium"
+                        >
+                          {actionLoading === 'unregister' ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <UserX className="w-5 h-5" />
+                          )}
+                          Cancel Registration
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleRegister}
+                          disabled={selectedEvent.is_full || actionLoading === 'register'}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        >
+                          {actionLoading === 'register' ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <Users className="w-5 h-5" />
+                          )}
+                          {selectedEvent.is_full ? 'Event Full' : 'JOIN US'}
+                        </button>
+                      )
+                    )}
+                    
+                    {/* Reminder Button - Only for upcoming events */}
+                    {new Date(selectedEvent.start_date) > now && (
+                      selectedEvent.user_has_reminder || userReminders.length > 0 ? (
+                        <button
+                          onClick={handleRemoveReminder}
+                          disabled={actionLoading === 'reminder'}
+                          className="px-4 py-3 bg-yellow-100 text-yellow-700 border border-yellow-300 rounded-lg hover:bg-yellow-200 transition-colors"
+                          title="Remove reminder"
+                        >
+                          {actionLoading === 'reminder' ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <BellOff className="w-5 h-5" />
+                          )}
+                        </button>
+                      ) : (
+                        <div className="relative group">
+                          <button
+                            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            title="Set reminder"
+                          >
+                            <Bell className="w-5 h-5" />
+                          </button>
+                          {/* Dropdown for reminder options */}
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[140px]">
+                            <button
+                              onClick={() => handleSetReminder('1_week')}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 rounded-t-lg"
+                            >
+                              1 week before
+                            </button>
+                            <button
+                              onClick={() => handleSetReminder('1_day')}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+                            >
+                              1 day before
+                            </button>
+                            <button
+                              onClick={() => handleSetReminder('1_hour')}
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 rounded-b-lg"
+                            >
+                              1 hour before
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    )}
+                    
+                    <button
+                      onClick={handleGetDirections}
+                      className={`${new Date(selectedEvent.start_date) > now ? '' : 'flex-[2]'} flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium`}
+                    >
+                      <Navigation className="w-5 h-5" />
+                      Get Directions
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      <Share2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               }
             >
@@ -884,6 +1104,79 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
                   </div>
                 </div>
               )}
+
+              {/* ✨ NEW: Nearby Accommodations */}
+              {nearbyStays.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Home className="w-5 h-5 text-blue-600" />
+                    Nearby Accommodations
+                  </h3>
+                  <div className="space-y-3">
+                    {nearbyStays.map((stay: any) => (
+                      <div key={stay.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{stay.name}</h4>
+                            <p className="text-sm text-gray-600">{stay.city || 'Kedah'}</p>
+                            {stay.stay_type && (
+                              <Badge className="mt-1 bg-blue-100 text-blue-700 border-blue-300 text-xs">
+                                {stay.stay_type}
+                              </Badge>
+                            )}
+                          </div>
+                          {stay.price_per_night && (
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-blue-600">
+                                RM {stay.price_per_night}
+                              </div>
+                              <div className="text-xs text-gray-500">per night</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ✨ NEW: Nearby Restaurants */}
+              {nearbyRestaurants.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Utensils className="w-5 h-5 text-orange-600" />
+                    Nearby Restaurants
+                  </h3>
+                  <div className="space-y-3">
+                    {nearbyRestaurants.map((restaurant: any) => (
+                      <div key={restaurant.id} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{restaurant.name}</h4>
+                            <p className="text-sm text-gray-600">{restaurant.address || restaurant.city || 'Kedah'}</p>
+                            {restaurant.cuisines && restaurant.cuisines.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {restaurant.cuisines.slice(0, 3).map((cuisine: string, idx: number) => (
+                                  <Badge key={idx} className="bg-orange-100 text-orange-700 border-orange-300 text-xs">
+                                    {cuisine}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {restaurant.rating && (
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-orange-600">
+                                ⭐ {restaurant.rating.toFixed(1)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </DetailPanel>
           ) : (
             <div className="h-full flex items-center justify-center p-8 text-center">
@@ -960,147 +1253,23 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         </Card>
       )}
 
-      {/* Registration Modal */}
+      {/* Registration Modal - Using proper component with API integration */}
       {isRegistrationModalOpen && selectedEvent && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-2xl">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-2">Join Event</h2>
-                  <p className="text-green-100 text-sm line-clamp-1">{selectedEvent.title}</p>
-                </div>
-                <button
-                  onClick={() => setIsRegistrationModalOpen(false)}
-                  className="text-white hover:bg-white/20 rounded-full p-2 transition-colors ml-4"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-6">
-              {/* Event Summary */}
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium">{new Date(selectedEvent.start_date).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <MapPin className="w-5 h-5 text-red-600" />
-                  <span>{selectedEvent.location_name || selectedEvent.city || 'Kedah'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Users className="w-5 h-5 text-green-600" />
-                  <span>
-                    {selectedEvent.attendee_count || 0} / {selectedEvent.max_capacity || 'Unlimited'} registered
-                  </span>
-                </div>
-                {calculateDaysLeft(selectedEvent.start_date) > 0 && (
-                  <div className="flex items-center gap-2 text-orange-600 font-semibold">
-                    <Clock className="w-5 h-5" />
-                    <span>{calculateDaysLeft(selectedEvent.start_date)} days until event</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Registration Form */}
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                // Handle registration submission
-                alert(`Registration submitted for ${registrationForm.name}!\n\nYou'll receive a confirmation email at ${registrationForm.email}`);
-                setIsRegistrationModalOpen(false);
-                setRegistrationForm({ name: '', email: '', phone: '' });
-              }} className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    required
-                    value={registrationForm.name}
-                    onChange={(e) => setRegistrationForm({ ...registrationForm, name: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    required
-                    value={registrationForm.email}
-                    onChange={(e) => setRegistrationForm({ ...registrationForm, email: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                    placeholder="your.email@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    required
-                    value={registrationForm.phone}
-                    onChange={(e) => setRegistrationForm({ ...registrationForm, phone: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                    placeholder="+60 12-345 6789"
-                  />
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex gap-3">
-                    <div className="text-blue-600 mt-0.5">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 text-sm text-blue-900">
-                      <p className="font-semibold mb-1">Confirmation Details</p>
-                      <p className="text-blue-700">You'll receive a confirmation email with event details and QR code for check-in.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsRegistrationModalOpen(false)}
-                    className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={selectedEvent.is_full}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all font-semibold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {selectedEvent.is_full ? 'Event Full' : 'Confirm Registration'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+        <EventRegistrationModal
+          event={selectedEvent}
+          isOpen={isRegistrationModalOpen}
+          onClose={() => {
+            setIsRegistrationModalOpen(false);
+            // Refresh event data after registration
+            if (selectedEvent) {
+              api.get(`/events/${selectedEvent.id}/`).then(response => {
+                const updatedEvent = response.data;
+                setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+                setSelectedEvent(updatedEvent);
+              }).catch(console.error);
+            }
+          }}
+        />
       )}
     </div>
   );
