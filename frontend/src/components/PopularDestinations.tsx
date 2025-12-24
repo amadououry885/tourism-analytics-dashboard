@@ -373,9 +373,9 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
       {/* Filters Bar */}
-      <Card className="bg-white" style={{ border: '1px solid #E5E7EB' }}>
+      <Card className="bg-white flex-shrink-0" style={{ border: '1px solid #E5E7EB' }}>
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-4 items-center">
             {/* Search */}
@@ -440,8 +440,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       </Card>
 
       {/* Master-Detail Layout */}
-      <MasterDetailLayout
-        leftPanel={
+      <div className="flex-1 min-h-0">
+        <MasterDetailLayout
+          className="h-full"
+          leftPanel={
           <div className="bg-white">
             {filteredDestinations.length === 0 ? (
               <div className="p-8 text-center">
@@ -641,6 +643,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
           )
         }
       />
+      </div>
 
       {/* Least Visited Destinations */}
       {leastVisited.length > 0 && (
