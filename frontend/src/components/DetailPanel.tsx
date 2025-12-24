@@ -44,8 +44,8 @@ export function DetailPanel({
         </div>
       )}
 
-      {/* Content */}
-      <div className="p-6">
+      {/* Content - constrained width for consistent card sizes */}
+      <div className="p-6 max-w-2xl">
         {/* Title Section */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
