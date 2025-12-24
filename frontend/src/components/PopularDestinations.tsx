@@ -527,72 +527,89 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               </div>
 
               {/* Description */}
-              {selectedDestination.description && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
-                  <p className="text-gray-600 leading-relaxed">{selectedDestination.description}</p>
-                </div>
-              )}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {selectedDestination.description || (
+                    <span className="text-gray-400 italic">No information available</span>
+                  )}
+                </p>
+              </div>
 
               {/* Pricing */}
-              {(selectedDestination.is_free || selectedDestination.price) && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Pricing</h3>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-green-600" />
-                    {selectedDestination.is_free ? (
-                      <span className="text-green-600 font-semibold">Free Entry</span>
-                    ) : (
-                      <span className="text-gray-700 font-semibold">
-                        {selectedDestination.currency || 'RM'} {selectedDestination.price}
-                      </span>
-                    )}
-                  </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Pricing</h3>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                  {selectedDestination.is_free ? (
+                    <span className="text-green-600 font-semibold">Free Entry</span>
+                  ) : selectedDestination.price ? (
+                    <span className="text-gray-700 font-semibold">
+                      {selectedDestination.currency || 'RM'} {selectedDestination.price}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 italic">No pricing information available</span>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Contact Information */}
-              {(selectedDestination.contact_phone || selectedDestination.contact_email || selectedDestination.address) && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
-                  <div className="space-y-2">
-                    {selectedDestination.contact_phone && (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Phone className="w-4 h-4" />
-                        <span>{selectedDestination.contact_phone}</span>
-                      </div>
-                    )}
-                    {selectedDestination.contact_email && (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Mail className="w-4 h-4" />
-                        <span>{selectedDestination.contact_email}</span>
-                      </div>
-                    )}
-                    {selectedDestination.address && (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="w-4 h-4" />
-                        <span>{selectedDestination.address}</span>
-                      </div>
-                    )}
-                  </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
+                <div className="space-y-2">
+                  {selectedDestination.contact_phone ? (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone className="w-4 h-4" />
+                      <span>{selectedDestination.contact_phone}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Phone className="w-4 h-4" />
+                      <span className="italic">No phone number available</span>
+                    </div>
+                  )}
+                  {selectedDestination.contact_email ? (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Mail className="w-4 h-4" />
+                      <span>{selectedDestination.contact_email}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Mail className="w-4 h-4" />
+                      <span className="italic">No email available</span>
+                    </div>
+                  )}
+                  {selectedDestination.address ? (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>{selectedDestination.address}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <MapPin className="w-4 h-4" />
+                      <span className="italic">No address available</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Opening Hours */}
-              {selectedDestination.opening_hours && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Opening Hours</h3>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    <span>{selectedDestination.opening_hours}</span>
-                  </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Opening Hours</h3>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Clock className="w-4 h-4" />
+                  <span>
+                    {selectedDestination.opening_hours || (
+                      <span className="text-gray-400 italic">No opening hours available</span>
+                    )}
+                  </span>
                 </div>
-              )}
+              </div>
 
               {/* External Links */}
-              {(selectedDestination.wikipedia_url || selectedDestination.official_website || selectedDestination.tripadvisor_url) && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">External Links</h3>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">External Links</h3>
+                {(selectedDestination.official_website || selectedDestination.wikipedia_url || selectedDestination.tripadvisor_url) ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedDestination.official_website && (
                       <a
@@ -629,8 +646,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                       </a>
                     )}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-gray-400 italic">No external links available</p>
+                )}
+              </div>
             </DetailPanel>
           ) : (
             <div className="h-full flex items-center justify-center p-8 text-center">
