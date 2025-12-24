@@ -107,9 +107,9 @@ class VendorViewSet(viewsets.ModelViewSet):
         serializer = PromotionSerializer(promotions, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[])
     def make_reservation(self, request, pk=None):
-        """Create a reservation and send confirmation email"""
+        """Create a reservation and send confirmation email (public endpoint)"""
         from .emails import send_reservation_confirmation
         
         vendor = self.get_object()
@@ -304,3 +304,56 @@ class PromotionViewSet(viewsets.ModelViewSet):
             vendor_ids = user.vendor_set.values_list('id', flat=True)
             return Promotion.objects.filter(vendor_id__in=vendor_ids)
         return Promotion.objects.none()
+
+
+class ReservationViewSet(viewsets.ModelViewSet):
+    """CRUD for reservations - vendor owners see their reservations"""
+    serializer_class = ReservationSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            # Admin sees all
+            if user.role == 'admin':
+                return Reservation.objects.all().order_by('-date', '-time')
+            # Vendors see reservations for their restaurants
+            if hasattr(user, 'vendor_set'):
+                vendor_ids = user.vendor_set.values_list('id', flat=True)
+                return Reservation.objects.filter(vendor_id__in=vendor_ids).order_by('-date', '-time')
+        return Reservation.objects.none()
+    
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        """Confirm a reservation and send email"""
+        from .emails import send_reservation_status_update
+        
+        reservation = self.get_object()
+        old_status = reservation.status
+        reservation.status = 'confirmed'
+        reservation.save()
+        
+        email_sent = send_reservation_status_update(reservation, old_status)
+        
+        return Response({
+            'status': 'confirmed',
+            'email_sent': email_sent,
+            'message': 'Reservation confirmed successfully!'
+        })
+    
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel a reservation and send email"""
+        from .emails import send_reservation_status_update
+        
+        reservation = self.get_object()
+        old_status = reservation.status
+        reservation.status = 'cancelled'
+        reservation.save()
+        
+        email_sent = send_reservation_status_update(reservation, old_status)
+        
+        return Response({
+            'status': 'cancelled',
+            'email_sent': email_sent,
+            'message': 'Reservation cancelled successfully!'
+        })

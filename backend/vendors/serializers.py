@@ -32,9 +32,30 @@ class PromotionSerializer(serializers.ModelSerializer):
 
 
 class ReservationSerializer(serializers.ModelSerializer):
+    # Accept frontend field names and map to model fields
+    reservation_date = serializers.DateField(source='date', required=False)
+    reservation_time = serializers.TimeField(source='time', required=False)
+    
     class Meta:
         model = Reservation
-        fields = "__all__"
+        fields = [
+            'id', 'vendor', 'customer_name', 'customer_email', 'customer_phone',
+            'date', 'time', 'reservation_date', 'reservation_time',
+            'party_size', 'special_requests', 'status'
+        ]
+        extra_kwargs = {
+            'vendor': {'required': False},  # Set in view
+            'date': {'required': False},     # Can use reservation_date
+            'time': {'required': False},     # Can use reservation_time
+        }
+    
+    def validate(self, data):
+        # Ensure date and time are provided (either directly or via aliases)
+        if 'date' not in data:
+            raise serializers.ValidationError({'date': 'This field is required.'})
+        if 'time' not in data:
+            raise serializers.ValidationError({'time': 'This field is required.'})
+        return data
 
 
 class VendorDetailSerializer(serializers.ModelSerializer):

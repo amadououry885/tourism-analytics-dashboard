@@ -8,6 +8,7 @@ router.register(r"menu-items", views.MenuItemViewSet, basename='menuitem')
 router.register(r"opening-hours", views.OpeningHoursViewSet, basename='openinghours')
 router.register(r"reviews", views.ReviewViewSet, basename='review')
 router.register(r"promotions", views.PromotionViewSet, basename='promotion')
+router.register(r"reservations", views.ReservationViewSet, basename='reservation')
 
 urlpatterns = [
     path("", include(router.urls)),
