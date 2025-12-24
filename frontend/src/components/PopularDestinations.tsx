@@ -528,34 +528,30 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               </div>
 
               {/* Place Details */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900">Place Details</h3>
 
                 {/* About */}
-                <div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs font-bold">ℹ</span>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-1">About</h4>
-                      <p className="text-sm text-gray-600">
-                        {selectedDestination.description || "Description not yet published."}
-                      </p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">ℹ</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900 mb-1">About</h4>
+                    <p className="text-sm text-gray-600">
+                      {selectedDestination.description || "Description not yet published."}
+                    </p>
                   </div>
                 </div>
 
                 {/* Visiting Information */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Visiting Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <DollarSign className="w-4 h-4" />
-                        <span>Pricing:</span>
-                      </div>
-                      <span className="font-medium text-gray-900">
+                  <h4 className="font-medium text-gray-900 mb-3">Visiting Information</h4>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2 text-sm">
+                      <DollarSign className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-600">Pricing:</span>
+                      <span className="ml-auto text-gray-900">
                         {selectedDestination.is_free ? (
                           "Free Entry"
                         ) : selectedDestination.price ? (
@@ -565,12 +561,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                         )}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>Opening hours:</span>
-                      </div>
-                      <span className="font-medium text-gray-900">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-600">Opening hours:</span>
+                      <span className="ml-auto text-gray-900">
                         {selectedDestination.opening_hours || "Not public listed"}
                       </span>
                     </div>
@@ -579,23 +573,19 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
                 {/* Contact & Location */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Contact & Location</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Phone className="w-4 h-4" />
-                        <span>Contact details:</span>
-                      </div>
-                      <span className="font-medium text-gray-900">
+                  <h4 className="font-medium text-gray-900 mb-3">Contact & Location</h4>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-600">Contact details:</span>
+                      <span className="ml-auto text-gray-900">
                         {selectedDestination.contact_phone || selectedDestination.contact_email || "Not provided"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="w-4 h-4" />
-                        <span>Address:</span>
-                      </div>
-                      <span className="font-medium text-gray-900">
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-600">Address:</span>
+                      <span className="ml-auto text-gray-900">
                         {selectedDestination.address || "Not provided"}
                       </span>
                     </div>
@@ -604,50 +594,17 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
                 {/* External Resources */}
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">External Resources</h4>
-                  <div className="text-sm">
-                    <div className="flex items-center gap-2 text-gray-600 mb-2">
-                      <Globe className="w-4 h-4" />
-                      <span>Official links:</span>
-                    </div>
-                    <div className="ml-6">
+                  <h4 className="font-medium text-gray-900 mb-3">External Resources</h4>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Globe className="w-4 h-4 text-gray-600" />
+                    <span className="text-gray-600">Official links:</span>
+                    <span className="ml-auto text-gray-900">
                       {(selectedDestination.official_website || selectedDestination.wikipedia_url || selectedDestination.tripadvisor_url) ? (
-                        <div className="flex flex-wrap gap-2">
-                          {selectedDestination.official_website && (
-                            <a
-                              href={selectedDestination.official_website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline text-xs"
-                            >
-                              Website
-                            </a>
-                          )}
-                          {selectedDestination.wikipedia_url && (
-                            <a
-                              href={selectedDestination.wikipedia_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline text-xs"
-                            >
-                              Wikipedia
-                            </a>
-                          )}
-                          {selectedDestination.tripadvisor_url && (
-                            <a
-                              href={selectedDestination.tripadvisor_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline text-xs"
-                            >
-                              TripAdvisor
-                            </a>
-                          )}
-                        </div>
+                        "Not available"
                       ) : (
-                        <span className="text-gray-600">Not available</span>
+                        "Not available"
                       )}
-                    </div>
+                    </span>
                   </div>
                 </div>
               </div>
