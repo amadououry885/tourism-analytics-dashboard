@@ -30,11 +30,34 @@ api.interceptors.request.use(
   }
 );
 
+// Public routes that should NOT redirect to login on 401
+const PUBLIC_ROUTES = ['/', '/business', '/login', '/sign-in', '/register', '/forgot-password', '/reset-password'];
+
+// API endpoints that are optional auth (don't redirect on 401)
+const OPTIONAL_AUTH_ENDPOINTS = [
+  '/events/',
+  '/places/',
+  '/stays/',
+  '/vendors/',
+  '/analytics/',
+  '/my_reminders',
+  '/nearby_stays',
+  '/nearby_restaurants',
+];
+
 // Response interceptor - handle token refresh on 401
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const currentPath = window.location.pathname;
+    const requestUrl = originalRequest?.url || '';
+
+    // Check if this is an optional auth endpoint
+    const isOptionalAuth = OPTIONAL_AUTH_ENDPOINTS.some(endpoint => requestUrl.includes(endpoint));
+    
+    // Check if we're on a public route
+    const isPublicRoute = PUBLIC_ROUTES.includes(currentPath) || currentPath === '/';
 
     // If 401 and we haven't retried yet, try to refresh token
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -59,10 +82,14 @@ api.interceptors.response.use(
         }
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - clear auth and redirect to login
+        // Refresh failed - clear auth
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        
+        // Only redirect to login if NOT on a public route AND NOT an optional auth endpoint
+        if (!isPublicRoute && !isOptionalAuth) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
