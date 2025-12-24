@@ -89,25 +89,28 @@ export function MasterDetailLayout({
   }
 
   // Legacy layout for backward compatibility
-  const containerStyle = className?.includes('h-full') 
-    ? { height: '100%' } 
-    : { height: 'calc(100vh - 300px)' };
-    
+  // Fixed height container with independent scrolling panels
   return (
-    <div className={`flex ${className}`} style={containerStyle}>
-      {/* Left Panel - Master List */}
+    <div className={`flex ${className}`} style={{ height: 'calc(100vh - 280px)', overflow: 'hidden' }}>
+      {/* Left Panel - Scrollable List */}
       <div 
-        className={`${leftPanelWidth} overflow-y-auto flex-shrink-0`}
+        className={`${leftPanelWidth} flex-shrink-0`}
         style={{ 
-          borderRight: '1px solid #E5E7EB'
+          borderRight: '1px solid #E5E7EB',
+          height: '100%',
+          overflowY: 'auto'
         }}
       >
         {leftPanel}
       </div>
 
-      {/* Right Panel - Detail View */}
+      {/* Right Panel - Fixed, only content scrolls */}
       <div 
-        className={`${rightPanelWidth} overflow-y-auto bg-white flex-shrink-0`}
+        className={`${rightPanelWidth} bg-white flex-shrink-0`}
+        style={{
+          height: '100%',
+          overflowY: 'auto'
+        }}
       >
         {rightPanel}
       </div>
