@@ -261,11 +261,14 @@ class StayViewSet(viewsets.ModelViewSet):
         # 4. Serialize internal stays with the serializer, external as-is
         serialized_internal = self.get_serializer(internal_stays, many=True).data
         
+        # 5. Enhance internal stays with social metrics
+        enhanced_internal = self._enhance_with_social_metrics(serialized_internal)
+        
         return Response({
             'count': len(combined_stays),
             'internal_count': len(internal_stays),
             'external_count': len(external_stays),
-            'results': list(serialized_internal) + external_stays  # external_stays already dict
+            'results': enhanced_internal + external_stays  # external_stays already dict
         })
     
     def _generate_external_affiliate_stays(self, params):
