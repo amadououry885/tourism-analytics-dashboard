@@ -21,10 +21,10 @@ export function DetailPanel({
   showCloseButton = false
 }: DetailPanelProps) {
   return (
-    <div style={{ width: '100%', height: '100%', backgroundColor: 'white' }}>
+    <div style={{ width: '100%', height: '100%', backgroundColor: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header with optional image */}
       {image && (
-        <div style={{ position: 'relative', height: '256px', width: '100%', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' }}>
+        <div style={{ position: 'relative', height: '256px', width: '100%', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)', flexShrink: 0 }}>
           <img
             src={image}
             alt={title}
@@ -44,8 +44,8 @@ export function DetailPanel({
         </div>
       )}
 
-      {/* Content - full width */}
-      <div style={{ padding: '24px', width: '100%' }}>
+      {/* Scrollable Content Container */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px', width: '100%' }}>
         {/* Title Section */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
