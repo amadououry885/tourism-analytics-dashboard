@@ -21,7 +21,7 @@ export function DetailPanel({
   showCloseButton = false
 }: DetailPanelProps) {
   return (
-    <div className="h-full w-full bg-white">
+    <div className="h-full w-full bg-white" style={{ minWidth: '100%' }}>
       {/* Header with optional image */}
       {image && (
         <div className="relative h-64 w-full bg-gradient-to-br from-blue-500 to-purple-500">
@@ -45,7 +45,7 @@ export function DetailPanel({
       )}
 
       {/* Content - full width */}
-      <div className="p-6 w-full">
+      <div className="p-6 w-full" style={{ minWidth: '100%' }}>
         {/* Title Section */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
