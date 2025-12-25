@@ -88,6 +88,17 @@ const Stays: React.FC = () => {
             <p className="text-xl text-gray-700 mb-8 font-medium">
               Join 500+ partners reaching 10K+ monthly visitors across 5 cities in Kedah
             </p>
+            
+            {/* Search Accommodations CTA */}
+            <Link
+              to="/accommodations"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-2xl hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 font-bold text-lg mb-6 transform hover:scale-105"
+            >
+              <span className="text-2xl">🔍</span>
+              <span>Search Accommodations in Kedah</span>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <p className="text-sm text-gray-600 italic">Explore 100+ hotels, homestays, and apartments</p>
           </div>
 
           {/* Registration Cards */}

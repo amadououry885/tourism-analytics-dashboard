@@ -16,12 +16,33 @@ import {
   Users,
   Star,
   DollarSign,
-  Home
+  Home,
+  Upload,
+  Image as ImageIcon,
+  X,
+  Check,
+  TrendingUp,
+  TrendingDown,
+  MessageCircle,
+  Heart,
+  Eye,
+  BarChart3,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { FormInput } from '../../components/FormInput';
 import { FormSelect } from '../../components/FormSelect';
+
+interface StayImage {
+  id: number;
+  image: string;
+  image_url: string;
+  caption?: string;
+  is_primary: boolean;
+  order: number;
+  uploaded_at: string;
+}
 
 interface Stay {
   id: number;
@@ -34,6 +55,9 @@ interface Stay {
   lat?: number;
   lon?: number;
   images?: string[];
+  stay_images?: StayImage[];
+  main_image?: string;
+  main_image_url?: string;
   landmark?: string;
   distanceKm?: number;
   is_active: boolean;
@@ -42,6 +66,12 @@ interface Stay {
   booking_com_url?: string;
   agoda_url?: string;
   booking_provider?: string;
+  social_mentions?: number;
+  social_engagement?: number;
+  estimated_interest?: number;
+  trending_percentage?: number;
+  is_trending?: boolean;
+  social_rating?: number;
 }
 
 const StayOwnerDashboard: React.FC = () => {
@@ -52,6 +82,13 @@ const StayOwnerDashboard: React.FC = () => {
   const [stays, setStays] = useState<Stay[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStay, setEditingStay] = useState<Stay | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedStayForImages, setSelectedStayForImages] = useState<Stay | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [selectedStayForAnalytics, setSelectedStayForAnalytics] = useState<Stay | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -164,6 +201,120 @@ const StayOwnerDashboard: React.FC = () => {
       } catch (error) {
         console.error('Failed to delete accommodation:', error);
       }
+    }
+  };
+
+  // Image Upload Handlers
+  const handleOpenImageModal = (stay: Stay) => {
+    setSelectedStayForImages(stay);
+    setShowImageModal(true);
+    setImageFiles([]);
+    setImagePreviews([]);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setImageFiles(prev => [...prev, ...files]);
+
+    // Generate previews
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemovePreview = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadImages = async () => {
+    if (!selectedStayForImages || imageFiles.length === 0) return;
+
+    try {
+      setUploadingImages(true);
+      const formData = new FormData();
+      imageFiles.forEach(file => {
+        formData.append('images', file);
+      });
+
+      const response = await fetch(`/api/stays/stays/${selectedStayForImages.id}/upload_images/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      alert('✅ Images uploaded successfully!');
+      fetchStays();
+      setShowImageModal(false);
+      setImageFiles([]);
+      setImagePreviews([]);
+    } catch (error) {
+      console.error('Failed to upload images:', error);
+      alert('❌ Failed to upload images');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleDeleteImage = async (stayId: number, imageId: number) => {
+    if (!window.confirm('Delete this image?')) return;
+
+    try {
+      const response = await fetch(`/api/stays/stays/${stayId}/images/${imageId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Delete failed');
+
+      alert('✅ Image deleted');
+      fetchStays();
+    } catch (error) {
+      console.error('Failed to delete image:', error);
+      alert('❌ Failed to delete image');
+    }
+  };
+
+  const handleSetPrimaryImage = async (stayId: number, imageId: number) => {
+    try {
+      const response = await fetch(`/api/stays/stays/${stayId}/images/${imageId}/set-primary/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Set primary failed');
+
+      alert('✅ Primary image updated');
+      fetchStays();
+    } catch (error) {
+      console.error('Failed to set primary image:', error);
+      alert('❌ Failed to set primary image');
+    }
+  };
+
+  const handleOpenAnalytics = async (stay: Stay) => {
+    try {
+      // Fetch detailed stay with social metrics
+      const data = await request(`/stays/${stay.id}/`);
+      setSelectedStayForAnalytics(data);
+      setShowAnalytics(true);
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
     }
   };
 
@@ -383,17 +534,68 @@ const StayOwnerDashboard: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="flex gap-2 pt-4 border-t">
+                  {/* Social Metrics Summary */}
+                  {(stay.social_mentions || stay.is_trending) && (
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 mb-4 border border-purple-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-purple-700">Social Performance</span>
+                        {stay.is_trending && (
+                          <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            Trending
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {stay.social_mentions !== undefined && (
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="w-3 h-3 text-purple-600" />
+                            <span className="text-gray-600">{stay.social_mentions} mentions</span>
+                          </div>
+                        )}
+                        {stay.social_rating && (
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                            <span className="text-gray-600">{stay.social_rating}/10</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image Count */}
+                  {stay.stay_images && stay.stay_images.length > 0 && (
+                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                      <ImageIcon className="w-4 h-4 text-blue-600" />
+                      <span>{stay.stay_images.length} {stay.stay_images.length === 1 ? 'image' : 'images'} uploaded</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 pt-4 border-t">
                     <button
                       onClick={() => handleEdit(stay)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
                     >
                       <Edit2 className="w-4 h-4" />
                       Edit
                     </button>
                     <button
+                      onClick={() => handleOpenImageModal(stay)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Images
+                    </button>
+                    <button
+                      onClick={() => handleOpenAnalytics(stay)}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Analytics
+                    </button>
+                    <button
                       onClick={() => handleDelete(stay.id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium"
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete
@@ -724,6 +926,329 @@ const StayOwnerDashboard: React.FC = () => {
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 text-white rounded-xl hover:shadow-xl transition-all font-semibold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
               >
                 {loading ? '⏳ Saving...' : (editingStay ? '✅ Update Property' : '✅ Add Property')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Upload Modal */}
+      {showImageModal && selectedStayForImages && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border-4 border-purple-400"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-500 via-purple-400 to-pink-500 text-white px-8 py-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg">
+                    📸
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Manage Images</h2>
+                    <p className="text-purple-100 text-sm">{selectedStayForImages.name}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowImageModal(false)}
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(90vh-160px)] p-8">
+              {/* Existing Images */}
+              {selectedStayForImages.stay_images && selectedStayForImages.stay_images.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5 text-purple-600" />
+                    Current Images ({selectedStayForImages.stay_images.length})
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedStayForImages.stay_images.map((img) => (
+                      <div key={img.id} className="relative group rounded-xl overflow-hidden border-2 border-gray-200 hover:border-purple-400 transition-all">
+                        <img
+                          src={img.image_url}
+                          alt={img.caption || 'Stay image'}
+                          className="w-full h-40 object-cover"
+                        />
+                        {img.is_primary && (
+                          <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-white" />
+                            Primary
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                          {!img.is_primary && (
+                            <button
+                              onClick={() => handleSetPrimaryImage(selectedStayForImages.id, img.id)}
+                              className="bg-yellow-500 text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-yellow-600 flex items-center gap-1"
+                            >
+                              <Star className="w-4 h-4" />
+                              Set Primary
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteImage(selectedStayForImages.id, img.id)}
+                            className="bg-red-500 text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-red-600 flex items-center gap-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload New Images */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
+                  <Upload className="w-5 h-5" />
+                  Upload New Images
+                </h3>
+
+                {/* File Input */}
+                <div className="mb-4">
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-purple-300 rounded-xl cursor-pointer bg-white hover:bg-purple-50 transition-all">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className="w-12 h-12 text-purple-400 mb-3" />
+                      <p className="mb-2 text-sm text-gray-700">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB</p>
+                    </div>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                      Ready to Upload ({imagePreviews.length})
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group rounded-lg overflow-hidden border-2 border-purple-200">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover"
+                          />
+                          <button
+                            onClick={() => handleRemovePreview(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 px-8 py-4 flex gap-4">
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold"
+              >
+                Close
+              </button>
+              {imageFiles.length > 0 && (
+                <button
+                  onClick={handleUploadImages}
+                  disabled={uploadingImages}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-xl transition-all font-semibold disabled:opacity-50"
+                >
+                  {uploadingImages ? '⏳ Uploading...' : `📤 Upload ${imageFiles.length} Image${imageFiles.length > 1 ? 's' : ''}`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Modal */}
+      {showAnalytics && selectedStayForAnalytics && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowAnalytics(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border-4 border-green-400"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-8 py-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg">
+                    📊
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Performance Analytics</h2>
+                    <p className="text-green-100 text-sm">{selectedStayForAnalytics.name}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAnalytics(false)}
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(90vh-160px)] p-8">
+              {/* Trending Status */}
+              {selectedStayForAnalytics.is_trending !== undefined && (
+                <div className={`rounded-xl p-6 mb-6 ${
+                  selectedStayForAnalytics.is_trending 
+                    ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300'
+                    : 'bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300'
+                }`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    {selectedStayForAnalytics.is_trending ? (
+                      <>
+                        <TrendingUp className="w-8 h-8 text-green-600" />
+                        <div>
+                          <h3 className="text-xl font-bold text-green-900">🔥 Trending Property!</h3>
+                          <p className="text-sm text-green-700">
+                            Growing {selectedStayForAnalytics.trending_percentage?.toFixed(1)}% this week
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <TrendingDown className="w-8 h-8 text-gray-600" />
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">Not Currently Trending</h3>
+                          <p className="text-sm text-gray-600">Keep promoting to boost visibility</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Metrics Grid */}
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                {/* Social Rating */}
+                {selectedStayForAnalytics.social_rating && (
+                  <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
+                      <div>
+                        <p className="text-sm text-yellow-700 font-semibold">Social Rating</p>
+                        <p className="text-3xl font-bold text-yellow-900">
+                          {selectedStayForAnalytics.social_rating.toFixed(1)}/10
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-yellow-700">Based on social media sentiment</p>
+                  </div>
+                )}
+
+                {/* Social Mentions */}
+                {selectedStayForAnalytics.social_mentions !== undefined && (
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-xl p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <MessageCircle className="w-8 h-8 text-purple-600" />
+                      <div>
+                        <p className="text-sm text-purple-700 font-semibold">Social Mentions</p>
+                        <p className="text-3xl font-bold text-purple-900">
+                          {selectedStayForAnalytics.social_mentions}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-purple-700">Posts mentioning your property</p>
+                  </div>
+                )}
+
+                {/* Social Engagement */}
+                {selectedStayForAnalytics.social_engagement !== undefined && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Heart className="w-8 h-8 text-blue-600" />
+                      <div>
+                        <p className="text-sm text-blue-700 font-semibold">Total Engagement</p>
+                        <p className="text-3xl font-bold text-blue-900">
+                          {selectedStayForAnalytics.social_engagement?.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-blue-700">Likes, comments & shares</p>
+                  </div>
+                )}
+
+                {/* Estimated Interest */}
+                {selectedStayForAnalytics.estimated_interest !== undefined && (
+                  <div className="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-300 rounded-xl p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Eye className="w-8 h-8 text-green-600" />
+                      <div>
+                        <p className="text-sm text-green-700 font-semibold">Estimated Reach</p>
+                        <p className="text-3xl font-bold text-green-900">
+                          {selectedStayForAnalytics.estimated_interest?.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-green-700">Potential viewers</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Tips & Recommendations */}
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-300 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                  💡 Tips to Improve Performance
+                </h3>
+                <ul className="space-y-2 text-sm text-indigo-800">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span>Upload high-quality photos to attract more bookings</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span>Encourage guests to share their experience on social media</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span>Keep your contact information and pricing up to date</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <span>Respond quickly to inquiries to build trust</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 px-8 py-4">
+              <button
+                onClick={() => setShowAnalytics(false)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:shadow-xl transition-all font-semibold"
+              >
+                Close Analytics
               </button>
             </div>
           </div>

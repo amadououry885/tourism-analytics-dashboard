@@ -92,10 +92,11 @@ export function MasterDetailLayout({
   // Fixed height container with independent scrolling panels
   return (
     <div className={`flex ${className}`} style={{ height: 'calc(100vh - 280px)', overflow: 'hidden' }}>
-      {/* Left Panel - Scrollable List */}
+      {/* Left Panel - Scrollable List - Fixed width */}
       <div 
-        className={`${leftPanelWidth} flex-shrink-0`}
         style={{ 
+          width: '40%',
+          flexShrink: 0,
           borderRight: '1px solid #E5E7EB',
           height: '100%',
           overflowY: 'auto'
@@ -104,18 +105,17 @@ export function MasterDetailLayout({
         {leftPanel}
       </div>
 
-      {/* Right Panel - Takes remaining space, content stretches to fill */}
+      {/* Right Panel - Takes remaining 60% width */}
       <div 
-        className={`${rightPanelWidth} bg-white flex-grow`}
         style={{
+          width: '60%',
+          flexGrow: 1,
           height: '100%',
           overflowY: 'auto',
-          minWidth: 0
+          backgroundColor: 'white'
         }}
       >
-        <div className="w-full h-full">
-          {rightPanel}
-        </div>
+        {rightPanel}
       </div>
     </div>
   );

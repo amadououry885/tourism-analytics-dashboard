@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Filter, MapPin, DollarSign, Star, Home, X, ChevronDown, Sparkles, TrendingUp, Navigation, Share2, Clock, Users, Wifi, Car } from 'lucide-react';
+import { Search, Filter, MapPin, DollarSign, Star, Home, X, ChevronDown, Sparkles, TrendingUp, Navigation, Share2, Clock, Users, Wifi, Car, Mail, Phone as PhoneIcon, MessageCircle, Heart, Eye, Award, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { ListItem } from '../../components/ListItem';
 import { DetailPanel } from '../../components/DetailPanel';
@@ -72,6 +72,9 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
 
   // Auto-suggestions
   const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  // Image gallery state
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Auto-select first stay
   useEffect(() => {
@@ -679,30 +682,63 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                       metrics={[
                         { 
                           label: 'Price', 
-                          value: `RM ${stay.price_per_night || 'N/A'}`,
+                          value: `RM ${stay.priceNight || 'N/A'}`,
                           icon: <DollarSign className="w-3 h-3" />
                         },
                         { 
                           label: 'Rating', 
-                          value: stay.rating && typeof stay.rating === 'number' ? `${stay.rating.toFixed(1)} ★` : 'N/A',
+                          value: stay.social_rating 
+                            ? `${stay.social_rating.toFixed(1)} ★` 
+                            : stay.rating && typeof stay.rating === 'number' 
+                              ? `${stay.rating.toFixed(1)} ★` 
+                              : 'N/A',
                           icon: <Star className="w-3 h-3" />
                         },
-                        { 
-                          label: 'Amenities', 
-                          value: stay.amenities?.length || 0,
-                          icon: <Wifi className="w-3 h-3" />
-                        }
+                        ...(stay.social_mentions ? [{ 
+                          label: 'Mentions', 
+                          value: stay.social_mentions,
+                          icon: <MessageCircle className="w-3 h-3" />
+                        }] : []),
+                        ...(stay.is_trending ? [{ 
+                          label: 'Trending', 
+                          value: `+${stay.trending_percentage?.toFixed(0)}%`,
+                          icon: <TrendingUp className="w-3 h-3 text-green-600" />
+                        }] : [])
                       ]}
                       badge={
-                        stay.is_internal ? (
+                        stay.is_trending ? (
+                          <Badge className="bg-green-100 text-green-700 border-green-300 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            Trending
+                          </Badge>
+                        ) : stay.is_internal ? (
                           <Badge className="bg-green-100 text-green-700 border-green-300">
                             <Sparkles className="w-3 h-3 mr-1" />
                             Local Partner
                           </Badge>
                         ) : (
-                          <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                            External
-                          </Badge>
+                          <>
+                            {stay.booking_provider === 'booking.com' && (
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                🔵 Booking.com
+                              </Badge>
+                            )}
+                            {stay.booking_provider === 'agoda' && (
+                              <Badge className="bg-purple-100 text-purple-700 border-purple-300">
+                                🟣 Agoda
+                              </Badge>
+                            )}
+                            {stay.booking_provider === 'both' && (
+                              <Badge className="bg-indigo-100 text-indigo-700 border-indigo-300">
+                                🎯 Multi-Platform
+                              </Badge>
+                            )}
+                            {!stay.booking_provider && (
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                External
+                              </Badge>
+                            )}
+                          </>
                         )
                       }
                       isSelected={selectedStay?.id === stay.id}
@@ -716,54 +752,248 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                   <DetailPanel
                     title={selectedStay.name}
                     subtitle={`${selectedStay.district} • ${selectedStay.type || 'Accommodation'}`}
-                    image={selectedStay.image_url}
+                    image={
+                      selectedStay.stay_images && selectedStay.stay_images.length > 0 
+                        ? selectedStay.stay_images[currentImageIndex]?.image_url 
+                        : selectedStay.main_image_url || undefined
+                    }
                     actions={
-                      <div className="flex gap-3">
-                        <button
-                          onClick={handleGetDirections}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                        >
-                          <Navigation className="w-5 h-5" />
-                          Get Directions
-                        </button>
-                        <button
-                          onClick={handleShare}
-                          className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                          <Share2 className="w-5 h-5" />
-                        </button>
+                      <div className="space-y-3">
+                        {/* Action Buttons */}
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleGetDirections}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                          >
+                            <Navigation className="w-5 h-5" />
+                            Get Directions
+                          </button>
+                          <button
+                            onClick={handleShare}
+                            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                          >
+                            <Share2 className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Contact Buttons for Internal Stays */}
+                        {selectedStay.is_internal && (selectedStay.contact_email || selectedStay.contact_phone || selectedStay.contact_whatsapp) && (
+                          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                            <h4 className="text-sm font-bold text-green-900 mb-3 flex items-center gap-2">
+                              <PhoneIcon className="w-4 h-4" />
+                              Contact Owner Directly
+                            </h4>
+                            <div className="space-y-2">
+                              {selectedStay.contact_phone && (
+                                <a
+                                  href={`tel:${selectedStay.contact_phone}`}
+                                  className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                                >
+                                  <PhoneIcon className="w-4 h-4" />
+                                  {selectedStay.contact_phone}
+                                </a>
+                              )}
+                              {selectedStay.contact_whatsapp && (
+                                <a
+                                  href={`https://wa.me/${selectedStay.contact_whatsapp.replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                  WhatsApp {selectedStay.contact_whatsapp}
+                                </a>
+                              )}
+                              {selectedStay.contact_email && (
+                                <a
+                                  href={`mailto:${selectedStay.contact_email}`}
+                                  className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                                >
+                                  <Mail className="w-4 h-4" />
+                                  {selectedStay.contact_email}
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Booking Platform Badges */}
+                        {!selectedStay.is_internal && (selectedStay.booking_com_url || selectedStay.agoda_url) && (
+                          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                            <h4 className="text-sm font-bold text-blue-900 mb-3">Book Online</h4>
+                            <div className="space-y-2">
+                              {selectedStay.booking_com_url && (
+                                <a
+                                  href={selectedStay.booking_com_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <span className="text-lg">🔵</span>
+                                    Booking.com
+                                  </span>
+                                  <span className="text-xs">View →</span>
+                                </a>
+                              )}
+                              {selectedStay.agoda_url && (
+                                <a
+                                  href={selectedStay.agoda_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between px-4 py-2 bg-white border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <span className="text-lg">🟣</span>
+                                    Agoda
+                                  </span>
+                                  <span className="text-xs">View →</span>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     }
                   >
+                    {/* Image Gallery */}
+                    {selectedStay.stay_images && selectedStay.stay_images.length > 1 && (
+                      <div className="mb-6">
+                        <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+                          <img
+                            src={selectedStay.stay_images[currentImageIndex]?.image_url}
+                            alt={selectedStay.stay_images[currentImageIndex]?.caption || selectedStay.name}
+                            className="w-full h-64 object-cover"
+                          />
+                          {/* Image Navigation */}
+                          <button
+                            onClick={() => setCurrentImageIndex((prev) => 
+                              prev === 0 ? selectedStay.stay_images!.length - 1 : prev - 1
+                            )}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all"
+                          >
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => setCurrentImageIndex((prev) => 
+                              prev === selectedStay.stay_images!.length - 1 ? 0 : prev + 1
+                            )}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all"
+                          >
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+                          {/* Image Counter */}
+                          <div className="absolute bottom-2 right-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                            {currentImageIndex + 1} / {selectedStay.stay_images.length}
+                          </div>
+                        </div>
+                        {/* Thumbnail Navigation */}
+                        <div className="flex gap-2 mt-3 overflow-x-auto">
+                          {selectedStay.stay_images.map((img, idx) => (
+                            <button
+                              key={img.id}
+                              onClick={() => setCurrentImageIndex(idx)}
+                              className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                                idx === currentImageIndex 
+                                  ? 'border-blue-500 ring-2 ring-blue-300' 
+                                  : 'border-gray-200 hover:border-gray-400'
+                              }`}
+                            >
+                              <img
+                                src={img.image_url}
+                                alt={`Thumbnail ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Social Metrics */}
+                    {(selectedStay.is_trending || selectedStay.social_mentions || selectedStay.social_rating) && (
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Award className="w-5 h-5 text-purple-600" />
+                          Social Performance
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {selectedStay.is_trending && (
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <TrendingUp className="w-5 h-5 text-green-600" />
+                                <span className="text-xs font-bold text-green-700">TRENDING</span>
+                              </div>
+                              <div className="text-2xl font-bold text-green-900">
+                                +{selectedStay.trending_percentage?.toFixed(0)}%
+                              </div>
+                              <div className="text-xs text-green-600">This week</div>
+                            </div>
+                          )}
+                          {selectedStay.social_rating && (
+                            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-lg p-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Star className="w-5 h-5 text-yellow-600 fill-yellow-600" />
+                                <span className="text-xs font-bold text-yellow-700">SOCIAL RATING</span>
+                              </div>
+                              <div className="text-2xl font-bold text-yellow-900">
+                                {selectedStay.social_rating.toFixed(1)}/10
+                              </div>
+                              <div className="text-xs text-yellow-600">From sentiment</div>
+                            </div>
+                          )}
+                          {selectedStay.social_mentions !== undefined && selectedStay.social_mentions > 0 && (
+                            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <MessageCircle className="w-5 h-5 text-purple-600" />
+                                <span className="text-xs font-bold text-purple-700">MENTIONS</span>
+                              </div>
+                              <div className="text-2xl font-bold text-purple-900">
+                                {selectedStay.social_mentions}
+                              </div>
+                              <div className="text-xs text-purple-600">Social posts</div>
+                            </div>
+                          )}
+                          {selectedStay.estimated_interest !== undefined && selectedStay.estimated_interest > 0 && (
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg p-4">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Eye className="w-5 h-5 text-blue-600" />
+                                <span className="text-xs font-bold text-blue-700">REACH</span>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-900">
+                                {selectedStay.estimated_interest.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-blue-600">Est. viewers</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Metrics Grid */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
                         <DollarSign className="w-6 h-6 mx-auto mb-2 text-green-600" />
-                        <div className="text-2xl font-bold text-green-900">RM {selectedStay.price_per_night || 'N/A'}</div>
+                        <div className="text-2xl font-bold text-green-900">RM {selectedStay.priceNight || 'N/A'}</div>
                         <div className="text-xs text-green-600 font-medium">Per Night</div>
                       </div>
                       <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                         <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600 fill-yellow-600" />
-                        <div className="text-2xl font-bold text-yellow-900">{selectedStay.rating && typeof selectedStay.rating === 'number' ? selectedStay.rating.toFixed(1) : 'N/A'}</div>
+                        <div className="text-2xl font-bold text-yellow-900">
+                          {selectedStay.social_rating?.toFixed(1) || 
+                           (selectedStay.rating && typeof selectedStay.rating === 'number' ? selectedStay.rating.toFixed(1) : 'N/A')}
+                        </div>
                         <div className="text-xs text-yellow-600 font-medium">Rating</div>
                       </div>
                       <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-                        <div className="text-2xl font-bold text-blue-900">{selectedStay.reviews || 0}</div>
-                        <div className="text-xs text-blue-600 font-medium">Reviews</div>
+                        <div className="text-2xl font-bold text-blue-900">{selectedStay.amenities?.length || 0}</div>
+                        <div className="text-xs text-blue-600 font-medium">Amenities</div>
                       </div>
                     </div>
 
-                    {/* Description */}
-                    {selectedStay.description && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
-                        <p className="text-gray-600 leading-relaxed">{selectedStay.description}</p>
-                      </div>
-                    )}
-
                     {/* Source Badge */}
-                    <div>
+                    <div className="mb-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">Source</h3>
                       {selectedStay.is_internal ? (
                         <Badge className="bg-green-100 text-green-700 border-green-300 text-sm px-4 py-2">
@@ -771,15 +1001,34 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                           Local Partner - Verified by Tourism Kedah
                         </Badge>
                       ) : (
-                        <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-sm px-4 py-2">
-                          External Source - {selectedStay.source || 'Third Party'}
-                        </Badge>
+                        <div className="space-y-2">
+                          {selectedStay.booking_provider === 'booking.com' && (
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-sm px-4 py-2">
+                              🔵 Booking.com Partner Property
+                            </Badge>
+                          )}
+                          {selectedStay.booking_provider === 'agoda' && (
+                            <Badge className="bg-purple-100 text-purple-700 border-purple-300 text-sm px-4 py-2">
+                              🟣 Agoda Partner Property
+                            </Badge>
+                          )}
+                          {selectedStay.booking_provider === 'both' && (
+                            <Badge className="bg-indigo-100 text-indigo-700 border-indigo-300 text-sm px-4 py-2">
+                              🎯 Available on Multiple Platforms
+                            </Badge>
+                          )}
+                          {!selectedStay.booking_provider && (
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-sm px-4 py-2">
+                              External Source - Third Party
+                            </Badge>
+                          )}
+                        </div>
                       )}
                     </div>
 
                     {/* Location */}
                     {(selectedStay.district || selectedStay.landmark) && (
-                      <div>
+                      <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Location</h3>
                         <div className="space-y-2">
                           {selectedStay.district && (
@@ -813,20 +1062,6 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                             );
                           })}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Contact Info */}
-                    {selectedStay.contact_phone && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact</h3>
-                        <a
-                          href={`tel:${selectedStay.contact_phone}`}
-                          className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium"
-                        >
-                          <Clock className="w-4 h-4" />
-                          {selectedStay.contact_phone}
-                        </a>
                       </div>
                     )}
                   </DetailPanel>

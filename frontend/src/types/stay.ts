@@ -3,6 +3,16 @@
  * Used across the application for type safety
  */
 
+export interface StayImage {
+  id: number;
+  image: string;
+  image_url: string;
+  caption?: string;
+  is_primary: boolean;
+  order: number;
+  uploaded_at: string;
+}
+
 export interface Stay {
   id: number | string;  // number for internal, string for external (e.g., 'ext_booking_1')
   name: string;
@@ -14,6 +24,9 @@ export interface Stay {
   lat?: number | null;
   lon?: number | null;
   images?: string[];
+  stay_images?: StayImage[];
+  main_image?: string;
+  main_image_url?: string;
   landmark?: string;
   distanceKm?: number | null;
   is_active: boolean;
