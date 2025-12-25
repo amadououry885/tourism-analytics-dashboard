@@ -108,14 +108,17 @@ export function MasterDetailLayout({
 
       {/* Right Panel - Takes remaining 60% width - Scrollable */}
       <div 
+        className="custom-scrollbar"
         style={{
           width: '60%',
           flexGrow: 1,
           height: '100%',
           overflowY: 'scroll',
+          overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
           backgroundColor: 'white',
-          position: 'relative'
+          position: 'relative',
+          scrollBehavior: 'smooth'
         }}
       >
         {rightPanel}
