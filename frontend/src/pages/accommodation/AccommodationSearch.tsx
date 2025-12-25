@@ -856,6 +856,12 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                       </div>
                     }
                   >
+                    {/* DEMO: Scrolling Test Section - Shows scrollbar works */}
+                    <div className="mb-6 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                      <h3 className="text-sm font-bold text-yellow-900 mb-2">📋 Full Details Available</h3>
+                      <p className="text-xs text-yellow-700">Scroll down to see contact information, booking links, and all amenities below.</p>
+                    </div>
+
                     {/* Image Gallery */}
                     {selectedStay.stay_images && selectedStay.stay_images.length > 1 && (
                       <div className="mb-6">
