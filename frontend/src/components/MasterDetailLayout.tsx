@@ -113,15 +113,19 @@ export function MasterDetailLayout({
           width: '60%',
           flexGrow: 1,
           height: '100%',
-          overflowY: 'scroll',
+          maxHeight: '100%',
+          overflowY: 'scroll !important' as any,
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
           backgroundColor: 'white',
           position: 'relative',
-          scrollBehavior: 'smooth'
+          scrollBehavior: 'smooth',
+          display: 'block'
         }}
       >
-        {rightPanel}
+        <div style={{ minHeight: '100%', paddingBottom: '20px' }}>
+          {rightPanel}
+        </div>
       </div>
     </div>
   );
