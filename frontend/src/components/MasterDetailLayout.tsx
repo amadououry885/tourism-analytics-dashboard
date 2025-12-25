@@ -91,7 +91,7 @@ export function MasterDetailLayout({
   // Legacy layout for backward compatibility
   // Fixed height container with independent scrolling panels
   return (
-    <div className={`flex ${className}`} style={{ height: 'calc(100vh - 400px)', minHeight: '500px', maxHeight: 'calc(100vh - 400px)', overflow: 'hidden' }}>
+    <div className={`flex ${className}`} style={{ height: '600px', overflow: 'hidden' }}>
       {/* Left Panel - Scrollable List - Fixed width */}
       <div 
         style={{ 
