@@ -99,20 +99,23 @@ export function MasterDetailLayout({
           flexShrink: 0,
           borderRight: '1px solid #E5E7EB',
           height: '100%',
-          overflowY: 'auto'
+          overflowY: 'scroll',
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         {leftPanel}
       </div>
 
-      {/* Right Panel - Takes remaining 60% width */}
+      {/* Right Panel - Takes remaining 60% width - Scrollable */}
       <div 
         style={{
           width: '60%',
           flexGrow: 1,
           height: '100%',
-          overflowY: 'auto',
-          backgroundColor: 'white'
+          overflowY: 'scroll',
+          WebkitOverflowScrolling: 'touch',
+          backgroundColor: 'white',
+          position: 'relative'
         }}
       >
         {rightPanel}
