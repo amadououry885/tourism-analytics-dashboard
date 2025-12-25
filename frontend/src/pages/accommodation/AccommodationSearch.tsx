@@ -777,7 +777,7 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                         </div>
 
                         {/* Contact Buttons for Internal Stays */}
-                        {selectedStay.is_internal && (selectedStay.contact_email || selectedStay.contact_phone || selectedStay.contact_whatsapp) && (
+                        {selectedStay.is_internal && (
                           <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
                             <h4 className="text-sm font-bold text-green-900 mb-3 flex items-center gap-2">
                               <PhoneIcon className="w-4 h-4" />
@@ -793,6 +793,15 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                                   {selectedStay.contact_phone}
                                 </a>
                               )}
+                              {!selectedStay.contact_phone && (
+                                <a
+                                  href="tel:+60174445566"
+                                  className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                                >
+                                  <PhoneIcon className="w-4 h-4" />
+                                  +60 17-444 5566
+                                </a>
+                              )}
                               {selectedStay.contact_whatsapp && (
                                 <a
                                   href={`https://wa.me/${selectedStay.contact_whatsapp.replace(/[^0-9]/g, '')}`}
@@ -804,6 +813,17 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                                   WhatsApp {selectedStay.contact_whatsapp}
                                 </a>
                               )}
+                              {!selectedStay.contact_whatsapp && (
+                                <a
+                                  href="https://wa.me/60174445566"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                  WhatsApp +60174445566
+                                </a>
+                              )}
                               {selectedStay.contact_email && (
                                 <a
                                   href={`mailto:${selectedStay.contact_email}`}
@@ -811,6 +831,15 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                                 >
                                   <Mail className="w-4 h-4" />
                                   {selectedStay.contact_email}
+                                </a>
+                              )}
+                              {!selectedStay.contact_email && (
+                                <a
+                                  href="mailto:contact@kedahtourism.my"
+                                  className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
+                                >
+                                  <Mail className="w-4 h-4" />
+                                  contact@kedahtourism.my
                                 </a>
                               )}
                             </div>
