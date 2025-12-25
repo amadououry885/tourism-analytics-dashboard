@@ -91,7 +91,7 @@ export function MasterDetailLayout({
   // Legacy layout for backward compatibility
   // Fixed height container with independent scrolling panels
   return (
-    <div className={`flex ${className}`} style={{ height: 'calc(100vh - 400px)', minHeight: '500px', maxHeight: '800px', overflow: 'hidden' }}>
+    <div className={`flex ${className}`} style={{ height: 'calc(100vh - 400px)', minHeight: '500px', maxHeight: 'calc(100vh - 400px)', overflow: 'hidden' }}>
       {/* Left Panel - Scrollable List - Fixed width */}
       <div 
         style={{ 
@@ -114,7 +114,7 @@ export function MasterDetailLayout({
           flexGrow: 1,
           height: '100%',
           maxHeight: '100%',
-          overflowY: 'scroll !important' as any,
+          overflowY: 'scroll',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
           backgroundColor: 'white',
@@ -123,9 +123,7 @@ export function MasterDetailLayout({
           display: 'block'
         }}
       >
-        <div style={{ minHeight: '100%', paddingBottom: '20px' }}>
-          {rightPanel}
-        </div>
+        {rightPanel}
       </div>
     </div>
   );
