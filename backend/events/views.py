@@ -462,6 +462,63 @@ class EventViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=True, methods=['post'], permission_classes=[AdminOrReadOnly], url_path='clone_form_from/(?P<source_event_id>[^/.]+)')
+    def clone_registration_form(self, request, pk=None, source_event_id=None):
+        """
+        Clone registration form from another event to this event.
+        Useful when multiple events need the same registration form.
+        
+        POST /api/events/{target_event_id}/clone_form_from/{source_event_id}/
+        """
+        target_event = self.get_object()
+        
+        try:
+            source_event = Event.objects.get(id=source_event_id)
+            source_form = source_event.registration_form
+        except Event.DoesNotExist:
+            return Response({
+                'error': f'Source event {source_event_id} not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except EventRegistrationForm.DoesNotExist:
+            return Response({
+                'error': f'Source event has no registration form'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Delete existing form if any
+        if hasattr(target_event, 'registration_form'):
+            target_event.registration_form.delete()
+        
+        # Create new form (clone)
+        new_form = EventRegistrationForm.objects.create(
+            event=target_event,
+            title=source_form.title,
+            description=source_form.description,
+            confirmation_message=source_form.confirmation_message,
+            allow_guest_registration=source_form.allow_guest_registration,
+        )
+        
+        # Clone all fields
+        for field in source_form.fields.all():
+            EventRegistrationField.objects.create(
+                form=new_form,
+                label=field.label,
+                field_type=field.field_type,
+                is_required=field.is_required,
+                placeholder=field.placeholder,
+                help_text=field.help_text,
+                options=field.options,
+                order=field.order,
+                min_length=field.min_length,
+                max_length=field.max_length,
+                pattern=field.pattern,
+            )
+        
+        serializer = EventRegistrationFormSerializer(new_form)
+        return Response({
+            'message': f'Successfully cloned form from "{source_event.title}"',
+            'form': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    
     @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def submit_registration(self, request, pk=None):
         """
