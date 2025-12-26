@@ -2,7 +2,7 @@ services:
   - type: web
     name: tourism-analytics-backend
     env: python
-    buildCommand: "pip install -r requirements-prod.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py create_admin && python seed.py"
+    buildCommand: "pip install -r requirements-prod.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py create_admin && python manage.py fix_event_creators && python seed.py"
     startCommand: "gunicorn tourism_api.wsgi:application"
     envVars:
       - key: DJANGO_SETTINGS_MODULE
