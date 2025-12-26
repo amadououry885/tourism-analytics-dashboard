@@ -389,11 +389,19 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         
         console.log('[EventsTimeline] Received events:', backendEvents.length, 'events');
         console.log('[EventsTimeline] First event:', backendEvents[0]);
+        console.log('[EventsTimeline] All event start dates:', backendEvents.map(e => ({ title: e.title, start: e.start_date })));
         
         // If backend has data, use it; otherwise keep demo data
         if (backendEvents.length > 0) {
           console.log('[EventsTimeline] Setting events from backend');
           setEvents(backendEvents);
+          
+          // Calculate and log upcoming count immediately after setting
+          const now = new Date();
+          const upcoming = backendEvents.filter(e => new Date(e.start_date) > now);
+          console.log('[EventsTimeline] Upcoming events after fetch:', upcoming.length, 'out of', backendEvents.length);
+          console.log('[EventsTimeline] Current time for comparison:', now.toISOString());
+          console.log('[EventsTimeline] Upcoming event titles:', upcoming.map(e => e.title));
         } else {
           console.warn('[EventsTimeline] No backend events, keeping demo data');
         }
