@@ -148,17 +148,27 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
         
         // Fetch ALL vendors from backend (handle pagination)
         let allVendors: any[] = [];
-        let nextUrl = `/vendors/?${params.toString()}`;
+        let nextUrl: string | null = `/vendors/?${params.toString()}`;
         
         while (nextUrl) {
           const response = await api.get(nextUrl);
           const pageVendors = response.data.results || response.data || [];
           allVendors = [...allVendors, ...pageVendors];
           
-          // Check if there's a next page
-          nextUrl = response.data.next ? response.data.next.replace(api.defaults.baseURL || '', '') : null;
-          
           console.log('[RestaurantVendors] Fetched page, total so far:', allVendors.length);
+          
+          // Check if there's a next page - extract just the path and query
+          if (response.data.next) {
+            try {
+              const nextFullUrl = new URL(response.data.next);
+              nextUrl = nextFullUrl.pathname + nextFullUrl.search;
+            } catch {
+              // If URL parsing fails, try simple string replacement
+              nextUrl = response.data.next.replace(/^https?:\/\/[^\/]+/, '');
+            }
+          } else {
+            nextUrl = null;
+          }
         }
         
         console.log('[RestaurantVendors] Total vendors fetched:', allVendors.length);
