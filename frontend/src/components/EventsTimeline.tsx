@@ -204,9 +204,15 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const [nearbyStays, setNearbyStays] = useState<any[]>([]);
   const [nearbyRestaurants, setNearbyRestaurants] = useState<any[]>([]);
   const [userReminders, setUserReminders] = useState<string[]>([]);
+  const [now, setNow] = useState(new Date());
 
-  // Calculate current time (recalculate on each render to ensure accuracy)
-  const now = new Date();
+  // Update 'now' every minute to keep counts accurate
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
 
   // Calculate days left for upcoming events
   const calculateDaysLeft = (startDate: string) => {
