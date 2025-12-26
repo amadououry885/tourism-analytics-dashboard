@@ -15,7 +15,7 @@ export default function TourismDashboard() {
   const [searchParams] = useSearchParams();
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('destinations');
   // Force rebuild for color scheme update
 
   // ✨ Read URL parameters and switch tabs automatically
@@ -81,12 +81,12 @@ export default function TourismDashboard() {
           <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-3">
             <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
               {[
-                { id: 'overview', label: '📊 Overview' },
                 { id: 'destinations', label: '🗺️ Places' },
                 { id: 'restaurants', label: '🍽️ Food' },
                 { id: 'accommodation', label: '🏨 Stay' },
                 { id: 'transport', label: '🚌 Transport' },
                 { id: 'events', label: '📅 Events' },
+                { id: 'overview', label: '📊 Overview' },
               ].map((tab) => (
                 <button
                   key={tab.id}
