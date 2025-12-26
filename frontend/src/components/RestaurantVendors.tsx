@@ -146,14 +146,25 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
           params.append('city', selectedCity);
         }
         
-        // Fetch vendors from backend
-        const response = await api.get(`/vendors/?${params.toString()}`);
-        const vendors = response.data.results || response.data || [];
+        // Fetch ALL vendors from backend (handle pagination)
+        let allVendors: any[] = [];
+        let nextUrl = `/vendors/?${params.toString()}`;
         
-        console.log('[RestaurantVendors] Received vendors:', vendors.length);
+        while (nextUrl) {
+          const response = await api.get(nextUrl);
+          const pageVendors = response.data.results || response.data || [];
+          allVendors = [...allVendors, ...pageVendors];
+          
+          // Check if there's a next page
+          nextUrl = response.data.next ? response.data.next.replace(api.defaults.baseURL || '', '') : null;
+          
+          console.log('[RestaurantVendors] Fetched page, total so far:', allVendors.length);
+        }
+        
+        console.log('[RestaurantVendors] Total vendors fetched:', allVendors.length);
         
         // Transform vendor data to restaurant format matching backend Vendor model
-        const backendRestaurants = vendors.map((vendor: any) => ({
+        const backendRestaurants = allVendors.map((vendor: any) => ({
           id: vendor.id,
           name: vendor.name,
           cuisine: vendor.cuisines?.[0] || 'General',
