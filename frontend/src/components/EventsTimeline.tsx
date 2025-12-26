@@ -553,6 +553,15 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   const upcomingCount = events.filter(e => new Date(e.start_date) > now).length;
   const pastCount = events.filter(e => new Date(e.start_date) <= now).length;
 
+  // Debug logging
+  console.log('[EventsTimeline] Event counts:', {
+    total: events.length,
+    upcoming: upcomingCount,
+    past: pastCount,
+    now: now.toISOString(),
+    sampleEvent: events[0] ? { title: events[0].title, start: events[0].start_date } : null
+  });
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* ✨ NEW: Happening Now Section */}
