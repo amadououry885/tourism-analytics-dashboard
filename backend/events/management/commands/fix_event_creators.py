@@ -35,9 +35,20 @@ class Command(BaseCommand):
         
         if count == 0:
             self.stdout.write(self.style.SUCCESS('✅ All events already have created_by set'))
-            return
+        else:
+            self.stdout.write(f'Found {count} events without created_by')
+            
+            # Update each event individually and log
+            for event in events_without_creator:
+                event.created_by = admin_user
+                event.save()
+                self.stdout.write(f'  ✓ Fixed: {event.title}')
+            
+            self.stdout.write(self.style.SUCCESS(f'✅ Updated {count} events to have created_by={admin_user.username}'))
         
-        self.stdout.write(f'Found {count} events without created_by')
-        events_without_creator.update(created_by=admin_user)
-        
-        self.stdout.write(self.style.SUCCESS(f'✅ Updated {count} events to have created_by={admin_user.username}'))
+        # Verify all events now have created_by
+        remaining = Event.objects.filter(created_by__isnull=True).count()
+        if remaining > 0:
+            self.stdout.write(self.style.ERROR(f'⚠️  WARNING: {remaining} events still missing created_by!'))
+        else:
+            self.stdout.write(self.style.SUCCESS(f'✅ VERIFIED: All {Event.objects.count()} events have created_by set'))
