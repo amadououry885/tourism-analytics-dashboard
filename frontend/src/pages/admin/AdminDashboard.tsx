@@ -787,8 +787,19 @@ const AdminDashboard: React.FC = () => {
                 <div className="max-h-[800px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
                   {(() => {
                     const now = new Date();
-                    const upcomingEvents = events.filter(event => new Date(event.end_date) >= now);
-                    const pastEvents = events.filter(event => new Date(event.end_date) < now);
+                    // Filter: Upcoming = not yet ended (end_date >= now OR no end_date but start_date >= now)
+                    const upcomingEvents = events.filter(event => {
+                      const endDate = event.end_date ? new Date(event.end_date) : null;
+                      const startDate = new Date(event.start_date);
+                      // Show if: has end_date and not ended yet, OR no end_date but hasn't started yet
+                      return endDate ? endDate >= now : startDate >= now;
+                    });
+                    const pastEvents = events.filter(event => {
+                      const endDate = event.end_date ? new Date(event.end_date) : null;
+                      const startDate = new Date(event.start_date);
+                      // Past if: has end_date and it's passed, OR no end_date but start has passed
+                      return endDate ? endDate < now : startDate < now;
+                    });
 
                     return (
                       <div className="space-y-8">
