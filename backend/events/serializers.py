@@ -80,7 +80,7 @@ class EventRegistrationFormWriteSerializer(serializers.ModelSerializer):
 # ✨ PART 2: Event Serializers (now that form serializers are defined)
 
 class EventSerializer(serializers.ModelSerializer):
-    created_by_username = serializers.ReadOnlyField(source='created_by.username')
+    created_by_username = serializers.SerializerMethodField()
     
     # ✨ NEW: Computed fields for capacity management
     attendee_count = serializers.SerializerMethodField()
@@ -198,6 +198,10 @@ class EventSerializer(serializers.ModelSerializer):
     def get_days_remaining(self, obj):
         """Return days remaining in event"""
         return obj.days_remaining  # Access @property
+    
+    def get_created_by_username(self, obj):
+        """Safely get username of creator, or None if no creator"""
+        return obj.created_by.username if obj.created_by else None
     
     def get_has_custom_form(self, obj):
         """Check if event has custom registration form"""
