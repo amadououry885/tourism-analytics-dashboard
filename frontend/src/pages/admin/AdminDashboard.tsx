@@ -25,6 +25,7 @@ import { useApi } from '../../hooks/useApi';
 import { FormInput } from '../../components/FormInput';
 import { FormSelect } from '../../components/FormSelect';
 import PlacesManagement from './PlacesManagement';
+import RegistrationFormBuilder from '../../components/RegistrationFormBuilder';
 
 interface PendingUser {
   id: number;
@@ -88,6 +89,7 @@ const AdminDashboard: React.FC = () => {
   const [showEventModal, setShowEventModal] = useState(false);
   const [showTransportModal, setShowTransportModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [formBuilderEvent, setFormBuilderEvent] = useState<Event | null>(null);
   const [editingTransport, setEditingTransport] = useState<TransportRoute | null>(null);
 
   const [eventForm, setEventForm] = useState(emptyEventForm);
