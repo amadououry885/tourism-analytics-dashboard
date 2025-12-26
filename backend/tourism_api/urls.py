@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse, JsonResponse
+from events.views_health import health_check
 
 def healthz(_request):
     return HttpResponse("OK", content_type="text/plain")
@@ -34,6 +35,7 @@ def root(_request):
 urlpatterns = [
     # health check (use this for ALB/EB health check path)
     path("healthz/", healthz),
+    path("api/health/", health_check),  # Detailed health check with DB stats
 
     path("admin/", admin.site.urls),
 
