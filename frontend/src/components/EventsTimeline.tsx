@@ -382,8 +382,9 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         
         console.log('[EventsTimeline] Fetching events from:', api.defaults.baseURL + '/events/');
         
-        // Fetch events
-        const response = await api.get('/events/');
+        // Fetch events with cache-busting and large page size to get all events
+        const timestamp = new Date().getTime();
+        const response = await api.get(`/events/?page_size=100&_t=${timestamp}`);
         const backendEvents = response.data.results || response.data || [];
         
         console.log('[EventsTimeline] Received events:', backendEvents.length, 'events');
