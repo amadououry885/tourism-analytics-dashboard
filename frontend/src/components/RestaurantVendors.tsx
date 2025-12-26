@@ -586,7 +586,8 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
               <div className="pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setIsReservationModalOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg font-semibold"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-lg hover:shadow-xl font-semibold"
+                  style={{ backgroundColor: '#2563eb', color: '#ffffff' }}
                 >
                   <CalendarPlus className="w-5 h-5" />
                   Make a Reservation
