@@ -34,6 +34,22 @@ class Event(models.Model):
     # ✨ NEW: Capacity Management
     max_capacity = models.IntegerField(null=True, blank=True, help_text="Maximum number of attendees (leave blank for unlimited)")
     
+    # ✨ NEW: Custom Registration Forms
+    requires_approval = models.BooleanField(
+        default=False,
+        help_text="If true, registrations need admin approval before being confirmed"
+    )
+    registration_form_config = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Custom registration form fields configuration. List of field definitions."
+    )
+    approval_message = models.TextField(
+        blank=True,
+        default="Your registration is pending approval. You will receive an email once reviewed.",
+        help_text="Message shown to users when their registration is pending approval"
+    )
+    
     # ✨ NEW: Recurring Events
     recurrence_type = models.CharField(
         max_length=20,
@@ -316,7 +332,9 @@ class EventRegistration(models.Model):
     status = models.CharField(
         max_length=20,
         choices=[
+            ('pending', 'Pending Approval'),
             ('confirmed', 'Confirmed'),
+            ('rejected', 'Rejected'),
             ('cancelled', 'Cancelled'),
             ('waitlist', 'Waitlist'),
         ],
@@ -328,6 +346,25 @@ class EventRegistration(models.Model):
         default=dict,
         blank=True,
         help_text="User's responses to custom registration fields"
+    )
+    
+    # ✨ NEW: Approval workflow fields
+    admin_notes = models.TextField(
+        blank=True,
+        help_text="Internal notes from admin during review"
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_registrations',
+        help_text="Admin who approved/rejected this registration"
+    )
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the registration was reviewed"
     )
     
     # ✨ NEW: Basic contact info (extracted from form_data for quick access)

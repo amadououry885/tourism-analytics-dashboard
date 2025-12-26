@@ -44,6 +44,7 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
   useEffect(() => {
     if (isOpen && event.id) {
@@ -122,16 +123,20 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
       });
       
       // Submit registration
-      await api.post(`/events/${event.id}/submit_registration/`, {
+      const response = await api.post(`/events/${event.id}/submit_registration/`, {
         form_data: submission,
       });
       
+      // Set success message from response (may be approval pending message)
+      setSuccessMessage(response.data.message || formConfig?.confirmation_message || 'Thank you for registering!');
       setSuccess(true);
+      
       setTimeout(() => {
         onClose();
         setSuccess(false);
         setFormData({});
-      }, 3000);
+        setSuccessMessage('');
+      }, 4000); // 4 seconds for pending approval messages
     } catch (err: any) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
@@ -337,8 +342,8 @@ export function EventRegistrationModal({ event, isOpen, onClose }: EventRegistra
               <div style={{ width: '64px', height: '64px', backgroundColor: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <Check style={{ width: '32px', height: '32px', color: '#16a34a' }} />
               </div>
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>Registration Successful!</h3>
-              <p style={{ color: '#4b5563' }}>{formConfig?.confirmation_message}</p>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>Registration Received!</h3>
+              <p style={{ color: '#4b5563', padding: '0 16px' }}>{successMessage}</p>
             </div>
           ) : (
             <div>

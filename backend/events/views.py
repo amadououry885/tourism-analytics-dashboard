@@ -534,19 +534,42 @@ class EventViewSet(viewsets.ModelViewSet):
         serializer = EventRegistrationSerializer(data=registration_data)
         
         if serializer.is_valid():
+            # Determine initial status based on event's requires_approval setting
+            if event.requires_approval:
+                registration_data['status'] = 'pending'
+            else:
+                registration_data['status'] = 'confirmed'
+            
+            # Re-validate with status
+            serializer = EventRegistrationSerializer(data=registration_data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
             registration = serializer.save()
             
-            # Send automatic thank-you email
-            email_sent = send_registration_confirmation(registration, event)
-            if email_sent:
-                print(f"✅ Confirmation email sent to {contact_email}")
+            # Send appropriate email based on status
+            if registration.status == 'pending':
+                # Send pending approval email
+                email_sent = send_registration_confirmation(registration, event, is_pending=True)
+                if email_sent:
+                    print(f"✅ Pending approval email sent to {contact_email}")
+                else:
+                    print(f"⚠️ Failed to send pending email to {contact_email}")
+                
+                # Return approval message
+                confirmation_msg = event.approval_message or "Your registration is pending approval. You will receive an email once reviewed."
             else:
-                print(f"⚠️ Failed to send confirmation email to {contact_email}")
-            
-            # Get confirmation message
-            confirmation_msg = "Thank you for registering!"
-            if has_custom_form:
-                confirmation_msg = form.confirmation_message
+                # Send automatic confirmation email
+                email_sent = send_registration_confirmation(registration, event)
+                if email_sent:
+                    print(f"✅ Confirmation email sent to {contact_email}")
+                else:
+                    print(f"⚠️ Failed to send confirmation email to {contact_email}")
+                
+                # Get confirmation message
+                confirmation_msg = "Thank you for registering!"
+                if has_custom_form:
+                    confirmation_msg = form.confirmation_message
             
             return Response({
                 'message': confirmation_msg,
@@ -556,7 +579,97 @@ class EventViewSet(viewsets.ModelViewSet):
                     'attendee_count': event.attendee_count,
                     'spots_remaining': event.spots_remaining,
                 },
-                'email_sent': email_sent
+                'email_sent': email_sent,
+                'requires_approval': event.requires_approval,
             }, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
+    def pending_registrations(self, request, pk=None):
+        """Get all pending registrations for this event (Admin only)"""
+        event = self.get_object()
+        pending = event.registrations.filter(status='pending').order_by('-registered_at')
+        serializer = EventRegistrationSerializer(pending, many=True)
+        return Response({
+            'count': pending.count(),
+            'registrations': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser], url_path='registrations/(?P<registration_id>[^/.]+)/approve')
+    def approve_registration(self, request, pk=None, registration_id=None):
+        """Approve a pending registration (Admin only)"""
+        from django.utils.timezone import now as timezone_now
+        from .emails import send_approval_email
+        
+        event = self.get_object()
+        
+        try:
+            registration = event.registrations.get(id=registration_id, status='pending')
+        except EventRegistration.DoesNotExist:
+            return Response({
+                'error': 'Pending registration not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check capacity
+        if event.is_full:
+            return Response({
+                'error': 'Event is at full capacity. Cannot approve more registrations.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Update registration
+        registration.status = 'confirmed'
+        registration.reviewed_by = request.user
+        registration.reviewed_at = timezone_now()
+        registration.admin_notes = request.data.get('admin_notes', '')
+        registration.save()
+        
+        # Send approval email
+        email_sent = send_approval_email(registration, event)
+        if email_sent:
+            print(f"✅ Approval email sent to {registration.contact_email}")
+        else:
+            print(f"⚠️ Failed to send approval email to {registration.contact_email}")
+        
+        return Response({
+            'message': 'Registration approved successfully',
+            'registration': EventRegistrationSerializer(registration).data,
+            'email_sent': email_sent
+        })
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser], url_path='registrations/(?P<registration_id>[^/.]+)/reject')
+    def reject_registration(self, request, pk=None, registration_id=None):
+        """Reject a pending registration (Admin only)"""
+        from django.utils.timezone import now as timezone_now
+        from .emails import send_rejection_email
+        
+        event = self.get_object()
+        
+        try:
+            registration = event.registrations.get(id=registration_id, status='pending')
+        except EventRegistration.DoesNotExist:
+            return Response({
+                'error': 'Pending registration not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Update registration
+        registration.status = 'rejected'
+        registration.reviewed_by = request.user
+        registration.reviewed_at = timezone_now()
+        registration.admin_notes = request.data.get('admin_notes', '')
+        registration.save()
+        
+        # Send rejection email
+        reason = request.data.get('reason', 'Unfortunately, we cannot approve your registration at this time.')
+        email_sent = send_rejection_email(registration, event, reason)
+        if email_sent:
+            print(f"✅ Rejection email sent to {registration.contact_email}")
+        else:
+            print(f"⚠️ Failed to send rejection email to {registration.contact_email}")
+        
+        return Response({
+            'message': 'Registration rejected',
+            'registration': EventRegistrationSerializer(registration).data,
+            'email_sent': email_sent
+        })
+

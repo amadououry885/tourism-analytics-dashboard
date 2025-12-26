@@ -136,6 +136,10 @@ class EventSerializer(serializers.ModelSerializer):
             "days_remaining",
             # ✨ FORM FIELDS:
             "has_custom_form",
+            # ✨ APPROVAL WORKFLOW FIELDS:
+            "requires_approval",
+            "registration_form_config",
+            "approval_message",
         ]
         read_only_fields = [
             'created_by', 
@@ -220,15 +224,17 @@ class EventDetailSerializer(EventSerializer):
 class EventRegistrationSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True, allow_null=True)
     event_title = serializers.CharField(source='event.title', read_only=True)
+    reviewed_by_username = serializers.CharField(source='reviewed_by.username', read_only=True, allow_null=True)
     
     class Meta:
         model = EventRegistration
         fields = [
             'id', 'user', 'user_username', 'event', 'event_title', 
             'status', 'form_data', 'contact_name', 'contact_email', 'contact_phone',
+            'admin_notes', 'reviewed_by', 'reviewed_by_username', 'reviewed_at',
             'registered_at', 'updated_at'
         ]
-        read_only_fields = ['registered_at', 'updated_at']
+        read_only_fields = ['registered_at', 'updated_at', 'reviewed_by', 'reviewed_at']
     
     def validate_form_data(self, value):
         """Validate that form_data matches the event's registration form schema"""

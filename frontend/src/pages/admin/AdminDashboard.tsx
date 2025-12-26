@@ -76,7 +76,7 @@ const AdminDashboard: React.FC = () => {
     tags: [] as string[],
     city: '',
     image_url: '',
-    recurrence_type: '', // ✨ NEW: daily, weekly, monthly, yearly, or empty for one-time
+    recurrence_type: 'none', // ✨ NEW: daily, weekly, monthly, yearly, or 'none' for one-time
     max_capacity: null as number | null, // ✨ NEW: Maximum attendees
   };
   
@@ -160,8 +160,9 @@ const AdminDashboard: React.FC = () => {
     try {
       console.log('Fetching events...');
       // Add timestamp to prevent caching
+      // Use hide_instances=1 to show all events (including newly created ones) without recurring filter
       const timestamp = new Date().getTime();
-      const data = await request(`/events/?page_size=100&_t=${timestamp}`);
+      const data = await request(`/events/?page_size=100&hide_instances=1&_t=${timestamp}`);
       console.log('Events data:', data);
       console.log('Number of events:', data.results?.length || data.length);
       // Log which events have images

@@ -30,7 +30,9 @@ export function DetailPanel({
             alt={title}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             onError={(e) => {
-              e.currentTarget.style.display = 'none';
+              console.error('Image failed to load:', image?.substring(0, 100));
+              // Show gradient background instead of hiding
+              e.currentTarget.style.opacity = '0';
             }}
           />
           {showCloseButton && onClose && (
