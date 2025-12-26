@@ -142,10 +142,10 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full my-8 max-h-[95vh] flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
+        <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">📋 Registration Form Builder</h2>
@@ -160,7 +160,7 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Form Settings */}
           <div className="bg-gray-50 rounded-xl p-6 space-y-4">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -318,17 +318,17 @@ export const RegistrationFormBuilder: React.FC<RegistrationFormBuilderProps> = (
           )}
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex-shrink-0 flex justify-end gap-3 pt-4 border-t sticky bottom-0 bg-white">
             <button
               onClick={onClose}
-              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
+              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all font-semibold"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving || fields.length === 0}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-lg"
             >
               <Save className="w-5 h-5" />
               {saving ? 'Saving...' : 'Save Form'}

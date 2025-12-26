@@ -1128,10 +1128,10 @@ const AdminDashboard: React.FC = () => {
 
         {/* Event Modal */}
         {showEventModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={(e) => e.target === e.currentTarget && resetEventForm()}>
-            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{ border: '3px solid #d4a574' }}>
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && resetEventForm()}>
+            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full my-8 max-h-[95vh] flex flex-col" style={{ border: '3px solid #d4a574' }}>
               {/* Vibrant Header */}
-              <div className="bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 px-8 py-8">
+              <div className="bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 px-8 py-8 flex-shrink-0">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-4xl">{editingEvent ? '✏️' : '🎉'}</span>
@@ -1147,7 +1147,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
+              <div className="flex-1 overflow-y-auto">
                 <form onSubmit={handleEventSubmit} className="p-8 space-y-8">
                   {/* Step 1 */}
                   <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6 border-2 border-orange-200 shadow-sm">
@@ -1447,10 +1447,10 @@ const AdminDashboard: React.FC = () => {
 
         {/* Transport Modal */}
         {showTransportModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && resetTransportForm()}>
-            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full my-8" style={{ border: '3px solid #6ba587' }}>
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && resetTransportForm()}>
+            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full my-8 max-h-[95vh] flex flex-col" style={{ border: '3px solid #6ba587' }}>
               {/* Vibrant Header - Green Theme */}
-              <div className="bg-gradient-to-r from-green-500 via-green-400 to-teal-500 px-8 py-8">
+              <div className="bg-gradient-to-r from-green-500 via-green-400 to-teal-500 px-8 py-8 flex-shrink-0">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-4xl">{editingTransport ? '✏️' : '🚌'}</span>
@@ -1467,7 +1467,7 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Scrollable Form Area */}
-              <div className="max-h-[calc(90vh-200px)] overflow-y-auto">
+              <div className="flex-1 overflow-y-auto">
                 <form onSubmit={handleTransportSubmit} className="p-8 space-y-8">
                   {/* Step 1 */}
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200 shadow-sm">
