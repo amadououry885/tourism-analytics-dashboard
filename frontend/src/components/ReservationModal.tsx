@@ -300,7 +300,7 @@ export function ReservationModal({ restaurant, isOpen, onClose }: ReservationMod
                     style={{
                       flex: 1,
                       padding: '12px 16px',
-                      background: 'linear-gradient(to right, #f97316, #ea580c)',
+                      background: 'linear-gradient(to right, #2563eb, #1d4ed8)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
