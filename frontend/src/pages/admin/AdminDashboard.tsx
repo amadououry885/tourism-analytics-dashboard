@@ -868,6 +868,13 @@ const AdminDashboard: React.FC = () => {
 
                                 <div className="flex gap-1 pt-2 border-t border-gray-100">
                                   <button
+                                    onClick={() => setFormBuilderEvent(event)}
+                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition-colors font-bold shadow-sm"
+                                    title="Create/Edit Registration Form"
+                                  >
+                                    📋 Form
+                                  </button>
+                                  <button
                                     onClick={() => navigate(`/admin/events/${event.id}/registrations`)}
                                     className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors font-bold shadow-sm"
                                   >
@@ -1657,6 +1664,19 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Registration Form Builder Modal */}
+        {formBuilderEvent && (
+          <RegistrationFormBuilder
+            eventId={formBuilderEvent.id}
+            eventTitle={formBuilderEvent.title}
+            onClose={() => setFormBuilderEvent(null)}
+            onSave={() => {
+              fetchEvents();
+              setFormBuilderEvent(null);
+            }}
+          />
         )}
         </div>
       </div>
