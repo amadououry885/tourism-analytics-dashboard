@@ -485,7 +485,23 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
             return bAttendance - aAttendance;
           case 'date':
           default:
-            return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+            // Sort upcoming events first (closest to now at top), then past events (most recent first)
+            const aDate = new Date(a.start_date);
+            const bDate = new Date(b.start_date);
+            const aIsPast = aDate <= now;
+            const bIsPast = bDate <= now;
+            
+            // If one is upcoming and one is past, upcoming comes first
+            if (aIsPast && !bIsPast) return 1;
+            if (!aIsPast && bIsPast) return -1;
+            
+            // Both upcoming: closest date first (ascending)
+            if (!aIsPast && !bIsPast) {
+              return aDate.getTime() - bDate.getTime();
+            }
+            
+            // Both past: most recent first (descending)
+            return bDate.getTime() - aDate.getTime();
         }
       });
   }, [events, searchTerm, selectedCity, selectedEventType, dateFilter, sortBy, now]);
