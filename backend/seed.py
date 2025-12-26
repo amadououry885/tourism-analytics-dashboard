@@ -14,8 +14,25 @@ from events.models import Event
 from stays.models import Stay
 from transport.models import Place as TPlace, Route
 from vendors.models import Vendor
+from users.models import User
 
 fake = Faker()
+
+# Get or create admin user for foreign keys
+admin_user, _ = User.objects.get_or_create(
+    email='admin@kedahtourism.com',
+    defaults={
+        'name': 'Admin User',
+        'role': 'admin',
+        'is_staff': True,
+        'is_superuser': True,
+        'is_approved': True,
+    }
+)
+if _:
+    admin_user.set_password('admin123')
+    admin_user.save()
+    print(f"✅ Created admin user: {admin_user.email}")
 
 # ───────────────────────────────────────────────────────────
 # Helper
@@ -60,6 +77,7 @@ for name, city, lat, lon in kedah_places:
             currency="MYR",
             latitude=lat,
             longitude=lon,
+            created_by=admin_user,  # Set the admin user as creator
         ),
     )
     aplace_objs.append(obj)
@@ -166,6 +184,7 @@ for i in range(12):
             lon=round(random.uniform(99.6, 100.8), 6),
             tags=random.sample(["festival", "music", "food", "sport", "family", "culture"], k=2),
             is_published=True,
+            created_by=admin_user,  # Set the admin user as creator
         ),
     )
     if made:
