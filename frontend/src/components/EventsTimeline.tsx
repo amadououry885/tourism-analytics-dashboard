@@ -556,27 +556,27 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
     <div className="space-y-4 md:space-y-6">
       {/* ✨ NEW: Happening Now Section */}
       {happeningNowEvents.length > 0 && (
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 p-3 sm:p-4 md:p-6 shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl border-2 border-red-700 p-4 sm:p-5 md:p-6 shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <h3 className="text-lg sm:text-xl font-bold text-red-700">Happening Now</h3>
+              <div className="w-4 h-4 bg-white rounded-full animate-pulse shadow-lg"></div>
+              <h3 className="text-xl sm:text-2xl font-black text-white drop-shadow-lg">🔴 LIVE NOW</h3>
             </div>
-            <span className="text-xs sm:text-sm text-red-600 font-medium">
-              {happeningNowEvents.length} {happeningNowEvents.length === 1 ? 'event' : 'events'} live
+            <span className="text-sm sm:text-base text-white font-bold bg-white/20 px-3 py-1 rounded-full">
+              {happeningNowEvents.length} {happeningNowEvents.length === 1 ? 'event' : 'events'} happening
             </span>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {happeningNowEvents.map(event => (
-              <Card key={event.id} className="bg-white border-red-300 shadow-md hover:shadow-xl transition-shadow cursor-pointer" onClick={() => handleViewDetails(event)}>
+              <Card key={event.id} className="bg-white border-red-400 shadow-xl hover:shadow-2xl hover:scale-105 transition-all cursor-pointer" onClick={() => handleViewDetails(event)}>
                 <CardContent className="p-3 sm:p-4 md:pt-6">
                   <div className="space-y-2 sm:space-y-3">
                     {/* Title with LIVE badge */}
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-semibold text-gray-900 line-clamp-2 text-sm sm:text-base">{event.title}</h4>
-                      <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded whitespace-nowrap">
-                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></div>
+                      <h4 className="font-bold text-gray-900 line-clamp-2 text-sm sm:text-base">{event.title}</h4>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-black rounded-lg shadow-lg whitespace-nowrap animate-pulse">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
                         LIVE
                       </span>
                     </div>
@@ -792,9 +792,9 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
                     ]}
                     badge={
                       isHappeningNow ? (
-                        <Badge className="bg-green-100 text-green-700 border-green-300 animate-pulse">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Live Now
+                        <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white border-red-700 font-bold shadow-lg animate-pulse">
+                          <div className="w-2 h-2 bg-white rounded-full mr-1.5"></div>
+                          🔴 LIVE NOW
                         </Badge>
                       ) : isPast ? (
                         <Badge className="bg-gray-100 text-gray-700 border-gray-300">
@@ -850,7 +850,12 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
                         <button
                           onClick={() => setIsRegistrationModalOpen(true)}
                           disabled={selectedEvent.is_full}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-md hover:shadow-lg transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                          style={{
+                            background: selectedEvent.is_full ? '#9ca3af' : 'linear-gradient(to right, #16a34a, #15803d)',
+                            color: '#ffffff',
+                            border: 'none'
+                          }}
                         >
                           <Users className="w-5 h-5" />
                           {selectedEvent.is_full ? 'Event Full' : 'JOIN US'}
