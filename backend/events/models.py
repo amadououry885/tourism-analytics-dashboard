@@ -200,6 +200,15 @@ class Event(models.Model):
             if current_date.date() > end_limit:
                 break
             
+            # Check if instance already exists for this date
+            existing = Event.objects.filter(
+                parent_event=self,
+                start_date__date=current_date.date()
+            ).exists()
+            
+            if existing:
+                continue  # Skip if already exists
+            
             # Create instance
             instance = Event.objects.create(
                 title=self.title,
