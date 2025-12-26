@@ -7,8 +7,8 @@ WORKDIR /app
 # Install system deps for psycopg2
 RUN apt-get update && apt-get install -y gcc libpq-dev
 
-# Copy requirements
-COPY requirements.txt .
+# Copy requirements - use production requirements without AWS EB CLI
+COPY requirements-prod.txt requirements.txt
 
 # Install Python deps
 RUN pip install --no-cache-dir -r requirements.txt
