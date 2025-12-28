@@ -33,6 +33,7 @@ interface Place {
   opening_hours?: string;
   best_time_to_visit?: string;
   amenities?: any;
+  is_open?: boolean;
 }
 
 interface MapViewProps {
@@ -229,11 +230,24 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
           />
         )}
         <div className=\"flex-1 min-w-0\">
-          <h3 className=\"font-semibold text-gray-900 truncate\">{place.name}</h3>
-          <p className=\"text-sm text-gray-600 line-clamp-2\">{place.description}</p>
-          <div className=\"flex items-center gap-2 mt-1\">
-            <Badge variant=\"secondary\" className=\"text-xs\">{place.category}</Badge>
-            <span className=\"text-xs text-gray-500\">{place.city}</span>
+          <h3 className="font-semibold text-gray-900 truncate">{place.name}</h3>
+          <p className="text-sm text-gray-600 line-clamp-2">{place.description}</p>
+          <div className="flex items-center gap-2 mt-1">
+            {place.is_open !== undefined && (
+              place.is_open ? (
+                <Badge className="text-xs bg-green-600 border-green-600" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
+                  <Clock className="w-3 h-3 mr-1" />
+                  OPEN
+                </Badge>
+              ) : (
+                <Badge className="text-xs bg-red-600 border-red-600" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
+                  <Clock className="w-3 h-3 mr-1" />
+                  CLOSED
+                </Badge>
+              )
+            )}
+            <Badge variant="secondary" className="text-xs">{place.category}</Badge>
+            <span className="text-xs text-gray-500">{place.city}</span>
             {!place.is_free && place.price && (
               <span className=\"text-xs text-green-600 font-medium\">
                 {place.currency || 'MYR'} {place.price}
@@ -287,10 +301,28 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
               <Badge>{selectedPlace.category}</Badge>
             </div>
             <div>
+              <h4 className=\"font-semibold text-gray-900 mb-2\">Status</h4>
+              {selectedPlace.is_open !== undefined && (
+                selectedPlace.is_open ? (
+                  <Badge className=\"bg-green-600 border-green-600\" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
+                    <Clock className=\"w-3 h-3 mr-1\" />
+                    OPEN
+                  </Badge>
+                ) : (
+                  <Badge className=\"bg-red-600 border-red-600\" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
+                    <Clock className=\"w-3 h-3 mr-1\" />
+                    CLOSED
+                  </Badge>
+                )
+              )}
+            </div>
+          </div>
+
+          <div className=\"grid grid-cols-2 gap-4\">
+            <div>
               <h4 className=\"font-semibold text-gray-900 mb-2\">Location</h4>
               <p className=\"text-gray-600\">{selectedPlace.city}{selectedPlace.state && `, ${selectedPlace.state}`}</p>
             </div>
-          </div>
 
           {selectedPlace.opening_hours && (
             <div>
