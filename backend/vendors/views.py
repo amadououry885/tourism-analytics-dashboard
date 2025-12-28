@@ -41,8 +41,11 @@ class VendorViewSet(viewsets.ModelViewSet):
         if user.is_authenticated and user.role == 'vendor':
             qs = qs.filter(owner=user)
         else:
-            # Others see only active AND open vendors
-            qs = qs.filter(is_active=True, is_open=True)
+            # Others see only active vendors (and open if field exists)
+            qs = qs.filter(is_active=True)
+            # Add is_open filter only if migration is applied
+            if hasattr(qs.model, 'is_open'):
+                qs = qs.filter(is_open=True)
         
         city = self.request.query_params.get("city")
         q = self.request.query_params.get("q")

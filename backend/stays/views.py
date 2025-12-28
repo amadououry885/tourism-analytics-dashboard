@@ -120,8 +120,11 @@ class StayViewSet(viewsets.ModelViewSet):
         if user.is_authenticated and user.role == 'stay_owner':
             qs = qs.filter(owner=user)
         else:
-            # Others see only active AND open stays
-            qs = qs.filter(is_active=True, is_open=True)
+            # Others see only active stays (and open if field exists)
+            qs = qs.filter(is_active=True)
+            # Add is_open filter only if migration is applied
+            if hasattr(qs.model, 'is_open'):
+                qs = qs.filter(is_open=True)
         
         district = self.request.query_params.get("district")
         typ = self.request.query_params.get("type")
