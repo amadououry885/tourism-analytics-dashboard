@@ -579,16 +579,16 @@ const VendorDashboard: React.FC = () => {
                 <div key={restaurant.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border-2 border-gray-100 hover:border-emerald-300 transform hover:-translate-y-1 relative">
                   {/* Status Toggle - Top Right Corner */}
                   <button
-                    onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open)}
+                    onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open ?? true)}
                     className={`absolute top-4 right-4 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${
-                      restaurant.is_open 
+                      (restaurant.is_open ?? true)
                         ? 'bg-green-500 text-white hover:bg-green-600 border-2 border-green-400' 
                         : 'bg-red-500 text-white hover:bg-red-600 border-2 border-red-400'
                     }`}
-                    title={`Click to ${restaurant.is_open ? 'close' : 'open'} restaurant`}
+                    title={`Click to ${(restaurant.is_open ?? true) ? 'close' : 'open'} restaurant`}
                   >
-                    <span className="text-lg">{restaurant.is_open ? '✓' : '✕'}</span>
-                    <span className="font-bold">{restaurant.is_open ? 'OPEN' : 'CLOSED'}</span>
+                    <span className="text-lg">{(restaurant.is_open ?? true) ? '✓' : '✕'}</span>
+                    <span className="font-bold">{(restaurant.is_open ?? true) ? 'OPEN' : 'CLOSED'}</span>
                   </button>
 
                   {/* Restaurant Header */}
