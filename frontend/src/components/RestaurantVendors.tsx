@@ -400,12 +400,12 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                   ]}
                   badge={
                     restaurant.isOpen ? (
-                      <Badge className="bg-green-500 text-white border-green-400 font-bold shadow-sm">
+                      <Badge className="bg-green-600 border-green-600 font-bold shadow-sm" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
                         <Clock className="w-3 h-3 mr-1" />
                         OPEN
                       </Badge>
                     ) : (
-                      <Badge className="bg-red-500 text-white border-red-400 font-bold shadow-sm">
+                      <Badge className="bg-red-600 border-red-600 font-bold shadow-sm" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
                         <Clock className="w-3 h-3 mr-1" />
                         CLOSED
                       </Badge>
