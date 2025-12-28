@@ -69,7 +69,7 @@ class VendorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
         fields = [
-            "id", "name", "city", "cuisines", "lat", "lon", "is_active",
+            "id", "name", "city", "cuisines", "lat", "lon", "is_active", "is_open",
             "created_at", "updated_at", "menu_items", "opening_hours",
             "reviews", "active_promotions", "rating_summary", "owner", "owner_username"
         ]
@@ -125,7 +125,7 @@ class VendorListSerializer(serializers.ModelSerializer):
             'logo_url', 'cover_image_url', 'gallery_images',
             'amenities', 'delivery_available', 'takeaway_available',
             'reservation_required', 'dress_code',
-            'rating_average', 'total_reviews', 'is_active', 
+            'rating_average', 'total_reviews', 'is_active', 'is_open',
             'owner', 'owner_username', 'created_at', 'updated_at'
         ]
         read_only_fields = ['owner', 'owner_username', 'created_at', 'updated_at']
