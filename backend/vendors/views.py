@@ -33,16 +33,16 @@ class VendorViewSet(viewsets.ModelViewSet):
         serializer.save()
     
     def get_queryset(self):
-        """Filter vendors - owners see their own, others see all active"""
+        """Filter vendors - owners see their own, others see all active and open"""
         qs = super().get_queryset()
         user = self.request.user
         
-        # If user is authenticated vendor, show their own vendors
+        # If user is authenticated vendor, show their own vendors (regardless of status)
         if user.is_authenticated and user.role == 'vendor':
             qs = qs.filter(owner=user)
         else:
-            # Others see only active vendors
-            qs = qs.filter(is_active=True)
+            # Others see only active AND open vendors
+            qs = qs.filter(is_active=True, is_open=True)
         
         city = self.request.query_params.get("city")
         q = self.request.query_params.get("q")

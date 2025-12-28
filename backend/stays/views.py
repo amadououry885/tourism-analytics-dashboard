@@ -112,16 +112,16 @@ class StayViewSet(viewsets.ModelViewSet):
         }
 
     def get_queryset(self):
-        """Filter stays - owners see their own, others see all active"""
+        """Filter stays - owners see their own, others see all active and open"""
         qs = super().get_queryset()
         user = self.request.user
         
-        # If user is authenticated stay_owner, show their own stays
+        # If user is authenticated stay_owner, show their own stays (regardless of status)
         if user.is_authenticated and user.role == 'stay_owner':
             qs = qs.filter(owner=user)
         else:
-            # Others see only active stays
-            qs = qs.filter(is_active=True)
+            # Others see only active AND open stays
+            qs = qs.filter(is_active=True, is_open=True)
         
         district = self.request.query_params.get("district")
         typ = self.request.query_params.get("type")
