@@ -58,6 +58,7 @@ interface Restaurant {
   reservation_required?: boolean;
   dress_code?: string;
   is_active: boolean;
+  is_open: boolean;
   owner?: number;
   owner_username?: string;
 }
@@ -303,6 +304,25 @@ const VendorDashboard: React.FC = () => {
     });
     setEditingRestaurant(null);
     setShowAddModal(false);
+  };
+
+  const handleToggleStatus = async (restaurantId: number, currentStatus: boolean) => {
+    try {
+      const response = await request(
+        `/vendors/${restaurantId}/toggle_status/`,
+        {
+          method: 'POST',
+        },
+        `✅ Restaurant ${currentStatus ? 'closed' : 'opened'} successfully!`
+      );
+      
+      // Update local state
+      setRestaurants(restaurants.map(r => 
+        r.id === restaurantId ? { ...r, is_open: response.is_open } : r
+      ));
+    } catch (error) {
+      console.error('Failed to toggle status:', error);
+    }
   };
 
   const handleLogout = () => {
@@ -585,6 +605,22 @@ const VendorDashboard: React.FC = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="mb-3">
+                    <button
+                      onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open)}
+                      className={`w-full px-4 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                        restaurant.is_open 
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200 border-2 border-green-300' 
+                          : 'bg-red-100 text-red-800 hover:bg-red-200 border-2 border-red-300'
+                      }`}
+                    >
+                      <span className="text-lg">{restaurant.is_open ? '🟢' : '🔴'}</span>
+                      <span>{restaurant.is_open ? 'OPEN' : 'CLOSED'}</span>
+                      <span className="text-xs opacity-70">(Click to toggle)</span>
+                    </button>
                   </div>
 
                   {/* Action Buttons - More Descriptive */}

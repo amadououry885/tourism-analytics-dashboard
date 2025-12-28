@@ -127,6 +127,17 @@ class VendorViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'])
+    def toggle_status(self, request, pk=None):
+        """Toggle restaurant open/close status"""
+        vendor = self.get_object()
+        vendor.is_open = not vendor.is_open
+        vendor.save()
+        return Response({
+            'is_open': vendor.is_open,
+            'message': f"Restaurant is now {'OPEN' if vendor.is_open else 'CLOSED'}"
+        })
+
 
 class VendorAnalyticsView(APIView):
     """Get analytics for vendors"""

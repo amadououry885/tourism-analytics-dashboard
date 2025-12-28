@@ -1,5 +1,7 @@
 from django.db.models import Q
 from rest_framework import viewsets, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
 from common.permissions import AdminOrReadOnly
@@ -54,6 +56,17 @@ class PlaceViewSet(viewsets.ModelViewSet):
             val = p["is_free"].lower() in {"1", "true", "yes"}
             qs = qs.filter(is_free=val)
         return qs
+
+    @action(detail=True, methods=['post'])
+    def toggle_status(self, request, pk=None):
+        """Toggle place open/close status"""
+        place = self.get_object()
+        place.is_open = not place.is_open
+        place.save()
+        return Response({
+            'is_open': place.is_open,
+            'message': f"Place is now {'OPEN' if place.is_open else 'CLOSED'}"
+        })
 
 
 class SocialPostViewSet(viewsets.ModelViewSet):

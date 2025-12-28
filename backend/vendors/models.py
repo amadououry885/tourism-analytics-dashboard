@@ -47,6 +47,7 @@ class Vendor(models.Model):
     takeaway_available = models.BooleanField(default=True)
     reservation_required = models.BooleanField(default=False)
     dress_code = models.CharField(max_length=100, blank=True, help_text="e.g., Casual, Smart Casual, Formal")
+    is_open = models.BooleanField(default=True, help_text="Whether the restaurant is currently open/operational")
     
     # System Fields
     is_active = models.BooleanField(default=True)

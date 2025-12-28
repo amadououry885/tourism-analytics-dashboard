@@ -61,6 +61,7 @@ interface Stay {
   landmark?: string;
   distanceKm?: number;
   is_active: boolean;
+  is_open: boolean;
   owner?: number;
   owner_username?: string;
   booking_com_url?: string;
@@ -339,6 +340,25 @@ const StayOwnerDashboard: React.FC = () => {
     setShowAddModal(true);
   };
 
+  const handleToggleStatus = async (stayId: number, currentStatus: boolean) => {
+    try {
+      const response = await request(
+        `/stays/${stayId}/toggle_status/`,
+        {
+          method: 'POST',
+        },
+        `✅ Accommodation ${currentStatus ? 'closed' : 'opened'} successfully!`
+      );
+      
+      // Update local state
+      setStays(stays.map(s => 
+        s.id === stayId ? { ...s, is_open: response.is_open } : s
+      ));
+    } catch (error) {
+      console.error('Failed to toggle status:', error);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -562,6 +582,22 @@ const StayOwnerDashboard: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Status Toggle */}
+                  <div className="mb-3">
+                    <button
+                      onClick={() => handleToggleStatus(stay.id, stay.is_open)}
+                      className={`w-full px-4 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                        stay.is_open 
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200 border-2 border-green-300' 
+                          : 'bg-red-100 text-red-800 hover:bg-red-200 border-2 border-red-300'
+                      }`}
+                    >
+                      <span className="text-lg">{stay.is_open ? '🟢' : '🔴'}</span>
+                      <span>{stay.is_open ? 'OPEN' : 'CLOSED'}</span>
+                      <span className="text-xs opacity-70">(Click to toggle)</span>
+                    </button>
+                  </div>
 
                   {/* Image Count */}
                   {stay.stay_images && stay.stay_images.length > 0 && (

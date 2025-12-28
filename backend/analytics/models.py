@@ -39,6 +39,7 @@ class Place(models.Model):
     # Operational Details
     opening_hours = models.TextField(blank=True, default="", help_text="Opening hours (e.g., 'Mon-Fri: 9AM-6PM')")
     best_time_to_visit = models.CharField(max_length=200, blank=True, default="", help_text="Best season/time to visit")
+    is_open = models.BooleanField(default=True, help_text="Whether the place is currently open/operational")
     
     # Facilities & Amenities (JSON field for flexible storage)
     amenities = models.JSONField(
