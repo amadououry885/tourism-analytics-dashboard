@@ -576,9 +576,23 @@ const VendorDashboard: React.FC = () => {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {restaurants.map((restaurant) => (
-                <div key={restaurant.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border-2 border-gray-100 hover:border-emerald-300 transform hover:-translate-y-1">
+                <div key={restaurant.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border-2 border-gray-100 hover:border-emerald-300 transform hover:-translate-y-1 relative">
+                  {/* Status Toggle - Top Right Corner */}
+                  <button
+                    onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open)}
+                    className={`absolute top-4 right-4 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${
+                      restaurant.is_open 
+                        ? 'bg-green-500 text-white hover:bg-green-600 border-2 border-green-400' 
+                        : 'bg-red-500 text-white hover:bg-red-600 border-2 border-red-400'
+                    }`}
+                    title={`Click to ${restaurant.is_open ? 'close' : 'open'} restaurant`}
+                  >
+                    <span className="text-lg">{restaurant.is_open ? '✓' : '✕'}</span>
+                    <span className="font-bold">{restaurant.is_open ? 'OPEN' : 'CLOSED'}</span>
+                  </button>
+
                   {/* Restaurant Header */}
-                  <div className="mb-4">
+                  <div className="mb-4 pr-32">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="bg-gradient-to-br from-emerald-100 to-teal-100 p-3 rounded-xl">
                         <Store className="w-6 h-6 text-emerald-600" />
@@ -605,22 +619,6 @@ const VendorDashboard: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="mb-3">
-                    <button
-                      onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open)}
-                      className={`w-full px-4 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                        restaurant.is_open 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200 border-2 border-green-300' 
-                          : 'bg-red-100 text-red-800 hover:bg-red-200 border-2 border-red-300'
-                      }`}
-                    >
-                      <span className="text-lg">{restaurant.is_open ? '🟢' : '🔴'}</span>
-                      <span>{restaurant.is_open ? 'OPEN' : 'CLOSED'}</span>
-                      <span className="text-xs opacity-70">(Click to toggle)</span>
-                    </button>
                   </div>
 
                   {/* Action Buttons - More Descriptive */}

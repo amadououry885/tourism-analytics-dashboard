@@ -506,8 +506,22 @@ const StayOwnerDashboard: React.FC = () => {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stays.map((stay) => (
-                <div key={stay.id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all p-6 border-2 border-transparent hover:border-orange-300">
-                  <div className="flex justify-between items-start mb-4">
+                <div key={stay.id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all p-6 border-2 border-transparent hover:border-orange-300 relative">
+                  {/* Status Toggle - Top Right Corner */}
+                  <button
+                    onClick={() => handleToggleStatus(stay.id, stay.is_open)}
+                    className={`absolute top-4 right-4 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${
+                      stay.is_open 
+                        ? 'bg-green-500 text-white hover:bg-green-600 border-2 border-green-400' 
+                        : 'bg-red-500 text-white hover:bg-red-600 border-2 border-red-400'
+                    }`}
+                    title={`Click to ${stay.is_open ? 'close' : 'open'} accommodation`}
+                  >
+                    <span className="text-lg">{stay.is_open ? '✓' : '✕'}</span>
+                    <span className="font-bold">{stay.is_open ? 'OPEN' : 'CLOSED'}</span>
+                  </button>
+
+                  <div className="flex justify-between items-start mb-4 pr-32">
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-gray-900 mb-2">{stay.name}</h3>
                       <span className="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-sm font-semibold rounded-full">
@@ -582,22 +596,6 @@ const StayOwnerDashboard: React.FC = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* Status Toggle */}
-                  <div className="mb-3">
-                    <button
-                      onClick={() => handleToggleStatus(stay.id, stay.is_open)}
-                      className={`w-full px-4 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                        stay.is_open 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200 border-2 border-green-300' 
-                          : 'bg-red-100 text-red-800 hover:bg-red-200 border-2 border-red-300'
-                      }`}
-                    >
-                      <span className="text-lg">{stay.is_open ? '🟢' : '🔴'}</span>
-                      <span>{stay.is_open ? 'OPEN' : 'CLOSED'}</span>
-                      <span className="text-xs opacity-70">(Click to toggle)</span>
-                    </button>
-                  </div>
 
                   {/* Image Count */}
                   {stay.stay_images && stay.stay_images.length > 0 && (
