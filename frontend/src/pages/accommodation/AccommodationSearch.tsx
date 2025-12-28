@@ -706,40 +706,57 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                         }] : [])
                       ]}
                       badge={
-                        stay.is_trending ? (
-                          <Badge className="bg-green-100 text-green-700 border-green-300 flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            Trending
-                          </Badge>
-                        ) : stay.is_internal ? (
-                          <Badge className="bg-green-100 text-green-700 border-green-300">
-                            <Sparkles className="w-3 h-3 mr-1" />
-                            Local Partner
-                          </Badge>
-                        ) : (
-                          <>
-                            {stay.booking_provider === 'booking.com' && (
-                              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                                🔵 Booking.com
+                        <>
+                          {/* Open/Closed Status Badge - Most Important */}
+                          {stay.is_open !== undefined && (
+                            stay.is_open ? (
+                              <Badge className="bg-green-500 text-white border-green-400 font-bold shadow-sm mr-2">
+                                <Clock className="w-3 h-3 mr-1" />
+                                OPEN
                               </Badge>
-                            )}
-                            {stay.booking_provider === 'agoda' && (
-                              <Badge className="bg-purple-100 text-purple-700 border-purple-300">
-                                🟣 Agoda
+                            ) : (
+                              <Badge className="bg-red-500 text-white border-red-400 font-bold shadow-sm mr-2">
+                                <Clock className="w-3 h-3 mr-1" />
+                                CLOSED
                               </Badge>
-                            )}
-                            {stay.booking_provider === 'both' && (
-                              <Badge className="bg-indigo-100 text-indigo-700 border-indigo-300">
-                                🎯 Multi-Platform
-                              </Badge>
-                            )}
-                            {!stay.booking_provider && (
-                              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                                External
-                              </Badge>
-                            )}
-                          </>
-                        )
+                            )
+                          )}
+                          {/* Other Badges */}
+                          {stay.is_trending ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-300 flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              Trending
+                            </Badge>
+                          ) : stay.is_internal ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-300">
+                              <Sparkles className="w-3 h-3 mr-1" />
+                              Local Partner
+                            </Badge>
+                          ) : (
+                            <>
+                              {stay.booking_provider === 'booking.com' && (
+                                <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                  🔵 Booking.com
+                                </Badge>
+                              )}
+                              {stay.booking_provider === 'agoda' && (
+                                <Badge className="bg-purple-100 text-purple-700 border-purple-300">
+                                  🟣 Agoda
+                                </Badge>
+                              )}
+                              {stay.booking_provider === 'both' && (
+                                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-300">
+                                  🎯 Multi-Platform
+                                </Badge>
+                              )}
+                              {!stay.booking_provider && (
+                                <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                  External
+                                </Badge>
+                              )}
+                            </>
+                          )}
+                        </>
                       }
                       isSelected={selectedStay?.id === stay.id}
                       onClick={() => handleSelectStay(stay)}

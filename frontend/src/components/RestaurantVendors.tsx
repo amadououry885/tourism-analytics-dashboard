@@ -183,7 +183,9 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
           city: vendor.city?.toLowerCase().replace(/\s+/g, '-') || 'kedah',
           image: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0] || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`,
           visitors: Math.floor(Math.random() * 20000) + 1000, // Mock visitor count
-          badges: vendor.amenities?.halal_certified ? ['Halal'] : []
+          badges: vendor.amenities?.halal_certified ? ['Halal'] : [],
+          isOpen: vendor.is_open ?? true,
+          isLive: vendor.is_open ?? true
         }));
         
         // If backend has data, use it; otherwise keep demo data
@@ -397,10 +399,15 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                     }
                   ]}
                   badge={
-                    restaurant.isLive && (
-                      <Badge className="bg-green-100 text-green-700 border-green-300">
+                    restaurant.isOpen ? (
+                      <Badge className="bg-green-500 text-white border-green-400 font-bold shadow-sm">
                         <Clock className="w-3 h-3 mr-1" />
-                        Open
+                        OPEN
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-red-500 text-white border-red-400 font-bold shadow-sm">
+                        <Clock className="w-3 h-3 mr-1" />
+                        CLOSED
                       </Badge>
                     )
                   }

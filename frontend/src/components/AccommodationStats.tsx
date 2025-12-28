@@ -61,7 +61,8 @@ export function AccommodationStats({ selectedCity, timeRange }: AccommodationSta
           district: stay.district || stay.city || 'Kedah',
           rating: stay.rating,
           priceNight: stay.price_per_night?.toString() || '0',
-          amenities: stay.amenities || []
+          amenities: stay.amenities || [],
+          isOpen: stay.is_open ?? true
         }));
         
         // If backend has data, use it; otherwise keep demo data
