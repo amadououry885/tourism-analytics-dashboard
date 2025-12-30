@@ -35,17 +35,36 @@ test_users = [
 
 for user_data in test_users:
     password = user_data.pop('password')
-    user, created = User.objects.get_or_create(
-        email=user_data['email'],
-        defaults=user_data
-    )
+    username = user_data['username']
+    email = user_data['email']
+    
+    # Try to get by username first, then email
+    user = None
+    created = False
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Create new user
+            user = User.objects.create(**user_data)
+            created = True
+    
+    # Update password and settings
     if created or not user.check_password(password):
         user.set_password(password)
-        user.is_approved = True
-        user.is_active = True
-        user.username = user_data['username']
-        user.save()
-        print(f"✅ {'Created' if created else 'Updated'}: {user.username} ({user.email})")
+    user.is_approved = True
+    user.is_active = True
+    user.username = username
+    user.email = email
+    user.role = user_data['role']
+    if 'is_staff' in user_data:
+        user.is_staff = user_data['is_staff']
+    if 'is_superuser' in user_data:
+        user.is_superuser = user_data['is_superuser']
+    user.save()
+    print(f"✅ {'Created' if created else 'Updated'}: {user.username} ({user.email})")
 
 # Get admin user for foreign keys (use the test admin we just created)
 admin_user = User.objects.get(username='admin')
