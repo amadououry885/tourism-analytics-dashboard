@@ -32,6 +32,7 @@ interface Destination {
   category?: string;
   city?: string;
   is_free?: boolean;
+  is_open?: boolean;
   price?: number;
   currency?: string;
   latitude?: number;
@@ -104,6 +105,13 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
   useEffect(() => {
     fetchDestinations();
+    
+    // Auto-refresh every 5 seconds to catch status changes
+    const interval = setInterval(() => {
+      fetchDestinations();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, [fetchDestinations]);
 
   useEffect(() => {
@@ -129,6 +137,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
           // Set ALL destinations data (not just top 5) - ranked by posts
           const destinations = places.map((place: any, index: number) => ({
+            id: place.id,
             name: place.place_name || place.name || 'Unknown',
             posts: place.posts || place.post_count || 0,
             rating: place.rating || place.average_rating || 0,
@@ -138,6 +147,8 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
             category: place.category || '',
             city: place.city || '',
             image_url: place.image_url || '',
+            is_free: place.is_free,
+            is_open: place.is_open,
             // ✅ Add all new fields from API
             wikipedia_url: place.wikipedia_url || undefined,
             official_website: place.official_website || undefined,
@@ -471,9 +482,15 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                     }
                   ]}
                   badge={
-                    destination.is_free && (
-                      <Badge className="bg-green-100 text-green-700 border-green-300">
-                        Free
+                    destination.is_open ? (
+                      <Badge className="bg-green-600 border-green-600 font-bold shadow-sm" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
+                        <Clock className="w-3 h-3 mr-1" />
+                        OPEN
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-red-600 border-red-600 font-bold shadow-sm" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
+                        <Clock className="w-3 h-3 mr-1" />
+                        CLOSED
                       </Badge>
                     )
                   }

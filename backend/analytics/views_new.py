@@ -264,6 +264,7 @@ class PopularPlacesView(APIView):
                 'city': p.city or '',
                 'image_url': p.image_url or '',
                 'is_free': p.is_free,
+                'is_open': p.is_open,  # ✅ Open/closed status
                 'price': float(p.price) if p.price else None,
                 'description': p.description or '',
                 # ✅ Add new fields

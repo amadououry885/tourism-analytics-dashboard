@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, MapPin, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, MapPin, Upload, Power } from 'lucide-react';
 import axios from '../../services/api';
 
 interface Place {
@@ -11,6 +11,7 @@ interface Place {
   state: string;
   country: string;
   is_free: boolean;
+  is_open: boolean;
   price: string;
   currency: string;
   latitude: string;
@@ -43,6 +44,7 @@ const emptyPlace: Place = {
   state: 'Kedah',
   country: 'Malaysia',
   is_free: true,
+  is_open: true,
   price: '0.00',
   currency: 'MYR',
   latitude: '',
@@ -85,8 +87,14 @@ export default function PlacesManagement() {
   const fetchPlaces = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/places/');
-      setPlaces(response.data.results || response.data);
+      // Fetch all places without pagination
+      const response = await axios.get('/places/?page_size=1000');
+      const placesData = response.data.results || response.data;
+      console.log('[Admin Places] First 3 places:', placesData.slice(0, 3).map((p: any) => ({ 
+        name: p.name, 
+        is_open: p.is_open 
+      })));
+      setPlaces(placesData);
       setError('');
     } catch (err: any) {
       setError('Failed to load places: ' + (err.response?.data?.message || err.message));
@@ -185,6 +193,17 @@ export default function PlacesManagement() {
       fetchPlaces();
     } catch (err: any) {
       setError('Failed to delete place: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleToggleStatus = async (id: number, currentStatus: boolean) => {
+    try {
+      const response = await axios.post(`/places/${id}/toggle_status/`);
+      const newStatus = response.data.is_open;
+      setSuccess(`Place ${newStatus ? 'opened' : 'closed'} successfully!`);
+      fetchPlaces();
+    } catch (err: any) {
+      setError('Failed to toggle status: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -426,6 +445,20 @@ export default function PlacesManagement() {
                       className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
                     Free Entry
+                  </label>
+                </div>
+
+                {/* Open/Closed Status */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                    <input
+                      type="checkbox"
+                      name="is_open"
+                      checked={formData.is_open}
+                      onChange={handleInputChange}
+                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    Open for Visitors
                   </label>
                 </div>
 
@@ -760,68 +793,102 @@ export default function PlacesManagement() {
           </div>
         )}
 
-        {/* Places List */}
+        {/* Places Grid */}
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">
             All Places ({places.length})
           </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 text-gray-700 font-medium">Image</th>
-                  <th className="text-left py-3 px-4 text-gray-700 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 text-gray-700 font-medium">Category</th>
-                  <th className="text-left py-3 px-4 text-gray-700 font-medium">City</th>
-                  <th className="text-left py-3 px-4 text-gray-700 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {places.map((place) => (
-                  <tr key={place.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      {place.image_url ? (
-                        <img
-                          src={place.image_url}
-                          alt={place.name}
-                          className="w-12 h-12 object-cover rounded"
-                          onError={(e) => {
-                            e.currentTarget.src = '';
-                            e.currentTarget.alt = 'No image';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">
-                          No img
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-gray-900">{place.name}</td>
-                    <td className="py-3 px-4 text-gray-600">{place.category}</td>
-                    <td className="py-3 px-4 text-gray-600">{place.city}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(place)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => place.id && handleDelete(place.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {places.map((place) => (
+              <div key={place.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                {/* Image */}
+                <div className="relative h-48 bg-gray-100">
+                  {place.image_url ? (
+                    <img
+                      src={place.image_url}
+                      alt={place.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '';
+                        e.currentTarget.alt = 'No image';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <MapPin className="w-12 h-12" />
+                    </div>
+                  )}
+                  {/* Status Badge */}
+                  <div className="absolute top-3 right-3">
+                    {place.is_open ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full shadow-lg">
+                        <Power className="w-3 h-3" />
+                        OPEN
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full shadow-lg">
+                        <Power className="w-3 h-3" />
+                        CLOSED
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-1">{place.name}</h3>
+                  <div className="space-y-1 mb-4">
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <span className="font-medium">Category:</span>
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">{place.category}</span>
+                    </p>
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <MapPin className="w-3 h-3" />
+                      {place.city}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => place.id && handleToggleStatus(place.id, place.is_open)}
+                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                        place.is_open 
+                          ? 'bg-red-50 text-red-700 hover:bg-red-100' 
+                          : 'bg-green-50 text-green-700 hover:bg-green-100'
+                      }`}
+                      title={place.is_open ? 'Close Place' : 'Open Place'}
+                    >
+                      <Power className="w-4 h-4" />
+                      {place.is_open ? 'Close' : 'Open'}
+                    </button>
+                    <button
+                      onClick={() => handleEdit(place)}
+                      className="flex items-center justify-center p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => place.id && handleDelete(place.id)}
+                      className="flex items-center justify-center p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+          
+          {places.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg font-medium">No places found</p>
+              <p className="text-sm">Click "Add New Place" to get started</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

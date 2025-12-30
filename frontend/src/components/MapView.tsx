@@ -219,10 +219,19 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
 
   // Render place item for list
   const renderPlaceItem = (place: Place) => {
-    // DEBUG: Check is_open value
-    if (place.id === 1) {
-      console.log('[MapView] Rendering place:', place.name, 'is_open:', place.is_open, 'type:', typeof place.is_open);
-    }
+    // DEBUG: ALWAYS show a test badge
+    const badgeElement = (
+      <div style={{ 
+        backgroundColor: '#16a34a', 
+        color: '#ffffff', 
+        padding: '4px 8px', 
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontWeight: 'bold'
+      }}>
+        TEST BADGE
+      </div>
+    );
     
     return (
     <ListItem
@@ -251,19 +260,7 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
           icon: <DollarSign className="w-3 h-3" />
         }] : [])
       ]}
-      badge={
-        place.is_open ? (
-          <Badge className="bg-green-600 border-green-600 font-bold shadow-sm" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
-            <Clock className="w-3 h-3 mr-1" />
-            OPEN
-          </Badge>
-        ) : (
-          <Badge className="bg-red-600 border-red-600 font-bold shadow-sm" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
-            <Clock className="w-3 h-3 mr-1" />
-            CLOSED
-          </Badge>
-        )
-      }
+      badge={badgeElement}
       isSelected={selectedPlace?.id === place.id}
       onClick={() => handleSelectPlace(place)}
     />

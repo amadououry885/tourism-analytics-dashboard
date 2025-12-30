@@ -19,6 +19,11 @@ export function ListItem({
   badge,
   rightContent
 }: ListItemProps) {
+  // DEBUG: Log badge prop
+  if (badge) {
+    console.log('[ListItem] Received badge for:', title, 'badge:', badge);
+  }
+  
   return (
     <div
       onClick={onClick}
