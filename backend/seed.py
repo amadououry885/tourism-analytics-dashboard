@@ -18,21 +18,37 @@ from users.models import User
 
 fake = Faker()
 
-# Get or create admin user for foreign keys
-admin_user, _ = User.objects.get_or_create(
-    email='admin@kedahtourism.com',
-    defaults={
-        'name': 'Admin User',
-        'role': 'admin',
-        'is_staff': True,
-        'is_superuser': True,
-        'is_approved': True,
-    }
-)
-if _:
-    admin_user.set_password('admin123')
-    admin_user.save()
-    print(f"✅ Created admin user: {admin_user.email}")
+# ───────────────────────────────────────────────────────────
+# Create Test Users (for portals and testing)
+# ───────────────────────────────────────────────────────────
+print("\n🔐 Creating test user accounts...")
+
+test_users = [
+    {'username': 'admin', 'email': 'admin@example.com', 'password': 'admin123', 'role': 'admin', 'first_name': 'Admin', 'last_name': 'User', 'is_staff': True, 'is_superuser': True},
+    {'username': 'vendor1', 'email': 'vendor1@example.com', 'password': 'vendor123', 'role': 'vendor', 'first_name': 'Vendor', 'last_name': 'One'},
+    {'username': 'vendor2', 'email': 'vendor2@example.com', 'password': 'vendor123', 'role': 'vendor', 'first_name': 'Vendor', 'last_name': 'Two'},
+    {'username': 'OuryRestau', 'email': 'amadouodiallo77@gmail.com', 'password': 'vendor123', 'role': 'vendor', 'first_name': 'Amadou', 'last_name': 'Diallo'},
+    {'username': 'stayowner1', 'email': 'stay@example.com', 'password': 'stay123', 'role': 'stay_owner', 'first_name': 'Stay', 'last_name': 'Owner One'},
+    {'username': 'stayowner2', 'email': 'stay2@test.com', 'password': 'stay123', 'role': 'stay_owner', 'first_name': 'Stay', 'last_name': 'Owner Two'},
+    {'username': 'NaimFOOD', 'email': 'hasib.naeim08@gmail.com', 'password': 'stay123', 'role': 'stay_owner', 'first_name': 'Hasib', 'last_name': 'Naeim'},
+]
+
+for user_data in test_users:
+    password = user_data.pop('password')
+    user, created = User.objects.get_or_create(
+        email=user_data['email'],
+        defaults=user_data
+    )
+    if created or not user.check_password(password):
+        user.set_password(password)
+        user.is_approved = True
+        user.is_active = True
+        user.username = user_data['username']
+        user.save()
+        print(f"✅ {'Created' if created else 'Updated'}: {user.username} ({user.email})")
+
+# Get admin user for foreign keys (use the test admin we just created)
+admin_user = User.objects.get(username='admin')
 
 # ───────────────────────────────────────────────────────────
 # Helper
