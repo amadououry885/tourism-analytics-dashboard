@@ -105,13 +105,6 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
   useEffect(() => {
     fetchDestinations();
-    
-    // Auto-refresh every 5 seconds to catch status changes
-    const interval = setInterval(() => {
-      fetchDestinations();
-    }, 5000);
-    
-    return () => clearInterval(interval);
   }, [fetchDestinations]);
 
   useEffect(() => {
