@@ -53,6 +53,7 @@ const defaultPlaces: Place[] = [
     city: 'Alor Setar',
     state: 'Kedah',
     is_free: true,
+    is_open: true,
     latitude: 6.1248,
     longitude: 100.3678,
     image_url: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=800',
@@ -66,6 +67,7 @@ const defaultPlaces: Place[] = [
     city: 'Langkawi',
     state: 'Kedah',
     is_free: true,
+    is_open: true,
     latitude: 6.2885,
     longitude: 99.7431,
     image_url: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800',
@@ -79,6 +81,7 @@ const defaultPlaces: Place[] = [
     city: 'Langkawi',
     state: 'Kedah',
     is_free: false,
+    is_open: true,
     price: 15,
     currency: 'MYR',
     latitude: 6.3833,
@@ -94,6 +97,7 @@ const defaultPlaces: Place[] = [
     city: 'Langkawi',
     state: 'Kedah',
     is_free: true,
+    is_open: true,
     latitude: 6.3284,
     longitude: 99.8517,
     image_url: 'https://images.unsplash.com/photo-1578894381163-e72c17f2d45f?w=800',
@@ -107,6 +111,7 @@ const defaultPlaces: Place[] = [
     city: 'Alor Setar',
     state: 'Kedah',
     is_free: false,
+    is_open: true,
     price: 20,
     currency: 'MYR',
     latitude: 6.1187,
@@ -137,26 +142,24 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
       try {
         setLoading(true);
         
-        console.log('[MapView] Fetching places from:', api.defaults.baseURL + '/places/');
-        
         const params = new URLSearchParams();
         if (selectedCity && selectedCity !== 'all') {
           params.append('city', selectedCity);
         }
         
+        // Add timestamp to prevent caching
+        params.append('_t', Date.now().toString());
+        
         const response = await api.get(`/places/?${params.toString()}`);
         const backendPlaces = response.data.results || response.data || [];
         
-        console.log('[MapView] Received places:', backendPlaces.length);
+        console.log('[MapView] Loaded', backendPlaces.length, 'places, first has is_open:', backendPlaces[0]?.is_open);
         
         if (backendPlaces.length > 0) {
-          console.log('[MapView] Using backend data');
           setPlaces(backendPlaces);
-        } else {
-          console.warn('[MapView] No backend data, keeping demo');
         }
       } catch (error) {
-        console.error('[MapView] Error fetching places:', error);
+        console.error('[MapView] Error:', error);
         // Keep demo data on error
       } finally {
         setLoading(false);
@@ -215,52 +218,57 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
   const categories = ['all', ...Array.from(new Set(places.map(p => p.category)))];
 
   // Render place item for list
-  const renderPlaceItem = (place: Place) => (
+  const renderPlaceItem = (place: Place) => {
+    // DEBUG: Check is_open value
+    if (place.id === 1) {
+      console.log('[MapView] Rendering place:', place.name, 'is_open:', place.is_open, 'type:', typeof place.is_open);
+    }
+    
+    return (
     <ListItem
       key={place.id}
-      isActive={selectedPlace?.id === place.id}
+      title={place.name}
+      subtitle={place.description}
+      metrics={[
+        { 
+          label: 'Category', 
+          value: place.category,
+          icon: <MapPin className="w-3 h-3" />
+        },
+        { 
+          label: 'Location', 
+          value: place.city,
+          icon: <Navigation className="w-3 h-3" />
+        },
+        ...(!place.is_free && place.price ? [{
+          label: 'Price',
+          value: `${place.currency || 'MYR'} ${place.price}`,
+          icon: <DollarSign className="w-3 h-3" />
+        }] : []),
+        ...(place.is_free ? [{
+          label: 'Entry',
+          value: 'Free',
+          icon: <DollarSign className="w-3 h-3" />
+        }] : [])
+      ]}
+      badge={
+        place.is_open ? (
+          <Badge className="bg-green-600 border-green-600 font-bold shadow-sm" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
+            <Clock className="w-3 h-3 mr-1" />
+            OPEN
+          </Badge>
+        ) : (
+          <Badge className="bg-red-600 border-red-600 font-bold shadow-sm" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
+            <Clock className="w-3 h-3 mr-1" />
+            CLOSED
+          </Badge>
+        )
+      }
+      isSelected={selectedPlace?.id === place.id}
       onClick={() => handleSelectPlace(place)}
-    >
-      <div className=\"flex gap-3\">
-        {place.image_url && (
-          <img 
-            src={place.image_url} 
-            alt={place.name}
-            className=\"w-16 h-16 object-cover rounded-lg flex-shrink-0\"
-          />
-        )}
-        <div className=\"flex-1 min-w-0\">
-          <h3 className="font-semibold text-gray-900 truncate">{place.name}</h3>
-          <p className="text-sm text-gray-600 line-clamp-2">{place.description}</p>
-          <div className="flex items-center gap-2 mt-1">
-            {place.is_open !== undefined && (
-              place.is_open ? (
-                <Badge className="text-xs bg-green-600 border-green-600" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
-                  <Clock className="w-3 h-3 mr-1" />
-                  OPEN
-                </Badge>
-              ) : (
-                <Badge className="text-xs bg-red-600 border-red-600" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
-                  <Clock className="w-3 h-3 mr-1" />
-                  CLOSED
-                </Badge>
-              )
-            )}
-            <Badge variant="secondary" className="text-xs">{place.category}</Badge>
-            <span className="text-xs text-gray-500">{place.city}</span>
-            {!place.is_free && place.price && (
-              <span className=\"text-xs text-green-600 font-medium\">
-                {place.currency || 'MYR'} {place.price}
-              </span>
-            )}
-            {place.is_free && (
-              <Badge variant=\"outline\" className=\"text-xs text-green-600 border-green-600\">Free</Badge>
-            )}
-          </div>
-        </div>
-      </div>
-    </ListItem>
-  );
+    />
+    );
+  };
 
   // Render place details panel
   const renderPlaceDetails = () => {
@@ -302,18 +310,20 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
             </div>
             <div>
               <h4 className=\"font-semibold text-gray-900 mb-2\">Status</h4>
-              {selectedPlace.is_open !== undefined && (
-                selectedPlace.is_open ? (
-                  <Badge className=\"bg-green-600 border-green-600\" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
-                    <Clock className=\"w-3 h-3 mr-1\" />
-                    OPEN
-                  </Badge>
-                ) : (
-                  <Badge className=\"bg-red-600 border-red-600\" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
-                    <Clock className=\"w-3 h-3 mr-1\" />
-                    CLOSED
-                  </Badge>
-                )
+              {selectedPlace.is_open !== undefined ? (
+                <span 
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md" 
+                  style={{ 
+                    backgroundColor: selectedPlace.is_open ? '#16a34a' : '#dc2626', 
+                    color: '#ffffff',
+                    border: '1px solid transparent'
+                  }}
+                >
+                  <Clock className=\"w-3 h-3 mr-1\" style={{ color: '#ffffff' }} />
+                  {selectedPlace.is_open ? 'OPEN' : 'CLOSED'}
+                </span>
+              ) : (
+                <span className="text-gray-500 text-sm">Status not available</span>
               )}
             </div>
           </div>
