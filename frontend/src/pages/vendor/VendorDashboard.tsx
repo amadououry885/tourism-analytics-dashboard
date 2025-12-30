@@ -145,6 +145,12 @@ const VendorDashboard: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('[VendorDashboard] Form data before payload:', {
+      price_range: formData.price_range,
+      price_range_type: typeof formData.price_range,
+      cuisines: formData.cuisines
+    });
+    
     const payload = {
       name: formData.name,
       city: formData.city,
