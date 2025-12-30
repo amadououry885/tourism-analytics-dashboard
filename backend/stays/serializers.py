@@ -48,7 +48,6 @@ class StaySerializer(serializers.ModelSerializer):
             "landmark",
             "distanceKm",
             "is_active",
-            "is_open",
             "is_internal",
             "contact_email",
             "contact_phone",
