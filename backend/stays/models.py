@@ -28,7 +28,6 @@ class Stay(models.Model):
     landmark = models.CharField(max_length=200, blank=True)
     distanceKm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    is_open = models.BooleanField(default=True, help_text="Whether the accommodation is currently open/operational")
     
     # Hybrid search: differentiate internal (platform) vs external (affiliate) stays
     is_internal = models.BooleanField(

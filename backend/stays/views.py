@@ -452,17 +452,6 @@ class StayViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-    @action(detail=True, methods=['post'])
-    def toggle_status(self, request, pk=None):
-        """Toggle accommodation open/close status"""
-        stay = self.get_object()
-        stay.is_open = not stay.is_open
-        stay.save()
-        return Response({
-            'is_open': stay.is_open,
-            'message': f"Accommodation is now {'OPEN' if stay.is_open else 'CLOSED'}"
-        })
-
 class StayImageViewSet(viewsets.ModelViewSet):
     """Separate viewset for managing stay images"""
     queryset = StayImage.objects.all()
