@@ -123,13 +123,25 @@ const VendorDashboard: React.FC = () => {
 
   const fetchRestaurants = async () => {
     try {
-      console.log('Fetching vendors...');
+      console.log('[VendorDashboard] Fetching vendors...');
       const data = await request('/vendors/');
-      console.log('Vendors data:', data);
+      console.log('[VendorDashboard] Vendors response:', data);
+      console.log('[VendorDashboard] Results array:', data?.results);
+      console.log('[VendorDashboard] Results count:', data?.count);
+      
       // Handle paginated response - extract results array
-      setRestaurants(data.results || data); // Use results if paginated, otherwise use data directly
-    } catch (error) {
-      console.error('Failed to fetch restaurants:', error);
+      const restaurantsList = data?.results || data || [];
+      console.log('[VendorDashboard] Setting restaurants to:', restaurantsList);
+      setRestaurants(restaurantsList);
+      
+      if (restaurantsList.length > 0) {
+        console.log('[VendorDashboard] ✅ Successfully loaded', restaurantsList.length, 'restaurants');
+      } else {
+        console.log('[VendorDashboard] ⚠️ No restaurants found in response');
+      }
+    } catch (error: any) {
+      console.error('[VendorDashboard] ❌ Failed to fetch restaurants:', error);
+      console.error('[VendorDashboard] Error details:', error.response || error.message);
     }
   };
 
