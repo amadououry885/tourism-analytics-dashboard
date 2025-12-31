@@ -85,7 +85,6 @@ const VendorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours'>('restaurants');
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
-  const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
   const [formData, setFormData] = useState({
     name: '',
     city: '',
