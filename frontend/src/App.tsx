@@ -16,7 +16,7 @@ import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PlacesManagement from './pages/admin/PlacesManagement';
 import EventRegistrations from './pages/EventRegistrations';
-import VendorDashboard from './pages/vendor/VendorDashboardNew';
+import VendorDashboard from './pages/vendor/VendorDashboard';
 import StayOwnerDashboard from './pages/stays/StayOwnerDashboard';
 
 export default function App() {
