@@ -11,12 +11,22 @@ import {
   Home,
   UtensilsCrossed,
   Clock,
+  Phone,
+  Globe,
+  Settings,
+  CheckCircle,
+  Image,
+  X,
+  ArrowLeft,
+  ArrowRight,
+  Save,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { FormInput } from '../../components/FormInput';
 import { MenuManagement } from '../../components/MenuManagement';
 import { OpeningHoursManagement } from '../../components/OpeningHoursManagement';
+import { VendorDashboardModal } from './VendorDashboardModal';
 
 interface Restaurant {
   id: number;
@@ -74,6 +84,7 @@ const VendorDashboard: React.FC = () => {
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours'>('restaurants');
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
+  const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
   const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
   const [formData, setFormData] = useState({
     name: '',
@@ -726,7 +737,7 @@ const VendorDashboard: React.FC = () => {
       </main>
 
       {/* Add/Edit Modal - Super User Friendly */}
-      {showAddModal && (
+      {false && showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-y-auto border-4 border-emerald-200">
             {/* Colorful Header */}
@@ -1312,6 +1323,22 @@ const VendorDashboard: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Professional Tabbed Modal */}
+      {showAddModal && (
+        <VendorDashboardModal
+          editingRestaurant={editingRestaurant}
+          formStep={formStep}
+          setFormStep={setFormStep}
+          formData={formData}
+          setFormData={setFormData}
+          cuisineOptions={cuisineOptions}
+          handleCuisineChange={handleCuisineChange}
+          handleSubmit={handleSubmit}
+          resetForm={resetForm}
+          loading={loading}
+        />
       )}
     </div>
   );
