@@ -202,8 +202,31 @@ const VendorDashboard: React.FC = () => {
       
       fetchRestaurants();
       resetForm();
-    } catch (error) {
+      setShowForm(false);
+      setEditingRestaurant(null);
+    } catch (error: any) {
       console.error('Failed to save restaurant:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Show specific validation errors
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        let errorMessage = 'Failed to save restaurant:\n\n';
+        
+        if (typeof errorData === 'object') {
+          Object.entries(errorData).forEach(([field, messages]) => {
+            if (Array.isArray(messages)) {
+              errorMessage += `${field}: ${messages.join(', ')}\n`;
+            } else {
+              errorMessage += `${field}: ${messages}\n`;
+            }
+          });
+        } else {
+          errorMessage += errorData;
+        }
+        
+        alert(errorMessage);
+      }
     }
   };
 
