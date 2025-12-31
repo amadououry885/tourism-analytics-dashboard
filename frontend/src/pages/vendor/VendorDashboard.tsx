@@ -157,39 +157,53 @@ const VendorDashboard: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('[VendorDashboard] Form data before payload:', {
-      price_range: formData.price_range,
-      price_range_type: typeof formData.price_range,
-      cuisines: formData.cuisines
-    });
+    // Validation
+    if (!formData.name || !formData.name.trim()) {
+      alert('⚠️ Restaurant name is required!');
+      return;
+    }
     
-    const payload = {
+    if (!formData.city || !formData.city.trim()) {
+      alert('⚠️ City is required!');
+      return;
+    }
+    
+    console.log('[VendorDashboard] Form data before payload:', {
       name: formData.name,
       city: formData.city,
       cuisines: formData.cuisines,
-      description: formData.description,
+      cuisines_length: formData.cuisines.length,
+      price_range: formData.price_range,
+      price_range_type: typeof formData.price_range,
+    });
+    
+    const payload = {
+      name: formData.name.trim(),
+      city: formData.city.trim(),
+      cuisines: formData.cuisines,
+      description: formData.description.trim(),
       established_year: formData.established_year ? parseInt(formData.established_year) : null,
       price_range: formData.price_range,
       lat: formData.lat ? parseFloat(formData.lat) : null,
       lon: formData.lon ? parseFloat(formData.lon) : null,
-      address: formData.address,
-      contact_phone: formData.contact_phone,
-      contact_email: formData.contact_email,
-      official_website: formData.official_website,
-      facebook_url: formData.facebook_url,
-      instagram_url: formData.instagram_url,
-      tripadvisor_url: formData.tripadvisor_url,
-      google_maps_url: formData.google_maps_url,
-      logo_url: formData.logo_url,
-      cover_image_url: formData.cover_image_url,
+      address: formData.address.trim(),
+      contact_phone: formData.contact_phone.trim(),
+      contact_email: formData.contact_email.trim(),
+      official_website: formData.official_website.trim(),
+      facebook_url: formData.facebook_url.trim(),
+      instagram_url: formData.instagram_url.trim(),
+      tripadvisor_url: formData.tripadvisor_url.trim(),
+      google_maps_url: formData.google_maps_url.trim(),
+      logo_url: formData.logo_url.trim(),
+      cover_image_url: formData.cover_image_url.trim(),
       amenities: formData.amenities,
       delivery_available: formData.delivery_available,
       takeaway_available: formData.takeaway_available,
       reservation_required: formData.reservation_required,
-      dress_code: formData.dress_code,
+      dress_code: formData.dress_code.trim(),
     };
 
-    console.log('Submitting payload:', payload);
+    console.log('[VendorDashboard] Submitting payload:', JSON.stringify(payload, null, 2));
     
     try {
       if (editingRestaurant) {
