@@ -74,6 +74,7 @@ const VendorDashboard: React.FC = () => {
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours'>('restaurants');
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
+  const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
   const [formData, setFormData] = useState({
     name: '',
     city: '',
@@ -362,6 +363,7 @@ const VendorDashboard: React.FC = () => {
     });
     setEditingRestaurant(null);
     setShowAddModal(false);
+    setFormStep('basic');
   };
 
   const handleToggleStatus = async (restaurantId: number, currentStatus: boolean) => {
