@@ -112,7 +112,7 @@ class StayViewSet(viewsets.ModelViewSet):
         }
 
     def get_queryset(self):
-        """Filter stays - owners see their own, others see all active and open"""
+        """Filter stays - owners see their own, others see all active"""
         qs = super().get_queryset()
         user = self.request.user
         
@@ -120,11 +120,9 @@ class StayViewSet(viewsets.ModelViewSet):
         if user.is_authenticated and user.role == 'stay_owner':
             qs = qs.filter(owner=user)
         else:
-            # Others see only active stays (and open if field exists)
+            # Others see only active stays (show both open and closed with badges)
             qs = qs.filter(is_active=True)
-            # Add is_open filter only if migration is applied
-            if hasattr(qs.model, 'is_open'):
-                qs = qs.filter(is_open=True)
+            # Don't filter by is_open - let users see all stays with status badges
         
         district = self.request.query_params.get("district")
         typ = self.request.query_params.get("type")

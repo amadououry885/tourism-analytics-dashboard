@@ -33,7 +33,7 @@ class VendorViewSet(viewsets.ModelViewSet):
         serializer.save()
     
     def get_queryset(self):
-        """Filter vendors - owners see their own, others see all active and open"""
+        """Filter vendors - owners see their own, others see all active"""
         qs = super().get_queryset()
         user = self.request.user
         
@@ -41,11 +41,9 @@ class VendorViewSet(viewsets.ModelViewSet):
         if user.is_authenticated and user.role == 'vendor':
             qs = qs.filter(owner=user)
         else:
-            # Others see only active vendors (and open if field exists)
+            # Others see only active vendors (show both open and closed with badges)
             qs = qs.filter(is_active=True)
-            # Add is_open filter only if migration is applied
-            if hasattr(qs.model, 'is_open'):
-                qs = qs.filter(is_open=True)
+            # Don't filter by is_open - let users see all vendors with status badges
         
         city = self.request.query_params.get("city")
         q = self.request.query_params.get("q")
