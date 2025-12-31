@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Image as ImageIcon, X } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 
 interface MenuItem {
   id?: number;
@@ -59,12 +59,15 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/vendors/menu-items/', {
+      const response = await api.get('/menu-items/', {
         params: { vendor_id: vendorId }
       });
-      setMenuItems(response.data);
+      // Handle paginated response
+      const items = response.data.results || response.data;
+      setMenuItems(Array.isArray(items) ? items : []);
     } catch (error) {
       console.error('Error fetching menu items:', error);
+      setMenuItems([]);
     } finally {
       setLoading(false);
     }
@@ -74,9 +77,9 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
     e.preventDefault();
     try {
       if (editingItem?.id) {
-        await axios.put(`/api/vendors/menu-items/${editingItem.id}/`, formData);
+        await api.put(`/menu-items/${editingItem.id}/`, formData);
       } else {
-        await axios.post('/vendors/menu-items/', formData);
+        await api.post('/menu-items/', formData);
       }
       await fetchMenuItems();
       resetForm();
@@ -95,7 +98,7 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this menu item?')) return;
     try {
-      await axios.delete(`/api/vendors/menu-items/${id}/`);
+      await api.delete(`/menu-items/${id}/`);
       await fetchMenuItems();
     } catch (error) {
       console.error('Error deleting menu item:', error);
@@ -132,7 +135,7 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   };
 
   // Group items by category
-  const groupedItems = menuItems.reduce((acc, item) => {
+  const groupedItems = (Array.isArray(menuItems) ? menuItems : []).reduce((acc, item) => {
     const cat = item.category || 'Uncategorized';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(item);

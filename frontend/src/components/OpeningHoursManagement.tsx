@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Copy, Save, X } from 'lucide-react';
-import axios from 'axios';
+import api from '../services/api';
 
 interface OpeningHour {
   id?: number;
@@ -33,16 +33,20 @@ export const OpeningHoursManagement: React.FC<OpeningHoursManagementProps> = ({ 
   const fetchHours = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/vendors/opening-hours/', {
+      const response = await api.get('/opening-hours/', {
         params: { vendor_id: vendorId }
       });
       
+      // Handle paginated response
+      const data = response.data.results || response.data;
+      const hoursData = Array.isArray(data) ? data : [];
+      
       // Initialize hours for all days if not exists
-      const existingDays = response.data.map((h: OpeningHour) => h.day_of_week);
+      const existingDays = hoursData.map((h: OpeningHour) => h.day_of_week);
       const allHours: OpeningHour[] = [];
       
       for (let i = 0; i < 7; i++) {
-        const existing = response.data.find((h: OpeningHour) => h.day_of_week === i);
+        const existing = hoursData.find((h: OpeningHour) => h.day_of_week === i);
         if (existing) {
           allHours.push(existing);
         } else {
@@ -96,10 +100,10 @@ export const OpeningHoursManagement: React.FC<OpeningHoursManagementProps> = ({ 
       const promises = hours.map(async (hour) => {
         if (hour.id) {
           // Update existing
-          await axios.put(`/api/vendors/opening-hours/${hour.id}/`, hour);
+          await api.put(`/opening-hours/${hour.id}/`, hour);
         } else {
           // Create new
-          await axios.post('/vendors/opening-hours/', hour);
+          await api.post('/opening-hours/', hour);
         }
       });
       

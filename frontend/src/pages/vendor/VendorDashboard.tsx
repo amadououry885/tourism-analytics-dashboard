@@ -20,12 +20,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Save,
+  Calendar,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { FormInput } from '../../components/FormInput';
 import { MenuManagement } from '../../components/MenuManagement';
 import { OpeningHoursManagement } from '../../components/OpeningHoursManagement';
+import { ReservationManagement } from '../../components/ReservationManagement';
 import { VendorDashboardModal } from './VendorDashboardModal';
 
 interface Restaurant {
@@ -82,7 +84,7 @@ const VendorDashboard: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
-  const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours'>('restaurants');
+  const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours' | 'reservations'>('restaurants');
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
   const [formData, setFormData] = useState({
@@ -549,11 +551,31 @@ const VendorDashboard: React.FC = () => {
               Opening Hours
               {restaurants.length === 0 && <span className="text-xs">(Add restaurant first)</span>}
             </button>
+            <button
+              onClick={() => {
+                if (restaurants.length > 0) {
+                  setSelectedVendorId(restaurants[0].id);
+                  setActiveTab('reservations');
+                } else {
+                  alert('Please add a restaurant first before viewing reservations');
+                }
+              }}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
+                activeTab === 'reservations'
+                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+              disabled={restaurants.length === 0}
+            >
+              <Calendar className="w-5 h-5" />
+              Reservations
+              {restaurants.length === 0 && <span className="text-xs">(Add restaurant first)</span>}
+            </button>
           </div>
         </div>
 
-        {/* Restaurant Selector (for Menu & Hours tabs) */}
-        {(activeTab === 'menu' || activeTab === 'hours') && restaurants.length > 1 && (
+        {/* Restaurant Selector (for Menu, Hours & Reservations tabs) */}
+        {(activeTab === 'menu' || activeTab === 'hours' || activeTab === 'reservations') && restaurants.length > 1 && (
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
             <label className="block text-sm font-medium text-blue-900 mb-2">
               Select Restaurant:
@@ -733,596 +755,12 @@ const VendorDashboard: React.FC = () => {
         {activeTab === 'hours' && selectedVendorId && (
           <OpeningHoursManagement vendorId={selectedVendorId} />
         )}
+
+        {/* Reservations Tab */}
+        {activeTab === 'reservations' && selectedVendorId && (
+          <ReservationManagement vendorId={selectedVendorId} />
+        )}
       </main>
-
-      {/* Add/Edit Modal - Super User Friendly */}
-      {false && showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-y-auto border-4 border-emerald-200">
-            {/* Colorful Header */}
-            <div className="sticky top-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white px-8 py-8 rounded-t-3xl">
-              <div className="flex items-center gap-4 mb-3">
-                <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl">
-                  <Store className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold">
-                    {editingRestaurant ? '✏️ Update Your Restaurant' : '🎉 Add Your Restaurant'}
-                  </h2>
-                  <p className="text-emerald-100 text-base mt-1">
-                    {editingRestaurant ? 'Make changes to your restaurant information below' : "Fill out this simple form - it only takes 2 minutes!"}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Progress Indicator */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mt-4">
-                <p className="text-sm font-semibold mb-2">What you'll need:</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">✓ Restaurant name</span>
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">✓ City location</span>
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">✓ Type of food</span>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-8 space-y-8">
-              {/* Step 1: Basic Info */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-8 border-blue-500 p-6 rounded-xl shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    1
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-blue-900 text-xl">Basic Information</h3>
-                    <p className="text-sm text-blue-700">Tell us about your restaurant</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2 text-lg">
-                    📝 What's your restaurant called? <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="e.g., Mario's Italian Bistro, Sushi Palace, Burger King"
-                    required
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all text-lg"
-                  />
-                  <p className="text-gray-600 text-sm mt-2">💡 Use the name customers know you by</p>
-                </div>
-
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2 text-lg flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-emerald-600" />
-                    Which city are you in? <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({...formData, city: e.target.value})}
-                    placeholder="e.g., Kuala Lumpur, Langkawi, Penang, Kedah"
-                    required
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all text-lg"
-                  />
-                  <p className="text-gray-600 text-sm mt-2">💡 This helps customers find you</p>
-                </div>
-              </div>
-
-              {/* Step 2: Cuisine Selection */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-8 border-purple-500 p-6 rounded-xl shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-purple-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    2
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-purple-900 text-xl">What Food Do You Serve?</h3>
-                    <p className="text-sm text-purple-700">Select all that apply - you can pick more than one!</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="grid grid-cols-2 gap-4">
-                  {cuisineOptions.map((cuisine) => (
-                    <label 
-                      key={cuisine} 
-                      className={`
-                        group flex items-center gap-3 p-5 border-3 rounded-2xl cursor-pointer transition-all transform hover:scale-105
-                        ${formData.cuisines.includes(cuisine) 
-                          ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg scale-105' 
-                          : 'border-gray-300 hover:border-emerald-300 hover:bg-gray-50 hover:shadow-md'
-                        }
-                      `}
-                    >
-                      <div className={`
-                        w-7 h-7 rounded-lg border-3 flex items-center justify-center transition-all
-                        ${formData.cuisines.includes(cuisine)
-                          ? 'bg-emerald-500 border-emerald-500'
-                          : 'border-gray-400 group-hover:border-emerald-400'
-                        }
-                      `}>
-                        {formData.cuisines.includes(cuisine) && (
-                          <span className="text-white font-bold text-lg">✓</span>
-                        )}
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={formData.cuisines.includes(cuisine)}
-                        onChange={() => handleCuisineChange(cuisine)}
-                        className="sr-only"
-                      />
-                      <span className={`text-base font-bold ${formData.cuisines.includes(cuisine) ? 'text-emerald-900' : 'text-gray-700'}`}>
-                        🍽️ {cuisine}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                
-                {formData.cuisines.length === 0 && (
-                  <div className="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-center gap-3">
-                    <span className="text-3xl">⚠️</span>
-                    <p className="text-red-800 font-semibold">Please select at least one type of food you serve</p>
-                  </div>
-                )}
-                
-                {formData.cuisines.length > 0 && (
-                  <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-xl p-4 flex items-center gap-3">
-                    <span className="text-3xl">✅</span>
-                    <p className="text-green-800 font-semibold">
-                      Great! You've selected {formData.cuisines.length} cuisine type{formData.cuisines.length > 1 ? 's' : ''}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* NEW: Business Profile Section */}
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border-l-8 border-indigo-500 p-6 rounded-xl shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-indigo-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    3
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-indigo-900 text-xl">Business Details</h3>
-                    <p className="text-sm text-indigo-700">Tell customers about your restaurant</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2 text-lg">
-                    📝 About Your Restaurant
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    placeholder="Describe your restaurant, specialties, ambiance, history..."
-                    rows={4}
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 transition-all text-lg"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-900 font-bold mb-2">
-                      📅 Year Established (Optional)
-                    </label>
-                    <input
-                      type="number"
-                      name="established_year"
-                      value={formData.established_year}
-                      onChange={(e) => setFormData({...formData, established_year: e.target.value})}
-                      placeholder="e.g., 2010"
-                      className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-900 font-bold mb-2">
-                      💰 Price Range
-                    </label>
-                    <select
-                      name="price_range"
-                      value={formData.price_range}
-                      onChange={(e) => setFormData({...formData, price_range: e.target.value})}
-                      className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
-                    >
-                      <option value="$">$ Budget (&lt; RM30)</option>
-                      <option value="$$">$$ Moderate (RM30-80)</option>
-                      <option value="$$$">$$$ Upscale (RM80-150)</option>
-                      <option value="$$$$">$$$$ Fine Dining (&gt; RM150)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* NEW: Contact Information Section */}
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-l-8 border-emerald-500 p-6 rounded-xl shadow-sm mt-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-emerald-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    4
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-emerald-900 text-xl">📞 Contact Information</h3>
-                    <p className="text-sm text-emerald-700">How customers can reach you</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    ☎️ Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="contact_phone"
-                    value={formData.contact_phone}
-                    onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
-                    placeholder="+604-730 8888"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    📧 Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="contact_email"
-                    value={formData.contact_email}
-                    onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                    placeholder="info@restaurant.com"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-gray-900 font-bold mb-2">
-                    📍 Full Address
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                    placeholder="Street address, building, city, postal code"
-                    rows={2}
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* NEW: Online Presence Section */}
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-8 border-blue-500 p-6 rounded-xl shadow-sm mt-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    5
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-blue-900 text-xl">🌐 Online Presence</h3>
-                    <p className="text-sm text-blue-700">Your website and social media links</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    🌐 Official Website
-                  </label>
-                  <input
-                    type="url"
-                    name="official_website"
-                    value={formData.official_website}
-                    onChange={(e) => setFormData({...formData, official_website: e.target.value})}
-                    placeholder="https://yourrestaurant.com"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    📘 Facebook Page
-                  </label>
-                  <input
-                    type="url"
-                    name="facebook_url"
-                    value={formData.facebook_url}
-                    onChange={(e) => setFormData({...formData, facebook_url: e.target.value})}
-                    placeholder="https://facebook.com/yourrestaurant"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    📸 Instagram Profile
-                  </label>
-                  <input
-                    type="url"
-                    name="instagram_url"
-                    value={formData.instagram_url}
-                    onChange={(e) => setFormData({...formData, instagram_url: e.target.value})}
-                    placeholder="https://instagram.com/yourrestaurant"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    ⭐ TripAdvisor Link
-                  </label>
-                  <input
-                    type="url"
-                    name="tripadvisor_url"
-                    value={formData.tripadvisor_url}
-                    onChange={(e) => setFormData({...formData, tripadvisor_url: e.target.value})}
-                    placeholder="https://tripadvisor.com/..."
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-gray-900 font-bold mb-2">
-                    📍 Google Maps Link
-                  </label>
-                  <input
-                    type="url"
-                    name="google_maps_url"
-                    value={formData.google_maps_url}
-                    onChange={(e) => setFormData({...formData, google_maps_url: e.target.value})}
-                    placeholder="https://maps.app.goo.gl/..."
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* NEW: Media Section */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-8 border-purple-500 p-6 rounded-xl shadow-sm mt-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-purple-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    6
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-purple-900 text-xl">📸 Images & Branding</h3>
-                    <p className="text-sm text-purple-700">Logo, cover photo, and gallery images</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    🎨 Logo URL
-                  </label>
-                  <input
-                    type="url"
-                    name="logo_url"
-                    value={formData.logo_url}
-                    onChange={(e) => setFormData({...formData, logo_url: e.target.value})}
-                    placeholder="https://example.com/logo.jpg"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    🖼️ Cover Image URL
-                  </label>
-                  <input
-                    type="url"
-                    name="cover_image_url"
-                    value={formData.cover_image_url}
-                    onChange={(e) => setFormData({...formData, cover_image_url: e.target.value})}
-                    placeholder="https://example.com/cover.jpg"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-200 focus:border-purple-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* NEW: Amenities Section */}
-              <div className="bg-gradient-to-r from-green-50 to-lime-50 border-l-8 border-green-500 p-6 rounded-xl shadow-sm mt-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    7
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-green-900 text-xl">✨ Facilities & Amenities</h3>
-                    <p className="text-sm text-green-700">What features do you offer?</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {[
-                  { key: 'parking', label: '🅿️ Parking', icon: '🅿️' },
-                  { key: 'wifi', label: '📶 Free WiFi', icon: '📶' },
-                  { key: 'wheelchair_accessible', label: '♿ Wheelchair Accessible', icon: '♿' },
-                  { key: 'outdoor_seating', label: '🏠 Outdoor Seating', icon: '🏠' },
-                  { key: 'halal_certified', label: '🍃 Halal Certified', icon: '🍃' },
-                  { key: 'non_smoking', label: '🚭 Non-Smoking Area', icon: '🚭' },
-                  { key: 'live_music', label: '🎵 Live Music', icon: '🎵' },
-                  { key: 'tv_sports', label: '📺 TV/Sports', icon: '📺' },
-                  { key: 'private_events', label: '🎉 Private Events', icon: '🎉' },
-                  { key: 'delivery', label: '🚚 Delivery', icon: '🚚' },
-                  { key: 'takeaway', label: '📦 Takeaway', icon: '📦' },
-                  { key: 'reservations', label: '📅 Reservations', icon: '📅' },
-                ].map((amenity) => (
-                  <label
-                    key={amenity.key}
-                    className={`
-                      flex items-center gap-2 px-4 py-3 border-3 rounded-2xl cursor-pointer transition-all transform hover:scale-105
-                      ${formData.amenities[amenity.key as keyof typeof formData.amenities]
-                        ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 shadow-lg scale-105'
-                        : 'border-gray-300 hover:border-green-300 hover:bg-gray-50 hover:shadow-md'
-                      }
-                    `}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.amenities[amenity.key as keyof typeof formData.amenities] || false}
-                      onChange={(e) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          amenities: {
-                            ...prev.amenities,
-                            [amenity.key]: e.target.checked
-                          }
-                        }));
-                      }}
-                      className="w-5 h-5 text-green-600 border-gray-400 rounded focus:ring-green-500"
-                    />
-                    <span className={`text-sm font-bold ${formData.amenities[amenity.key as keyof typeof formData.amenities] ? 'text-green-900' : 'text-gray-700'}`}>
-                      {amenity.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              {/* NEW: Operational Options Section */}
-              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-8 border-amber-500 p-6 rounded-xl shadow-sm mt-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-amber-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    8
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-amber-900 text-xl">⚙️ Operational Settings</h3>
-                    <p className="text-sm text-amber-700">Service options and policies</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <label className="flex items-center gap-3 px-4 py-3 bg-white border-3 border-gray-300 rounded-xl cursor-pointer hover:border-amber-400 transition-all">
-                    <input
-                      type="checkbox"
-                      checked={formData.delivery_available}
-                      onChange={(e) => setFormData({...formData, delivery_available: e.target.checked})}
-                      className="w-5 h-5 text-amber-600 border-gray-400 rounded focus:ring-amber-500"
-                    />
-                    <span className="text-gray-900 font-bold">🚚 Delivery Available</span>
-                  </label>
-
-                  <label className="flex items-center gap-3 px-4 py-3 bg-white border-3 border-gray-300 rounded-xl cursor-pointer hover:border-amber-400 transition-all">
-                    <input
-                      type="checkbox"
-                      checked={formData.takeaway_available}
-                      onChange={(e) => setFormData({...formData, takeaway_available: e.target.checked})}
-                      className="w-5 h-5 text-amber-600 border-gray-400 rounded focus:ring-amber-500"
-                    />
-                    <span className="text-gray-900 font-bold">📦 Takeaway Available</span>
-                  </label>
-
-                  <label className="flex items-center gap-3 px-4 py-3 bg-white border-3 border-gray-300 rounded-xl cursor-pointer hover:border-amber-400 transition-all">
-                    <input
-                      type="checkbox"
-                      checked={formData.reservation_required}
-                      onChange={(e) => setFormData({...formData, reservation_required: e.target.checked})}
-                      className="w-5 h-5 text-amber-600 border-gray-400 rounded focus:ring-amber-500"
-                    />
-                    <span className="text-gray-900 font-bold">📅 Reservation Required</span>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block text-gray-900 font-bold mb-2">
-                    👔 Dress Code (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="dress_code"
-                    value={formData.dress_code}
-                    onChange={(e) => setFormData({...formData, dress_code: e.target.value})}
-                    placeholder="e.g., Casual, Smart Casual, Formal"
-                    className="w-full px-5 py-4 border-3 border-gray-300 rounded-xl focus:ring-4 focus:ring-amber-200 focus:border-amber-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Step 9: Optional Location */}
-              <div className="bg-gradient-to-r from-gray-50 to-slate-50 border-l-8 border-gray-400 p-6 rounded-xl shadow-sm mt-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-gray-400 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-                    9
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-xl">
-                      Map Location <span className="text-gray-500 text-base font-normal">(Optional - You Can Skip This)</span>
-                    </h3>
-                    <p className="text-sm text-gray-700">Only if you know your GPS coordinates - otherwise leave empty</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Latitude (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    name="lat"
-                    value={formData.lat}
-                    onChange={(e) => setFormData({...formData, lat: e.target.value})}
-                    placeholder="e.g., 3.1390"
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-3 focus:ring-gray-200 focus:border-gray-500 transition-all"
-                  />
-                  <p className="text-gray-500 text-xs mt-1">💡 Skip if you don't know</p>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Longitude (Optional)
-                  </label>
-                  <input
-                    type="number"
-                    name="lon"
-                    value={formData.lon}
-                    onChange={(e) => setFormData({...formData, lon: e.target.value})}
-                    placeholder="e.g., 101.6869"
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-3 focus:ring-gray-200 focus:border-gray-500 transition-all"
-                  />
-                  <p className="text-gray-500 text-xs mt-1">💡 Skip if you don't know</p>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 pt-8 border-t-3 border-gray-200">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="flex-1 px-8 py-4 border-3 border-gray-400 text-gray-700 rounded-xl hover:bg-gray-100 transition-all font-bold text-lg shadow-lg hover:shadow-xl"
-                >
-                  ❌ Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading || formData.cuisines.length === 0}
-                  className="flex-1 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all font-bold text-lg shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
-                >
-                  {loading ? '⏳ Saving Your Restaurant...' : (editingRestaurant ? '✅ UPDATE RESTAURANT' : '✅ ADD RESTAURANT NOW')}
-                </button>
-              </div>
-              
-              {/* Help Text */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-                <p className="text-blue-800 text-sm">
-                  <span className="font-bold">Need help?</span> Don't worry! Just fill in the required fields marked with <span className="text-red-500">*</span>
-                </p>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Professional Tabbed Modal */}
       {showAddModal && (

@@ -249,46 +249,59 @@ class VendorSearchView(APIView):
 class MenuItemViewSet(viewsets.ModelViewSet):
     """CRUD for menu items - vendor owners only"""
     serializer_class = MenuItemSerializer
+    permission_classes = [IsVendorOwnerOrReadOnly]
     
     def get_queryset(self):
         # Vendors can only see/edit their own menu items
         user = self.request.user
-        if user.is_authenticated and hasattr(user, 'vendor_set'):
+        vendor_id = self.request.query_params.get('vendor_id')
+        
+        if vendor_id:
+            # Public view - anyone can see menu items for a specific vendor
+            return MenuItem.objects.filter(vendor_id=vendor_id, is_available=True)
+        
+        if user.is_authenticated and user.role == 'vendor':
+            # Vendors see all their menu items
             vendor_ids = user.vendor_set.values_list('id', flat=True)
             return MenuItem.objects.filter(vendor_id__in=vendor_ids)
+        
         return MenuItem.objects.none()
     
     def perform_create(self, serializer):
         # Ensure vendor is owned by current user
         vendor = serializer.validated_data['vendor']
         if vendor.owner != self.request.user:
-            return Response(
-                {'error': 'You can only add menu items to your own restaurants'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('You can only add menu items to your own restaurants')
         serializer.save()
 
 
 class OpeningHoursViewSet(viewsets.ModelViewSet):
     """CRUD for opening hours - vendor owners only"""
     serializer_class = OpeningHoursSerializer
+    permission_classes = [IsVendorOwnerOrReadOnly]
     
     def get_queryset(self):
         # Vendors can only see/edit their own opening hours
         user = self.request.user
-        if user.is_authenticated and hasattr(user, 'vendor_set'):
+        vendor_id = self.request.query_params.get('vendor_id')
+        
+        if vendor_id:
+            # Public view - anyone can see opening hours for a specific vendor
+            return OpeningHours.objects.filter(vendor_id=vendor_id)
+        
+        if user.is_authenticated and user.role == 'vendor':
             vendor_ids = user.vendor_set.values_list('id', flat=True)
             return OpeningHours.objects.filter(vendor_id__in=vendor_ids)
+        
         return OpeningHours.objects.none()
     
     def perform_create(self, serializer):
         # Ensure vendor is owned by current user
         vendor = serializer.validated_data['vendor']
         if vendor.owner != self.request.user:
-            return Response(
-                {'error': 'You can only add hours to your own restaurants'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('You can only add hours to your own restaurants')
         serializer.save()
 
 
@@ -321,25 +334,48 @@ class PromotionViewSet(viewsets.ModelViewSet):
 class ReservationViewSet(viewsets.ModelViewSet):
     """CRUD for reservations - vendor owners see their reservations"""
     serializer_class = ReservationSerializer
+    permission_classes = [IsVendorOwnerOrReadOnly]
     
     def get_queryset(self):
         user = self.request.user
+        vendor_id = self.request.query_params.get('vendor_id')
+        
+        if vendor_id:
+            # Filter by specific vendor (vendors can only see their own)
+            if user.is_authenticated and user.role == 'vendor':
+                vendor_ids = Vendor.objects.filter(owner=user).values_list('id', flat=True)
+                if int(vendor_id) in vendor_ids:
+                    return Reservation.objects.filter(vendor_id=vendor_id).order_by('-date', '-time')
+                return Reservation.objects.none()
+            # Admins can see all
+            elif user.is_authenticated and user.role == 'admin':
+                return Reservation.objects.filter(vendor_id=vendor_id).order_by('-date', '-time')
+        
         if user.is_authenticated:
             # Admin sees all
             if user.role == 'admin':
                 return Reservation.objects.all().order_by('-date', '-time')
             # Vendors see reservations for their restaurants
-            if hasattr(user, 'vendor_set'):
-                vendor_ids = user.vendor_set.values_list('id', flat=True)
+            if user.role == 'vendor':
+                vendor_ids = Vendor.objects.filter(owner=user).values_list('id', flat=True)
                 return Reservation.objects.filter(vendor_id__in=vendor_ids).order_by('-date', '-time')
+        
         return Reservation.objects.none()
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[])
     def confirm(self, request, pk=None):
         """Confirm a reservation and send email"""
         from .emails import send_reservation_status_update
         
         reservation = self.get_object()
+        
+        # Check if user owns the vendor for this reservation
+        if request.user.is_authenticated and request.user.role == 'vendor':
+            vendor_ids = Vendor.objects.filter(owner=request.user).values_list('id', flat=True)
+            if reservation.vendor_id not in vendor_ids:
+                return Response({'error': 'You can only confirm reservations for your own restaurants'}, 
+                              status=status.HTTP_403_FORBIDDEN)
+        
         old_status = reservation.status
         reservation.status = 'confirmed'
         reservation.save()
@@ -352,9 +388,31 @@ class ReservationViewSet(viewsets.ModelViewSet):
             'message': 'Reservation confirmed successfully!'
         })
     
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[])
     def cancel(self, request, pk=None):
         """Cancel a reservation and send email"""
+        from .emails import send_reservation_status_update
+        
+        reservation = self.get_object()
+        
+        # Check if user owns the vendor for this reservation
+        if request.user.is_authenticated and request.user.role == 'vendor':
+            vendor_ids = Vendor.objects.filter(owner=request.user).values_list('id', flat=True)
+            if reservation.vendor_id not in vendor_ids:
+                return Response({'error': 'You can only cancel reservations for your own restaurants'}, 
+                              status=status.HTTP_403_FORBIDDEN)
+        
+        old_status = reservation.status
+        reservation.status = 'cancelled'
+        reservation.save()
+        
+        email_sent = send_reservation_status_update(reservation, old_status)
+        
+        return Response({
+            'status': 'cancelled',
+            'email_sent': email_sent,
+            'message': 'Reservation cancelled successfully!'
+        })
         from .emails import send_reservation_status_update
         
         reservation = self.get_object()
