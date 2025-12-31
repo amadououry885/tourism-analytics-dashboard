@@ -465,8 +465,8 @@ export const VendorDashboardModal: React.FC<ModalProps> = ({
           </div>
 
           {/* Footer with Actions */}
-          <div className="flex-shrink-0 bg-gray-50 border-t-2 border-gray-200 px-8 py-5 flex items-center justify-between">
-            <div className="flex gap-3">
+          <div className="flex-shrink-0 bg-gray-50 border-t-2 border-gray-200 px-8 py-5 flex items-center justify-between flex-wrap gap-4">
+            <div className="flex gap-3 flex-wrap">
               {formStep !== 'basic' && (
                 <button
                   type="button"
@@ -498,7 +498,7 @@ export const VendorDashboardModal: React.FC<ModalProps> = ({
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap ml-auto">
               <button
                 type="button"
                 onClick={resetForm}
@@ -510,6 +510,7 @@ export const VendorDashboardModal: React.FC<ModalProps> = ({
                 type="submit"
                 disabled={loading || formData.cuisines.length === 0}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                title={formData.cuisines.length === 0 ? 'Please select at least one cuisine type in Basic Info tab' : ''}
               >
                 <Save className="w-5 h-5" />
                 {loading ? 'Saving...' : (editingRestaurant ? 'Update Restaurant' : 'Add Restaurant')}
