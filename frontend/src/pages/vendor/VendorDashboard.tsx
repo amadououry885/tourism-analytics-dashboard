@@ -70,6 +70,7 @@ const VendorDashboard: React.FC = () => {
   
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours'>('restaurants');
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
