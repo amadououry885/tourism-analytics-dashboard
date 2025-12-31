@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Badge Test</title>
+    <style>
+        body { padding: 20px; font-family: sans-serif; }
+        .badge-container { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h2>Badge Rendering Test</h2>
+    
+    <div class="badge-container">
+        <strong>Test 1: Green OPEN badge</strong><br>
+        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md" 
+              style="background-color: #16a34a; color: #ffffff; display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 500; border-radius: 0.375rem;">
+            OPEN
+        </span>
+    </div>
+
+    <div class="badge-container">
+        <strong>Test 2: Red CLOSED badge</strong><br>
+        <span style="background-color: #dc2626; color: #ffffff; display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 500; border-radius: 0.375rem;">
+            CLOSED
+        </span>
+    </div>
+
+    <div class="badge-container">
+        <strong>Test 3: Dynamic test</strong><br>
+        <div id="dynamic-test"></div>
+    </div>
+
+    <script>
+        // Test dynamic rendering
+        const testData = { is_open: true };
+        const div = document.getElementById('dynamic-test');
+        
+        if (testData.is_open !== undefined) {
+            const badge = document.createElement('span');
+            badge.style.backgroundColor = testData.is_open ? '#16a34a' : '#dc2626';
+            badge.style.color = '#ffffff';
+            badge.style.display = 'inline-flex';
+            badge.style.alignItems = 'center';
+            badge.style.padding = '0.25rem 0.5rem';
+            badge.style.fontSize = '0.75rem';
+            badge.style.fontWeight = '500';
+            badge.style.borderRadius = '0.375rem';
+            badge.textContent = testData.is_open ? 'OPEN' : 'CLOSED';
+            div.appendChild(badge);
+        } else {
+            div.innerHTML = '<span style="color: red;">NO is_open FIELD</span>';
+        }
+    </script>
+</body>
+</html>
