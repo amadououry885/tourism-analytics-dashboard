@@ -118,12 +118,14 @@ const VendorDashboard: React.FC = () => {
   ];
 
   useEffect(() => {
+    console.log('[VendorDashboard] Component mounted, user:', user);
     fetchRestaurants();
   }, []);
 
   const fetchRestaurants = async () => {
     try {
       console.log('[VendorDashboard] Fetching vendors...');
+      console.log('[VendorDashboard] User authenticated:', user);
       const data = await request('/vendors/');
       console.log('[VendorDashboard] Vendors response:', data);
       console.log('[VendorDashboard] Results array:', data?.results);
@@ -399,6 +401,14 @@ const VendorDashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={fetchRestaurants}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
+                title="Refresh restaurant list"
+              >
+                <UtensilsCrossed className="w-5 h-5" />
+                <span className="font-bold">Refresh</span>
+              </button>
               <Link
                 to="/"
                 className="px-6 py-2.5 bg-white border-2 border-gray-900 hover:bg-gray-100 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
