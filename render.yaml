@@ -1,0 +1,170 @@
+# Render.com Configuration
+# Deploys Django backend + Redis cache + Celery workers
+
+services:
+  # ============================================================================
+  # 1. Redis Cache Service (for caching + Celery broker)
+  # ============================================================================
+  - type: redis
+    name: tourism-redis
+    plan: free  # Free tier: 25MB storage
+    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys when full
+    ipAllowList: []  # Only accessible by services in same account
+
+  # ============================================================================
+  # 2. Django Backend Web Service
+  # ============================================================================
+  - type: web
+    name: tourism-analytics-dashboard
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 2 tourism_api.wsgi"
+    healthCheckPath: /healthz/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      
+      - key: SECRET_KEY
+        generateValue: true
+      
+      - key: DEBUG
+        value: False
+      
+      - key: ENV
+        value: production
+      
+      - key: DJANGO_SETTINGS_MODULE
+        value: tourism_api.settings
+      
+      # Database (SQLite for free tier, or add PostgreSQL service)
+      - key: DATABASE_URL
+        value: ""  # Leave empty to use SQLite, or connect PostgreSQL
+      
+      # Redis connection (auto-populated from Redis service)
+      - key: REDIS_URL
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      # CORS & Hosts
+      - key: ALLOWED_HOSTS
+        value: tourism-analytics-dashboard.onrender.com,tourism-analytics-dashboard.vercel.app
+      
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://tourism-analytics-dashboard.vercel.app,http://localhost:3000
+      
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://tourism-analytics-dashboard.onrender.com,https://tourism-analytics-dashboard.vercel.app
+      
+      # Email (Gmail)
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      
+      - key: EMAIL_PORT
+        value: 587
+      
+      - key: EMAIL_USE_TLS
+        value: True
+      
+      - key: EMAIL_HOST_USER
+        sync: false  # Set in Render dashboard
+      
+      - key: EMAIL_HOST_PASSWORD
+        sync: false  # Set in Render dashboard (App Password)
+      
+      - key: DEFAULT_FROM_EMAIL
+        value: Kedah Tourism <noreply@kedahtourism.com>
+      
+      - key: FRONTEND_URL
+        value: https://tourism-analytics-dashboard.vercel.app
+
+  # ============================================================================
+  # 3. Celery Worker (Background Tasks)
+  # ============================================================================
+  - type: worker
+    name: tourism-celery-worker
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "celery -A tourism_api.celery worker -l info"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      
+      - key: DJANGO_SETTINGS_MODULE
+        value: tourism_api.settings
+      
+      - key: REDIS_URL
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      - key: SECRET_KEY
+        generateValue: true
+
+  # ============================================================================
+  # 4. Celery Beat (Scheduler for periodic tasks)
+  # ============================================================================
+  - type: worker
+    name: tourism-celery-beat
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "celery -A tourism_api.celery beat -l info"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      
+      - key: DJANGO_SETTINGS_MODULE
+        value: tourism_api.settings
+      
+      - key: REDIS_URL
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      - key: CELERY_BROKER_URL
+        fromService:
+          name: tourism-redis
+          type: redis
+          property: connectionString
+      
+      - key: SECRET_KEY
+        generateValue: true
