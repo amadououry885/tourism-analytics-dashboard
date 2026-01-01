@@ -23,6 +23,9 @@ urlpatterns = [
     path('password-reset/verify/', views.verify_reset_token, name='password_reset_verify'),
     path('password-reset/confirm/', views.confirm_password_reset, name='password_reset_confirm'),
     
+    # Business Claiming
+    path('available-businesses/', views.available_businesses, name='available_businesses'),
+    
     # Admin - User Management
     path('admin/users/pending/', views.pending_users, name='pending_users'),
     path('admin/users/<int:user_id>/approve/', views.approve_user, name='approve_user'),

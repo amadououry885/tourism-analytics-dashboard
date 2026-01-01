@@ -76,9 +76,8 @@ def pending_users(request):
 @permission_classes([IsAuthenticated])
 def approve_user(request, user_id):
     """
-    Admin approves a user (admin only).
-    Only vendor and stay_owner accounts can be approved.
-    Admin accounts and tourists are not subject to approval.
+    Admin approves a user and assigns them to their claimed business (admin only).
+    Accepts optional vendor_id or stay_id to assign business ownership.
     """
     # Check if user is admin
     if request.user.role != 'admin':
@@ -97,22 +96,81 @@ def approve_user(request, user_id):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Get business assignment from request (optional)
+        vendor_id = request.data.get('vendor_id', user.claimed_vendor_id)
+        stay_id = request.data.get('stay_id', user.claimed_stay_id)
+        verification_notes = request.data.get('verification_notes', '')
+        
+        # Assign business ownership if provided
+        assigned_business = None
+        if user.role == 'vendor' and vendor_id:
+            try:
+                from vendors.models import Vendor
+                vendor = Vendor.objects.get(id=vendor_id)
+                
+                # Check if vendor already has an owner
+                if vendor.owner and vendor.owner != user:
+                    return Response(
+                        {'error': f'This restaurant already has an owner: {vendor.owner.username}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                vendor.owner = user
+                vendor.save()
+                assigned_business = vendor.name
+                logger.info(f"Assigned vendor {vendor.name} (ID: {vendor_id}) to user {user.username}")
+            except Vendor.DoesNotExist:
+                return Response(
+                    {'error': f'Vendor with ID {vendor_id} not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        
+        elif user.role == 'stay_owner' and stay_id:
+            try:
+                from stays.models import Stay
+                stay = Stay.objects.get(id=stay_id)
+                
+                # Check if stay already has an owner
+                if stay.owner and stay.owner != user:
+                    return Response(
+                        {'error': f'This hotel already has an owner: {stay.owner.username}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                stay.owner = user
+                stay.save()
+                assigned_business = stay.name
+                logger.info(f"Assigned stay {stay.name} (ID: {stay_id}) to user {user.username}")
+            except Stay.DoesNotExist:
+                return Response(
+                    {'error': f'Stay with ID {stay_id} not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        
+        # Approve user
         user.is_approved = True
         user.is_active = True
-        user.save(update_fields=['is_approved', 'is_active'])
+        if verification_notes:
+            user.business_verification_notes = verification_notes
+        user.save(update_fields=['is_approved', 'is_active', 'business_verification_notes'])
         
         # Send approval email notification
-        email_sent = send_approval_email(user)
+        email_sent = send_approval_email(user, assigned_business)
         if email_sent:
             logger.info(f"Approval email sent to {user.email}")
         else:
             logger.warning(f"Failed to send approval email to {user.email}, but user was approved")
         
-        return Response({
+        response_data = {
             'message': f'User {user.username} approved successfully',
             'user': UserSerializer(user).data,
             'email_sent': email_sent
-        }, status=status.HTTP_200_OK)
+        }
+        
+        if assigned_business:
+            response_data['assigned_business'] = assigned_business
+        
+        return Response(response_data, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response(
             {'error': 'User not found'},
@@ -340,3 +398,55 @@ def confirm_password_reset(request):
             {'error': 'Invalid token'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def available_businesses(request):
+    """
+    List available businesses (restaurants and hotels) for claiming.
+    Returns businesses that don't have an owner yet.
+    Public endpoint for registration process.
+    """
+    business_type = request.query_params.get('type', 'all')  # 'vendor', 'stay', or 'all'
+    search = request.query_params.get('search', '')
+    
+    result = {}
+    
+    if business_type in ['vendor', 'all']:
+        from vendors.models import Vendor
+        vendors = Vendor.objects.filter(owner__isnull=True)
+        
+        if search:
+            vendors = vendors.filter(name__icontains=search)
+        
+        result['vendors'] = [
+            {
+                'id': v.id,
+                'name': v.name,
+                'city': v.city,
+                'cuisine_types': v.cuisine_types,
+                'address': v.address
+            }
+            for v in vendors[:50]  # Limit to 50 results
+        ]
+    
+    if business_type in ['stay', 'all']:
+        from stays.models import Stay
+        stays = Stay.objects.filter(owner__isnull=True)
+        
+        if search:
+            stays = stays.filter(name__icontains=search)
+        
+        result['stays'] = [
+            {
+                'id': s.id,
+                'name': s.name,
+                'city': s.city,
+                'type': s.type,
+                'address': s.address
+            }
+            for s in stays[:50]  # Limit to 50 results
+        ]
+    
+    return Response(result)

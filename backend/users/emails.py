@@ -12,12 +12,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def send_approval_email(user):
+def send_approval_email(user, assigned_business=None):
     """
     Send approval notification email to a newly approved user.
     
     Args:
         user: User object that was approved
+        assigned_business: Name of the business assigned to the user (optional)
         
     Returns:
         bool: True if email sent successfully, False otherwise
@@ -31,6 +32,16 @@ def send_approval_email(user):
             'stay_owner': 'Hotel/Stay Owner',
             'admin': 'Administrator'
         }.get(user.role, user.role)
+        
+        # Business assignment message
+        business_message = ''
+        if assigned_business:
+            business_message = f"""
+            <div style="background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; border-radius: 6px; margin: 20px 0;">
+                <strong>🏢 Your Business:</strong> You have been assigned as the owner of <strong>{assigned_business}</strong>.<br>
+                You can now manage all aspects of your business through the vendor portal.
+            </div>
+            """
         
         # HTML email content
         html_message = f"""
@@ -132,6 +143,8 @@ def send_approval_email(user):
                         <span class="emoji">🏢</span> <strong>Role:</strong> {role_display}
                     </p>
                 </div>
+                
+                {business_message}
                 
                 <div class="benefits">
                     <p><strong class="emoji">✨ What You Can Do Now:</strong></p>

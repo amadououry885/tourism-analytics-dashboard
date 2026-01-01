@@ -25,12 +25,12 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_approved', 'is_active', 'date_joined']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_approved', 'is_active', 'date_joined', 'claimed_vendor_id', 'claimed_stay_id', 'business_verification_notes']
         read_only_fields = ['id', 'is_approved', 'is_active', 'date_joined']
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Serializer for user registration"""
+    """Serializer for user registration with business claiming support"""
     
     password = serializers.CharField(
         write_only=True, 
@@ -44,10 +44,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         style={'input_type': 'password'}, 
         label="Confirm Password"
     )
+    claimed_vendor_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="ID of the restaurant this vendor claims to own"
+    )
+    claimed_stay_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="ID of the hotel/stay this owner claims to own"
+    )
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2', 'role', 'first_name', 'last_name']
+        fields = ['username', 'email', 'password', 'password2', 'role', 'first_name', 'last_name', 'claimed_vendor_id', 'claimed_stay_id']
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:

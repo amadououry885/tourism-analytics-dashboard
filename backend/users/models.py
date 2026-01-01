@@ -27,6 +27,23 @@ class User(AbstractUser):
         help_text="Admin must approve vendors and stay owners before they can access protected endpoints"
     )
     
+    # Business claiming fields (for future owner registration)
+    claimed_vendor_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="ID of the restaurant/vendor this user claims to own (pending approval)"
+    )
+    claimed_stay_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="ID of the hotel/stay this user claims to own (pending approval)"
+    )
+    business_verification_notes = models.TextField(
+        blank=True,
+        default='',
+        help_text="Admin notes about business ownership verification"
+    )
+    
     class Meta:
         db_table = 'users'
         verbose_name = 'User'
