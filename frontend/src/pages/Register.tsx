@@ -25,7 +25,10 @@ const Register: React.FC = () => {
     last_name: '',
     claimed_vendor_id: null as number | null,
     claimed_stay_id: null as number | null,
+    phone_number: '',
+    business_registration_number: '',
   });
+  const [verificationDocument, setVerificationDocument] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,10 +100,29 @@ const Register: React.FC = () => {
       return;
     }
 
+    // Validate phone number
+    if (!formData.phone_number) {
+      toast.error('⚠️ Phone number is required');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const result = await register(formData);
+      // Create FormData for file upload
+      const submitData = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== '') {
+          submitData.append(key, String(value));
+        }
+      });
+      
+      // Add verification document if provided
+      if (verificationDocument) {
+        submitData.append('verification_document', verificationDocument);
+      }
+
+      const result = await register(submitData);
       
       if (result.requiresApproval) {
         toast.success('✅ Registration successful! Please wait for admin approval.');
@@ -316,6 +338,76 @@ const Register: React.FC = () => {
                   placeholder="Last name"
                 />
               </div>
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="phone_number"
+                name="phone_number"
+                type="tel"
+                required
+                value={formData.phone_number}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="+60 12-345 6789"
+              />
+              <p className="mt-1 text-xs text-gray-500">Required for verification purposes</p>
+            </div>
+
+            {/* Business Registration Number (Optional) */}
+            <div>
+              <label htmlFor="business_registration_number" className="block text-sm font-medium text-gray-700 mb-2">
+                Business Registration Number <span className="text-gray-400">(Optional)</span>
+              </label>
+              <input
+                id="business_registration_number"
+                name="business_registration_number"
+                type="text"
+                value={formData.business_registration_number}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="e.g., SSM-1234567-A"
+              />
+              <p className="mt-1 text-xs text-gray-500">Your official business license/registration number</p>
+            </div>
+
+            {/* Verification Document Upload */}
+            <div>
+              <label htmlFor="verification_document" className="block text-sm font-medium text-gray-700 mb-2">
+                Verification Document <span className="text-gray-400">(Optional)</span>
+              </label>
+              <input
+                id="verification_document"
+                name="verification_document"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    // Check file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error('File size must be less than 5MB');
+                      e.target.value = '';
+                      return;
+                    }
+                    setVerificationDocument(file);
+                  }
+                }}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+              <p className="mt-1 text-xs text-gray-500">Upload ID, business license, or ownership proof (PDF, Image, max 5MB)</p>
+              {verificationDocument && (
+                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  {verificationDocument.name}
+                </p>
+              )}
             </div>
 
             {/* Password */}

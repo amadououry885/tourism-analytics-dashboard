@@ -78,6 +78,7 @@ def approve_user(request, user_id):
     """
     Admin approves a user and assigns them to their claimed business (admin only).
     Accepts optional vendor_id or stay_id to assign business ownership.
+    Accepts optional admin_notes to save admin's verification notes.
     """
     # Check if user is admin
     if request.user.role != 'admin':
@@ -99,7 +100,7 @@ def approve_user(request, user_id):
         # Get business assignment from request (optional)
         vendor_id = request.data.get('vendor_id', user.claimed_vendor_id)
         stay_id = request.data.get('stay_id', user.claimed_stay_id)
-        verification_notes = request.data.get('verification_notes', '')
+        admin_notes = request.data.get('admin_notes', '')
         
         # Assign business ownership if provided
         assigned_business = None
@@ -147,12 +148,12 @@ def approve_user(request, user_id):
                     status=status.HTTP_404_NOT_FOUND
                 )
         
-        # Approve user
+        # Approve user and save admin notes
         user.is_approved = True
         user.is_active = True
-        if verification_notes:
-            user.business_verification_notes = verification_notes
-        user.save(update_fields=['is_approved', 'is_active', 'business_verification_notes'])
+        if admin_notes:
+            user.admin_notes = admin_notes
+        user.save(update_fields=['is_approved', 'is_active', 'admin_notes'])
         
         # Send approval email notification
         email_sent = send_approval_email(user, assigned_business)

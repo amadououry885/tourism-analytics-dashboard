@@ -38,6 +38,10 @@ interface PendingUser {
   claimed_vendor_id?: number | null;
   claimed_stay_id?: number | null;
   business_verification_notes?: string;
+  phone_number?: string;
+  business_registration_number?: string;
+  verification_document?: string;
+  admin_notes?: string;
 }
 
 interface Event {
@@ -87,6 +91,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'transport' | 'places'>('approvals');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [businessNames, setBusinessNames] = useState<{ [key: number]: string }>({});
+  const [adminNotes, setAdminNotes] = useState<{ [key: number]: string }>({});
   const [events, setEvents] = useState<Event[]>([]);
   const [transportRoutes, setTransportRoutes] = useState<TransportRoute[]>([]);
   
@@ -228,6 +233,11 @@ const AdminDashboard: React.FC = () => {
         requestBody.stay_id = claimedStayId;
       }
       
+      // Add admin notes if provided
+      if (adminNotes[userId]) {
+        requestBody.admin_notes = adminNotes[userId];
+      }
+      
       await request(
         `/auth/admin/users/${userId}/approve/`,
         { 
@@ -237,6 +247,12 @@ const AdminDashboard: React.FC = () => {
         '✅ User approved and business assigned successfully!'
       );
       fetchPendingUsers();
+      // Clear admin notes for this user
+      setAdminNotes(prev => {
+        const updated = { ...prev };
+        delete updated[userId];
+        return updated;
+      });
     } catch (error: any) {
       console.error('Failed to approve user:', error);
       if (error.response?.data?.error) {
@@ -692,6 +708,34 @@ const AdminDashboard: React.FC = () => {
                         <span style={{ fontWeight: '600' }}>Email:</span>
                         <span style={{ color: '#666' }}>{pendingUser.email}</span>
                       </div>
+                      {pendingUser.phone_number && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '16px' }}>📞</span>
+                          <span style={{ fontWeight: '600' }}>Phone:</span>
+                          <span style={{ color: '#666' }}>{pendingUser.phone_number}</span>
+                        </div>
+                      )}
+                      {pendingUser.business_registration_number && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '16px' }}>🏢</span>
+                          <span style={{ fontWeight: '600' }}>Business Reg #:</span>
+                          <span style={{ color: '#666' }}>{pendingUser.business_registration_number}</span>
+                        </div>
+                      )}
+                      {pendingUser.verification_document && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '16px' }}>📄</span>
+                          <span style={{ fontWeight: '600' }}>Document:</span>
+                          <a 
+                            href={pendingUser.verification_document} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: '#3b82f6', textDecoration: 'underline' }}
+                          >
+                            View Uploaded Document
+                          </a>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
                         <Clock style={{ width: '16px', height: '16px', color: '#d4a574' }} />
                         <span style={{ fontWeight: '600' }}>Registered:</span>
@@ -734,6 +778,40 @@ const AdminDashboard: React.FC = () => {
                         </p>
                       </div>
                     )}
+
+                    {/* Admin Notes */}
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ 
+                        display: 'block', 
+                        fontSize: '14px', 
+                        fontWeight: '600', 
+                        color: '#374151',
+                        marginBottom: '8px'
+                      }}>
+                        📝 Admin Notes (Private)
+                      </label>
+                      <textarea
+                        value={adminNotes[pendingUser.id] || ''}
+                        onChange={(e) => setAdminNotes(prev => ({ ...prev, [pendingUser.id]: e.target.value }))}
+                        placeholder="Add verification notes, contact details, or comments..."
+                        rows={3}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontFamily: 'inherit',
+                          resize: 'vertical',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+                        onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                      />
+                      <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', marginBottom: '0' }}>
+                        These notes are only visible to admins
+                      </p>
+                    </div>
 
                     <div style={{ display: 'flex', gap: '12px' }}>
                       <button

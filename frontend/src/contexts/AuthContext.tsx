@@ -29,7 +29,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<User>; // Return User
   logout: () => void;
-  register: (data: RegisterData) => Promise<{ requiresApproval: boolean; message: string }>;
+  register: (data: RegisterData | FormData) => Promise<{ requiresApproval: boolean; message: string }>;
   refreshAccessToken: () => Promise<void>;
   apiCall: (endpoint: string, options?: RequestInit) => Promise<any>; // New helper
 }
@@ -214,12 +214,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     clearAuth();
   };
 
-  const register = async (data: RegisterData): Promise<{ requiresApproval: boolean; message: string }> => {
+  const register = async (data: RegisterData | FormData): Promise<{ requiresApproval: boolean; message: string }> => {
     try {
+      // Determine if we're sending FormData or JSON
+      const isFormData = data instanceof FormData;
+      
       const response = await fetch(`${API_BASE_URL}/auth/register/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+        body: isFormData ? data : JSON.stringify(data),
       });
 
       const result = await response.json();
@@ -233,7 +236,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // Check if user needs approval (vendor or stay_owner)
-      const requiresApproval = data.role === 'vendor' || data.role === 'stay_owner';
+      const role = isFormData ? data.get('role') as string : (data as RegisterData).role;
+      const requiresApproval = role === 'vendor' || role === 'stay_owner';
       
       return {
         requiresApproval,

@@ -25,7 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_approved', 'is_active', 'date_joined', 'claimed_vendor_id', 'claimed_stay_id', 'business_verification_notes']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_approved', 'is_active', 'date_joined', 'claimed_vendor_id', 'claimed_stay_id', 'business_verification_notes', 'phone_number', 'business_registration_number', 'verification_document', 'admin_notes']
         read_only_fields = ['id', 'is_approved', 'is_active', 'date_joined']
 
 
@@ -54,10 +54,24 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text="ID of the hotel/stay this owner claims to own"
     )
+    phone_number = serializers.CharField(
+        required=True,
+        help_text="Contact phone number for verification"
+    )
+    business_registration_number = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Business registration or license number (optional)"
+    )
+    verification_document = serializers.FileField(
+        required=False,
+        allow_null=True,
+        help_text="Upload verification documents (ID, business license)"
+    )
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2', 'role', 'first_name', 'last_name', 'claimed_vendor_id', 'claimed_stay_id']
+        fields = ['username', 'email', 'password', 'password2', 'role', 'first_name', 'last_name', 'claimed_vendor_id', 'claimed_stay_id', 'phone_number', 'business_registration_number', 'verification_document']
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:

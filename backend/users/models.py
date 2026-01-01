@@ -44,6 +44,31 @@ class User(AbstractUser):
         help_text="Admin notes about business ownership verification"
     )
     
+    # Verification fields
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        help_text="Contact phone number for verification"
+    )
+    business_registration_number = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text="Official business registration/license number (optional)"
+    )
+    verification_document = models.FileField(
+        upload_to='verification_documents/',
+        null=True,
+        blank=True,
+        help_text="Upload business verification documents (ID, business license, etc.)"
+    )
+    admin_notes = models.TextField(
+        blank=True,
+        default='',
+        help_text="Admin's private notes about this user/business"
+    )
+    
     class Meta:
         db_table = 'users'
         verbose_name = 'User'
