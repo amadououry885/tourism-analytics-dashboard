@@ -197,26 +197,43 @@ LOGGING = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ── Celery Configuration ─────────────────────────────────────────────────────
+# Falls back to Redis localhost if not configured (safe for development)
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+# Ignore result if broker is not available (prevents crashes on Render without Redis)
+CELERY_TASK_IGNORE_RESULT = True if ENV == 'production' and not os.environ.get('REDIS_URL') else False
 
 # ── Cache Configuration (Redis) ──────────────────────────────────────────────
 # Use Redis for caching analytics results with cache invalidation strategy
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/1'),  # DB 1 for cache (0 for Celery)
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'kedah_tourism',  # Prefix all cache keys
-        'TIMEOUT': 60 * 15,  # Default 15 minutes (overridden per endpoint)
+# Falls back to DummyCache if Redis is not available (e.g., on Render without Redis service)
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
+
+# Check if Redis is available (production without Redis uses DummyCache)
+if ENV == 'production' and not os.environ.get('REDIS_URL'):
+    # Fallback to dummy cache if Redis not configured on Render
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
     }
-}
+    print("⚠️  WARNING: Redis not configured, using DummyCache (no caching)")
+else:
+    # Use Redis cache (local development or production with Redis)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,  # DB 1 for cache (0 for Celery)
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'kedah_tourism',  # Prefix all cache keys
+            'TIMEOUT': 60 * 15,  # Default 15 minutes (overridden per endpoint)
+        }
+    }
 
 # Cache timeout settings (in seconds)
 CACHE_TTL = {

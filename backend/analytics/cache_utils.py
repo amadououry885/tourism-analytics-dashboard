@@ -22,10 +22,23 @@ Perfect for tourism analytics because:
 """
 
 from django.core.cache import cache
+from django.conf import settings
 from functools import wraps
 from typing import Optional, List
 import hashlib
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def is_cache_available() -> bool:
+    """Check if cache backend is available (not DummyCache)."""
+    try:
+        cache_backend = settings.CACHES['default']['BACKEND']
+        return 'dummy' not in cache_backend.lower()
+    except Exception:
+        return False
 
 
 def generate_cache_key(prefix: str, **kwargs) -> str:
@@ -105,6 +118,11 @@ def invalidate_cache(patterns: List[str]):
     Args:
         patterns: List of cache key patterns to invalidate (supports wildcards)
     """
+    # Skip if cache is not available
+    if not is_cache_available():
+        logger.info("⚠️ Cache not available, skipping invalidation")
+        return 0
+    
     from django_redis import get_redis_connection
     
     try:
@@ -121,13 +139,13 @@ def invalidate_cache(patterns: List[str]):
             if keys:
                 # Delete matching keys
                 deleted_count += conn.delete(*keys)
-                print(f"🗑️ Invalidated {len(keys)} keys matching '{pattern}'")
+                logger.info(f"🗑️ Invalidated {len(keys)} keys matching '{pattern}'")
         
-        print(f"✅ Total cache keys invalidated: {deleted_count}")
+        logger.info(f"✅ Total cache keys invalidated: {deleted_count}")
         return deleted_count
     
     except Exception as e:
-        print(f"⚠️ Cache invalidation error: {e}")
+        logger.warning(f"⚠️ Cache invalidation error: {e}")
         # Don't crash if cache is unavailable
         return 0
 
