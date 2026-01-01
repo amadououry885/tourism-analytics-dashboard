@@ -1,11 +1,16 @@
 from django.db.models import Q, Count, F, Case, When, IntegerField, Sum, Avg
 from django.db.models.functions import Coalesce, TruncDate, ExtractHour
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime, timedelta
 from .models import Place, SocialPost, PostRaw, PostClean, SentimentTopic
 from .serializers import PlaceSerializer, SocialPostSerializer, PostCleanSerializer, SentimentTopicSerializer
 from events.models import Event
+from .cache_utils import generate_cache_key
+from django.core.cache import cache
 
 class PlacesListView(APIView):
     """Get all places/cities"""
@@ -30,6 +35,21 @@ def parse_range(request):
 class SentimentSummaryView(APIView):
     """Get overall sentiment distribution and totals from social posts"""
     def get(self, request):
+        # Generate cache key from query parameters
+        cache_key = generate_cache_key(
+            'sentiment_summary',
+            range=request.GET.get('range', '7'),
+            city=request.GET.get('city', 'all')
+        )
+        
+        # Try to get from cache
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            print(f"📦 CACHE HIT: {cache_key}")
+            return Response(cached_data)
+        
+        print(f"🔍 CACHE MISS: {cache_key} - Fetching from DB...")
+        
         start, end = parse_range(request)
         
         # Use SocialPost with sentiment fields instead of PostClean
@@ -49,7 +69,7 @@ class SentimentSummaryView(APIView):
         total = sum(agg.values())
         if total == 0:
             # Return placeholder data if no posts exist
-            return Response({
+            data = {
                 "positive_pct": 60,
                 "neutral_pct": 30,
                 "negative_pct": 10,
@@ -58,17 +78,24 @@ class SentimentSummaryView(APIView):
                 "negative": 0,
                 "mentions": 0,
                 "message": "No sentiment data available yet. Data will be collected automatically."
-            })
-            
-        return Response({
-            "positive_pct": round(agg['pos'] * 100 / total),
-            "neutral_pct": round(agg['neu'] * 100 / total),
-            "negative_pct": round(agg['neg'] * 100 / total),
-            "positive": agg['pos'],
-            "neutral": agg['neu'],
-            "negative": agg['neg'],
-            "mentions": total
-        })
+            }
+        else:
+            data = {
+                "positive_pct": round(agg['pos'] * 100 / total),
+                "neutral_pct": round(agg['neu'] * 100 / total),
+                "negative_pct": round(agg['neg'] * 100 / total),
+                "positive": agg['pos'],
+                "neutral": agg['neu'],
+                "negative": agg['neg'],
+                "mentions": total
+            }
+        
+        # Cache for 2 hours
+        timeout = getattr(settings, 'CACHE_TTL', {}).get('sentiment_summary', 60 * 60 * 2)
+        cache.set(cache_key, data, timeout)
+        print(f"✅ CACHED: {cache_key} (timeout: {timeout}s)")
+        
+        return Response(data)
 
 class SentimentByCategoryView(APIView):
     """Get sentiment breakdown by place category from social posts"""

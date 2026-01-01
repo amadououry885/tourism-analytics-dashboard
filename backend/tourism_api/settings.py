@@ -204,6 +204,32 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
+# ── Cache Configuration (Redis) ──────────────────────────────────────────────
+# Use Redis for caching analytics results with cache invalidation strategy
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379/1'),  # DB 1 for cache (0 for Celery)
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'kedah_tourism',  # Prefix all cache keys
+        'TIMEOUT': 60 * 15,  # Default 15 minutes (overridden per endpoint)
+    }
+}
+
+# Cache timeout settings (in seconds)
+CACHE_TTL = {
+    'destinations_list': 60 * 60 * 24,      # 24 hours - destination data changes slowly
+    'destination_detail': 60 * 60 * 12,     # 12 hours - individual stats
+    'top_destinations': 60 * 60 * 6,        # 6 hours - rankings change with new data
+    'social_metrics': 60 * 30,              # 30 minutes - social data updated frequently
+    'sentiment_summary': 60 * 60 * 2,       # 2 hours - sentiment analysis
+    'events_attendance': 60 * 60 * 24,      # 24 hours - event stats
+    'vendors_popular': 60 * 60 * 6,         # 6 hours - restaurant rankings
+    'stays_trending': 60 * 60 * 6,          # 6 hours - accommodation trends
+}
+
 # ── Email Configuration (Gmail for Development) ──────────────────────────────
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')

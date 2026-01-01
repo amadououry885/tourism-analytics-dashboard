@@ -27,6 +27,7 @@ from analytics.classifier import PostClassifier
 from analytics.models import Place, SocialPost
 from vendors.models import Vendor
 from stays.models import Stay
+from analytics.cache_utils import invalidate_analytics_cache
 
 
 @shared_task  # ✅ ADD THIS DECORATOR
@@ -187,6 +188,18 @@ def collect_and_process_social_posts():
     print(f"❌ Non-tourism posts skipped: {non_tourism_posts_skipped}")
     print(f"📦 Total posts processed: {len(raw_posts)}")
     print(f"⏰ Finished at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Step 6: ✨ INVALIDATE CACHE after new data arrives
+    print("\n" + "=" * 60)
+    print("🗑️ INVALIDATING ANALYTICS CACHE...")
+    print("=" * 60)
+    try:
+        deleted_keys = invalidate_analytics_cache()
+        print(f"✅ Cache invalidation complete! {deleted_keys} keys removed.")
+        print("📝 Next API request will fetch fresh data from database.")
+    except Exception as e:
+        print(f"⚠️ Cache invalidation failed (non-critical): {e}")
+    
     print("=" * 60)
 
 
