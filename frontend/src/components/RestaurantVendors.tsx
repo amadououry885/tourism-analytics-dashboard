@@ -55,8 +55,26 @@ interface RestaurantVendorsProps {
 }
 
 export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
-  // State management - Initialize with demo data for presentation
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(demoData.results || []);
+  // Transform demo data to match expected format
+  const transformedDemoData = (demoData.results || []).map((vendor: any) => ({
+    id: vendor.id,
+    name: vendor.name,
+    cuisine: vendor.cuisines?.[0] || 'General',
+    rating: vendor.rating_average || 4.0,
+    reviews: vendor.total_reviews || 0,
+    priceRange: vendor.price_range || '$$',
+    specialty: vendor.description || vendor.cuisines?.join(', ') || 'Local cuisine',
+    location: vendor.city || 'Kedah',
+    city: vendor.city?.toLowerCase().replace(/\s+/g, '-') || 'kedah',
+    image: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0] || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`,
+    visitors: Math.floor(Math.random() * 20000) + 1000,
+    badges: vendor.amenities?.halal_certified ? ['Halal'] : [],
+    isOpen: vendor.is_open ?? true,
+    isLive: vendor.is_open ?? true
+  }));
+
+  // State management - Initialize with transformed demo data for presentation
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(transformedDemoData);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState('all');
   const [selectedPriceRange, setSelectedPriceRange] = useState('all');
