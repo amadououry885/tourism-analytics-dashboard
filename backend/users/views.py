@@ -425,7 +425,7 @@ def available_businesses(request):
                 'id': v.id,
                 'name': v.name,
                 'city': v.city,
-                'cuisine_types': v.cuisine_types,
+                'cuisines': v.cuisines,
                 'address': v.address
             }
             for v in vendors[:50]  # Limit to 50 results
