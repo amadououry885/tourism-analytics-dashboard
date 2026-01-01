@@ -35,6 +35,9 @@ interface PendingUser {
   first_name: string;
   last_name: string;
   date_joined: string;
+  claimed_vendor_id?: number | null;
+  claimed_stay_id?: number | null;
+  business_verification_notes?: string;
 }
 
 interface Event {
@@ -83,6 +86,7 @@ const AdminDashboard: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'transport' | 'places'>('approvals');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [businessNames, setBusinessNames] = useState<{ [key: number]: string }>({});
   const [events, setEvents] = useState<Event[]>([]);
   const [transportRoutes, setTransportRoutes] = useState<TransportRoute[]>([]);
   
@@ -153,6 +157,28 @@ const AdminDashboard: React.FC = () => {
     try {
       const data = await request('/auth/admin/users/pending/');
       setPendingUsers(data);
+      
+      // Fetch business names for claimed businesses
+      const names: { [key: number]: string } = {};
+      for (const user of data) {
+        if (user.claimed_vendor_id) {
+          try {
+            const vendor = await request(`/vendors/${user.claimed_vendor_id}/`);
+            names[user.claimed_vendor_id] = vendor.name;
+          } catch (error) {
+            console.error(`Failed to fetch vendor ${user.claimed_vendor_id}:`, error);
+          }
+        }
+        if (user.claimed_stay_id) {
+          try {
+            const stay = await request(`/stays/${user.claimed_stay_id}/`);
+            names[user.claimed_stay_id] = stay.name;
+          } catch (error) {
+            console.error(`Failed to fetch stay ${user.claimed_stay_id}:`, error);
+          }
+        }
+      }
+      setBusinessNames(names);
     } catch (error) {
       console.error('Failed to fetch pending users:', error);
     }
@@ -191,16 +217,32 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleApproveUser = async (userId: number) => {
+  const handleApproveUser = async (userId: number, claimedVendorId?: number | null, claimedStayId?: number | null) => {
     try {
+      const requestBody: any = {};
+      
+      if (claimedVendorId) {
+        requestBody.vendor_id = claimedVendorId;
+      }
+      if (claimedStayId) {
+        requestBody.stay_id = claimedStayId;
+      }
+      
       await request(
         `/auth/admin/users/${userId}/approve/`,
-        { method: 'POST' },
-        '✅ User approved successfully!'
+        { 
+          method: 'POST',
+          body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
+        },
+        '✅ User approved and business assigned successfully!'
       );
       fetchPendingUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to approve user:', error);
+      if (error.response?.data?.error) {
+        // Show specific error from backend (e.g., "This restaurant already has an owner")
+        alert(`Error: ${error.response.data.error}`);
+      }
     }
   };
 
@@ -657,9 +699,49 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Claimed Business Info */}
+                    {(pendingUser.claimed_vendor_id || pendingUser.claimed_stay_id) && (
+                      <div style={{ 
+                        marginBottom: '16px', 
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                        border: '2px solid rgba(59, 130, 246, 0.3)',
+                        padding: '16px', 
+                        borderRadius: '12px' 
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                          {pendingUser.role === 'vendor' ? (
+                            <Store style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
+                          ) : (
+                            <Home style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
+                          )}
+                          <span style={{ fontWeight: '700', color: '#3b82f6', fontSize: '14px' }}>
+                            🏢 Claimed Business
+                          </span>
+                        </div>
+                        <p style={{ 
+                          fontSize: '16px', 
+                          fontWeight: '600', 
+                          color: '#1e40af',
+                          margin: '0'
+                        }}>
+                          {pendingUser.claimed_vendor_id 
+                            ? businessNames[pendingUser.claimed_vendor_id] || `Vendor ID: ${pendingUser.claimed_vendor_id}`
+                            : businessNames[pendingUser.claimed_stay_id!] || `Stay ID: ${pendingUser.claimed_stay_id}`
+                          }
+                        </p>
+                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', marginBottom: '0' }}>
+                          This business will be automatically assigned upon approval
+                        </p>
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', gap: '12px' }}>
                       <button
-                        onClick={() => handleApproveUser(pendingUser.id)}
+                        onClick={() => handleApproveUser(
+                          pendingUser.id, 
+                          pendingUser.claimed_vendor_id, 
+                          pendingUser.claimed_stay_id
+                        )}
                         disabled={loading}
                         style={{
                           flex: 1,
