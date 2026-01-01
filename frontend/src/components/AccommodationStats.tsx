@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Building2, Star, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import demoData from '../data/stays.demo.json';
 
 interface Stay {
   id: number;
@@ -20,20 +21,20 @@ interface AccommodationStatsProps {
   timeRange?: string;
 }
 
-// Default demo data for presentation
-const defaultStays: Stay[] = [
-  { id: 1, name: 'Langkawi Lagoon Resort', type: 'Hotel', district: 'Langkawi', rating: 4.8, priceNight: '450', amenities: ['Pool', 'Spa', 'Restaurant'] },
-  { id: 2, name: 'The Danna Langkawi', type: 'Resort', district: 'Langkawi', rating: 4.9, priceNight: '850', amenities: ['Beach', 'Spa', 'Fine Dining'] },
-  { id: 3, name: 'Alor Setar Tower Hotel', type: 'Hotel', district: 'Alor Setar', rating: 4.3, priceNight: '200', amenities: ['Pool', 'Gym'] },
-  { id: 4, name: 'Pedu Lake Resort', type: 'Resort', district: 'Pedu Lake', rating: 4.2, priceNight: '300', amenities: ['Lake View', 'Restaurant'] },
-  { id: 5, name: 'Langkawi Beach Villa', type: 'Guesthouse', district: 'Langkawi', rating: 4.5, priceNight: '180', amenities: ['Beach', 'WiFi'] },
-  { id: 6, name: 'Kedah Homestay', type: 'Guesthouse', district: 'Alor Setar', rating: 4.0, priceNight: '80', amenities: ['WiFi', 'Kitchen'] },
-  { id: 7, name: 'Meritus Pelangi Beach Resort', type: 'Resort', district: 'Langkawi', rating: 4.7, priceNight: '600', amenities: ['Beach', 'Spa', 'Pool'] },
-  { id: 8, name: 'Grand Alora Hotel', type: 'Hotel', district: 'Alor Setar', rating: 4.4, priceNight: '250', amenities: ['Restaurant', 'Gym'] },
-];
-
 export function AccommodationStats({ selectedCity, timeRange }: AccommodationStatsProps) {
-  const [stays, setStays] = useState<Stay[]>(defaultStays); // Initialize with demo data
+  // Transform demo data to match expected format
+  const transformedDemoData = (demoData.results || []).map((stay: any) => ({
+    id: stay.id,
+    name: stay.name,
+    type: stay.type || 'Hotel',
+    district: stay.district || stay.city || 'Kedah',
+    rating: stay.rating,
+    priceNight: stay.price_per_night?.toString() || '0',
+    amenities: stay.amenities || [],
+    isOpen: stay.is_open ?? true
+  }));
+
+  const [stays, setStays] = useState<Stay[]>(transformedDemoData); // Initialize with demo data
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

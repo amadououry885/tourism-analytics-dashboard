@@ -7,6 +7,7 @@ import { DetailPanel } from '../../components/DetailPanel';
 import { Stay, HybridSearchResponse } from '../../types/stay';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import demoData from '../../data/stays.demo.json';
 
 const DISTRICTS = [
   'All Districts',
@@ -51,10 +52,29 @@ interface AccommodationSearchProps {
 }
 
 export default function AccommodationSearch({ selectedCity = 'all' }: AccommodationSearchProps) {
-  const [stays, setStays] = useState<Stay[]>([]);
-  const [filteredStays, setFilteredStays] = useState<Stay[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [internalCount, setInternalCount] = useState(0);
+  // Transform demo data to match expected format
+  const transformedDemoData = (demoData.results || []).map((stay: any) => ({
+    id: stay.id,
+    name: stay.name,
+    type: stay.type || 'Hotel',
+    district: stay.district || stay.city || 'Kedah',
+    rating: stay.rating || 0,
+    price_per_night: stay.price_per_night || 0,
+    amenities: stay.amenities || [],
+    is_internal: true,
+    landmark: stay.landmark || '',
+    contact_phone: stay.contact_phone || '',
+    contact_email: stay.contact_email || '',
+    description: stay.description || '',
+    images: stay.images || [],
+    total_rooms: stay.total_rooms || 0,
+    available_rooms: stay.available_rooms || 0
+  }));
+
+  const [stays, setStays] = useState<Stay[]>(transformedDemoData);
+  const [filteredStays, setFilteredStays] = useState<Stay[]>(transformedDemoData);
+  const [loading, setLoading] = useState(false);
+  const [internalCount, setInternalCount] = useState(transformedDemoData.length);
   const [externalCount, setExternalCount] = useState(0);
   
   // Filters - Initialize district from selectedCity prop
@@ -155,11 +175,18 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
       console.log('✅ Received stays:', response.data.results.length, 'results');
       console.log('📊 Internal:', response.data.internal_count, 'External:', response.data.external_count);
       
-      setStays(response.data.results);
-      setInternalCount(response.data.internal_count);
-      setExternalCount(response.data.external_count);
+      // If backend has data, use it; otherwise keep demo data
+      if (response.data.results && response.data.results.length > 0) {
+        console.log('[AccommodationSearch] Using backend data');
+        setStays(response.data.results);
+        setInternalCount(response.data.internal_count);
+        setExternalCount(response.data.external_count);
+      } else {
+        console.warn('[AccommodationSearch] No backend data, keeping demo');
+      }
     } catch (error) {
-      console.error('Error fetching stays:', error);
+      console.error('[AccommodationSearch] Error fetching stays:', error);
+      // Keep demo data on error
     } finally {
       setLoading(false);
     }
