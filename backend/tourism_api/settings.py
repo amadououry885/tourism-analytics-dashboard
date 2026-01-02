@@ -220,20 +220,26 @@ if ENV == 'production' and not os.environ.get('REDIS_URL'):
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         }
     }
-    print("⚠️  WARNING: Redis not configured, using DummyCache (no caching)")
+    logger.warning("⚠️  Redis not configured, using DummyCache (no caching)")
 else:
     # Use Redis cache (local development or production with Redis)
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL,  # DB 1 for cache (0 for Celery)
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            },
-            'KEY_PREFIX': 'kedah_tourism',  # Prefix all cache keys
-            'TIMEOUT': 60 * 15,  # Default 15 minutes (overridden per endpoint)
+    try:
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+                'LOCATION': REDIS_URL,  # DB 1 for cache (0 for Celery)
+                'KEY_PREFIX': 'kedah_tourism',  # Prefix all cache keys
+                'TIMEOUT': 60 * 15,  # Default 15 minutes (overridden per endpoint)
+            }
         }
-    }
+    except Exception as e:
+        # If Redis configuration fails, fall back to DummyCache
+        logger.warning(f"⚠️  Redis configuration failed ({e}), using DummyCache")
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            }
+        }
 
 # Cache timeout settings (in seconds)
 CACHE_TTL = {
