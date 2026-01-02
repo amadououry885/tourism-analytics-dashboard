@@ -5,6 +5,8 @@ import { PopularDestinations } from '../components/PopularDestinations';
 import { KedahMap } from '../components/KedahMap'; // Import the Leaflet map component
 import { SocialMediaCharts } from '../components/SocialMediaCharts';
 import { OverviewMetrics } from '../components/OverviewMetrics';
+import { MapPin, UtensilsCrossed, Hotel, Bus, CalendarDays } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Overview: React.FC = () => {
@@ -14,6 +16,8 @@ const Overview: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>('places');
+  const navigate = useNavigate();
 
   // ✅ FETCH ALL CITIES FROM PLACES API
   useEffect(() => {
@@ -86,6 +90,107 @@ const Overview: React.FC = () => {
 
       {/* Overview Metrics Cards */}
       <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
+
+      {/* Navigation Tabs Container - Same style as metrics */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-8">
+        <div className="flex items-center justify-between divide-x divide-gray-200">
+          {/* Places Tab */}
+          <button
+            onClick={() => {
+              setActiveTab('places');
+              navigate('/');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
+              activeTab === 'places' ? 'bg-blue-50' : ''
+            }`}
+          >
+            <div className={`flex items-center gap-2 ${activeTab === 'places' ? 'text-blue-600' : 'text-gray-600'}`}>
+              <MapPin className="w-5 h-5" />
+              <span className="font-medium">Places</span>
+            </div>
+          </button>
+
+          {/* Food Tab */}
+          <button
+            onClick={() => {
+              setActiveTab('food');
+              navigate('/food');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
+              activeTab === 'food' ? 'bg-blue-50' : ''
+            }`}
+          >
+            <div className={`flex items-center gap-2 ${activeTab === 'food' ? 'text-blue-600' : 'text-gray-600'}`}>
+              <UtensilsCrossed className="w-5 h-5" />
+              <span className="font-medium">Food</span>
+            </div>
+          </button>
+
+          {/* Stay Tab */}
+          <button
+            onClick={() => {
+              setActiveTab('stay');
+              navigate('/stays');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
+              activeTab === 'stay' ? 'bg-blue-50' : ''
+            }`}
+          >
+            <div className={`flex items-center gap-2 ${activeTab === 'stay' ? 'text-blue-600' : 'text-gray-600'}`}>
+              <Hotel className="w-5 h-5" />
+              <span className="font-medium">Stay</span>
+            </div>
+          </button>
+
+          {/* Transport Tab */}
+          <button
+            onClick={() => {
+              setActiveTab('transport');
+              navigate('/transport');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
+              activeTab === 'transport' ? 'bg-blue-50' : ''
+            }`}
+          >
+            <div className={`flex items-center gap-2 ${activeTab === 'transport' ? 'text-blue-600' : 'text-gray-600'}`}>
+              <Bus className="w-5 h-5" />
+              <span className="font-medium">Transport</span>
+            </div>
+          </button>
+
+          {/* Events Tab */}
+          <button
+            onClick={() => {
+              setActiveTab('events');
+              navigate('/events');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
+              activeTab === 'events' ? 'bg-blue-50' : ''
+            }`}
+          >
+            <div className={`flex items-center gap-2 ${activeTab === 'events' ? 'text-blue-600' : 'text-gray-600'}`}>
+              <CalendarDays className="w-5 h-5" />
+              <span className="font-medium">Events</span>
+            </div>
+          </button>
+
+          {/* Overview Tab */}
+          <button
+            onClick={() => {
+              setActiveTab('overview');
+              navigate('/analytics');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
+              activeTab === 'overview' ? 'bg-blue-50' : ''
+            }`}
+          >
+            <div className={`flex items-center gap-2 ${activeTab === 'overview' ? 'text-blue-600' : 'text-gray-600'}`}>
+              <span className="text-lg">📊</span>
+              <span className="font-medium">Overview</span>
+            </div>
+          </button>
+        </div>
+      </div>
 
       {/* Social Media Charts Section */}
       <div className="mb-8">
