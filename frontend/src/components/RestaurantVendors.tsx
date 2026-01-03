@@ -288,15 +288,10 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
   return (
     <div className="space-y-6">
       {/* Restaurant Count Card */}
-      <div 
-        className="rounded-xl shadow-lg p-4 sm:p-6"
-        style={{ 
-          background: 'linear-gradient(to right, #3b82f6, #2563eb)',
-        }}
-      >
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+            <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
               <Utensils className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
             <div>
