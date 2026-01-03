@@ -287,25 +287,6 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Restaurant Count Card */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 sm:p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Utensils className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-            </div>
-            <div>
-              <p className="text-white/90 text-xs sm:text-sm font-medium">Total Restaurants</p>
-              <h2 className="text-white text-2xl sm:text-4xl font-bold">{sortedRestaurants.length}</h2>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-white/90 text-xs sm:text-sm">Showing Results</p>
-            <p className="text-white text-lg sm:text-2xl font-semibold">{sortedRestaurants.length}/{restaurants.length}</p>
-          </div>
-        </div>
-      </div>
-
       {/* Filters Bar */}
       <Card className="bg-white" style={{ border: '1px solid #E5E7EB' }}>
         <CardContent className="p-4">
