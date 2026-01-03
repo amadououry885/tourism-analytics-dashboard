@@ -98,7 +98,7 @@ const Overview: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('places');
-              navigate('/');
+              navigate('/?tab=destinations');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
               activeTab === 'places' ? 'bg-blue-50' : ''
@@ -114,7 +114,7 @@ const Overview: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('food');
-              navigate('/food');
+              navigate('/?tab=restaurants');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
               activeTab === 'food' ? 'bg-blue-50' : ''
@@ -130,7 +130,7 @@ const Overview: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('stay');
-              navigate('/stays');
+              navigate('/?tab=accommodation');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
               activeTab === 'stay' ? 'bg-blue-50' : ''
@@ -146,7 +146,7 @@ const Overview: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('transport');
-              navigate('/transport');
+              navigate('/?tab=transport');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
               activeTab === 'transport' ? 'bg-blue-50' : ''
@@ -162,7 +162,7 @@ const Overview: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('events');
-              navigate('/events');
+              navigate('/?tab=events');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
               activeTab === 'events' ? 'bg-blue-50' : ''
@@ -178,7 +178,7 @@ const Overview: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('overview');
-              navigate('/analytics');
+              navigate('/?tab=overview');
             }}
             className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
               activeTab === 'overview' ? 'bg-blue-50' : ''

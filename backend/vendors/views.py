@@ -33,15 +33,21 @@ class VendorViewSet(viewsets.ModelViewSet):
         serializer.save()
     
     def get_queryset(self):
-        """Filter vendors - owners see their own, others see all active"""
+        """Filter vendors based on context:
+        - Dashboard (?my_restaurants=true): Vendors see only their own
+        - Public browsing: Everyone sees all active vendors
+        """
         qs = super().get_queryset()
         user = self.request.user
         
-        # If user is authenticated vendor, show their own vendors (regardless of status)
-        if user.is_authenticated and user.role == 'vendor':
+        # Check if this is a dashboard request (vendor managing their own restaurants)
+        my_restaurants = self.request.query_params.get('my_restaurants', '').lower() == 'true'
+        
+        # If user is authenticated vendor AND requesting their own restaurants, filter by owner
+        if user.is_authenticated and user.role == 'vendor' and my_restaurants:
             qs = qs.filter(owner=user)
         else:
-            # Others see only active vendors (show both open and closed with badges)
+            # Public browsing: show all active vendors (even for logged-in users)
             qs = qs.filter(is_active=True)
             # Don't filter by is_open - let users see all vendors with status badges
         

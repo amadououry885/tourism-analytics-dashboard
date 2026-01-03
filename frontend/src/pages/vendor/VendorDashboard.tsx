@@ -140,7 +140,8 @@ const VendorDashboard: React.FC = () => {
     try {
       console.log('[VendorDashboard] Fetching vendors...');
       console.log('[VendorDashboard] User authenticated:', user);
-      const data = await request('/vendors/');
+      // Add my_restaurants=true to only fetch vendor's own restaurants
+      const data = await request('/vendors/?my_restaurants=true');
       console.log('[VendorDashboard] Vendors response:', data);
       console.log('[VendorDashboard] Results array:', data?.results);
       console.log('[VendorDashboard] Results count:', data?.count);
