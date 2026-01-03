@@ -295,12 +295,12 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
               <Utensils className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
             <div>
-              <p className="text-white/90 text-xs sm:text-sm font-medium">Total Restaurants</p>
+              <p className="text-white text-xs sm:text-sm font-medium">Total Restaurants</p>
               <h2 className="text-white text-2xl sm:text-4xl font-bold">{sortedRestaurants.length}</h2>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-white/90 text-xs sm:text-sm">Showing Results</p>
+            <p className="text-white text-xs sm:text-sm">Showing Results</p>
             <p className="text-white text-lg sm:text-2xl font-semibold">{sortedRestaurants.length}/{restaurants.length}</p>
           </div>
         </div>
