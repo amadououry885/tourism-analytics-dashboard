@@ -20,6 +20,16 @@ import EventRegistrations from './pages/EventRegistrations';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import StayOwnerDashboard from './pages/stays/StayOwnerDashboard';
 
+// New Explore → Detail pages
+import PlacesExplore from './pages/places/PlacesExplore';
+import PlaceDetails from './pages/places/PlaceDetails';
+import FoodExplore from './pages/food/FoodExplore';
+import FoodDetails from './pages/food/FoodDetails';
+import EventsExplore from './pages/events/EventsExplore';
+import EventDetails from './pages/events/EventDetails';
+import StaysExplore from './pages/stays/StaysExplore';
+import StayDetails from './pages/stays/StayDetails';
+
 export default function App() {
   return (
     <Router>
@@ -29,10 +39,23 @@ export default function App() {
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/explore" element={<TourismDashboard />} />
-            <Route path="/places" element={<Navigate to="/explore?tab=destinations" replace />} />
-            <Route path="/food" element={<Navigate to="/explore?tab=restaurants" replace />} />
-            <Route path="/stays" element={<Navigate to="/explore?tab=accommodation" replace />} />
-            <Route path="/events" element={<Navigate to="/explore?tab=events" replace />} />
+            
+            {/* New Explore → Detail Pattern for Places */}
+            <Route path="/places" element={<PlacesExplore />} />
+            <Route path="/places/:id" element={<PlaceDetails />} />
+            
+            {/* Food Explore → Detail */}
+            <Route path="/food" element={<FoodExplore />} />
+            <Route path="/food/:id" element={<FoodDetails />} />
+            
+            {/* Events Explore → Detail */}
+            <Route path="/events" element={<EventsExplore />} />
+            <Route path="/events/:id" element={<EventDetails />} />
+            
+            {/* Stays Explore → Detail */}
+            <Route path="/stays" element={<StaysExplore />} />
+            <Route path="/stays/:id" element={<StayDetails />} />
+            
             <Route path="/business" element={<BusinessLanding />} />
             {/* /login redirects to /sign-in for unified auth flow */}
             <Route path="/login" element={<Navigate to="/sign-in" replace />} />
