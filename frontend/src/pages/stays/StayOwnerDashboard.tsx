@@ -61,7 +61,6 @@ interface Stay {
   landmark?: string;
   distanceKm?: number;
   is_active: boolean;
-  is_open: boolean;
   owner?: number;
   owner_username?: string;
   booking_com_url?: string;
@@ -128,6 +127,8 @@ const StayOwnerDashboard: React.FC = () => {
   ];
 
   useEffect(() => {
+    // NEW FLOW VERIFICATION - Remove after confirming
+    console.log('NEW FLOW ACTIVE - StayOwnerDashboard.tsx');
     fetchStays();
   }, []);
 
@@ -340,25 +341,6 @@ const StayOwnerDashboard: React.FC = () => {
     setShowAddModal(true);
   };
 
-  const handleToggleStatus = async (stayId: number, currentStatus: boolean) => {
-    try {
-      const response = await request(
-        `/stays/${stayId}/toggle_status/`,
-        {
-          method: 'POST',
-        },
-        `✅ Accommodation ${currentStatus ? 'closed' : 'opened'} successfully!`
-      );
-      
-      // Update local state
-      setStays(stays.map(s => 
-        s.id === stayId ? { ...s, is_open: response.is_open } : s
-      ));
-    } catch (error) {
-      console.error('Failed to toggle status:', error);
-    }
-  };
-
   const resetForm = () => {
     setFormData({
       name: '',
@@ -506,22 +488,8 @@ const StayOwnerDashboard: React.FC = () => {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {stays.map((stay) => (
-                <div key={stay.id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all p-6 border-2 border-transparent hover:border-orange-300 relative">
-                  {/* Status Toggle - Top Right Corner */}
-                  <button
-                    onClick={() => handleToggleStatus(stay.id, stay.is_open ?? true)}
-                    className={`absolute top-4 right-4 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${
-                      (stay.is_open ?? true)
-                        ? 'bg-green-500 text-white hover:bg-green-600 border-2 border-green-400' 
-                        : 'bg-red-500 text-white hover:bg-red-600 border-2 border-red-400'
-                    }`}
-                    title={`Click to ${(stay.is_open ?? true) ? 'close' : 'open'} accommodation`}
-                  >
-                    <span className="text-lg">{(stay.is_open ?? true) ? '✓' : '✕'}</span>
-                    <span className="font-bold">{(stay.is_open ?? true) ? 'OPEN' : 'CLOSED'}</span>
-                  </button>
-
-                  <div className="flex justify-between items-start mb-4 pr-32">
+                <div key={stay.id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all p-6 border-2 border-transparent hover:border-orange-300">
+                  <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-gray-900 mb-2">{stay.name}</h3>
                       <span className="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-sm font-semibold rounded-full">

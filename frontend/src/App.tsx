@@ -8,8 +8,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import TourismDashboard from './pages/TourismDashboard';
 import BusinessLanding from './pages/BusinessLanding';
-import Login from './pages/Login';
-import SignIn from './pages/SignIn';
+// SignInPage uses the original AuthModal (centered popup with username + password only)
+import SignInPage from './pages/SignInPage';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -28,8 +28,10 @@ export default function App() {
             {/* Public Routes */}
             <Route path="/" element={<TourismDashboard />} />
             <Route path="/business" element={<BusinessLanding />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/sign-in" element={<SignIn />} />
+            {/* /login redirects to /sign-in for unified auth flow */}
+            <Route path="/login" element={<Navigate to="/sign-in" replace />} />
+            {/* SignInPage shows the centered AuthModal (username + password only, no portal selector) */}
+            <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />

@@ -86,9 +86,9 @@ api.interceptors.response.use(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         
-        // Only redirect to login if NOT on a public route AND NOT an optional auth endpoint
+        // Only redirect to sign-in if NOT on a public route AND NOT an optional auth endpoint
         if (!isPublicRoute && !isOptionalAuth) {
-          window.location.href = '/login';
+          window.location.href = '/sign-in';
         }
         return Promise.reject(refreshError);
       }
@@ -225,36 +225,11 @@ export const eventAPI = {
   deleteEvent: (id: number) => api.delete(`/events/${id}/`),
 };
 
-export const transportAPI = {
-  getAllRoutes: () => api.get('/transport/api/routes/'),
-  
-  createRoute: (data: {
-    origin: string;
-    destination: string;
-    mode: string;
-    distance_km?: number;
-    duration_minutes?: number;
-    is_active?: boolean;
-  }) => api.post('/transport/api/routes/', data),
-  
-  updateRoute: (id: number, data: Partial<{
-    origin: string;
-    destination: string;
-    mode: string;
-    distance_km: number;
-    duration_minutes: number;
-    is_active: boolean;
-  }>) => api.put(`/transport/api/routes/${id}/`, data),
-  
-  deleteRoute: (id: number) => api.delete(`/transport/api/routes/${id}/`),
-};
-
 // Public analytics API (no auth required)
 export const analyticsAPI = {
   getTopDestinations: () => api.get('/analytics/destinations/top/'),
   getRevenueStats: () => api.get('/analytics/revenue/'),
   getAttendanceStats: () => api.get('/analytics/attendance/'),
-  getTransportStats: () => api.get('/transport/analytics/stats/'),
 };
 
 export default api;

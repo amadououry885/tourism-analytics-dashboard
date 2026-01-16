@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Search, Filter, MapPin, DollarSign, Star, Home, X, ChevronDown, Sparkles, TrendingUp, Navigation, Share2, Clock, Users, Wifi, Car, Mail, Phone as PhoneIcon, MessageCircle, Heart, Eye, Award, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '../../lib/api';
+import { Search, Filter, MapPin, DollarSign, Star, Home, X, ChevronDown, Sparkles, TrendingUp, Navigation, Share2, Clock, Users, Wifi, Car, Mail, Phone as PhoneIcon, MessageCircle, Heart, Eye, Award, Image as ImageIcon, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
 import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { ListItem } from '../../components/ListItem';
 import { DetailPanel } from '../../components/DetailPanel';
 import { Stay, HybridSearchResponse } from '../../types/stay';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import demoData from '../../data/stays.demo.json';
+import { FilterDropdown, SortDropdown, ToggleFilter, FEATURE_COLORS } from '../../components/FilterDropdown';
 
 const DISTRICTS = [
   'All Districts',
@@ -52,29 +52,10 @@ interface AccommodationSearchProps {
 }
 
 export default function AccommodationSearch({ selectedCity = 'all' }: AccommodationSearchProps) {
-  // Transform demo data to match expected format
-  const transformedDemoData = (demoData.results || []).map((stay: any) => ({
-    id: stay.id,
-    name: stay.name,
-    type: stay.type || 'Hotel',
-    district: stay.district || stay.city || 'Kedah',
-    rating: stay.rating || 0,
-    price_per_night: stay.price_per_night || 0,
-    amenities: stay.amenities || [],
-    is_internal: true,
-    landmark: stay.landmark || '',
-    contact_phone: stay.contact_phone || '',
-    contact_email: stay.contact_email || '',
-    description: stay.description || '',
-    images: stay.images || [],
-    total_rooms: stay.total_rooms || 0,
-    available_rooms: stay.available_rooms || 0
-  }));
-
-  const [stays, setStays] = useState<Stay[]>(transformedDemoData);
-  const [filteredStays, setFilteredStays] = useState<Stay[]>(transformedDemoData);
-  const [loading, setLoading] = useState(false);
-  const [internalCount, setInternalCount] = useState(transformedDemoData.length);
+  const [stays, setStays] = useState<Stay[]>([]);
+  const [filteredStays, setFilteredStays] = useState<Stay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [internalCount, setInternalCount] = useState(0);
   const [externalCount, setExternalCount] = useState(0);
   
   // Filters - Initialize district from selectedCity prop
@@ -170,23 +151,16 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
       console.log('📡 Fetching stays from:', url);
       console.log('📋 Params:', { district, type, minPrice, maxPrice, minRating });
       
-      const response = await axios.get<HybridSearchResponse>(url);
+      const response = await api.get<HybridSearchResponse>(url);
       
       console.log('✅ Received stays:', response.data.results.length, 'results');
       console.log('📊 Internal:', response.data.internal_count, 'External:', response.data.external_count);
       
-      // If backend has data, use it; otherwise keep demo data
-      if (response.data.results && response.data.results.length > 0) {
-        console.log('[AccommodationSearch] Using backend data');
-        setStays(response.data.results);
-        setInternalCount(response.data.internal_count);
-        setExternalCount(response.data.external_count);
-      } else {
-        console.warn('[AccommodationSearch] No backend data, keeping demo');
-      }
+      setStays(response.data.results);
+      setInternalCount(response.data.internal_count);
+      setExternalCount(response.data.external_count);
     } catch (error) {
-      console.error('[AccommodationSearch] Error fetching stays:', error);
-      // Keep demo data on error
+      console.error('Error fetching stays:', error);
     } finally {
       setLoading(false);
     }
@@ -455,205 +429,106 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
               </button>
             </div>
 
-            {/* Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all ${
-                showFilters
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-              {(district || type || minPrice || maxPrice || minRating || selectedAmenities.length > 0) && (
-                <Badge className="bg-red-500 text-white border-0 ml-1">
-                  {[district, type, minPrice, maxPrice, minRating, ...selectedAmenities].filter(Boolean).length}
-                </Badge>
-              )}
-            </button>
+            {/* Inline Filter Dropdowns - Replacing old toggle panel */}
+            <div className="flex flex-wrap gap-3 items-center">
+              {/* District/Location Dropdown */}
+              <FilterDropdown
+                label="Location"
+                icon={<MapPin className="w-4 h-4" />}
+                options={DISTRICTS.map(d => ({
+                  value: d === 'All Districts' ? '' : d,
+                  label: d,
+                  icon: d === 'All Districts' ? '🌍' : '📍'
+                }))}
+                value={district}
+                onChange={(val) => setDistrict(val as string)}
+                accentColor={FEATURE_COLORS.stay}
+              />
+
+              {/* Property Type Dropdown */}
+              <FilterDropdown
+                label="Type"
+                icon={<Building2 className="w-4 h-4" />}
+                options={STAY_TYPES.map(t => ({
+                  value: t.value,
+                  label: t.label,
+                  icon: t.icon
+                }))}
+                value={type}
+                onChange={(val) => setType(val as string)}
+                accentColor={FEATURE_COLORS.stay}
+              />
+
+              {/* Rating Dropdown */}
+              <FilterDropdown
+                label="Rating"
+                icon={<Star className="w-4 h-4" />}
+                options={[
+                  { value: '', label: 'Any Rating', icon: '⭐' },
+                  { value: '3', label: '3+ Stars', icon: '⭐⭐⭐' },
+                  { value: '4', label: '4+ Stars', icon: '⭐⭐⭐⭐' },
+                  { value: '4.5', label: '4.5+ Stars', icon: '🌟' },
+                ]}
+                value={minRating}
+                onChange={(val) => setMinRating(val as string)}
+                accentColor={FEATURE_COLORS.stay}
+              />
+
+              {/* Amenities Multi-select Dropdown */}
+              <FilterDropdown
+                label="Amenities"
+                icon={<Wifi className="w-4 h-4" />}
+                options={AMENITIES.map(a => ({
+                  value: a.name,
+                  label: a.name,
+                  icon: a.icon
+                }))}
+                value={selectedAmenities}
+                onChange={(val) => setSelectedAmenities(val as string[])}
+                multiple={true}
+                searchable={false}
+                accentColor={FEATURE_COLORS.stay}
+              />
+
+              {/* Results Count */}
+              <div className="text-sm text-gray-600 ml-auto flex items-center gap-2">
+                <span className="font-bold" style={{ color: FEATURE_COLORS.stay }}>{filteredStays.length}</span>
+                <span className="text-gray-500">stays</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Advanced Filters Panel */}
-      {showFilters && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="px-8 py-6">
-            <div className="max-w-6xl mx-auto">
-              {/* Type Filters - Pill Style */}
-              <div className="mb-6">
-                <label className="block text-sm font-bold text-gray-700 mb-3">Property Type</label>
-                <div className="flex flex-wrap gap-2">
-                  {STAY_TYPES.map(t => (
-                    <button
-                      key={t.value}
-                      onClick={() => setType(type === t.value ? '' : t.value)}
-                      className={`px-5 py-2.5 rounded-full font-semibold transition-all flex items-center gap-2 ${
-                        type === t.value
-                          ? t.color + ' shadow-lg transform scale-105'
-                          : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
-                      <span className="text-lg">{t.icon}</span>
-                      <span>{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* District */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-indigo-600" />
-                    Location
-                    {selectedCity && selectedCity !== 'all' && (
-                      <span className="text-xs font-normal text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
-                        🔗 Synced with city filter
-                      </span>
-                    )}
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={district}
-                      onChange={(e) => setDistrict(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 appearance-none bg-white font-medium text-gray-900"
-                    >
-                      {DISTRICTS.map(d => (
-                        <option key={d} value={d === 'All Districts' ? '' : d}>{d}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-green-600" />
-                    Price Range (RM/night)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="Min"
-                      value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
-                      className="w-1/2 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 font-medium"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Max"
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
-                      className="w-1/2 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 font-medium"
-                    />
-                  </div>
-                </div>
-
-                {/* Rating */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                    <Star className="w-4 h-4 text-yellow-500" />
-                    Minimum Rating
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={minRating}
-                      onChange={(e) => setMinRating(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-yellow-500 appearance-none bg-white font-medium text-gray-900"
-                    >
-                      <option value="">Any Rating</option>
-                      <option value="3">⭐⭐⭐ 3+ Stars</option>
-                      <option value="4">⭐⭐⭐⭐ 4+ Stars</option>
-                      <option value="4.5">⭐⭐⭐⭐⭐ 4.5+ Stars</option>
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Amenities - Icon Style */}
-              <div className="mt-6">
-                <label className="block text-sm font-bold text-gray-700 mb-3">Amenities</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
-                  {AMENITIES.map(amenity => (
-                    <button
-                      key={amenity.name}
-                      onClick={() => handleToggleAmenity(amenity.name)}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                        selectedAmenities.includes(amenity.name)
-                          ? 'border-indigo-500 bg-indigo-50 shadow-md'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}
-                    >
-                      <span className="text-2xl">{amenity.icon}</span>
-                      <span className={`text-xs font-semibold ${
-                        selectedAmenities.includes(amenity.name) ? 'text-indigo-700' : 'text-gray-600'
-                      }`}>
-                        {amenity.name}
-                      </span>
-                      {selectedAmenities.includes(amenity.name) && (
-                        <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">✓</span>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Active Filters & Clear */}
-              {(district || type || minPrice || maxPrice || minRating || selectedAmenities.length > 0) && (
-                <div className="mt-6 flex items-center justify-between bg-gray-50 rounded-xl p-4">
-                  <div className="flex flex-wrap gap-2">
-                    {district && (
-                      <Badge className="bg-indigo-100 text-indigo-700 px-3 py-1">
-                        📍 {district}
-                      </Badge>
-                    )}
-                    {type && (
-                      <Badge className="bg-purple-100 text-purple-700 px-3 py-1">
-                        {STAY_TYPES.find(t => t.value === type)?.icon} {type}
-                      </Badge>
-                    )}
-                    {(minPrice || maxPrice) && (
-                      <Badge className="bg-green-100 text-green-700 px-3 py-1">
-                        💰 RM {minPrice || '0'} - {maxPrice || '∞'}
-                      </Badge>
-                    )}
-                    {minRating && (
-                      <Badge className="bg-yellow-100 text-yellow-700 px-3 py-1">
-                        ⭐ {minRating}+ Stars
-                      </Badge>
-                    )}
-                    {selectedAmenities.map(a => (
-                      <Badge key={a} className="bg-blue-100 text-blue-700 px-3 py-1">
-                        {AMENITIES.find(am => am.name === a)?.icon} {a}
-                      </Badge>
-                    ))}
-                  </div>
-                  <button
-                    onClick={handleClearFilters}
-                    className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear All
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Results Section */}
       <div className="px-8 py-8">
         {loading ? (
-          <div className="text-center py-16">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent"></div>
-            <p className="mt-6 text-gray-600 text-lg font-medium">Finding the best stays for you...</p>
+          <div className="space-y-6">
+            {/* Skeleton Results Header */}
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
+            </div>
+            {/* Skeleton Stay Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-md animate-pulse" style={{ border: '1px solid #E4E9F2' }}>
+                  <div className="h-48 bg-gray-200"></div>
+                  <div className="p-4 space-y-3">
+                    <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="flex gap-2">
+                      <div className="h-6 bg-green-100 rounded-full w-16"></div>
+                      <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <div className="h-6 bg-gray-200 rounded w-20"></div>
+                      <div className="h-8 bg-indigo-100 rounded-lg w-24"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : filteredStays.length === 0 ? (
           <div className="text-center py-16">
@@ -670,7 +545,7 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
             </button>
           </div>
         ) : (
-          <>
+          <div className="animate-fadeIn">
             {/* Results Header */}
             <div className="mb-6">
               <div className="flex items-center justify-between">
@@ -733,57 +608,40 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                         }] : [])
                       ]}
                       badge={
-                        <>
-                          {/* Open/Closed Status Badge - Most Important */}
-                          {stay.is_open !== undefined && (
-                            stay.is_open ? (
-                              <Badge className="bg-green-600 border-green-600 font-bold shadow-sm mr-2" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
-                                <Clock className="w-3 h-3 mr-1" />
-                                OPEN
+                        stay.is_trending ? (
+                          <Badge className="bg-green-100 text-green-700 border-green-300 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            Trending
+                          </Badge>
+                        ) : stay.is_internal ? (
+                          <Badge className="bg-green-100 text-green-700 border-green-300">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Local Partner
+                          </Badge>
+                        ) : (
+                          <>
+                            {stay.booking_provider === 'booking.com' && (
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                🔵 Booking.com
                               </Badge>
-                            ) : (
-                              <Badge className="bg-red-600 border-red-600 font-bold shadow-sm mr-2" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
-                                <Clock className="w-3 h-3 mr-1" />
-                                CLOSED
+                            )}
+                            {stay.booking_provider === 'agoda' && (
+                              <Badge className="bg-purple-100 text-purple-700 border-purple-300">
+                                🟣 Agoda
                               </Badge>
-                            )
-                          )}
-                          {/* Other Badges */}
-                          {stay.is_trending ? (
-                            <Badge className="bg-green-100 text-green-700 border-green-300 flex items-center gap-1">
-                              <TrendingUp className="w-3 h-3" />
-                              Trending
-                            </Badge>
-                          ) : stay.is_internal ? (
-                            <Badge className="bg-green-100 text-green-700 border-green-300">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              Local Partner
-                            </Badge>
-                          ) : (
-                            <>
-                              {stay.booking_provider === 'booking.com' && (
-                                <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                                  🔵 Booking.com
-                                </Badge>
-                              )}
-                              {stay.booking_provider === 'agoda' && (
-                                <Badge className="bg-purple-100 text-purple-700 border-purple-300">
-                                  🟣 Agoda
-                                </Badge>
-                              )}
-                              {stay.booking_provider === 'both' && (
-                                <Badge className="bg-indigo-100 text-indigo-700 border-indigo-300">
-                                  🎯 Multi-Platform
-                                </Badge>
-                              )}
-                              {!stay.booking_provider && (
-                                <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                                  External
-                                </Badge>
-                              )}
-                            </>
-                          )}
-                        </>
+                            )}
+                            {stay.booking_provider === 'both' && (
+                              <Badge className="bg-indigo-100 text-indigo-700 border-indigo-300">
+                                🎯 Multi-Platform
+                              </Badge>
+                            )}
+                            {!stay.booking_provider && (
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                External
+                              </Badge>
+                            )}
+                          </>
+                        )
                       }
                       isSelected={selectedStay?.id === stay.id}
                       onClick={() => handleSelectStay(stay)}
@@ -1164,7 +1022,7 @@ export default function AccommodationSearch({ selectedCity = 'all' }: Accommodat
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

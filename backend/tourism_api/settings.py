@@ -62,7 +62,6 @@ INSTALLED_APPS = [
     "analytics",
     "vendors",
     "events",
-    "transport",
     "stays",
     "api",
     
@@ -197,61 +196,12 @@ LOGGING = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ── Celery Configuration ─────────────────────────────────────────────────────
-# Falls back to Redis localhost if not configured (safe for development)
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
-# Ignore result if broker is not available (prevents crashes on Render without Redis)
-CELERY_TASK_IGNORE_RESULT = True if ENV == 'production' and not os.environ.get('REDIS_URL') else False
-
-# ── Cache Configuration (Redis) ──────────────────────────────────────────────
-# Use Redis for caching analytics results with cache invalidation strategy
-# Falls back to DummyCache if Redis is not available (e.g., on Render without Redis service)
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
-
-# Check if Redis is available (production without Redis uses DummyCache)
-if ENV == 'production' and not os.environ.get('REDIS_URL'):
-    # Fallback to dummy cache if Redis not configured on Render
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
-    logger.warning("⚠️  Redis not configured, using DummyCache (no caching)")
-else:
-    # Use Redis cache (local development or production with Redis)
-    try:
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-                'LOCATION': REDIS_URL,  # DB 1 for cache (0 for Celery)
-                'KEY_PREFIX': 'kedah_tourism',  # Prefix all cache keys
-                'TIMEOUT': 60 * 15,  # Default 15 minutes (overridden per endpoint)
-            }
-        }
-    except Exception as e:
-        # If Redis configuration fails, fall back to DummyCache
-        logger.warning(f"⚠️  Redis configuration failed ({e}), using DummyCache")
-        CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-            }
-        }
-
-# Cache timeout settings (in seconds)
-CACHE_TTL = {
-    'destinations_list': 60 * 60 * 24,      # 24 hours - destination data changes slowly
-    'destination_detail': 60 * 60 * 12,     # 12 hours - individual stats
-    'top_destinations': 60 * 60 * 6,        # 6 hours - rankings change with new data
-    'social_metrics': 60 * 30,              # 30 minutes - social data updated frequently
-    'sentiment_summary': 60 * 60 * 2,       # 2 hours - sentiment analysis
-    'events_attendance': 60 * 60 * 24,      # 24 hours - event stats
-    'vendors_popular': 60 * 60 * 6,         # 6 hours - restaurant rankings
-    'stays_trending': 60 * 60 * 6,          # 6 hours - accommodation trends
-}
 
 # ── Email Configuration (Gmail for Development) ──────────────────────────────
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')

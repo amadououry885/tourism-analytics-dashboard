@@ -51,6 +51,13 @@ urlpatterns = [
     path('analytics/places/nearby/', vn.NearbyPlacesView.as_view()),
     path('analytics/places/least-visited', vn.LeastVisitedDestinationsView.as_view(), name='analytics-places-least-visited'),
     path('analytics/places/least-visited/', vn.LeastVisitedDestinationsView.as_view()),
+    
+    # NEW: Visit level categorization and place-specific sentiment
+    path('analytics/places/by-visit-level', vn.PlacesByVisitLevelView.as_view(), name='analytics-places-by-visit-level'),
+    path('analytics/places/by-visit-level/', vn.PlacesByVisitLevelView.as_view()),
+    path('analytics/places/<int:place_id>/sentiment', vn.PlaceSentimentDetailView.as_view(), name='analytics-place-sentiment-detail'),
+    path('analytics/places/<int:place_id>/sentiment/', vn.PlaceSentimentDetailView.as_view()),
+
 
     # === SENTIMENT ANALYSIS ===
     path('sentiment/summary', vn.SentimentSummaryView.as_view(), name='sentiment-summary'),
@@ -61,6 +68,11 @@ urlpatterns = [
     path('sentiment/by-category/', vn.SentimentByCategoryView.as_view()),
     path('sentiment/keywords', vn.TopKeywordsView.as_view(), name='sentiment-keywords'),
     path('sentiment/keywords/', vn.TopKeywordsView.as_view()),
+    
+    # NEW: Sentiment comparison between visit levels
+    path('analytics/sentiment/comparison', vn.SentimentComparisonView.as_view(), name='analytics-sentiment-comparison'),
+    path('analytics/sentiment/comparison/', vn.SentimentComparisonView.as_view()),
+
 
     # === SOCIAL MEDIA ===
     path('social/metrics', vn.SocialMetricsView.as_view(), name='social-metrics'),

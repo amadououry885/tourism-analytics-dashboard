@@ -1,14 +1,13 @@
-
-
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { MapPin, TrendingUp, TrendingDown, Filter, Search, SortAsc, SortDesc, Star, MessageCircle, Navigation, Share2, DollarSign, Globe, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
+import { MapPin, TrendingUp, TrendingDown, Filter, Search, SortAsc, SortDesc, Star, MessageCircle, Navigation, Share2, DollarSign, Globe, Phone, Mail, Clock, ExternalLink, Grid, Sparkles, Ticket } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { MasterDetailLayout } from './MasterDetailLayout';
 import { ListItem } from './ListItem';
 import { DetailPanel } from './DetailPanel';
+import { FilterDropdown, ToggleFilter, SortDropdown, FilterOption } from './FilterDropdown';
 
 interface PopularDestinationsProps {
   timeRange?: string;
@@ -82,7 +81,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
     try {
       // Use axios with relative URL (baseURL already has /api)
-      const response = await axios.get('/analytics/places/popular/');
+      const response = await api.get('/analytics/places/popular/');
       const data = response.data;
 
       // Handle array response from analytics endpoint
@@ -120,7 +119,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         // ✅ Fetch places from analytics popular endpoint using axios
         let response;
         try {
-          response = await axios.get(`/analytics/places/popular/${cityParam}`);
+          response = await api.get(`/analytics/places/popular/${cityParam}`);
           const data = response.data;
           console.log('✅ Response from analytics/places/popular/:', data);
 
@@ -174,7 +173,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
         } catch (apiError) {
           console.log('⚠️ analytics/places failed, trying places endpoint...');
           // Fallback to places endpoint using axios
-          response = await axios.get('/places/');
+          response = await api.get('/places/');
           const data = response.data;
           console.log('✅ Response from places:', data);
 
@@ -204,7 +203,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
 
         // Fetch least visited destinations
         try {
-          const leastResponse = await axios.get('/rankings/least-pois');
+          const leastResponse = await api.get('/rankings/least-pois');
           const leastData = leastResponse.data;
           console.log('✅ Response from rankings/least-pois:', leastData);
           const leastPlaces = leastData.results || leastData || [];
@@ -378,67 +377,92 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Filters Bar */}
+    <div className="flex flex-col h-full animate-fadeIn">
+      {/* Filters Bar - Modern Dropdown Pattern */}
       <Card className="bg-white flex-shrink-0" style={{ border: '1px solid #E5E7EB' }}>
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap gap-3 items-center">
             {/* Search */}
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-[200px] max-w-[300px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search destinations..."
+                  placeholder="Search places..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                 />
               </div>
             </div>
 
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat || 'All')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+            {/* Category Dropdown */}
+            <FilterDropdown
+              label="Category"
+              icon={<Grid className="w-4 h-4" />}
+              options={categories.map(cat => ({
+                value: cat,
+                label: cat,
+                icon: cat === 'All' ? '🌍' : 
+                      cat.toLowerCase().includes('city') ? '🏙️' :
+                      cat.toLowerCase().includes('nature') ? '🌿' :
+                      cat.toLowerCase().includes('museum') ? '🏛️' :
+                      cat.toLowerCase().includes('landmark') ? '🏰' :
+                      cat.toLowerCase().includes('beach') ? '🏖️' :
+                      cat.toLowerCase().includes('temple') || cat.toLowerCase().includes('mosque') ? '🕌' :
+                      cat.toLowerCase().includes('park') ? '🌳' : '📍'
+              }))}
+              value={selectedCategory}
+              onChange={(val) => setSelectedCategory(val as string)}
+              searchable={categories.length > 5}
+              placeholder="Search categories..."
+              accentColor="#2563EB"
+            />
 
-            {/* Sort */}
-            <select
+            {/* Rating Dropdown */}
+            <FilterDropdown
+              label="Rating"
+              icon={<Star className="w-4 h-4" />}
+              options={[
+                { value: 'all', label: 'All Ratings', icon: '⭐' },
+                { value: '4.5', label: '4.5+ Stars', icon: '🌟' },
+                { value: '4', label: '4+ Stars', icon: '⭐' },
+                { value: '3', label: '3+ Stars', icon: '✨' },
+              ]}
+              value={sortBy === 'rating' ? 'rating' : 'all'}
+              onChange={(val) => {
+                if (val !== 'all') {
+                  setSortBy('rating');
+                }
+              }}
+              accentColor="#2563EB"
+            />
+
+            {/* Sort Dropdown */}
+            <SortDropdown
+              options={[
+                { value: 'popularity', label: 'Most Popular', icon: '🔥' },
+                { value: 'rating', label: 'Highest Rated', icon: '⭐' },
+                { value: 'name', label: 'Name (A-Z)', icon: '🔤' },
+              ]}
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="popularity">🔥 Popular</option>
-              <option value="name">🔤 Name</option>
-              <option value="rating">⭐ Rating</option>
-            </select>
+              onChange={(val) => setSortBy(val as 'popularity' | 'name' | 'rating')}
+              accentColor="#2563EB"
+            />
 
-            {/* Free Only */}
-            <label className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
-              <input
-                type="checkbox"
-                checked={showFreeOnly}
-                onChange={(e) => setShowFreeOnly(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-gray-700">🎟️ Free Only</span>
-            </label>
+            {/* Free Only Toggle */}
+            <ToggleFilter
+              label="Free Entry"
+              icon={<Ticket className="w-4 h-4" />}
+              checked={showFreeOnly}
+              onChange={setShowFreeOnly}
+              accentColor="#2563EB"
+            />
 
             {/* Results Count */}
-            <div className="text-sm text-gray-600 ml-auto">
-              <span className="font-bold text-blue-600">{filteredDestinations.length}</span> destinations
+            <div className="text-sm text-gray-600 ml-auto flex items-center gap-2">
+              <span className="font-bold text-blue-600">{filteredDestinations.length}</span>
+              <span className="text-gray-500">places</span>
             </div>
           </div>
         </CardContent>
@@ -460,8 +484,10 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               filteredDestinations.map((destination, index) => (
                 <ListItem
                   key={destination.id || index}
+                  index={index}
                   title={destination.name}
                   subtitle={`${destination.city || ''} ${destination.category ? '• ' + destination.category : ''}`}
+                  accentColor="#2563EB"
                   metrics={[
                     { 
                       label: 'Posts', 

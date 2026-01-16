@@ -5,7 +5,8 @@ import { PopularDestinations } from '../components/PopularDestinations';
 import { KedahMap } from '../components/KedahMap'; // Import the Leaflet map component
 import { SocialMediaCharts } from '../components/SocialMediaCharts';
 import { OverviewMetrics } from '../components/OverviewMetrics';
-import { MapPin, UtensilsCrossed, Hotel, Bus, CalendarDays } from 'lucide-react';
+import { SentimentComparison } from '../components/SentimentComparison';
+import { MapPin, UtensilsCrossed, Hotel, CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -91,6 +92,20 @@ const Overview: React.FC = () => {
       {/* Overview Metrics Cards */}
       <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
 
+      {/* Sentiment Comparison Section - NEW SUPERVISOR FEATURE */}
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">📊</span>
+            <div>
+              <h2 className="text-xl font-bold text-blue-900 dark:text-blue-100">NEW: Sentiment Analysis Dashboard</h2>
+              <p className="text-sm text-blue-700 dark:text-blue-300">Compare visitor sentiment between most and least visited places</p>
+            </div>
+          </div>
+        </div>
+        <SentimentComparison />
+      </div>
+
       {/* Navigation Tabs Container - Same style as metrics */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 mb-8">
         <div className="flex items-center justify-between divide-x divide-gray-200">
@@ -139,22 +154,6 @@ const Overview: React.FC = () => {
             <div className={`flex items-center gap-2 ${activeTab === 'stay' ? 'text-blue-600' : 'text-gray-600'}`}>
               <Hotel className="w-5 h-5" />
               <span className="font-medium">Stay</span>
-            </div>
-          </button>
-
-          {/* Transport Tab */}
-          <button
-            onClick={() => {
-              setActiveTab('transport');
-              navigate('/?tab=transport');
-            }}
-            className={`flex-1 flex flex-col items-center justify-center p-4 transition-all hover:bg-gray-50 rounded-lg ${
-              activeTab === 'transport' ? 'bg-blue-50' : ''
-            }`}
-          >
-            <div className={`flex items-center gap-2 ${activeTab === 'transport' ? 'text-blue-600' : 'text-gray-600'}`}>
-              <Bus className="w-5 h-5" />
-              <span className="font-medium">Transport</span>
             </div>
           </button>
 

@@ -3,10 +3,25 @@ from django.conf import settings
 import os
 
 def stay_image_upload_path(instance, filename):
-    """Generate upload path for stay images: stays/{stay_id}/{filename}"""
+    """Generate upload path for stay images: stays/{stay_id}/{filename}
+    Works for both Stay.main_image and StayImage.image fields
+    """
     ext = filename.split('.')[-1]
-    filename = f"{instance.name.replace(' ', '_')}_{filename}"
-    return os.path.join('stays', str(instance.id or 'temp'), filename)
+    
+    # Handle both Stay and StayImage instances
+    if hasattr(instance, 'stay'):
+        # This is a StayImage instance
+        stay = instance.stay
+        stay_id = stay.id if stay else 'temp'
+        stay_name = stay.name if stay else 'unknown'
+    else:
+        # This is a Stay instance
+        stay_id = instance.id or 'temp'
+        stay_name = instance.name or 'unknown'
+    
+    safe_name = stay_name.replace(' ', '_')[:50]  # Limit name length
+    filename = f"{safe_name}_{filename}"
+    return os.path.join('stays', str(stay_id), filename)
 
 class Stay(models.Model):
     TYPE_CHOICES = [
@@ -28,6 +43,10 @@ class Stay(models.Model):
     landmark = models.CharField(max_length=200, blank=True)
     distanceKm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    is_open = models.BooleanField(
+        default=True,
+        help_text="Whether the accommodation is currently open/accepting bookings"
+    )
     
     # Hybrid search: differentiate internal (platform) vs external (affiliate) stays
     is_internal = models.BooleanField(

@@ -25,9 +25,9 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ className = '' }
     },
     {
       label: 'Sign In',
-      path: '/login',
+      path: '/sign-in',
       icon: <LogIn className="w-4 h-4" />,
-      active: location.pathname.includes('/login')
+      active: location.pathname.includes('/sign-in')
     }
   ];
 

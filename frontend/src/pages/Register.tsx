@@ -131,9 +131,9 @@ const Register: React.FC = () => {
         toast.success('✅ Registration successful!');
       }
       
-      // Redirect to login after 2 seconds
+      // Redirect to sign-in after 2 seconds (NEW unified auth flow)
       setTimeout(() => {
-        navigate('/login');
+        navigate('/sign-in');
       }, 2000);
     } catch (error: any) {
       console.error('Registration failed:', error);
@@ -473,7 +473,7 @@ const Register: React.FC = () => {
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
               <Link
-                to="/login"
+                to="/sign-in"
                 className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
               >
                 Sign in

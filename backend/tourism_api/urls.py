@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse, JsonResponse
+from django.conf import settings
+from django.conf.urls.static import static
 from events.views_health import health_check
 
 def healthz(_request):
@@ -19,8 +21,6 @@ def root(_request):
             "vendors": "/api/vendors/",
             "events": "/api/events/",
             "stays": "/api/stays/",
-            "transport_places": "/api/transport/places/",
-            "transport_routes": "/api/transport/routes/",
             "analytics_examples": [
                 "/api/ping",
                 "/api/metrics/visitors",
@@ -45,12 +45,13 @@ urlpatterns = [
     # Include analytics FIRST so its routes are found (e.g., /api/places/suggest)
     path("api/", include("analytics.urls")),
 
-    # Then your existing app's API routes (vendors/events/stays/transport, etc.)
+    # Then your existing app's API routes (vendors/events/stays)
     path("api/", include("api.urls")),
-    
-    # Transport routes including analytics
-    path("api/transport/", include("transport.urls")),
 
     # Root: quick index of useful endpoints
     path("", root),
 ]
+
+# Serve media files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

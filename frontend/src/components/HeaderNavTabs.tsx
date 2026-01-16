@@ -5,7 +5,7 @@ import { Building2, LogIn } from 'lucide-react';
 export const HeaderNavTabs: React.FC = () => {
   const location = useLocation();
   const isBusinessActive = location.pathname.includes('/business');
-  const isSignInActive = location.pathname.includes('/login');
+  const isSignInActive = location.pathname.includes('/sign-in');
 
   return (
     <div className="flex items-center gap-3">
@@ -24,7 +24,7 @@ export const HeaderNavTabs: React.FC = () => {
       </Link>
       
       <Link
-        to="/login"
+        to="/sign-in"
         className={`
           px-4 py-2 rounded-lg font-medium text-sm transition-colors shadow-sm border flex items-center gap-2
           ${isSignInActive 

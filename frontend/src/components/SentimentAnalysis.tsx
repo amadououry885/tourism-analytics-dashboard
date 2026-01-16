@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Smile, Meh, Frown, MessageSquare } from 'lucide-react';
@@ -28,7 +28,7 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
         if (timeRange) params.append('range', timeRange === 'week' ? '7d' : '30d');
         
         // Fetch sentiment summary
-        const summaryResponse = await axios.get(`/analytics/sentiment/summary/?${params.toString()}`);
+        const summaryResponse = await api.get(`/analytics/sentiment/summary/?${params.toString()}`);
         
         if (summaryResponse.data) {
           setSentimentData([
@@ -40,10 +40,10 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
 
         // Fetch keywords if detailed view
         if (detailed) {
-          const keywordsResponse = await axios.get(`/analytics/sentiment/keywords/?${params.toString()}`);
+          const keywordsResponse = await api.get(`/analytics/sentiment/keywords/?${params.toString()}`);
           setTopKeywords(keywordsResponse.data || []);
 
-          const categoryResponse = await axios.get(`/analytics/sentiment/by-category/?${params.toString()}`);
+          const categoryResponse = await api.get(`/analytics/sentiment/by-category/?${params.toString()}`);
           setCategorysentiment(categoryResponse.data || []);
         }
       } catch (error) {
@@ -88,7 +88,7 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
   }
 
   return (
-    <>
+    <div className="animate-fadeIn">
       <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader>
           <CardTitle style={{ color: '#0F172A' }}>Sentiment Analysis</CardTitle>
@@ -198,6 +198,6 @@ export function SentimentAnalysis({ detailed = false, selectedCity, timeRange }:
           </Card>
         </>
       )}
-    </>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Eye, Heart, Share2, MessageCircle, TrendingUp, Smile, Meh, Frown } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -66,7 +66,7 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
         
         console.log('📊 Fetching comprehensive metrics from:', url);
 
-        const response = await axios.get(url);
+        const response = await api.get(url);
         const data = response.data;
 
         // Transform backend data to match component structure
@@ -125,47 +125,9 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
   }
 
   return (
-    <div className="mobile-grid-2">
-      {/* Comments Card - Professional White Design */}
-      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
-        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#3B82F6' }}>
-                <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-              </div>
-              <span>Comments 💬</span>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
-            {metrics.totalComments >= 1000 ? (metrics.totalComments / 1000).toFixed(1) + 'K' : metrics.totalComments}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Likes Card - Professional White Design */}
-      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
-        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#EC4899' }}>
-                <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-white fill-current" />
-              </div>
-              <span>Likes ❤️</span>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
-            {metrics.totalLikes >= 1000 ? (metrics.totalLikes / 1000).toFixed(0) + 'K' : metrics.totalLikes}
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="flex gap-3 sm:gap-4">
       {/* Total Posts Card - Professional White Design */}
-      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex-1" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
           <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
             <div className="flex items-center gap-1 sm:gap-2">
@@ -183,27 +145,8 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
         </CardContent>
       </Card>
 
-      {/* Shares Card - Professional White Design */}
-      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
-        <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
-          <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="p-1 sm:p-2 rounded-full" style={{ backgroundColor: '#22C55E' }}>
-                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-              </div>
-              <span>Shares 📤</span>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 sm:p-3 md:p-4 pt-0">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold" style={{ color: '#0F172A' }}>
-            {metrics.shares >= 1000 ? (metrics.shares / 1000).toFixed(1) + 'K' : metrics.shares}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Page Views Card - Professional White Design - Full width on mobile */}
-      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 col-span-2 sm:col-span-1" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+      {/* Page Views Card - Professional White Design */}
+      <Card className="bg-white hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex-1" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="pb-1 sm:pb-2 p-2 sm:p-3 md:p-4">
           <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between" style={{ color: '#0F172A' }}>
             <div className="flex items-center gap-1 sm:gap-2">

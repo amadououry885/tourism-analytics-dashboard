@@ -218,7 +218,7 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
   const categories = ['all', ...Array.from(new Set(places.map(p => p.category)))];
 
   // Render place item for list
-  const renderPlaceItem = (place: Place) => {
+  const renderPlaceItem = (place: Place, index: number) => {
     // DEBUG: ALWAYS show a test badge
     const badgeElement = (
       <div style={{ 
@@ -236,8 +236,10 @@ const MapView: React.FC<MapViewProps> = ({ selectedCity, center = [6.1200, 100.3
     return (
     <ListItem
       key={place.id}
+      index={index}
       title={place.name}
       subtitle={place.description}
+      accentColor="#2563EB"
       metrics={[
         { 
           label: 'Category', 

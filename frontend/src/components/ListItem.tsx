@@ -8,6 +8,8 @@ interface ListItemProps {
   onClick?: () => void;
   badge?: ReactNode;
   rightContent?: ReactNode;
+  index?: number; // For staggered animation
+  accentColor?: string; // Feature accent color
 }
 
 export function ListItem({
@@ -17,52 +19,54 @@ export function ListItem({
   isSelected = false,
   onClick,
   badge,
-  rightContent
+  rightContent,
+  index = 0,
+  accentColor = '#2563EB' // Default to Places blue
 }: ListItemProps) {
-  // DEBUG: Log badge prop
-  if (badge) {
-    console.log('[ListItem] Received badge for:', title, 'badge:', badge);
-  }
   
   return (
     <div
       onClick={onClick}
       className={`
-        p-4 cursor-pointer transition-all duration-200
+        p-4 cursor-pointer animate-fadeIn
         ${isSelected 
-          ? 'bg-blue-50 border-l-4 border-blue-600' 
+          ? 'border-l-4' 
           : 'bg-white border-l-4 border-transparent hover:bg-gray-50'
         }
       `}
       style={{ 
-        borderBottom: '1px solid #E5E7EB'
+        borderBottom: '1px solid #E5E7EB',
+        animationDelay: `${index * 30}ms`,
+        transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
+        backgroundColor: isSelected ? `${accentColor}08` : undefined,
+        borderLeftColor: isSelected ? accentColor : 'transparent',
       }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          {/* Title */}
+          {/* Title - Dark gray for readability */}
           <h3 
-            className="font-semibold text-gray-900 text-base truncate mb-1"
-            style={{ color: isSelected ? '#2557A7' : '#111827' }}
+            className="font-semibold text-base truncate mb-1"
+            style={{ color: isSelected ? accentColor : '#111827' }}
           >
             {title}
           </h3>
 
-          {/* Subtitle */}
+          {/* Subtitle - Secondary gray */}
           {subtitle && (
-            <p className="text-gray-600 text-sm mb-2 truncate">
+            <p className="text-sm mb-2 truncate" style={{ color: '#6B7280' }}>
               {subtitle}
             </p>
           )}
 
-          {/* Metrics */}
+          {/* Metrics - Muted gray */}
           {metrics.length > 0 && (
             <div className="flex items-center gap-4 mt-2 flex-wrap">
-              {metrics.map((metric, index) => (
-                <div key={index} className="flex items-center gap-1 text-xs text-gray-500">
-                  {metric.icon && <span className="text-gray-400">{metric.icon}</span>}
+              {metrics.map((metric, idx) => (
+                <div key={idx} className="flex items-center gap-1 text-xs" style={{ color: '#9CA3AF' }}>
+                  {metric.icon && <span style={{ color: '#9CA3AF' }}>{metric.icon}</span>}
                   <span className="font-medium">{metric.label}:</span>
-                  <span>{metric.value}</span>
+                  <span style={{ color: '#6B7280' }}>{metric.value}</span>
                 </div>
               ))}
             </div>

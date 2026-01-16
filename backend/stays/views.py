@@ -116,13 +116,12 @@ class StayViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         
-        # If user is authenticated stay_owner, show their own stays (regardless of status)
+        # If user is authenticated stay_owner, show their own stays
         if user.is_authenticated and user.role == 'stay_owner':
             qs = qs.filter(owner=user)
         else:
-            # Others see only active stays (show both open and closed with badges)
+            # Others see only active stays
             qs = qs.filter(is_active=True)
-            # Don't filter by is_open - let users see all stays with status badges
         
         district = self.request.query_params.get("district")
         typ = self.request.query_params.get("type")

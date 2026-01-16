@@ -28,7 +28,7 @@ import { FormInput } from '../../components/FormInput';
 import { MenuManagement } from '../../components/MenuManagement';
 import { OpeningHoursManagement } from '../../components/OpeningHoursManagement';
 import { ReservationManagement } from '../../components/ReservationManagement';
-import { VendorDashboardModal } from './VendorDashboardModal';
+import { VendorDashboardModal } from './VendorDashboardModalNew';
 
 interface Restaurant {
   id: number;
@@ -87,6 +87,12 @@ const VendorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours' | 'reservations'>('restaurants');
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[VendorDashboard] showAddModal changed:', showAddModal);
+  }, [showAddModal]);
+
   const [formData, setFormData] = useState({
     name: '',
     city: '',
@@ -404,37 +410,33 @@ const VendorDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen" style={{ background: '#f5f0eb' }}>
+      {/* Header - Warm gradient like Admin */}
+      <header style={{ background: 'linear-gradient(135deg, #d4a574 0%, #e8c9a8 100%)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <Store className="w-8 h-8 text-purple-600" />
+              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px', borderRadius: '12px' }}>
+                <Store className="w-7 h-7 text-white" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Restaurants</h1>
-                <p className="text-sm text-gray-600">Welcome back, {user?.username}! 👋</p>
+                <h1 className="text-xl font-semibold text-white">Restaurant Dashboard</h1>
+                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm">Welcome back, {user?.username}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={fetchRestaurants}
-                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
-                title="Refresh restaurant list"
-              >
-                <UtensilsCrossed className="w-5 h-5" />
-                <span className="font-bold">Refresh</span>
-              </button>
               <Link
                 to="/"
-                className="px-6 py-2.5 bg-white border-2 border-gray-900 hover:bg-gray-100 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg flex items-center gap-2"
+                className="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
               >
-                <Home className="w-5 h-5 text-gray-900" />
-                <span className="text-gray-900 font-bold text-base">Dashboard</span>
+                <Home className="w-5 h-5" />
+                <span className="font-medium">Dashboard</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
               >
                 <LogOut className="w-5 h-5" />
                 <span>Logout</span>
@@ -446,70 +448,39 @@ const VendorDashboard: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Card with Instructions - Enhanced for Non-Technical Users */}
-        <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl shadow-2xl p-8 mb-8 text-white relative overflow-hidden">
-          {/* Decorative Background Elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
-                <Store className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold mb-1">Welcome to Your Restaurant Dashboard! 👋</h2>
-                <p className="text-emerald-100 text-lg">Easy tools to manage your business</p>
-              </div>
-            </div>
-            
-            {/* Simple 3-Step Guide */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mt-6 mb-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span className="bg-white text-emerald-600 w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold">✓</span>
-                Getting Started is Easy!
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-                  <div className="text-4xl mb-2">1️⃣</div>
-                  <h4 className="font-bold mb-1 text-lg">Click "Add Restaurant"</h4>
-                  <p className="text-emerald-100 text-sm">Start by clicking the green button below</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-                  <div className="text-4xl mb-2">2️⃣</div>
-                  <h4 className="font-bold mb-1 text-lg">Fill Simple Form</h4>
-                  <p className="text-emerald-100 text-sm">Enter your restaurant name and what food you serve</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-                  <div className="text-4xl mb-2">3️⃣</div>
-                  <h4 className="font-bold mb-1 text-lg">You're Done!</h4>
-                  <p className="text-emerald-100 text-sm">Your restaurant will appear below instantly</p>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-3 px-8 py-4 bg-white text-emerald-600 rounded-xl hover:bg-emerald-50 transition-all font-bold shadow-2xl text-xl transform hover:scale-105 border-4 border-white/20 animate-pulse hover:animate-none"
-            >
-              <Plus className="w-7 h-7" />
-              <span>🚀 CLICK HERE TO ADD YOUR RESTAURANT</span>
-            </button>
+        {/* Page Header with Action */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold" style={{ color: '#2d2d2d' }}>Manage Restaurants</h2>
+            <p style={{ color: '#666' }}>Add and manage your restaurant listings</p>
           </div>
+          <button
+            onClick={() => {
+              console.log('[VendorDashboard] Add Restaurant button clicked!');
+              setShowAddModal(true);
+            }}
+            style={{ background: 'linear-gradient(135deg, #d4a574 0%, #c89963 100%)', boxShadow: '0 4px 12px rgba(212, 165, 116, 0.3)' }}
+            className="flex items-center gap-2 px-5 py-2.5 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            Add Restaurant
+          </button>
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="bg-white rounded-xl shadow-md border-2 border-gray-200 mb-6 overflow-hidden">
-          <div className="flex border-b border-gray-200">
+        {/* Tabs Navigation - Warm color scheme */}
+        <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '24px', overflow: 'hidden' }}>
+          {/* Colored top band */}
+          <div style={{ height: '4px', background: 'linear-gradient(90deg, #d4a574 0%, #e8c9a8 50%, #d4a574 100%)' }} />
+          <nav className="flex px-4 space-x-6 border-b border-gray-100">
             <button
               onClick={() => setActiveTab('restaurants')}
-              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
-                activeTab === 'restaurants'
-                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              style={{
+                borderBottom: activeTab === 'restaurants' ? '3px solid #d4a574' : '3px solid transparent',
+                color: activeTab === 'restaurants' ? '#d4a574' : '#666',
+              }}
+              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
             >
-              <Store className="w-5 h-5" />
+              <Store className="w-4 h-4" />
               My Restaurants
             </button>
             <button
@@ -518,19 +489,17 @@ const VendorDashboard: React.FC = () => {
                   setSelectedVendorId(restaurants[0].id);
                   setActiveTab('menu');
                 } else {
-                  alert('Please add a restaurant first before managing menu items');
+                  alert('Please add a restaurant first');
                 }
               }}
-              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
-                activeTab === 'menu'
-                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-              disabled={restaurants.length === 0}
+              style={{
+                borderBottom: activeTab === 'menu' ? '3px solid #e67e22' : '3px solid transparent',
+                color: activeTab === 'menu' ? '#e67e22' : '#666',
+              }}
+              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
             >
-              <UtensilsCrossed className="w-5 h-5" />
+              <UtensilsCrossed className="w-4 h-4" />
               Menu Management
-              {restaurants.length === 0 && <span className="text-xs">(Add restaurant first)</span>}
             </button>
             <button
               onClick={() => {
@@ -538,19 +507,17 @@ const VendorDashboard: React.FC = () => {
                   setSelectedVendorId(restaurants[0].id);
                   setActiveTab('hours');
                 } else {
-                  alert('Please add a restaurant first before setting opening hours');
+                  alert('Please add a restaurant first');
                 }
               }}
-              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
-                activeTab === 'hours'
-                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-              disabled={restaurants.length === 0}
+              style={{
+                borderBottom: activeTab === 'hours' ? '3px solid #3498db' : '3px solid transparent',
+                color: activeTab === 'hours' ? '#3498db' : '#666',
+              }}
+              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
             >
-              <Clock className="w-5 h-5" />
+              <Clock className="w-4 h-4" />
               Opening Hours
-              {restaurants.length === 0 && <span className="text-xs">(Add restaurant first)</span>}
             </button>
             <button
               onClick={() => {
@@ -558,33 +525,33 @@ const VendorDashboard: React.FC = () => {
                   setSelectedVendorId(restaurants[0].id);
                   setActiveTab('reservations');
                 } else {
-                  alert('Please add a restaurant first before viewing reservations');
+                  alert('Please add a restaurant first');
                 }
               }}
-              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all ${
-                activeTab === 'reservations'
-                  ? 'bg-emerald-50 text-emerald-700 border-b-4 border-emerald-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-              disabled={restaurants.length === 0}
+              style={{
+                borderBottom: activeTab === 'reservations' ? '3px solid #9b59b6' : '3px solid transparent',
+                color: activeTab === 'reservations' ? '#9b59b6' : '#666',
+              }}
+              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
             >
-              <Calendar className="w-5 h-5" />
+              <Calendar className="w-4 h-4" />
               Reservations
-              {restaurants.length === 0 && <span className="text-xs">(Add restaurant first)</span>}
             </button>
-          </div>
-        </div>
+          </nav>
+
+          {/* Tab Content Area */}
+          <div className="p-6">
 
         {/* Restaurant Selector (for Menu, Hours & Reservations tabs) */}
         {(activeTab === 'menu' || activeTab === 'hours' || activeTab === 'reservations') && restaurants.length > 1 && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
-            <label className="block text-sm font-medium text-blue-900 mb-2">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Restaurant:
             </label>
             <select
               value={selectedVendorId || ''}
               onChange={(e) => setSelectedVendorId(Number(e.target.value))}
-              className="w-full md:w-auto px-4 py-2 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
             >
               {restaurants.map(r => (
                 <option key={r.id} value={r.id}>{r.name}</option>
@@ -598,145 +565,100 @@ const VendorDashboard: React.FC = () => {
           <>
         {/* Restaurants Grid */}
         {restaurants.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl shadow-xl border-4 border-dashed border-gray-300">
-            <div className="max-w-lg mx-auto px-6">
-              {/* Large Icon */}
-              <div className="mb-6 relative">
-                <div className="bg-gradient-to-br from-emerald-100 to-teal-100 w-32 h-32 rounded-full mx-auto flex items-center justify-center mb-4">
-                  <Store className="w-16 h-16 text-emerald-600" />
-                </div>
-                <div className="absolute top-0 right-1/3 animate-bounce">
-                  <span className="text-4xl">👈</span>
-                </div>
-              </div>
-              
-              {/* Main Message */}
-              <h3 className="text-3xl font-bold text-gray-900 mb-3">No Restaurants Yet</h3>
-              <p className="text-emerald-600 text-2xl font-bold mb-4">Let's Get Started! 🎉</p>
-              
-              {/* Friendly Explanation */}
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6 text-left">
-                <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
-                  <span className="text-2xl">💡</span>
-                  Why Add Your Restaurant?
-                </h4>
-                <ul className="space-y-2 text-blue-800">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                    <span>Customers can find you easily online</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                    <span>Show what type of food you serve</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                    <span>Attract more visitors to your business</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                    <span>Takes only 2 minutes to complete!</span>
-                  </li>
-                </ul>
-              </div>
-              
-              {/* Big Action Button */}
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all font-bold text-xl shadow-2xl transform hover:scale-105 border-4 border-emerald-200"
-              >
-                <Plus className="w-7 h-7" />
-                <span>ADD MY FIRST RESTAURANT NOW</span>
-                <span className="text-2xl">→</span>
-              </button>
-              
-              <p className="text-gray-500 text-sm mt-4">
-                ⏱️ Quick and easy - no technical skills needed!
-              </p>
+          <div style={{ textAlign: 'center', padding: '64px 24px', background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <div style={{ width: '80px', height: '80px', background: 'rgba(212, 165, 116, 0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Store style={{ width: '40px', height: '40px', color: '#d4a574' }} />
             </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#2d2d2d', marginBottom: '8px' }}>No restaurants yet</h3>
+            <p style={{ color: '#666', marginBottom: '24px', maxWidth: '300px', margin: '0 auto 24px' }}>Add your first restaurant to get started with managing your business.</p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              style={{ background: 'linear-gradient(135deg, #d4a574 0%, #c89963 100%)', boxShadow: '0 4px 12px rgba(212, 165, 116, 0.3)' }}
+              className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              Add Restaurant
+            </button>
           </div>
         ) : (
           <>
-            {/* Success Badge */}
-            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <div className="bg-green-500 text-white w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-2xl">✓</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-green-900">Great Job! Your Restaurants are Listed 🎉</h3>
-                <p className="text-green-700 text-sm">You have {restaurants.length} restaurant{restaurants.length > 1 ? 's' : ''} listed. You can edit or add more below.</p>
-              </div>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-all font-bold shadow-lg border-2 border-white"
-              >
-                <Plus className="w-5 h-5" />
-                Add Another
-              </button>
+            {/* Restaurant Count */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-500">{restaurants.length} restaurant{restaurants.length > 1 ? 's' : ''}</p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {restaurants.map((restaurant) => (
-                <div key={restaurant.id} className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border-2 border-gray-100 hover:border-emerald-300 transform hover:-translate-y-1 relative">
-                  {/* Status Toggle - Top Right Corner */}
-                  <button
-                    onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open ?? true)}
-                    className={`absolute top-4 right-4 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${
-                      (restaurant.is_open ?? true)
-                        ? 'bg-green-500 text-white hover:bg-green-600 border-2 border-green-400' 
-                        : 'bg-red-500 text-white hover:bg-red-600 border-2 border-red-400'
-                    }`}
-                    title={`Click to ${(restaurant.is_open ?? true) ? 'close' : 'open'} restaurant`}
-                  >
-                    <span className="text-lg">{(restaurant.is_open ?? true) ? '✓' : '✕'}</span>
-                    <span className="font-bold">{(restaurant.is_open ?? true) ? 'OPEN' : 'CLOSED'}</span>
-                  </button>
-
+                <div 
+                  key={restaurant.id} 
+                  style={{ 
+                    background: 'white', 
+                    borderRadius: '16px', 
+                    padding: '20px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                    borderLeft: '4px solid #d4a574',
+                    transition: 'all 0.2s'
+                  }}
+                  className="hover:shadow-lg"
+                >
                   {/* Restaurant Header */}
-                  <div className="mb-4 pr-32">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="bg-gradient-to-br from-emerald-100 to-teal-100 p-3 rounded-xl">
-                        <Store className="w-6 h-6 text-emerald-600" />
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div style={{ width: '40px', height: '40px', background: 'rgba(212, 165, 116, 0.15)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Store style={{ width: '20px', height: '20px', color: '#d4a574' }} />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">{restaurant.name}</h3>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <MapPin className="w-4 h-4 text-emerald-600" />
-                          <span className="text-sm font-medium">{restaurant.city}</span>
-                        </div>
+                      <div>
+                        <h4 style={{ fontWeight: '600', color: '#2d2d2d', fontSize: '16px' }}>{restaurant.name}</h4>
+                        <p style={{ color: '#888', fontSize: '14px' }}>{restaurant.city}</p>
                       </div>
                     </div>
-                    
-                    {/* Cuisine Tags */}
-                    {restaurant.cuisines && restaurant.cuisines.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Food Types:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {restaurant.cuisines.map((cuisine, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 text-sm font-bold rounded-full border border-emerald-200">
-                              🍽️ {cuisine}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open ?? true)}
+                      style={{
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        borderRadius: '20px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: (restaurant.is_open ?? true) ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)',
+                        color: (restaurant.is_open ?? true) ? '#27ae60' : '#e74c3c',
+                        transition: 'all 0.2s'
+                      }}
+                      title={`Click to ${(restaurant.is_open ?? true) ? 'close' : 'open'} restaurant`}
+                    >
+                      {(restaurant.is_open ?? true) ? '● Open' : '● Closed'}
+                    </button>
                   </div>
 
-                  {/* Action Buttons - More Descriptive */}
-                  <div className="flex gap-2 pt-4 border-t-2 border-gray-100">
+                  {/* Cuisines */}
+                  {restaurant.cuisines && restaurant.cuisines.length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div className="flex flex-wrap gap-1.5">
+                        {restaurant.cuisines.map((cuisine, idx) => (
+                          <span key={idx} style={{ padding: '4px 10px', background: 'rgba(212, 165, 116, 0.1)', color: '#a07850', fontSize: '12px', fontWeight: '500', borderRadius: '6px' }}>
+                            {cuisine}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid #eee' }}>
                     <button
                       onClick={() => handleEdit(restaurant)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-all font-bold border-2 border-blue-200 hover:border-blue-300"
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(212, 165, 116, 0.1)', color: '#a07850', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
                     >
-                      <Edit2 className="w-5 h-5" />
-                      <span>Edit Info</span>
+                      <Edit2 style={{ width: '16px', height: '16px' }} />
+                      Edit
                     </button>
                     <button
                       onClick={() => handleDelete(restaurant.id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition-all font-bold border-2 border-red-200 hover:border-red-300"
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
                     >
-                      <Trash2 className="w-5 h-5" />
-                      <span>Remove</span>
+                      <Trash2 style={{ width: '16px', height: '16px' }} />
+                      Remove
                     </button>
                   </div>
                 </div>
@@ -761,22 +683,27 @@ const VendorDashboard: React.FC = () => {
         {activeTab === 'reservations' && selectedVendorId && (
           <ReservationManagement vendorId={selectedVendorId} />
         )}
+          </div>
+        </div>
       </main>
 
       {/* Professional Tabbed Modal */}
       {showAddModal && (
-        <VendorDashboardModal
-          editingRestaurant={editingRestaurant}
-          formStep={formStep}
-          setFormStep={setFormStep}
-          formData={formData}
-          setFormData={setFormData}
-          cuisineOptions={cuisineOptions}
-          handleCuisineChange={handleCuisineChange}
-          handleSubmit={handleSubmit}
-          resetForm={resetForm}
-          loading={loading}
-        />
+        <>
+          {console.log('[VendorDashboard] Rendering modal, showAddModal:', showAddModal)}
+          <VendorDashboardModal
+            editingRestaurant={editingRestaurant}
+            formStep={formStep}
+            setFormStep={setFormStep}
+            formData={formData}
+            setFormData={setFormData}
+            cuisineOptions={cuisineOptions}
+            handleCuisineChange={handleCuisineChange}
+            handleSubmit={handleSubmit}
+            resetForm={resetForm}
+            loading={loading}
+          />
+        </>
       )}
     </div>
   );

@@ -25,6 +25,7 @@ idna==3.10
 invoke==2.2.0
 jmespath==1.0.1
 kombu==5.4.2
+numpy==2.2.4
 packaging==24.2
 paramiko==4.0.0
 pathspec==0.12.1

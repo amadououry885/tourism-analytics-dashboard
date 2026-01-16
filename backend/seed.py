@@ -12,7 +12,6 @@ from faker import Faker
 from analytics.models import Place as APlace, SocialPost
 from events.models import Event
 from stays.models import Stay
-from transport.models import Place as TPlace, Route
 from vendors.models import Vendor
 from users.models import User
 
@@ -117,23 +116,7 @@ for name, city, lat, lon in kedah_places:
     )
     aplace_objs.append(obj)
 
-# Transport places (Kedah + outside)
-tplace_map = {}
-for name, city, lat, lon in kedah_places:
-    obj, _ = TPlace.objects.get_or_create(
-        name=name,
-        defaults=dict(lat=lat, lon=lon, is_in_kedah=True),
-    )
-    tplace_map[name] = obj
-
-for name, lat, lon in outside_places:
-    obj, _ = TPlace.objects.get_or_create(
-        name=name,
-        defaults=dict(lat=lat, lon=lon, is_in_kedah=False),
-    )
-    tplace_map[name] = obj
-
-print(f"✅ Analytics Places: {APlace.objects.count()} | Transport Places: {TPlace.objects.count()}")
+print(f"✅ Analytics Places: {APlace.objects.count()}")
 
 # ───────────────────────────────────────────────────────────
 # Vendors (in Kedah)
@@ -260,58 +243,6 @@ for place in aplace_objs:
 print(f"✅ SocialPosts created: {post_created} (total: {SocialPost.objects.count()})")
 
 # ───────────────────────────────────────────────────────────
-# Routes (Transport)
-# ───────────────────────────────────────────────────────────
-def add_route(fp, tp, rtype, options):
-    obj, _ = Route.objects.get_or_create(
-        from_place=fp, to_place=tp, route_type=rtype,
-        defaults=dict(options=options, polyline=None)
-    )
-    return obj
-
-# Key nodes
-AS = tplace_map["Alor Setar"]
-LGK = tplace_map["Langkawi"]
-SP = tplace_map["Sungai Petani"]
-KUL = tplace_map["Kuala Lumpur"]
-PEN = tplace_map["George Town"]
-IPOH = tplace_map["Ipoh"]
-
-# Intra-Kedah
-add_route(AS, LGK, "intra_kedah", [
-    {"mode": "Bus", "durationMin": 210, "priceMin": 35, "priceMax": 55, "provider": "Transnasional"},
-    {"mode": "Ferry (via Kuala Kedah)", "durationMin": 120, "priceMin": 18, "priceMax": 28, "provider": "Langkawi Ferry"},
-])
-add_route(AS, SP, "intra_kedah", [
-    {"mode": "Train (ETS)", "durationMin": 35, "priceMin": 12, "priceMax": 20, "provider": "KTMB"},
-    {"mode": "Bus", "durationMin": 50, "priceMin": 8, "priceMax": 12, "provider": "Local"},
-])
-add_route(SP, LGK, "intra_kedah", [
-    {"mode": "Bus+Ferry", "durationMin": 180, "priceMin": 30, "priceMax": 45, "provider": "Combo"},
-])
-
-# Coming to Kedah
-add_route(KUL, AS, "coming_to_kedah", [
-    {"mode": "Train (ETS)", "durationMin": 300, "priceMin": 60, "priceMax": 90, "provider": "KTMB"},
-    {"mode": "Flight to LGK + Bus", "durationMin": 180, "priceMin": 120, "priceMax": 280, "provider": "Various"},
-])
-add_route(PEN, AS, "coming_to_kedah", [
-    {"mode": "Bus", "durationMin": 120, "priceMin": 12, "priceMax": 20, "provider": "Rapid"},
-    {"mode": "Car", "durationMin": 90, "priceMin": 40, "priceMax": 60, "provider": "Drive"},
-])
-
-# Leaving Kedah
-add_route(AS, KUL, "leaving_kedah", [
-    {"mode": "Train (ETS)", "durationMin": 300, "priceMin": 60, "priceMax": 90, "provider": "KTMB"},
-    {"mode": "Bus", "durationMin": 420, "priceMin": 50, "priceMax": 70, "provider": "Transnasional"},
-])
-add_route(AS, IPOH, "leaving_kedah", [
-    {"mode": "Train (ETS)", "durationMin": 180, "priceMin": 35, "priceMax": 55, "provider": "KTMB"},
-])
-
-print("✅ Routes ensured (intra, coming_to_kedah, leaving_kedah)")
-
-# ───────────────────────────────────────────────────────────
 # Summary
 # ───────────────────────────────────────────────────────────
 print("\n🎉 All tables seeded successfully!")
@@ -320,5 +251,3 @@ print(f"SocialPosts:       {SocialPost.objects.count()}")
 print(f"Vendors:           {Vendor.objects.count()}")
 print(f"Stays:             {Stay.objects.count()}")
 print(f"Events:            {Event.objects.count()}")
-print(f"Places(transport): {TPlace.objects.count()}")
-print(f"Routes:            {Route.objects.count()}")

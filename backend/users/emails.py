@@ -556,3 +556,215 @@ def send_password_reset_email(user, token, frontend_url):
     except Exception as e:
         logger.error(f"Failed to send password reset email to {user.email}: {str(e)}")
         return False
+
+
+def send_registration_pending_email(user):
+    """
+    Send registration confirmation email to a newly registered user.
+    Confirms email address validity and explains the pending approval process.
+    
+    Args:
+        user: User object that was just registered
+        
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        subject = 'Registration Received – Account Pending Verification'
+        
+        # Determine role display name
+        role_display = {
+            'vendor': 'Restaurant Owner',
+            'stay_owner': 'Hotel/Stay Owner',
+            'admin': 'Administrator'
+        }.get(user.role, user.role)
+        
+        # HTML email content
+        html_message = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 10px 10px 0 0;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    font-size: 24px;
+                }}
+                .content {{
+                    background: #ffffff;
+                    padding: 30px;
+                    border: 1px solid #e5e7eb;
+                    border-top: none;
+                }}
+                .info-box {{
+                    background: #f3f4f6;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                }}
+                .info-box strong {{
+                    color: #3b82f6;
+                }}
+                .pending-notice {{
+                    background: #fef3c7;
+                    padding: 20px;
+                    border-left: 4px solid #f59e0b;
+                    border-radius: 6px;
+                    margin: 20px 0;
+                }}
+                .next-steps {{
+                    background: #eff6ff;
+                    padding: 20px;
+                    border-left: 4px solid #3b82f6;
+                    margin: 20px 0;
+                }}
+                .next-steps ul {{
+                    margin: 10px 0;
+                    padding-left: 20px;
+                }}
+                .next-steps li {{
+                    margin: 8px 0;
+                }}
+                .footer {{
+                    background: #1f2937;
+                    color: #9ca3af;
+                    padding: 20px 30px;
+                    text-align: center;
+                    border-radius: 0 0 10px 10px;
+                    font-size: 14px;
+                }}
+                .footer strong {{
+                    color: #ffffff;
+                }}
+                .emoji {{
+                    font-size: 1.2em;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📬 Registration Received</h1>
+            </div>
+            
+            <div class="content">
+                <p>Hello <strong>{user.first_name or user.username}</strong>,</p>
+                
+                <p>Thank you for registering on the <strong>Kedah Tourism Analytics</strong> platform.</p>
+                
+                <p>We have successfully received your application using this email address.</p>
+                
+                <div class="info-box">
+                    <p><strong>Your Registration Details:</strong></p>
+                    <p>
+                        <span class="emoji">👤</span> <strong>Username:</strong> {user.username}<br>
+                        <span class="emoji">📧</span> <strong>Email:</strong> {user.email}<br>
+                        <span class="emoji">🏢</span> <strong>Role:</strong> {role_display}
+                    </p>
+                </div>
+                
+                <div class="pending-notice">
+                    <p><strong><span class="emoji">⏳</span> Account Under Review</strong></p>
+                    <p>Your account is currently under review by our team. This verification process helps us ensure the quality and security of our platform.</p>
+                </div>
+                
+                <div class="next-steps">
+                    <p><strong><span class="emoji">📋</span> What Happens Next:</strong></p>
+                    <ul>
+                        <li><span class="emoji">1️⃣</span> Our team will review your registration details</li>
+                        <li><span class="emoji">2️⃣</span> Verification typically takes 1-2 business days</li>
+                        <li><span class="emoji">3️⃣</span> You will receive another email once your account is approved or if we need more information</li>
+                    </ul>
+                </div>
+                
+                <p>Please wait while we review your information. We appreciate your patience!</p>
+                
+                <p style="margin-top: 30px;">Thank you for your interest in joining the Kedah Tourism platform.</p>
+                
+                <p>Best regards,<br>
+                <strong>The Kedah Tourism Team</strong></p>
+            </div>
+            
+            <div class="footer">
+                <p><strong>Need Help?</strong></p>
+                <p>
+                    <span class="emoji">📞</span> Phone: +604-123-4567<br>
+                    <span class="emoji">📧</span> Email: support@kedahtourism.my
+                </p>
+                <p style="margin-top: 15px; font-size: 12px;">
+                    © 2025 Kedah Tourism Analytics. All rights reserved.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Plain text version (fallback for email clients that don't support HTML)
+        plain_message = f"""
+        Registration Received – Account Pending Verification
+        
+        Hello {user.first_name or user.username},
+        
+        Thank you for registering on the Kedah Tourism Analytics platform.
+        We have successfully received your application using this email address.
+        
+        Your Registration Details:
+        - Username: {user.username}
+        - Email: {user.email}
+        - Role: {role_display}
+        
+        Account Under Review
+        --------------------
+        Your account is currently under review by our team. 
+        This verification process helps us ensure the quality and security of our platform.
+        
+        What Happens Next:
+        1. Our team will review your registration details
+        2. Verification typically takes 1-2 business days
+        3. You will receive another email once your account is approved or if we need more information
+        
+        Please wait while we review your information. We appreciate your patience!
+        
+        Thank you for your interest in joining the Kedah Tourism platform.
+        
+        Best regards,
+        The Kedah Tourism Team
+        
+        ---
+        Need Help?
+        Phone: +604-123-4567
+        Email: support@kedahtourism.my
+        
+        © 2025 Kedah Tourism Analytics
+        """
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        logger.info(f"Registration pending email sent successfully to {user.email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send registration pending email to {user.email}: {str(e)}")
+        return False

@@ -298,7 +298,7 @@ class Event(models.Model):
             return Vendor.objects.none()
         
         vendors = []
-        for vendor in Vendor.objects.filter(is_approved=True):
+        for vendor in Vendor.objects.filter(is_active=True):
             if vendor.lat and vendor.lon:
                 R = 6371
                 lat1, lon1 = radians(self.lat), radians(self.lon)

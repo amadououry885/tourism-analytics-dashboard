@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import { OverviewMetrics } from '../components/OverviewMetrics';
 import { SocialMediaCharts } from '../components/SocialMediaCharts';
 import { PopularDestinations } from '../components/PopularDestinations';
-import { TransportAnalytics } from '../components/TransportAnalytics';
 import { EventsTimeline } from '../components/EventsTimeline';
 import { AccommodationStats } from '../components/AccommodationStats';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
+import { SentimentComparison } from '../components/SentimentComparison';
 import { RestaurantVendors } from '../components/RestaurantVendors';
 import AccommodationSearch from '../pages/accommodation/AccommodationSearch';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CitySelector } from '../components/CitySelector';
 
 export default function TourismDashboard() {
+  // NEW FLOW VERIFICATION - Remove after confirming
+  console.log('NEW FLOW ACTIVE - TourismDashboard.tsx');
+  
   const [searchParams] = useSearchParams();
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
@@ -69,13 +71,6 @@ export default function TourismDashboard() {
           </div>
         </div>
         
-        {/* Overview Metrics */}
-        <div className="bg-slate-900 border-t border-slate-800">
-          <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
-            <OverviewMetrics selectedCity={selectedCity} timeRange={timeRange} />
-          </div>
-        </div>
-        
         {/* Tabs Navigation - Professional */}
         <div className="w-full bg-white border-t border-slate-200 pb-2">
           <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-3">
@@ -84,7 +79,6 @@ export default function TourismDashboard() {
                 { id: 'destinations', label: '🗺️ Places' },
                 { id: 'restaurants', label: '🍽️ Food' },
                 { id: 'accommodation', label: '🏨 Stay' },
-                { id: 'transport', label: '🚌 Transport' },
                 { id: 'events', label: '📅 Events' },
                 { id: 'overview', label: '📊 Overview' },
               ].map((tab) => (
@@ -118,6 +112,8 @@ export default function TourismDashboard() {
           {activeTab === 'overview' && (
             <div className="space-y-6 h-full overflow-y-auto">
               <div className="flex flex-col gap-6">
+                {/* Most Visited & Least Visited Places - NEW */}
+                <SentimentComparison />
                 <SocialMediaCharts selectedCity={selectedCity} timeRange={timeRange} />
                 <SentimentAnalysis selectedCity={selectedCity} timeRange={timeRange} />
                 <AccommodationStats selectedCity={selectedCity} timeRange={timeRange} />
@@ -139,15 +135,16 @@ export default function TourismDashboard() {
             <AccommodationSearch />
           )}
 
-          {activeTab === 'transport' && (
-            <TransportAnalytics selectedCity={selectedCity} />
-          )}
-
           {activeTab === 'events' && (
             <EventsTimeline selectedCity={selectedCity} timeRange={timeRange} />
           )}
         </div>
       </main>
+      
+      {/* ✅ NEW UI ACTIVE MARKER - Remove after confirming */}
+      <div className="fixed bottom-2 right-2 bg-green-600 text-white px-3 py-1 text-xs rounded-full shadow-lg z-[99999]">
+        ✅ NEW UI v2.0 - Jan 16
+      </div>
     </div>
   );
 }

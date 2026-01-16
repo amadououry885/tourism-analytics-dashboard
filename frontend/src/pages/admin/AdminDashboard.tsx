@@ -7,7 +7,6 @@ import {
   XCircle, 
   LogOut,
   Calendar,
-  Bus,
   MapPin,
   Plus,
   Edit2,
@@ -25,7 +24,6 @@ import { useApi } from '../../hooks/useApi';
 import { FormInput } from '../../components/FormInput';
 import { FormSelect } from '../../components/FormSelect';
 import PlacesManagement from './PlacesManagement';
-import RegistrationFormBuilder from '../../components/RegistrationFormBuilder';
 
 interface PendingUser {
   id: number;
@@ -35,13 +33,6 @@ interface PendingUser {
   first_name: string;
   last_name: string;
   date_joined: string;
-  claimed_vendor_id?: number | null;
-  claimed_stay_id?: number | null;
-  business_verification_notes?: string;
-  phone_number?: string;
-  business_registration_number?: string;
-  verification_document?: string;
-  admin_notes?: string;
 }
 
 interface Event {
@@ -56,17 +47,6 @@ interface Event {
   image_url?: string;
   expected_attendance?: number;
   actual_attendance?: number;
-}
-
-interface TransportRoute {
-  id: number;
-  route_name: string;
-  transport_type: string;
-  departure_location: string;
-  arrival_location: string;
-  duration_minutes: number;
-  price: number;
-  city?: string;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -88,33 +68,17 @@ const AdminDashboard: React.FC = () => {
     max_capacity: null as number | null, // ✨ NEW: Maximum attendees
   };
   
-  const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'transport' | 'places'>('approvals');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'places'>('approvals');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
-  const [businessNames, setBusinessNames] = useState<{ [key: number]: string }>({});
-  const [adminNotes, setAdminNotes] = useState<{ [key: number]: string }>({});
   const [events, setEvents] = useState<Event[]>([]);
-  const [transportRoutes, setTransportRoutes] = useState<TransportRoute[]>([]);
   
   const [showEventModal, setShowEventModal] = useState(false);
-  const [showTransportModal, setShowTransportModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [formBuilderEvent, setFormBuilderEvent] = useState<Event | null>(null);
-  const [editingTransport, setEditingTransport] = useState<TransportRoute | null>(null);
 
   const [eventForm, setEventForm] = useState(emptyEventForm);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
-
-  const [transportForm, setTransportForm] = useState({
-    route_name: '',
-    transport_type: '',
-    departure_location: '',
-    arrival_location: '',
-    duration_minutes: '',
-    price: '',
-    city: '',  // ✅ ADD CITY FIELD
-  });
 
   const eventCategories = [
     { value: 'Festival', label: '🎉 Festival' },
@@ -124,14 +88,6 @@ const AdminDashboard: React.FC = () => {
     { value: 'Cultural', label: '🎭 Cultural' },
     { value: 'Food', label: '🍽️ Food & Dining' },
     { value: 'Other', label: '📅 Other' },
-  ];
-
-  const transportTypes = [
-    { value: 'Bus', label: '🚌 Bus' },
-    { value: 'Train', label: '🚆 Train' },
-    { value: 'Ferry', label: '⛴️ Ferry' },
-    { value: 'Taxi', label: '🚕 Taxi' },
-    { value: 'Shuttle', label: '🚐 Shuttle' },
   ];
 
   const cityOptions = [
@@ -145,7 +101,6 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     fetchPendingUsers();
     fetchEvents();
-    fetchTransportRoutes();
   }, []);
 
   // Add this new effect to scroll to top when tab changes
@@ -162,28 +117,6 @@ const AdminDashboard: React.FC = () => {
     try {
       const data = await request('/auth/admin/users/pending/');
       setPendingUsers(data);
-      
-      // Fetch business names for claimed businesses
-      const names: { [key: number]: string } = {};
-      for (const user of data) {
-        if (user.claimed_vendor_id) {
-          try {
-            const vendor = await request(`/vendors/${user.claimed_vendor_id}/`);
-            names[user.claimed_vendor_id] = vendor.name;
-          } catch (error) {
-            console.error(`Failed to fetch vendor ${user.claimed_vendor_id}:`, error);
-          }
-        }
-        if (user.claimed_stay_id) {
-          try {
-            const stay = await request(`/stays/${user.claimed_stay_id}/`);
-            names[user.claimed_stay_id] = stay.name;
-          } catch (error) {
-            console.error(`Failed to fetch stay ${user.claimed_stay_id}:`, error);
-          }
-        }
-      }
-      setBusinessNames(names);
     } catch (error) {
       console.error('Failed to fetch pending users:', error);
     }
@@ -211,54 +144,16 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const fetchTransportRoutes = async () => {
+  const handleApproveUser = async (userId: number) => {
     try {
-      console.log('Fetching transport routes...');
-      const data = await request('/transport/routes/');
-      console.log('Transport routes data:', data);
-      setTransportRoutes(data.results || data);
-    } catch (error) {
-      console.error('Failed to fetch transport routes:', error);
-    }
-  };
-
-  const handleApproveUser = async (userId: number, claimedVendorId?: number | null, claimedStayId?: number | null) => {
-    try {
-      const requestBody: any = {};
-      
-      if (claimedVendorId) {
-        requestBody.vendor_id = claimedVendorId;
-      }
-      if (claimedStayId) {
-        requestBody.stay_id = claimedStayId;
-      }
-      
-      // Add admin notes if provided
-      if (adminNotes[userId]) {
-        requestBody.admin_notes = adminNotes[userId];
-      }
-      
       await request(
         `/auth/admin/users/${userId}/approve/`,
-        { 
-          method: 'POST',
-          body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
-        },
-        '✅ User approved and business assigned successfully!'
+        { method: 'POST' },
+        '✅ User approved successfully!'
       );
       fetchPendingUsers();
-      // Clear admin notes for this user
-      setAdminNotes(prev => {
-        const updated = { ...prev };
-        delete updated[userId];
-        return updated;
-      });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to approve user:', error);
-      if (error.response?.data?.error) {
-        // Show specific error from backend (e.g., "This restaurant already has an owner")
-        alert(`Error: ${error.response.data.error}`);
-      }
     }
   };
 
@@ -302,29 +197,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleTransportSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (editingTransport) {
-        await request(
-          `/transport/routes/${editingTransport.id}/`,
-          { method: 'PUT', body: JSON.stringify(transportForm) },
-          '✅ Transport route updated successfully!'
-        );
-      } else {
-        await request(
-          '/transport/routes/',
-          { method: 'POST', body: JSON.stringify(transportForm) },
-          '✅ Transport route added successfully!'
-        );
-      }
-      fetchTransportRoutes();
-      resetTransportForm();
-    } catch (error) {
-      console.error('Failed to save transport route:', error);
-    }
-  };
-
   const handleDeleteEvent = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
@@ -332,17 +204,6 @@ const AdminDashboard: React.FC = () => {
         fetchEvents();
       } catch (error) {
         console.error('Failed to delete event:', error);
-      }
-    }
-  };
-
-  const handleDeleteTransport = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this route?')) {
-      try {
-        await request(`/transport/routes/${id}/`, { method: 'DELETE' }, '✅ Route deleted!');
-        fetchTransportRoutes();
-      } catch (error) {
-        console.error('Failed to delete route:', error);
       }
     }
   };
@@ -374,20 +235,6 @@ const AdminDashboard: React.FC = () => {
       setImageFile(file);
     };
     reader.readAsDataURL(file);
-  };
-
-  const resetTransportForm = () => {
-    setTransportForm({
-      route_name: '',
-      transport_type: '',
-      departure_location: '',
-      arrival_location: '',
-      duration_minutes: '',
-      price: '',
-      city: '',  // ✅ RESET CITY
-    });
-    setEditingTransport(null);
-    setShowTransportModal(false);
   };
 
   const handleLogout = () => {
@@ -447,7 +294,6 @@ const AdminDashboard: React.FC = () => {
           {[
             { id: 'approvals', label: 'User Approvals', icon: Users, badge: pendingUsers.length },
             { id: 'events', label: 'Events', icon: Calendar, badge: 0 },
-            { id: 'transport', label: 'Transport', icon: Bus, badge: 0 },
             { id: 'places', label: 'Places', icon: MapPin, badge: 0 },
           ].map((item) => {
             const Icon = item.icon;
@@ -708,34 +554,6 @@ const AdminDashboard: React.FC = () => {
                         <span style={{ fontWeight: '600' }}>Email:</span>
                         <span style={{ color: '#666' }}>{pendingUser.email}</span>
                       </div>
-                      {pendingUser.phone_number && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '16px' }}>📞</span>
-                          <span style={{ fontWeight: '600' }}>Phone:</span>
-                          <span style={{ color: '#666' }}>{pendingUser.phone_number}</span>
-                        </div>
-                      )}
-                      {pendingUser.business_registration_number && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '16px' }}>🏢</span>
-                          <span style={{ fontWeight: '600' }}>Business Reg #:</span>
-                          <span style={{ color: '#666' }}>{pendingUser.business_registration_number}</span>
-                        </div>
-                      )}
-                      {pendingUser.verification_document && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '16px' }}>📄</span>
-                          <span style={{ fontWeight: '600' }}>Document:</span>
-                          <a 
-                            href={pendingUser.verification_document} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ color: '#3b82f6', textDecoration: 'underline' }}
-                          >
-                            View Uploaded Document
-                          </a>
-                        </div>
-                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
                         <Clock style={{ width: '16px', height: '16px', color: '#d4a574' }} />
                         <span style={{ fontWeight: '600' }}>Registered:</span>
@@ -743,83 +561,9 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Claimed Business Info */}
-                    {(pendingUser.claimed_vendor_id || pendingUser.claimed_stay_id) && (
-                      <div style={{ 
-                        marginBottom: '16px', 
-                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
-                        border: '2px solid rgba(59, 130, 246, 0.3)',
-                        padding: '16px', 
-                        borderRadius: '12px' 
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                          {pendingUser.role === 'vendor' ? (
-                            <Store style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
-                          ) : (
-                            <Home style={{ width: '20px', height: '20px', color: '#3b82f6' }} />
-                          )}
-                          <span style={{ fontWeight: '700', color: '#3b82f6', fontSize: '14px' }}>
-                            🏢 Claimed Business
-                          </span>
-                        </div>
-                        <p style={{ 
-                          fontSize: '16px', 
-                          fontWeight: '600', 
-                          color: '#1e40af',
-                          margin: '0'
-                        }}>
-                          {pendingUser.claimed_vendor_id 
-                            ? businessNames[pendingUser.claimed_vendor_id] || `Vendor ID: ${pendingUser.claimed_vendor_id}`
-                            : businessNames[pendingUser.claimed_stay_id!] || `Stay ID: ${pendingUser.claimed_stay_id}`
-                          }
-                        </p>
-                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', marginBottom: '0' }}>
-                          This business will be automatically assigned upon approval
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Admin Notes */}
-                    <div style={{ marginBottom: '16px' }}>
-                      <label style={{ 
-                        display: 'block', 
-                        fontSize: '14px', 
-                        fontWeight: '600', 
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        📝 Admin Notes (Private)
-                      </label>
-                      <textarea
-                        value={adminNotes[pendingUser.id] || ''}
-                        onChange={(e) => setAdminNotes(prev => ({ ...prev, [pendingUser.id]: e.target.value }))}
-                        placeholder="Add verification notes, contact details, or comments..."
-                        rows={3}
-                        style={{
-                          width: '100%',
-                          padding: '12px',
-                          border: '2px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          fontFamily: 'inherit',
-                          resize: 'vertical',
-                          outline: 'none'
-                        }}
-                        onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                        onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-                      />
-                      <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', marginBottom: '0' }}>
-                        These notes are only visible to admins
-                      </p>
-                    </div>
-
                     <div style={{ display: 'flex', gap: '12px' }}>
                       <button
-                        onClick={() => handleApproveUser(
-                          pendingUser.id, 
-                          pendingUser.claimed_vendor_id, 
-                          pendingUser.claimed_stay_id
-                        )}
+                        onClick={() => handleApproveUser(pendingUser.id)}
                         disabled={loading}
                         style={{
                           flex: 1,
@@ -1028,13 +772,6 @@ const AdminDashboard: React.FC = () => {
 
                                 <div className="flex gap-1 pt-2 border-t border-gray-100">
                                   <button
-                                    onClick={() => setFormBuilderEvent(event)}
-                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition-colors font-bold shadow-sm"
-                                    title="Create/Edit Registration Form"
-                                  >
-                                    📋 Form
-                                  </button>
-                                  <button
                                     onClick={() => navigate(`/admin/events/${event.id}/registrations`)}
                                     className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors font-bold shadow-sm"
                                   >
@@ -1154,133 +891,6 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Transport Tab */}
-        {activeTab === 'transport' && (
-          <div>
-            {/* Action Card - Add Transport Route */}
-            <button
-              onClick={() => setShowTransportModal(true)}
-              style={{
-                width: '100%',
-                minHeight: '180px',
-                background: 'linear-gradient(135deg, #6ba587 0%, #5a9175 100%)',
-                border: 'none',
-                borderRadius: '16px',
-                padding: '32px',
-                cursor: 'pointer',
-                marginBottom: '24px',
-                boxShadow: '0 4px 12px rgba(107, 165, 135, 0.3)',
-                transition: 'all 0.2s',
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(107, 165, 135, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(107, 165, 135, 0.3)';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
-                    🚌 Add Transport Route
-                  </h2>
-                  <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', marginBottom: '16px' }}>
-                    Manage buses, trains, ferries, and taxis for tourists
-                  </p>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: 'white' }}>
-                    <Plus style={{ width: '20px', height: '20px' }} />
-                    Click to Add Route
-                  </div>
-                </div>
-                <Bus style={{ width: '64px', height: '64px', color: 'rgba(255,255,255,0.3)' }} />
-              </div>
-            </button>
-
-            {transportRoutes.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '80px 24px',
-                background: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              }}>
-                <Bus style={{ width: '128px', height: '128px', color: '#6ba587', margin: '0 auto 24px', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2d2d2d', marginBottom: '12px' }}>
-                  No Routes Yet 🚌
-                </h3>
-                <p style={{ fontSize: '18px', color: '#666', marginBottom: '32px', maxWidth: '500px', margin: '0 auto 32px' }}>
-                  Use the action card above to create your first transport route!
-                </p>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-6">
-                {transportRoutes.map((route) => (
-                  <div key={route.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all p-6 border-2 border-transparent hover:border-orange-200">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{route.route_name}</h3>
-                        <span className="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-sm font-semibold rounded-full">
-                          {route.transport_type}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 mb-4 bg-gray-50 p-4 rounded-lg">
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0" />
-                        <div>
-                          <span className="font-semibold">{route.departure_location}</span>
-                          <span className="mx-2">→</span>
-                          <span className="font-semibold">{route.arrival_location}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-5 h-5 text-orange-600" />
-                        <span className="font-medium">{route.duration_minutes} minutes</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-lg font-bold text-orange-600">
-                        💵 RM {route.price}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 pt-4 border-t">
-                      <button
-                        onClick={() => {
-                          setEditingTransport(route);
-                          setTransportForm({
-                            route_name: route.route_name,
-                            transport_type: route.transport_type,
-                            departure_location: route.departure_location,
-                            arrival_location: route.arrival_location,
-                            duration_minutes: route.duration_minutes.toString(),
-                            price: route.price.toString(),
-                            city: route.city || '',  // ✅ ADD CITY FIELD WHEN EDITING
-                          });
-                          setShowTransportModal(true);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTransport(route.id)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Places Tab */}
         {activeTab === 'places' && (
           <PlacesManagement />
@@ -1288,10 +898,10 @@ const AdminDashboard: React.FC = () => {
 
         {/* Event Modal */}
         {showEventModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50" onClick={(e) => e.target === e.currentTarget && resetEventForm()}>
-            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[95vh] flex flex-col" style={{ border: '3px solid #d4a574' }}>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={(e) => e.target === e.currentTarget && resetEventForm()}>
+            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{ border: '3px solid #d4a574' }}>
               {/* Vibrant Header */}
-              <div className="bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 px-8 py-8 flex-shrink-0">
+              <div className="bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 px-8 py-8">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
                     <span className="text-4xl">{editingEvent ? '✏️' : '🎉'}</span>
@@ -1307,7 +917,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto">
+              <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
                 <form onSubmit={handleEventSubmit} className="p-8 space-y-8">
                   {/* Step 1 */}
                   <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6 border-2 border-orange-200 shadow-sm">
@@ -1603,240 +1213,6 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
-
-        {/* Transport Modal */}
-        {showTransportModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50" onClick={(e) => e.target === e.currentTarget && resetTransportForm()}>
-            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[95vh] flex flex-col" style={{ border: '3px solid #6ba587' }}>
-              {/* Vibrant Header - Green Theme */}
-              <div className="bg-gradient-to-r from-green-500 via-green-400 to-teal-500 px-8 py-8 flex-shrink-0">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-4xl">{editingTransport ? '✏️' : '🚌'}</span>
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-bold text-white mb-1">
-                      {editingTransport ? 'Update Transport Route' : 'Add Transport Route'}
-                    </h2>
-                    <p className="text-green-100 text-base">
-                      {editingTransport ? 'Update route information below' : 'Help tourists get around easily!'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable Form Area */}
-              <div className="flex-1 overflow-y-auto">
-                <form onSubmit={handleTransportSubmit} className="p-8 space-y-8">
-                  {/* Step 1 */}
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        1
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-blue-900">🚌 Route Name</h3>
-                        <p className="text-sm text-blue-700">Make it easy for tourists to remember!</p>
-                      </div>
-                    </div>
-                    <FormInput
-                      label="Route Name"
-                      name="route_name"
-                      value={transportForm.route_name}
-                      onChange={(e) => setTransportForm({...transportForm, route_name: e.target.value})}
-                      placeholder="e.g., Kuah to Pantai Cenang Express"
-                      required
-                      hint="💡 Tip: Use departure and destination in the name"
-                    />
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        2
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-purple-900">🚍 Transport Type</h3>
-                        <p className="text-sm text-purple-700">What vehicle will tourists use?</p>
-                      </div>
-                    </div>
-
-                    <FormSelect
-                      label="Transport Type"
-                      name="transport_type"
-                      value={transportForm.transport_type}
-                      onChange={(e) => setTransportForm({...transportForm, transport_type: e.target.value})}
-                      options={transportTypes}
-                      required
-                      hint="💡 Choose the vehicle type tourists will use"
-                    />
-
-                    <div className="mt-6 pt-6 border-t-2 border-purple-200">
-                      <div className="mb-4">
-                        <h4 className="font-bold text-purple-900 mb-1 flex items-center gap-2">
-                          <span className="text-lg">🏙️</span> City
-                        </h4>
-                        <p className="text-sm text-purple-700">Which city is this route in?</p>
-                      </div>
-                    <FormSelect
-                      label="📍 City"
-                      name="city"
-                      value={transportForm.city}
-                      onChange={(e) => setTransportForm({...transportForm, city: e.target.value})}
-                      options={cityOptions}
-                      required
-                      hint="Select the city where this transport route operates"
-                    />
-                  </div>
-
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        3
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-green-900">📍 Route Locations</h3>
-                        <p className="text-sm text-green-700">Where does it start and end?</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="bg-white p-4 rounded-lg border-2 border-green-200">
-                        <FormInput
-                          label="📍 Departure Location (Starting Point)"
-                          name="departure_location"
-                          value={transportForm.departure_location}
-                          onChange={(e) => setTransportForm({...transportForm, departure_location: e.target.value})}
-                          placeholder="e.g., Kuah Jetty"
-                          required
-                          icon={<MapPin className="w-5 h-5" />}
-                          hint="Where does the journey begin?"
-                        />
-                    </div>
-
-                    <div className="flex justify-center">
-                      <div className="text-3xl text-green-500">↓</div>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg border-2 border-green-200">
-                      <FormInput
-                        label="🎯 Arrival Location (Destination)"
-                        name="arrival_location"
-                        value={transportForm.arrival_location}
-                        onChange={(e) => setTransportForm({...transportForm, arrival_location: e.target.value})}
-                        placeholder="e.g., Pantai Cenang Beach"
-                        required
-                        icon={<MapPin className="w-5 h-5" />}
-                        hint="Where does the journey end?"
-                      />
-                    </div>
-                    </div>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6 border-2 border-orange-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        4
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-orange-900">⏱️ Duration & Price</h3>
-                        <p className="text-sm text-orange-700">How long and how much?</p>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-white p-4 rounded-lg border-2 border-orange-200">
-                      <FormInput
-                        label="⏱️ Travel Duration"
-                        name="duration_minutes"
-                        type="number"
-                        value={transportForm.duration_minutes}
-                        onChange={(e) => setTransportForm({...transportForm, duration_minutes: e.target.value})}
-                        placeholder="e.g., 25"
-                        required
-                        icon={<Clock className="w-5 h-5" />}
-                        hint="How many minutes does the trip take?"
-                      />
-                    </div>
-
-                    <div className="bg-white p-4 rounded-lg border-2 border-orange-200">
-                      <FormInput
-                        label="💰 Ticket Price"
-                        name="price"
-                        type="number"
-                        step="0.01"
-                        value={transportForm.price}
-                        onChange={(e) => setTransportForm({...transportForm, price: e.target.value})}
-                        placeholder="e.g., 15"
-                        required
-                        icon={<DollarSign className="w-5 h-5" />}
-                        hint="How much does a ticket cost? (RM)"
-                      />
-                    </div>
-                    </div>
-                  </div>
-
-                  {/* Helpful Example Card */}
-                  <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-                    <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
-                      <span className="text-2xl">💡</span>
-                      Example Route:
-                    </h4>
-                    <div className="space-y-2 text-sm text-blue-800">
-                      <p>✅ <strong>Name:</strong> Kuah to Pantai Cenang Express</p>
-                      <p>✅ <strong>Type:</strong> 🚌 Bus</p>
-                      <p>✅ <strong>From:</strong> Kuah Jetty → <strong>To:</strong> Pantai Cenang Beach</p>
-                      <p>✅ <strong>Duration:</strong> 25 minutes</p>
-                      <p>✅ <strong>Price:</strong> RM 15.00</p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-4 sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-2">
-                    <button
-                      type="button"
-                      onClick={resetTransportForm}
-                      className="flex-1 px-8 py-4 bg-white border-3 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-bold text-lg shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                    >
-                      <span className="text-xl">❌</span> Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 px-8 py-4 bg-gradient-to-r from-green-500 via-green-400 to-teal-500 text-white rounded-xl hover:from-green-600 hover:via-green-500 hover:to-teal-600 transition-all font-bold text-lg shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:scale-105"
-                    >
-                      {loading ? (
-                        <><span className="text-xl">⏳</span> Saving...</>
-                      ) : editingTransport ? (
-                        <><span className="text-xl">✅</span> Update Route</>
-                      ) : (
-                        <><span className="text-xl">✅</span> Add Route</>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Registration Form Builder Modal */}
-        {formBuilderEvent && (
-          <RegistrationFormBuilder
-            eventId={formBuilderEvent.id}
-            eventTitle={formBuilderEvent.title}
-            onClose={() => setFormBuilderEvent(null)}
-            onSave={() => {
-              fetchEvents();
-              setFormBuilderEvent(null);
-            }}
-          />
         )}
         </div>
       </div>

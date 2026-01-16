@@ -27,21 +27,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Not authenticated - redirect to login
+  // Not authenticated - redirect to sign-in (NEW unified auth flow)
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/sign-in" replace />;
   }
 
   // Check if user role is allowed
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect based on user's actual role
+    // Redirect based on user's actual role (using NEW dashboard routes)
     switch (user.role) {
       case 'admin':
         return <Navigate to="/admin/dashboard" replace />;
       case 'vendor':
-        return <Navigate to="/vendor/my-restaurants" replace />;
+        return <Navigate to="/vendor/dashboard" replace />;
       case 'stay_owner':
-        return <Navigate to="/stays/my-stays" replace />;
+        return <Navigate to="/stay-owner/dashboard" replace />;
       default:
         return <Navigate to="/" replace />;
     }

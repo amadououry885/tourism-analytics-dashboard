@@ -9,6 +9,7 @@ import { MasterDetailLayout } from './MasterDetailLayout';
 import { ListItem } from './ListItem';
 import { DetailPanel } from './DetailPanel';
 import { ReservationModal } from './ReservationModal';
+import { FilterDropdown, SortDropdown, FilterOption, FEATURE_COLORS } from './FilterDropdown';
 import demoData from '../data/restaurants.demo.json';
 
 // City name mappings for display
@@ -55,22 +56,19 @@ interface RestaurantVendorsProps {
 }
 
 export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
-  // Transform demo data to match expected format
+  // Transform demo data to match expected Restaurant interface
   const transformedDemoData = (demoData.results || []).map((vendor: any) => ({
     id: vendor.id,
     name: vendor.name,
-    cuisine: vendor.cuisines?.[0] || 'General',
-    rating: vendor.rating_average || 4.0,
-    reviews: vendor.total_reviews || 0,
-    priceRange: vendor.price_range || '$$',
-    specialty: vendor.description || vendor.cuisines?.join(', ') || 'Local cuisine',
-    location: vendor.city || 'Kedah',
+    cuisine: vendor.cuisines?.[0] || vendor.cuisine || 'General',
+    rating: vendor.rating_average || vendor.rating || 4.0,
+    reviews: vendor.total_reviews || vendor.reviews || 0,
+    priceRange: vendor.price_range || vendor.priceRange || '$$',
+    specialty: vendor.description || vendor.cuisines?.join(', ') || vendor.specialty || 'Local cuisine',
     city: vendor.city?.toLowerCase().replace(/\s+/g, '-') || 'kedah',
-    image: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0] || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`,
-    visitors: Math.floor(Math.random() * 20000) + 1000,
-    badges: vendor.amenities?.halal_certified ? ['Halal'] : [],
-    isOpen: vendor.is_open ?? true,
-    isLive: vendor.is_open ?? true
+    image: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0] || vendor.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`,
+    visitors: vendor.visitors || Math.floor(Math.random() * 20000) + 1000,
+    badges: vendor.badges || []
   }));
 
   // State management - Initialize with transformed demo data for presentation
@@ -201,9 +199,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
           city: vendor.city?.toLowerCase().replace(/\s+/g, '-') || 'kedah',
           image: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0] || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=225&fit=crop`,
           visitors: Math.floor(Math.random() * 20000) + 1000, // Mock visitor count
-          badges: vendor.amenities?.halal_certified ? ['Halal'] : [],
-          isOpen: vendor.is_open ?? true,
-          isLive: vendor.is_open ?? true
+          badges: vendor.amenities?.halal_certified ? ['Halal'] : []
         }));
         
         // If backend has data, use it; otherwise keep demo data
@@ -231,7 +227,10 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
         restaurant.cuisine.toLowerCase().includes(searchQuery.toLowerCase()) ||
         restaurant.specialty.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesCuisine = selectedCuisine === 'all' || restaurant.cuisine === selectedCuisine;
+      // Multi-select cuisine filter: match if no categories selected OR if cuisine is in selected categories
+      const matchesCuisine = selectedCategories.length === 0 || 
+        selectedCategories.includes('all') || 
+        selectedCategories.includes(restaurant.cuisine);
       
       const matchesCity = selectedCity === 'all' || restaurant.city === selectedCity;
       
@@ -241,7 +240,7 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
       
       return matchesSearch && matchesCuisine && matchesCity && matchesPriceRange && matchesRating;
     });
-  }, [restaurants, searchQuery, selectedCuisine, selectedCity, selectedPriceRange, minRating]);
+  }, [restaurants, searchQuery, selectedCategories, selectedCity, selectedPriceRange, minRating]);
 
   // Sort restaurants
   const sortedRestaurants = useMemo(() => {
@@ -277,105 +276,136 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 p-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Loading restaurants...</h2>
+      <div className="space-y-6">
+        {/* Skeleton Filter Bar */}
+        <Card className="bg-white animate-pulse" style={{ border: '1px solid #E5E7EB' }}>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="h-10 bg-gray-200 rounded-lg w-[200px]"></div>
+              <div className="h-10 bg-gray-200 rounded-lg w-[120px]"></div>
+              <div className="h-10 bg-gray-200 rounded-lg w-[100px]"></div>
+              <div className="h-10 bg-gray-200 rounded-lg w-[100px]"></div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Skeleton Restaurant Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+              <div className="h-48 bg-gray-200 rounded-t-[14px]"></div>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="flex gap-2">
+                    <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                    <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       {/* Filters Bar */}
       <Card className="bg-white" style={{ border: '1px solid #E5E7EB' }}>
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap gap-3 items-center">
             {/* Search */}
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-[200px] max-w-[300px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
+                <input
                   type="text"
                   placeholder="Search restaurants..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white"
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm bg-white"
                 />
               </div>
             </div>
 
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2">
-              {cuisineTypes.slice(0, 5).map(cuisine => (
-                <button
-                  key={cuisine}
-                  onClick={() => toggleCategory(cuisine)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    selectedCategories.includes(cuisine)
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  {cuisine}
-                </button>
-              ))}
-            </div>
+            {/* Cuisine/Category Dropdown - Multi-select */}
+            <FilterDropdown
+              label="Cuisine"
+              icon={<Utensils className="w-4 h-4" />}
+              options={[
+                { value: 'all', label: 'All Cuisines', icon: '🍽️' },
+                ...cuisineTypes.map(cuisine => ({
+                  value: cuisine,
+                  label: cuisine,
+                  icon: cuisine.toLowerCase().includes('malay') ? '🥘' :
+                        cuisine.toLowerCase().includes('chinese') ? '🥡' :
+                        cuisine.toLowerCase().includes('indian') ? '🍛' :
+                        cuisine.toLowerCase().includes('western') ? '🍔' :
+                        cuisine.toLowerCase().includes('thai') ? '🍜' :
+                        cuisine.toLowerCase().includes('japanese') ? '🍣' :
+                        cuisine.toLowerCase().includes('seafood') ? '🦐' :
+                        cuisine.toLowerCase().includes('vegetarian') ? '🥗' : '🍴'
+                }))
+              ]}
+              value={selectedCategories}
+              onChange={(val) => setSelectedCategories(val as string[])}
+              multiple={true}
+              searchable={cuisineTypes.length > 5}
+              placeholder="Search cuisines..."
+              accentColor={FEATURE_COLORS.food}
+            />
 
-            {/* Price Range */}
-            <select
+            {/* Price Range Dropdown */}
+            <FilterDropdown
+              label="Price"
+              icon={<DollarSign className="w-4 h-4" />}
+              options={[
+                { value: 'all', label: 'All Prices', icon: '💰' },
+                { value: '$', label: '$ Budget', icon: '💵' },
+                { value: '$$', label: '$$ Moderate', icon: '💳' },
+                { value: '$$$', label: '$$$ Expensive', icon: '💎' },
+              ]}
               value={selectedPriceRange}
-              onChange={(e) => setSelectedPriceRange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Prices</option>
-              <option value="$">$ Budget</option>
-              <option value="$$">$$ Moderate</option>
-              <option value="$$$">$$$ Expensive</option>
-            </select>
+              onChange={(val) => setSelectedPriceRange(val as string)}
+              accentColor={FEATURE_COLORS.food}
+            />
 
-            {/* Rating */}
-            <select
-              value={minRating}
-              onChange={(e) => setMinRating(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="0">All Ratings</option>
-              <option value="4.5">⭐ 4.5+ Stars</option>
-              <option value="4">⭐ 4+ Stars</option>
-              <option value="3">⭐ 3+ Stars</option>
-            </select>
+            {/* Rating Dropdown */}
+            <FilterDropdown
+              label="Rating"
+              icon={<Star className="w-4 h-4" />}
+              options={[
+                { value: '0', label: 'All Ratings', icon: '⭐' },
+                { value: '4.5', label: '4.5+ Stars', icon: '🌟' },
+                { value: '4', label: '4+ Stars', icon: '⭐' },
+                { value: '3', label: '3+ Stars', icon: '✨' },
+              ]}
+              value={String(minRating)}
+              onChange={(val) => setMinRating(Number(val))}
+              accentColor={FEATURE_COLORS.food}
+            />
 
-            {/* Sort */}
-            <select
+            {/* Sort Dropdown */}
+            <SortDropdown
+              options={[
+                { value: 'rating', label: 'Highest Rated', icon: '⭐' },
+                { value: 'name', label: 'Name (A-Z)', icon: '🔤' },
+                { value: 'reviews', label: 'Most Reviews', icon: '💬' },
+                { value: 'price_asc', label: 'Price (Low→High)', icon: '📈' },
+                { value: 'price_desc', label: 'Price (High→Low)', icon: '📉' },
+              ]}
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="rating">Highest Rated</option>
-              <option value="name">Name (A-Z)</option>
-              <option value="reviews">Most Reviews</option>
-              <option value="price_asc">Price (Low to High)</option>
-              <option value="price_desc">Price (High to Low)</option>
-            </select>
-
-            {/* Clear Filters */}
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCuisine('all');
-                setSelectedPriceRange('all');
-                setMinRating(0);
-                setSelectedCategories([]);
-              }}
-              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-            >
-              Clear
-            </button>
+              onChange={(val) => setSortBy(val)}
+              accentColor={FEATURE_COLORS.food}
+            />
 
             {/* Results Count */}
-            <div className="text-sm text-gray-600 ml-auto">
-              <span className="font-bold text-blue-600">{sortedRestaurants.length}</span> restaurants
+            <div className="text-sm text-gray-600 ml-auto flex items-center gap-2">
+              <span className="font-bold" style={{ color: FEATURE_COLORS.food }}>{sortedRestaurants.length}</span>
+              <span className="text-gray-500">restaurants</span>
             </div>
           </div>
         </CardContent>
@@ -417,15 +447,10 @@ export function RestaurantVendors({ selectedCity }: RestaurantVendorsProps) {
                     }
                   ]}
                   badge={
-                    restaurant.isOpen ? (
-                      <Badge className="bg-green-600 border-green-600 font-bold shadow-sm" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
+                    restaurant.isLive && (
+                      <Badge className="bg-green-100 text-green-700 border-green-300">
                         <Clock className="w-3 h-3 mr-1" />
-                        OPEN
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-red-600 border-red-600 font-bold shadow-sm" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
-                        <Clock className="w-3 h-3 mr-1" />
-                        CLOSED
+                        Open
                       </Badge>
                     )
                   }

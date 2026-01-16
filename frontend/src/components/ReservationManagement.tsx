@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, Clock, CheckCircle, XCircle, Mail, Phone, MessageSquare } from 'lucide-react';
+import { Calendar, Users, Clock, CheckCircle, XCircle, Mail, Phone, MessageSquare, Trash2, Archive, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 
 interface Reservation {
@@ -23,7 +23,12 @@ interface ReservationManagementProps {
 export const ReservationManagement: React.FC<ReservationManagementProps> = ({ vendorId }) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled' | 'past'>('pending');
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showPast, setShowPast] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   useEffect(() => {
     fetchReservations();
@@ -45,180 +50,578 @@ export const ReservationManagement: React.FC<ReservationManagementProps> = ({ ve
     }
   };
 
-  const updateReservationStatus = async (reservationId: number, status: 'confirmed' | 'cancelled') => {
+  // Check if a reservation date has passed
+  const isPastReservation = (reservation: Reservation) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const reservationDate = new Date(reservation.date);
+    return reservationDate < today;
+  };
+
+  // Delete a reservation
+  const handleDelete = async (reservationId: number) => {
     try {
-      // Use the specific confirm/cancel endpoints that trigger email notifications
-      const endpoint = status === 'confirmed' 
-        ? `/reservations/${reservationId}/confirm/`
-        : `/reservations/${reservationId}/cancel/`;
-      
-      await api.post(endpoint);
+      setProcessingId(reservationId);
+      await api.delete(`/reservations/${reservationId}/`);
       await fetchReservations();
-      
-      // Show success message
-      const message = status === 'confirmed' 
-        ? 'Reservation confirmed! Customer will receive an email confirmation.'
-        : 'Reservation cancelled. Customer will be notified via email.';
-      alert(message);
+      setDeleteConfirm(null);
+      alert('🗑️ Reservation deleted successfully.');
     } catch (error) {
-      console.error('Error updating reservation:', error);
-      alert('Failed to update reservation status');
+      console.error('Error deleting reservation:', error);
+      alert('Failed to delete reservation');
+    } finally {
+      setProcessingId(null);
     }
   };
 
-  const filteredReservations = filter === 'all' 
-    ? reservations 
-    : reservations.filter(r => r.status === filter);
+  // Delete all past/cancelled reservations using bulk endpoint
+  const handleCleanup = async () => {
+    const toDelete = reservations.filter(r => 
+      isPastReservation(r) || r.status === 'cancelled'
+    );
+    
+    if (toDelete.length === 0) {
+      alert('No past or cancelled reservations to clean up.');
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${toDelete.length} past/cancelled reservation(s)? This cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      setProcessingId(-1); // Special indicator for bulk delete
+      // Use bulk cleanup endpoint
+      const response = await api.post('/reservations/cleanup/');
+      await fetchReservations();
+      alert(`🧹 ${response.data.message || `Cleaned up ${toDelete.length} reservation(s).`}`);
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+      alert('Some reservations could not be deleted.');
+      await fetchReservations();
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
-  const getStatusBadge = (status: string) => {
+  const handleConfirm = async (reservationId: number) => {
+    try {
+      setProcessingId(reservationId);
+      await api.post(`/reservations/${reservationId}/confirm/`);
+      await fetchReservations();
+      alert('✅ Reservation confirmed! Customer will receive an email confirmation.');
+    } catch (error) {
+      console.error('Error confirming reservation:', error);
+      alert('Failed to confirm reservation');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleReject = async (reservationId: number) => {
+    try {
+      setProcessingId(reservationId);
+      await api.post(`/reservations/${reservationId}/cancel/`, { reason: rejectReason });
+      await fetchReservations();
+      setShowRejectModal(null);
+      setRejectReason('');
+      alert('❌ Reservation rejected. Customer will be notified via email.');
+    } catch (error) {
+      console.error('Error rejecting reservation:', error);
+      alert('Failed to reject reservation');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // Separate reservations into upcoming and past
+  const upcomingReservations = reservations.filter(r => !isPastReservation(r));
+  const pastReservations = reservations.filter(r => isPastReservation(r));
+  
+  // Count for cleanup button
+  const cleanupCount = reservations.filter(r => isPastReservation(r) || r.status === 'cancelled').length;
+
+  // Filter logic - only show upcoming by default unless viewing past/all
+  const getFilteredReservations = () => {
+    let filtered = showPast ? reservations : upcomingReservations;
+    
+    if (filter === 'past') {
+      return pastReservations;
+    }
+    if (filter !== 'all') {
+      filtered = filtered.filter(r => r.status === filter);
+    }
+    return filtered;
+  };
+  
+  const filteredReservations = getFilteredReservations();
+
+  const getStatusBadge = (status: string, isPast: boolean = false) => {
     const styles = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      confirmed: 'bg-green-100 text-green-800 border-green-300',
-      cancelled: 'bg-red-100 text-red-800 border-red-300',
+      pending: { bg: '#fef3c7', color: '#92400e', border: '#f59e0b' },
+      confirmed: { bg: '#d1fae5', color: '#065f46', border: '#10b981' },
+      cancelled: { bg: '#fee2e2', color: '#991b1b', border: '#ef4444' },
     };
     const icons = {
       pending: '⏳',
       confirmed: '✅',
       cancelled: '❌',
     };
+    const style = styles[status as keyof typeof styles] || styles.pending;
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-semibold border-2 ${styles[status as keyof typeof styles]}`}>
-        {icons[status as keyof typeof icons]} {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span style={{
+        padding: '4px 12px',
+        borderRadius: '20px',
+        fontSize: '13px',
+        fontWeight: '600',
+        background: isPast ? '#e5e7eb' : style.bg,
+        color: isPast ? '#6b7280' : style.color,
+        border: `2px solid ${isPast ? '#9ca3af' : style.border}`
+      }}>
+        {isPast ? '📅' : icons[status as keyof typeof icons]} {isPast ? 'Past' : status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading reservations...</p>
+      <div style={{ textAlign: 'center', padding: '48px' }}>
+        <div style={{ width: '48px', height: '48px', border: '4px solid #e5e7eb', borderTopColor: '#d4a574', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+        <p style={{ marginTop: '16px', color: '#6b7280' }}>Loading reservations...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">📅 Reservations</h2>
-        <p className="text-gray-600">Manage your restaurant bookings</p>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '32px' }}>📅</span> Reservations
+          </h2>
+          <p style={{ color: '#6b7280' }}>Manage your restaurant bookings - approve or reject customer reservations</p>
+        </div>
+        
+        {/* Cleanup Button */}
+        {cleanupCount > 0 && (
+          <button
+            onClick={handleCleanup}
+            disabled={processingId === -1}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              background: processingId === -1 ? '#9ca3af' : '#f3f4f6',
+              color: '#374151',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontWeight: '500',
+              cursor: processingId === -1 ? 'not-allowed' : 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            <Trash2 style={{ width: '16px', height: '16px' }} />
+            {processingId === -1 ? 'Cleaning...' : `🧹 Clean Up (${cleanupCount})`}
+          </button>
+        )}
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6 border-b">
-        {(['all', 'pending', 'confirmed', 'cancelled'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setFilter(tab)}
-            className={`px-6 py-3 font-semibold transition-all ${
-              filter === tab
-                ? 'border-b-4 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            {tab !== 'all' && (
-              <span className="ml-2 px-2 py-1 bg-gray-200 rounded-full text-xs">
-                {reservations.filter(r => r.status === tab).length}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '2px solid #e5e7eb', paddingBottom: '0', flexWrap: 'wrap', alignItems: 'center' }}>
+        {(['pending', 'confirmed', 'all', 'cancelled', 'past'] as const).map((tab) => {
+          let count = 0;
+          if (tab === 'all') count = upcomingReservations.length;
+          else if (tab === 'past') count = pastReservations.length;
+          else count = upcomingReservations.filter(r => r.status === tab).length;
+          
+          const isActive = filter === tab;
+          const colors: Record<string, string> = {
+            all: '#6b7280',
+            pending: '#f59e0b',
+            confirmed: '#10b981',
+            cancelled: '#ef4444',
+            past: '#9ca3af'
+          };
+          const labels: Record<string, string> = {
+            all: '📋 Upcoming',
+            pending: '⏳ Pending',
+            confirmed: '✅ Confirmed',
+            cancelled: '❌ Cancelled',
+            past: '📅 Past'
+          };
+          return (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              style={{
+                padding: '12px 16px',
+                fontWeight: '600',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                borderBottom: isActive ? `3px solid ${colors[tab]}` : '3px solid transparent',
+                color: isActive ? colors[tab] : '#6b7280',
+                marginBottom: '-2px',
+                transition: 'all 0.2s',
+                fontSize: '14px'
+              }}
+            >
+              {labels[tab]}
+              <span style={{
+                marginLeft: '6px',
+                padding: '2px 8px',
+                background: isActive ? colors[tab] : '#e5e7eb',
+                color: isActive ? 'white' : '#6b7280',
+                borderRadius: '12px',
+                fontSize: '12px',
+                fontWeight: '700'
+              }}>
+                {count}
               </span>
-            )}
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
       {/* Reservations List */}
       {filteredReservations.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No {filter !== 'all' ? filter : ''} reservations</h3>
-          <p className="text-gray-500">
-            {filter === 'all' 
-              ? "You don't have any reservations yet. They'll appear here when customers book."
-              : `No ${filter} reservations found.`}
+        <div style={{ textAlign: 'center', padding: '48px', background: '#f9fafb', borderRadius: '16px' }}>
+          <Calendar style={{ width: '64px', height: '64px', color: '#d1d5db', margin: '0 auto 16px' }} />
+          <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+            No {filter === 'past' ? 'past' : filter !== 'all' ? filter : 'upcoming'} reservations
+          </h3>
+          <p style={{ color: '#6b7280' }}>
+            {filter === 'pending' 
+              ? "No pending reservations waiting for your approval."
+              : filter === 'past'
+              ? "No past reservations. Past reservations will appear here after their date passes."
+              : "Reservations will appear here when customers book."}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredReservations.map((reservation) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {filteredReservations.map((reservation) => {
+            const isPast = isPastReservation(reservation);
+            const canDelete = isPast || reservation.status === 'cancelled';
+            
+            return (
             <div
               key={reservation.id}
-              className="bg-white rounded-xl shadow-md border-2 border-gray-200 p-6 hover:shadow-lg transition-shadow"
+              style={{
+                background: isPast ? '#f9fafb' : 'white',
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                border: isPast ? '1px solid #d1d5db' : '1px solid #e5e7eb',
+                opacity: isPast ? 0.8 : 1
+              }}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900">{reservation.customer_name}</h3>
-                    {getStatusBadge(reservation.status)}
+              {/* Header Row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: isPast ? '#6b7280' : '#1f2937', marginBottom: '8px' }}>
+                    {reservation.customer_name}
+                  </h3>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {getStatusBadge(reservation.status, false)}
+                    {isPast && (
+                      <span style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        background: '#e5e7eb',
+                        color: '#6b7280',
+                        border: '2px solid #9ca3af'
+                      }}>
+                        📅 Past
+                      </span>
+                    )}
                   </div>
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Calendar className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">Date:</span>
-                      <span>{new Date(reservation.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Clock className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">Time:</span>
-                      <span>{reservation.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Users className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">Party Size:</span>
-                      <span>{reservation.party_size} guests</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Mail className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">Email:</span>
-                      <a href={`mailto:${reservation.customer_email}`} className="text-blue-600 hover:underline">
-                        {reservation.customer_email}
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Phone className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold">Phone:</span>
-                      <a href={`tel:${reservation.customer_phone}`} className="text-blue-600 hover:underline">
-                        {reservation.customer_phone}
-                      </a>
-                    </div>
-                  </div>
+                </div>
+                
+                {/* Delete Button for past/cancelled */}
+                {canDelete && (
+                  <button
+                    onClick={() => setDeleteConfirm(reservation.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      background: '#fee2e2',
+                      color: '#dc2626',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Trash2 style={{ width: '14px', height: '14px' }} />
+                    Delete
+                  </button>
+                )}
+              </div>
 
-                  {reservation.special_requests && (
-                    <div className="mt-4 p-3 bg-amber-50 border-l-4 border-amber-400 rounded">
-                      <div className="flex items-start gap-2">
-                        <MessageSquare className="w-5 h-5 text-amber-600 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-amber-900">Special Requests:</p>
-                          <p className="text-amber-800">{reservation.special_requests}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+              {/* Details Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPast ? '#9ca3af' : '#374151' }}>
+                  <Calendar style={{ width: '20px', height: '20px', color: isPast ? '#9ca3af' : '#d4a574' }} />
+                  <span style={{ fontWeight: '600' }}>Date:</span>
+                  <span>{new Date(reservation.date).toLocaleDateString()}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPast ? '#9ca3af' : '#374151' }}>
+                  <Clock style={{ width: '20px', height: '20px', color: isPast ? '#9ca3af' : '#d4a574' }} />
+                  <span style={{ fontWeight: '600' }}>Time:</span>
+                  <span>{reservation.time}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPast ? '#9ca3af' : '#374151' }}>
+                  <Users style={{ width: '20px', height: '20px', color: isPast ? '#9ca3af' : '#d4a574' }} />
+                  <span style={{ fontWeight: '600' }}>Party Size:</span>
+                  <span>{reservation.party_size} guests</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPast ? '#9ca3af' : '#374151' }}>
+                  <Mail style={{ width: '20px', height: '20px', color: isPast ? '#9ca3af' : '#d4a574' }} />
+                  <span style={{ fontWeight: '600' }}>Email:</span>
+                  <a href={`mailto:${reservation.customer_email}`} style={{ color: isPast ? '#9ca3af' : '#d4a574' }}>
+                    {reservation.customer_email}
+                  </a>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPast ? '#9ca3af' : '#374151' }}>
+                  <Phone style={{ width: '20px', height: '20px', color: isPast ? '#9ca3af' : '#d4a574' }} />
+                  <span style={{ fontWeight: '600' }}>Phone:</span>
+                  <a href={`tel:${reservation.customer_phone}`} style={{ color: isPast ? '#9ca3af' : '#d4a574' }}>
+                    {reservation.customer_phone}
+                  </a>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              {reservation.status === 'pending' && (
-                <div className="flex gap-3 mt-4 pt-4 border-t">
+              {/* Special Requests */}
+              {reservation.special_requests && (
+                <div style={{ marginTop: '16px', padding: '12px 16px', background: isPast ? '#f3f4f6' : '#fef3c7', borderLeft: `4px solid ${isPast ? '#9ca3af' : '#f59e0b'}`, borderRadius: '0 8px 8px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <MessageSquare style={{ width: '20px', height: '20px', color: isPast ? '#9ca3af' : '#d97706', marginTop: '2px' }} />
+                    <div>
+                      <p style={{ fontWeight: '600', color: isPast ? '#6b7280' : '#92400e', marginBottom: '4px' }}>Special Requests:</p>
+                      <p style={{ color: isPast ? '#9ca3af' : '#78350f' }}>{reservation.special_requests}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ACTION BUTTONS - Only show for pending reservations that are NOT past */}
+              {reservation.status === 'pending' && !isPast && (
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '12px', 
+                  marginTop: '20px', 
+                  paddingTop: '20px', 
+                  borderTop: '2px solid #e5e7eb' 
+                }}>
                   <button
-                    onClick={() => updateReservationStatus(reservation.id, 'confirmed')}
-                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                    onClick={() => handleConfirm(reservation.id)}
+                    disabled={processingId === reservation.id}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '14px 24px',
+                      background: processingId === reservation.id ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontWeight: '600',
+                      fontSize: '16px',
+                      cursor: processingId === reservation.id ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                      transition: 'all 0.2s'
+                    }}
                   >
-                    <CheckCircle className="w-5 h-5" />
-                    Confirm
+                    <CheckCircle style={{ width: '20px', height: '20px' }} />
+                    {processingId === reservation.id ? 'Processing...' : '✅ Approve Reservation'}
                   </button>
                   <button
-                    onClick={() => updateReservationStatus(reservation.id, 'cancelled')}
-                    className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                    onClick={() => setShowRejectModal(reservation.id)}
+                    disabled={processingId === reservation.id}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '14px 24px',
+                      background: processingId === reservation.id ? '#9ca3af' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontWeight: '600',
+                      fontSize: '16px',
+                      cursor: processingId === reservation.id ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                      transition: 'all 0.2s'
+                    }}
                   >
-                    <XCircle className="w-5 h-5" />
-                    Cancel
+                    <XCircle style={{ width: '20px', height: '20px' }} />
+                    ❌ Reject Reservation
                   </button>
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <Trash2 style={{ width: '48px', height: '48px', color: '#ef4444', margin: '0 auto 12px' }} />
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>
+                Delete Reservation?
+              </h3>
+              <p style={{ color: '#6b7280' }}>
+                This will permanently remove this reservation from your records. This action cannot be undone.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '480px',
+            width: '90%',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
+          }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#1f2937', marginBottom: '16px' }}>
+              ❌ Reject Reservation
+            </h3>
+            <p style={{ color: '#6b7280', marginBottom: '16px' }}>
+              Please provide a reason for rejecting this reservation (optional). The customer will be notified via email.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="e.g., We are fully booked at this time, Restaurant is closed for maintenance..."
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                minHeight: '100px',
+                resize: 'vertical',
+                marginBottom: '16px',
+                fontSize: '14px'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => { setShowRejectModal(null); setRejectReason(''); }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'white',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleReject(showRejectModal)}
+                disabled={processingId === showRejectModal}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {processingId === showRejectModal ? 'Rejecting...' : 'Reject Reservation'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 };
+

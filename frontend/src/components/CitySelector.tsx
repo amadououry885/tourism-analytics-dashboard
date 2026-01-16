@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, MapPin, Search } from 'lucide-react';
-import axios from 'axios';
+import api from '../lib/api';
 
 interface CitySelectorProps {
   selectedCity: string;
@@ -22,7 +22,7 @@ export function CitySelector({ selectedCity, onCityChange }: CitySelectorProps) 
         console.log('🔍 Fetching cities from Places API...');
 
         // ✅ Use the correct Places API endpoint (with trailing slash)
-        const response = await axios.get('/analytics/places/list/');
+        const response = await api.get('/analytics/places/list/');
         const places = response.data;
         
         console.log('🏙️ Fetched places from analytics API:', places);

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Image as ImageIcon, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import { Plus, Edit2, Trash2, Image as ImageIcon, X, UtensilsCrossed, Upload, Camera } from 'lucide-react';
 import api from '../services/api';
 
 interface MenuItem {
@@ -27,6 +28,10 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<MenuItem>({
     vendor: vendorId,
     name: '',
@@ -76,10 +81,35 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Create FormData for file upload
+      const submitData = new FormData();
+      submitData.append('vendor', String(formData.vendor));
+      submitData.append('name', formData.name);
+      submitData.append('description', formData.description);
+      submitData.append('category', formData.category);
+      submitData.append('price', formData.price);
+      submitData.append('currency', formData.currency);
+      submitData.append('is_available', String(formData.is_available));
+      submitData.append('is_vegetarian', String(formData.is_vegetarian));
+      submitData.append('is_halal', String(formData.is_halal));
+      submitData.append('spiciness_level', String(formData.spiciness_level));
+      formData.allergens.forEach(allergen => submitData.append('allergens', allergen));
+      
+      // Add image file if selected
+      if (selectedImage) {
+        submitData.append('image', selectedImage);
+      } else if (formData.image_url) {
+        submitData.append('image_url', formData.image_url);
+      }
+
       if (editingItem?.id) {
-        await api.put(`/menu-items/${editingItem.id}/`, formData);
+        await api.put(`/menu-items/${editingItem.id}/`, submitData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
       } else {
-        await api.post('/menu-items/', formData);
+        await api.post('/menu-items/', submitData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
       }
       await fetchMenuItems();
       resetForm();
@@ -92,6 +122,13 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   const handleEdit = (item: MenuItem) => {
     setEditingItem(item);
     setFormData(item);
+    // If item has an existing image URL, set it as preview
+    if (item.image_url) {
+      setImagePreview(item.image_url);
+    } else {
+      setImagePreview(null);
+    }
+    setSelectedImage(null);
     setShowForm(true);
   };
 
@@ -123,6 +160,59 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
     });
     setEditingItem(null);
     setShowForm(false);
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  // Handle image file selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image too large. Please choose an image under 5MB.');
+        return;
+      }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (PNG, JPG, etc.)');
+        return;
+      }
+      setSelectedImage(file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  // Handle drag and drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image too large. Please choose an image under 5MB.');
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Remove selected image
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setFormData({ ...formData, image_url: '' });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const toggleAllergen = (allergen: string) => {
@@ -133,6 +223,16 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
         : [...prev.allergens, allergen]
     }));
   };
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showForm) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [showForm]);
 
   // Group items by category
   const groupedItems = (Array.isArray(menuItems) ? menuItems : []).reduce((acc, item) => {
@@ -147,13 +247,18 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+      {/* Warm color band */}
+      <div style={{ height: '4px', background: 'linear-gradient(90deg, #e67e22 0%, #f5a855 50%, #e67e22 100%)' }} />
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Menu Management</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #eee' }}>
+        <div>
+          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#2d2d2d', margin: 0 }}>Menu Management</h2>
+          <p style={{ fontSize: '14px', color: '#888', margin: '4px 0 0 0' }}>Add and manage your menu items</p>
+        </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', background: 'linear-gradient(135deg, #e67e22 0%, #d35400 100%)', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500', boxShadow: '0 4px 12px rgba(230, 126, 34, 0.3)' }}
         >
           <Plus className="w-5 h-5" />
           Add Menu Item
@@ -161,63 +266,137 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
       </div>
 
       {/* Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="min-h-screen px-4 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {editingItem ? 'Edit Menu Item' : 'Add Menu Item'}
-                </h3>
-                <button onClick={resetForm} className="p-2 hover:bg-gray-100 rounded-lg">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+      {showForm && ReactDOM.createPortal(
+        <div 
+          style={{ 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999,
+            backgroundColor: 'rgba(0, 0, 0, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+          onClick={(e) => e.target === e.currentTarget && resetForm()}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full overflow-hidden relative"
+            style={{
+              maxWidth: '900px',
+              maxHeight: '95vh',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1)',
+              zIndex: 1000000,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={resetForm}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors bg-white rounded-full p-2 shadow-md border border-gray-200"
+              style={{ zIndex: 1000001 }}
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
+            {/* Header - White with warm accent */}
+            <div style={{ background: 'white', padding: '20px 24px', borderBottom: '1px solid #eee' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ padding: '10px', background: 'rgba(230, 126, 34, 0.1)', borderRadius: '10px' }}>
+                  <UtensilsCrossed style={{ width: '24px', height: '24px', color: '#e67e22' }} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#2d2d2d', margin: 0 }}>
+                    {editingItem ? 'Update Menu Item' : 'Add Menu Item'}
+                  </h2>
+                  <p style={{ fontSize: '14px', color: '#888', margin: '4px 0 0 0' }}>Fill in the details below</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Form Content - White background */}
+            <div 
+              style={{ 
+                flex: 1,
+                overflowY: 'auto',
+                padding: '24px',
+                background: 'white',
+                maxHeight: 'calc(95vh - 180px)', 
+                minHeight: '400px'
+              }}
+            >
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Section 1: Basic Information */}
+                <section style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: '12px', padding: '20px' }}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#2d2d2d', margin: 0 }}>Basic Information</h3>
+                    <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>Essential details about this menu item</p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Item Name *
+                      Item Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      placeholder="e.g., Nasi Lemak Special"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900 placeholder-gray-400 transition-all"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category *
-                    </label>
-                    <select
-                      required
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Category <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900 transition-all"
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Price (MYR) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900 placeholder-gray-400 transition-all"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Price (MYR) *
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Describe your dish..."
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900 placeholder-gray-400 transition-all resize-none"
                     />
                   </div>
 
@@ -231,173 +410,309 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
                       max="5"
                       value={formData.spiciness_level}
                       onChange={(e) => setFormData({ ...formData, spiciness_level: parseInt(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900 transition-all"
                     />
                   </div>
-                </div>
+                </section>
 
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
+                {/* Section 2: Dish Photo - Easy Upload for Non-Technical Users */}
+                <section style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: '12px', padding: '20px' }}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#2d2d2d', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Camera style={{ width: '20px', height: '20px', color: '#e67e22' }} />
+                      Dish Photo (optional)
+                    </h3>
+                    <p style={{ fontSize: '14px', color: '#888', marginTop: '4px' }}>
+                      Upload a photo from your phone or computer. This helps customers recognize your dish.
+                    </p>
+                  </div>
 
-                {/* Image URL */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL
-                  </label>
+                  {/* Hidden file input */}
                   <input
-                    type="url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    style={{ display: 'none' }}
                   />
-                </div>
 
-                {/* Checkboxes */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_available}
-                      onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
-                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                    />
-                    <span className="text-sm text-gray-700">Available</span>
-                  </label>
+                  {/* Show preview if image selected or existing URL */}
+                  {(imagePreview || formData.image_url) ? (
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <img
+                        src={imagePreview || formData.image_url}
+                        alt="Dish preview"
+                        style={{
+                          width: '200px',
+                          height: '150px',
+                          objectFit: 'cover',
+                          borderRadius: '12px',
+                          border: '2px solid #e67e22'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          right: '-8px',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          background: '#e74c3c',
+                          color: 'white',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                        }}
+                        title="Remove photo"
+                      >
+                        <X style={{ width: '16px', height: '16px' }} />
+                      </button>
+                      <p style={{ fontSize: '12px', color: '#27ae60', marginTop: '8px', fontWeight: '500' }}>
+                        ✓ Photo added successfully
+                      </p>
+                    </div>
+                  ) : (
+                    /* Upload area - drag & drop or click */
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      style={{
+                        border: '2px dashed #d4a574',
+                        borderRadius: '12px',
+                        padding: '40px 20px',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        background: 'rgba(212, 165, 116, 0.05)',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(212, 165, 116, 0.1)';
+                        e.currentTarget.style.borderColor = '#c89963';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(212, 165, 116, 0.05)';
+                        e.currentTarget.style.borderColor = '#d4a574';
+                      }}
+                    >
+                      <div style={{ 
+                        width: '60px', 
+                        height: '60px', 
+                        background: 'rgba(230, 126, 34, 0.1)', 
+                        borderRadius: '50%', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        margin: '0 auto 16px'
+                      }}>
+                        <Upload style={{ width: '28px', height: '28px', color: '#e67e22' }} />
+                      </div>
+                      <p style={{ fontSize: '16px', fontWeight: '600', color: '#2d2d2d', marginBottom: '4px' }}>
+                        Click to upload or drag & drop
+                      </p>
+                      <p style={{ fontSize: '14px', color: '#888' }}>
+                        PNG, JPG up to 5MB
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#aaa', marginTop: '12px' }}>
+                        📱 On mobile? Tap to open your camera or gallery
+                      </p>
+                    </div>
+                  )}
+                </section>
 
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_vegetarian}
-                      onChange={(e) => setFormData({ ...formData, is_vegetarian: e.target.checked })}
-                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                    />
-                    <span className="text-sm text-gray-700">Vegetarian</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_halal}
-                      onChange={(e) => setFormData({ ...formData, is_halal: e.target.checked })}
-                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                    />
-                    <span className="text-sm text-gray-700">Halal</span>
-                  </label>
-                </div>
-
-                {/* Allergens */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Allergens
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {allergenOptions.map(allergen => (
-                      <label key={allergen} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.allergens.includes(allergen)}
-                          onChange={() => toggleAllergen(allergen)}
-                          className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                        />
-                        <span className="text-sm text-gray-700">{allergen}</span>
-                      </label>
-                    ))}
+                {/* Section 3: Dietary Information */}
+                <section className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Dietary Information</h3>
+                    <p className="text-sm text-gray-500 mt-1">Help customers make informed choices</p>
                   </div>
-                </div>
 
-                {/* Submit Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-                  >
-                    {editingItem ? 'Update Item' : 'Add Item'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      formData.is_available
+                        ? 'bg-emerald-50 border-2 border-emerald-500'
+                        : 'bg-white border border-gray-200 hover:border-emerald-300'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={formData.is_available}
+                        onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <span className="text-sm text-gray-900">Available</span>
+                    </label>
+
+                    <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      formData.is_vegetarian
+                        ? 'bg-emerald-50 border-2 border-emerald-500'
+                        : 'bg-white border border-gray-200 hover:border-emerald-300'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={formData.is_vegetarian}
+                        onChange={(e) => setFormData({ ...formData, is_vegetarian: e.target.checked })}
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <span className="text-sm text-gray-900">Vegetarian</span>
+                    </label>
+
+                    <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                      formData.is_halal
+                        ? 'bg-emerald-50 border-2 border-emerald-500'
+                        : 'bg-white border border-gray-200 hover:border-emerald-300'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={formData.is_halal}
+                        onChange={(e) => setFormData({ ...formData, is_halal: e.target.checked })}
+                        className="w-4 h-4 text-emerald-600 rounded"
+                      />
+                      <span className="text-sm text-gray-900">Halal</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Allergens</label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {allergenOptions.map(allergen => (
+                        <label 
+                          key={allergen} 
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                            formData.allergens.includes(allergen)
+                              ? 'bg-emerald-50 border-2 border-emerald-500'
+                              : 'bg-white border border-gray-200 hover:border-emerald-300'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.allergens.includes(allergen)}
+                            onChange={() => toggleAllergen(allergen)}
+                            className="w-4 h-4 text-emerald-600 rounded"
+                          />
+                          <span className="text-sm text-gray-900">{allergen}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </section>
               </form>
             </div>
+
+            {/* Footer Buttons */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-all"
+              >
+                Cancel
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!formData.name || !formData.category || !formData.price}
+                className={`px-8 py-2.5 rounded-lg font-medium transition-all ${
+                  !formData.name || !formData.category || !formData.price
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'
+                }`}
+              >
+                {editingItem ? 'Update Item' : 'Add Item'}
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Menu Items Grid */}
       {Object.keys(groupedItems).length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No menu items yet. Add your first item to get started!</p>
+        <div className="px-6 py-16">
+          <div style={{ maxWidth: '350px', margin: '0 auto', textAlign: 'center' }}>
+            <div style={{ width: '80px', height: '80px', background: 'rgba(230, 126, 34, 0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <UtensilsCrossed style={{ width: '40px', height: '40px', color: '#e67e22' }} />
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#2d2d2d', marginBottom: '8px' }}>No menu items yet</h3>
+            <p style={{ color: '#666', marginBottom: '24px' }}>Add your first menu item to start building your restaurant's menu.</p>
+            <button
+              onClick={() => setShowForm(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: 'linear-gradient(135deg, #e67e22 0%, #d35400 100%)', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500', boxShadow: '0 4px 12px rgba(230, 126, 34, 0.3)' }}
+            >
+              <Plus className="w-5 h-5" />
+              Add Menu Item
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="space-y-8">
-          {Object.entries(groupedItems).map(([category, items]) => (
-            <div key={category}>
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                {category} ({items.length})
-              </h3>
+        <div style={{ padding: '24px' }}>
+          {Object.entries(groupedItems).map(([category, items], categoryIndex) => (
+            <div key={category} style={{ marginBottom: '32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e67e22' }} />
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#2d2d2d' }}>{category}</h3>
+                </div>
+                <span style={{ fontSize: '14px', color: '#888' }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map(item => (
-                  <div key={item.id} className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+                  <div key={item.id} className={`bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow border-l-4 ${
+                    categoryIndex % 4 === 0 ? 'border-l-orange-500' :
+                    categoryIndex % 4 === 1 ? 'border-l-emerald-500' :
+                    categoryIndex % 4 === 2 ? 'border-l-blue-500' :
+                    'border-l-purple-500'
+                  }`}>
                     {item.image_url && (
-                      <div className="h-40 bg-gray-100">
+                      <div className="h-36 bg-gray-50">
                         <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold text-gray-900">{item.name}</h4>
-                        <span className="text-emerald-600 font-bold">
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className="font-medium text-gray-900">{item.name}</h4>
+                        <span className="text-gray-900 font-semibold text-sm">
                           {item.currency} {parseFloat(item.price).toFixed(2)}
                         </span>
                       </div>
                       {item.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+                        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
                       )}
                       <div className="flex flex-wrap gap-1 mb-3">
                         {!item.is_available && (
-                          <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">Unavailable</span>
+                          <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded">Unavailable</span>
                         )}
                         {item.is_vegetarian && (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">🌱 Vegetarian</span>
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded">Vegetarian</span>
                         )}
                         {item.is_halal && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">☪️ Halal</span>
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded">Halal</span>
                         )}
                         {item.spiciness_level > 0 && (
-                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                            {'🌶️'.repeat(item.spiciness_level)}
+                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded">
+                            Spicy {'🌶️'.repeat(Math.min(item.spiciness_level, 3))}
                           </span>
                         )}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 pt-3 border-t border-gray-100">
                         <button
                           onClick={() => handleEdit(item)}
-                          className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-1"
+                          className="flex-1 px-3 py-1.5 text-gray-700 rounded hover:bg-gray-100 transition-colors flex items-center justify-center gap-1 text-sm font-medium"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3.5 h-3.5" />
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(item.id!)}
-                          className="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-1"
+                          className="flex-1 px-3 py-1.5 text-red-600 rounded hover:bg-red-50 transition-colors flex items-center justify-center gap-1 text-sm font-medium"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                           Delete
                         </button>
                       </div>

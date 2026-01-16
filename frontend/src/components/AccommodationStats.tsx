@@ -128,11 +128,39 @@ export function AccommodationStats({ selectedCity, timeRange }: AccommodationSta
     }));
 
   if (loading) {
-    return <div className="text-gray-900">Loading accommodation data...</div>;
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Chart Skeleton */}
+        <Card className="lg:col-span-2 bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <div className="h-5 bg-gray-200 rounded w-48 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-64"></div>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+            <div className="h-[200px] sm:h-[250px] md:h-[300px] bg-gray-100 rounded"></div>
+          </CardContent>
+        </Card>
+        {/* Stats Card Skeleton */}
+        <Card className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <div className="h-5 bg-gray-200 rounded w-32 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-48"></div>
+          </CardHeader>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0 space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex justify-between items-center">
+                <div className="h-4 bg-gray-200 rounded w-24"></div>
+                <div className="h-4 bg-gray-200 rounded w-16"></div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 animate-fadeIn">
       {/* Accommodation Overview Chart */}
       <Card className="lg:col-span-2 bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="p-3 sm:p-4 md:p-6">

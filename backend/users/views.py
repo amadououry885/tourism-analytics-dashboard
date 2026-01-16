@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import User, PasswordResetToken
 from .serializers import UserSerializer, UserRegistrationSerializer, UserApprovalSerializer
-from .emails import send_approval_email, send_rejection_email, send_password_reset_email
+from .emails import send_approval_email, send_rejection_email, send_password_reset_email, send_registration_pending_email
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,14 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        
+        # Send registration confirmation email (non-blocking)
+        try:
+            send_registration_pending_email(user)
+            logger.info(f"Registration email sent to {user.email}")
+        except Exception as e:
+            # Log error but don't block registration response
+            logger.error(f"Failed to send registration email to {user.email}: {str(e)}")
         
         # Different messages based on role
         if user.role in ('vendor', 'stay_owner'):

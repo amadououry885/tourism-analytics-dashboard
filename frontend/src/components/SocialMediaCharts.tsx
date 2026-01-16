@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import axios from 'axios';
+import api from '../lib/api';
 import { TrendingUp, Heart, MessageCircle, Share2, Eye, ThumbsUp, ThumbsDown, Meh, Twitter, Instagram, Facebook } from 'lucide-react';
 
 interface SocialMediaChartsProps {
@@ -89,9 +89,9 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
 
         // Fetch all data in parallel with city filtering
         const [engagementResponse, platformsResponse, metricsResponse] = await Promise.all([
-          axios.get(`/analytics/social-engagement/?${params.toString()}`),
-          axios.get(`/analytics/social/platforms/?${metricsParams.toString()}`),
-          axios.get(`/analytics/social/metrics/?${metricsParams.toString()}`)
+          api.get(`/analytics/social-engagement/?${params.toString()}`),
+          api.get(`/analytics/social/platforms/?${metricsParams.toString()}`),
+          api.get(`/analytics/social/metrics/?${metricsParams.toString()}`)
         ]);
 
         setEngagementData(engagementResponse.data || []);
@@ -106,7 +106,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
         }
         postsParams.append('range', range);
         
-        const postsResponse = await axios.get(`/posts/?${postsParams.toString()}`);
+        const postsResponse = await api.get(`/posts/?${postsParams.toString()}`);
         const allPosts = postsResponse.data?.results || [];
         
         // Simple keyword-based sentiment analysis
@@ -203,7 +203,7 @@ export function SocialMediaCharts({ detailed = false, selectedCity = 'all', time
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6 animate-fadeIn">
       {/* Main Engagement Chart */}
       <Card className="bg-white shadow-sm" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
         <CardHeader className="p-3 sm:p-4 md:p-6">
@@ -541,7 +541,7 @@ function CityComparisonChart({ timeRange }: CityComparisonProps) {
         
         const cityPromises = cities.map(async (city) => {
           try {
-            const response = await axios.get(`/analytics/social/metrics/?range=${range}&city=${encodeURIComponent(city)}`);
+            const response = await api.get(`/analytics/social/metrics/?range=${range}&city=${encodeURIComponent(city)}`);
             return {
               city,
               posts: response.data.total_posts || 0,

@@ -5,6 +5,8 @@ from django.utils.decorators import method_decorator
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework import status
 from datetime import datetime, timedelta
 from .models import Place, SocialPost, PostRaw, PostClean, SentimentTopic
 from .serializers import PlaceSerializer, SocialPostSerializer, PostCleanSerializer, SentimentTopicSerializer
@@ -700,3 +702,624 @@ class EventAttendanceTrendView(APIView):
             })
         
         return Response(result)
+
+
+class PlaceSentimentDetailView(APIView):
+    """
+    GET /api/analytics/places/{id}/sentiment/
+    Detailed sentiment analysis for a specific place.
+    Returns sentiment breakdown, time-based trends, and engagement insights.
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request, place_id):
+        from django.db.models import Count, Avg, Sum, Q
+        from django.db.models.functions import TruncMonth
+        from collections import defaultdict
+        
+        try:
+            place = Place.objects.get(id=place_id)
+        except Place.DoesNotExist:
+            return Response(
+                {'error': 'Place not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get all social posts for this place
+        posts = SocialPost.objects.filter(place=place)
+        
+        if not posts.exists():
+            # Return demo data for presentation purposes
+            return Response({
+                'place_id': place_id,
+                'place_name': place.name,
+                'category': place.category,
+                'has_data': True,
+                'is_demo_data': True,
+                'sentiment_summary': {
+                    'positive': 45,
+                    'neutral': 28,
+                    'negative': 12,
+                    'total_posts': 85,
+                    'positive_percentage': 52.9,
+                    'neutral_percentage': 32.9,
+                    'negative_percentage': 14.1,
+                    'average_score': 0.42,
+                    'rating': 4.2
+                },
+                'timeline': [
+                    {'date': '2024-01', 'positive': 8, 'neutral': 5, 'negative': 2, 'total': 15},
+                    {'date': '2024-02', 'positive': 7, 'neutral': 6, 'negative': 2, 'total': 15},
+                    {'date': '2024-03', 'positive': 9, 'neutral': 4, 'negative': 2, 'total': 15},
+                    {'date': '2024-04', 'positive': 8, 'neutral': 5, 'negative': 2, 'total': 15},
+                    {'date': '2024-05', 'positive': 7, 'neutral': 4, 'negative': 2, 'total': 13},
+                    {'date': '2024-06', 'positive': 6, 'neutral': 4, 'negative': 2, 'total': 12}
+                ],
+                'engagement_stats': {
+                    'total_likes': 4850,
+                    'total_comments': 1240,
+                    'total_shares': 680,
+                    'total_engagement': 6770,
+                    'average_engagement_per_post': 79.6,
+                    'engagement_trend': 'increasing'
+                },
+                'platform_breakdown': [
+                    {'platform': 'Instagram', 'posts': 35, 'avg_sentiment': 0.48, 'engagement': 3200},
+                    {'platform': 'Facebook', 'posts': 28, 'avg_sentiment': 0.38, 'engagement': 2150},
+                    {'platform': 'Twitter', 'posts': 22, 'avg_sentiment': 0.35, 'engagement': 1420}
+                ],
+                'top_positive_themes': [
+                    {'theme': 'Beautiful scenery', 'count': 18},
+                    {'theme': 'Great experience', 'count': 15},
+                    {'theme': 'Family friendly', 'count': 12}
+                ],
+                'top_negative_themes': [
+                    {'theme': 'Crowded', 'count': 5},
+                    {'theme': 'Parking issues', 'count': 4},
+                    {'theme': 'Expensive', 'count': 3}
+                ],
+                'recommendation': 'This destination has strong positive sentiment (52.9%) and growing engagement. Consider promoting during peak seasons.'
+            })
+        
+        # Sentiment summary
+        sentiment_counts = posts.values('sentiment').annotate(count=Count('id'))
+        total_posts = posts.count()
+        sentiment_summary = {
+            'total_posts': total_posts,
+            'positive': 0,
+            'neutral': 0,
+            'negative': 0,
+            'positive_percentage': 0,
+            'neutral_percentage': 0,
+            'negative_percentage': 0
+        }
+        
+        for item in sentiment_counts:
+            sentiment_type = item['sentiment'] or 'neutral'
+            count = item['count']
+            sentiment_summary[sentiment_type] = count
+            sentiment_summary[f'{sentiment_type}_percentage'] = round((count / total_posts) * 100, 1)
+        
+        # Average sentiment score and confidence
+        avg_metrics = posts.aggregate(
+            avg_sentiment_score=Avg('sentiment_score'),
+            avg_confidence=Avg('confidence')
+        )
+        
+        # Convert sentiment score to rating
+        avg_score = avg_metrics['avg_sentiment_score'] or 0
+        rating = ((avg_score + 1) / 2) * 4 + 1
+        
+        # Sentiment over time (monthly breakdown)
+        monthly_sentiment = posts.annotate(
+            month=TruncMonth('created_at')
+        ).values('month', 'sentiment').annotate(
+            count=Count('id')
+        ).order_by('month')
+        
+        # Organize by month
+        sentiment_timeline = defaultdict(lambda: {'positive': 0, 'neutral': 0, 'negative': 0})
+        for item in monthly_sentiment:
+            month_key = item['month'].strftime('%Y-%m')
+            sentiment_type = item['sentiment'] or 'neutral'
+            sentiment_timeline[month_key][sentiment_type] = item['count']
+        
+        timeline_data = [
+            {
+                'month': month,
+                'positive': data['positive'],
+                'neutral': data['neutral'],
+                'negative': data['negative']
+            }
+            for month, data in sorted(sentiment_timeline.items())
+        ]
+        
+        # Engagement metrics
+        engagement_stats = posts.aggregate(
+            total_engagement=Sum(F('likes') + F('comments') + F('shares')),
+            total_likes=Sum('likes'),
+            total_comments=Sum('comments'),
+            total_shares=Sum('shares'),
+            total_views=Sum('views')
+        )
+        
+        # Platform breakdown
+        platform_data = posts.values('platform').annotate(
+            count=Count('id'),
+            avg_sentiment=Avg('sentiment_score')
+        ).order_by('-count')
+        
+        # Top keywords (from content if available)
+        # This is a simplified version - in production you'd use NLP
+        top_keywords = []
+        
+        # Recommendation text based on sentiment
+        if sentiment_summary['positive_percentage'] > 70:
+            recommendation = "Highly recommended - visitors love this place!"
+        elif sentiment_summary['positive_percentage'] > 50:
+            recommendation = "Recommended - mostly positive visitor experiences"
+        elif sentiment_summary['negative_percentage'] > 50:
+            recommendation = "Mixed reviews - check recent feedback before visiting"
+        else:
+            recommendation = "Limited sentiment data - check other sources"
+        
+        return Response({
+            'place_id': place_id,
+            'place_name': place.name,
+            'place_category': place.category,
+            'place_city': place.city,
+            'has_data': True,
+            'sentiment_summary': sentiment_summary,
+            'rating': round(rating, 2),
+            'average_sentiment_score': round(avg_score, 3),
+            'average_confidence': round(avg_metrics['avg_confidence'] or 0, 1),
+            'sentiment_over_time': timeline_data,
+            'engagement_stats': engagement_stats,
+            'platform_breakdown': list(platform_data),
+            'top_keywords': top_keywords,
+            'recommendation': recommendation
+        })
+
+
+class PlacesByVisitLevelView(APIView):
+    """
+    GET /api/analytics/places/by-visit-level/?level=most|least|medium
+    Categorizes places by visit frequency with sentiment analysis.
+    Uses engagement percentiles to define most/medium/least visited tiers.
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        from django.db.models import Count, Avg, Sum, Q
+        import numpy as np
+        
+        level = request.GET.get('level', 'most')  # most, least, medium
+        
+        if level not in ['most', 'least', 'medium']:
+            return Response(
+                {'error': 'Invalid level. Must be "most", "least", or "medium"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get all places with their engagement metrics
+        places = Place.objects.annotate(
+            posts_count=Count('posts'),
+            total_engagement=Sum(F('posts__likes') + F('posts__comments') + F('posts__shares')),
+            avg_sentiment=Avg('posts__sentiment_score'),
+            positive_count=Count('posts', filter=Q(posts__sentiment='positive')),
+            neutral_count=Count('posts', filter=Q(posts__sentiment='neutral')),
+            negative_count=Count('posts', filter=Q(posts__sentiment='negative'))
+        ).filter(posts_count__gt=0)
+        
+        if not places.exists():
+            # Return demo data for presentation purposes
+            demo_places = {
+                'most': [
+                    {
+                        'id': 1,
+                        'name': 'Menara Alor Setar',
+                        'category': 'Landmark',
+                        'city': 'Alor Setar',
+                        'state': 'Kedah',
+                        'total_engagement': 5840,
+                        'posts_count': 42,
+                        'estimated_visitors': 6300,
+                        'sentiment': {
+                            'positive': 28,
+                            'neutral': 10,
+                            'negative': 4,
+                            'positive_percentage': 66.7,
+                            'neutral_percentage': 23.8,
+                            'negative_percentage': 9.5,
+                            'average_score': 0.52,
+                            'rating': 4.52
+                        },
+                        'price': 5.0,
+                        'is_free': False,
+                        'latitude': 6.1245,
+                        'longitude': 100.3673
+                    },
+                    {
+                        'id': 2,
+                        'name': 'Zahir Mosque',
+                        'category': 'Religious Site',
+                        'city': 'Alor Setar',
+                        'state': 'Kedah',
+                        'total_engagement': 4920,
+                        'posts_count': 38,
+                        'estimated_visitors': 5700,
+                        'sentiment': {
+                            'positive': 30,
+                            'neutral': 6,
+                            'negative': 2,
+                            'positive_percentage': 78.9,
+                            'neutral_percentage': 15.8,
+                            'negative_percentage': 5.3,
+                            'average_score': 0.68,
+                            'rating': 4.68
+                        },
+                        'price': None,
+                        'is_free': True,
+                        'latitude': 6.1198,
+                        'longitude': 100.3652
+                    }
+                ],
+                'medium': [
+                    {
+                        'id': 3,
+                        'name': 'Pekan Rabu Complex',
+                        'category': 'Shopping',
+                        'city': 'Alor Setar',
+                        'state': 'Kedah',
+                        'total_engagement': 2350,
+                        'posts_count': 24,
+                        'estimated_visitors': 3600,
+                        'sentiment': {
+                            'positive': 15,
+                            'neutral': 7,
+                            'negative': 2,
+                            'positive_percentage': 62.5,
+                            'neutral_percentage': 29.2,
+                            'negative_percentage': 8.3,
+                            'average_score': 0.45,
+                            'rating': 4.45
+                        },
+                        'price': None,
+                        'is_free': True,
+                        'latitude': 6.1187,
+                        'longitude': 100.3688
+                    }
+                ],
+                'least': [
+                    {
+                        'id': 4,
+                        'name': 'Nobat Tower',
+                        'category': 'Historical',
+                        'city': 'Alor Setar',
+                        'state': 'Kedah',
+                        'total_engagement': 680,
+                        'posts_count': 12,
+                        'estimated_visitors': 1800,
+                        'sentiment': {
+                            'positive': 8,
+                            'neutral': 3,
+                            'negative': 1,
+                            'positive_percentage': 66.7,
+                            'neutral_percentage': 25.0,
+                            'negative_percentage': 8.3,
+                            'average_score': 0.48,
+                            'rating': 4.48
+                        },
+                        'price': None,
+                        'is_free': True,
+                        'latitude': 6.1209,
+                        'longitude': 100.3640
+                    },
+                    {
+                        'id': 5,
+                        'name': 'Royal Museum',
+                        'category': 'Museum',
+                        'city': 'Alor Setar',
+                        'state': 'Kedah',
+                        'total_engagement': 520,
+                        'posts_count': 9,
+                        'estimated_visitors': 1350,
+                        'sentiment': {
+                            'positive': 6,
+                            'neutral': 2,
+                            'negative': 1,
+                            'positive_percentage': 66.7,
+                            'neutral_percentage': 22.2,
+                            'negative_percentage': 11.1,
+                            'average_score': 0.42,
+                            'rating': 4.42
+                        },
+                        'price': 3.0,
+                        'is_free': False,
+                        'latitude': 6.1220,
+                        'longitude': 100.3658
+                    }
+                ]
+            }
+            
+            selected_places = demo_places.get(level, [])
+            total_engagement = sum(p['total_engagement'] for p in selected_places)
+            avg_sentiment = sum(p['sentiment']['average_score'] for p in selected_places) / len(selected_places) if selected_places else 0
+            avg_rating = sum(p['sentiment']['rating'] for p in selected_places) / len(selected_places) if selected_places else 0
+            
+            pos_total = sum(p['sentiment']['positive'] for p in selected_places)
+            neu_total = sum(p['sentiment']['neutral'] for p in selected_places)
+            neg_total = sum(p['sentiment']['negative'] for p in selected_places)
+            total_sent = pos_total + neu_total + neg_total
+            
+            descriptions = {
+                'most': 'Most visited places (top 33% by engagement, ≥4500 engagement points)',
+                'medium': 'Moderately visited places (middle 33%, 1500-4500 engagement points)',
+                'least': 'Least visited places (bottom 33%, ≤1500 engagement points)'
+            }
+            
+            return Response({
+                'level': level,
+                'description': descriptions.get(level, 'Demo data'),
+                'total_places': len(selected_places),
+                'is_demo_data': True,
+                'aggregate_stats': {
+                    'total_engagement': total_engagement,
+                    'average_sentiment_score': round(avg_sentiment, 3),
+                    'average_rating': round(avg_rating, 2),
+                    'sentiment_distribution': {
+                        'positive': pos_total,
+                        'neutral': neu_total,
+                        'negative': neg_total,
+                        'positive_percentage': round((pos_total / total_sent) * 100, 1) if total_sent > 0 else 0,
+                        'neutral_percentage': round((neu_total / total_sent) * 100, 1) if total_sent > 0 else 0,
+                        'negative_percentage': round((neg_total / total_sent) * 100, 1) if total_sent > 0 else 0
+                    }
+                },
+                'places': selected_places
+            })
+        
+        # Calculate engagement percentiles
+        engagements = [p.total_engagement or 0 for p in places]
+        p33 = np.percentile(engagements, 33)
+        p67 = np.percentile(engagements, 67)
+        
+        # Filter by level
+        if level == 'most':
+            filtered_places = [p for p in places if (p.total_engagement or 0) >= p67]
+            description = f"Most visited places (top 33% by engagement, ≥{int(p67)} engagement points)"
+        elif level == 'least':
+            filtered_places = [p for p in places if (p.total_engagement or 0) <= p33]
+            description = f"Least visited places (bottom 33% by engagement, ≤{int(p33)} engagement points)"
+        else:  # medium
+            filtered_places = [p for p in places if p33 < (p.total_engagement or 0) < p67]
+            description = f"Moderately visited places (middle 33%, {int(p33)}-{int(p67)} engagement points)"
+        
+        # Format response
+        results = []
+        for place in filtered_places:
+            total_posts = place.posts_count or 1
+            sentiment_score = place.avg_sentiment or 0
+            rating = ((sentiment_score + 1) / 2) * 4 + 1
+            
+            results.append({
+                'id': place.id,
+                'name': place.name,
+                'category': place.category,
+                'city': place.city,
+                'state': place.state,
+                'total_engagement': place.total_engagement or 0,
+                'posts_count': place.posts_count,
+                'estimated_visitors': place.posts_count * 150,
+                'sentiment': {
+                    'positive': place.positive_count,
+                    'neutral': place.neutral_count,
+                    'negative': place.negative_count,
+                    'positive_percentage': round((place.positive_count / total_posts) * 100, 1),
+                    'neutral_percentage': round((place.neutral_count / total_posts) * 100, 1),
+                    'negative_percentage': round((place.negative_count / total_posts) * 100, 1),
+                    'average_score': round(sentiment_score, 3),
+                    'rating': round(rating, 2)
+                },
+                'price': float(place.price) if place.price else None,
+                'is_free': place.is_free,
+                'latitude': float(place.latitude) if place.latitude else None,
+                'longitude': float(place.longitude) if place.longitude else None
+            })
+        
+        # Sort by engagement descending
+        results.sort(key=lambda x: x['total_engagement'], reverse=True)
+        
+        # Calculate aggregate stats for this level
+        total_engagement = sum(p['total_engagement'] for p in results)
+        avg_sentiment_score = np.mean([p['sentiment']['average_score'] for p in results]) if results else 0
+        avg_rating = np.mean([p['sentiment']['rating'] for p in results]) if results else 0
+        
+        positive_total = sum(p['sentiment']['positive'] for p in results)
+        neutral_total = sum(p['sentiment']['neutral'] for p in results)
+        negative_total = sum(p['sentiment']['negative'] for p in results)
+        total_sentiment_posts = positive_total + neutral_total + negative_total
+        
+        return Response({
+            'level': level,
+            'description': description,
+            'total_places': len(results),
+            'aggregate_stats': {
+                'total_engagement': total_engagement,
+                'average_sentiment_score': round(avg_sentiment_score, 3),
+                'average_rating': round(avg_rating, 2),
+                'sentiment_distribution': {
+                    'positive': positive_total,
+                    'neutral': neutral_total,
+                    'negative': negative_total,
+                    'positive_percentage': round((positive_total / total_sentiment_posts) * 100, 1) if total_sentiment_posts > 0 else 0,
+                    'neutral_percentage': round((neutral_total / total_sentiment_posts) * 100, 1) if total_sentiment_posts > 0 else 0,
+                    'negative_percentage': round((negative_total / total_sentiment_posts) * 100, 1) if total_sentiment_posts > 0 else 0
+                }
+            },
+            'places': results
+        })
+
+
+class SentimentComparisonView(APIView):
+    """
+    GET /api/analytics/sentiment/comparison/
+    Compares sentiment distribution between most and least visited places.
+    Provides insights into how visitor sentiment correlates with visit frequency.
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        from django.db.models import Count, Avg, Sum, Q
+        import numpy as np
+        
+        # Get all places with engagement metrics
+        places = Place.objects.annotate(
+            posts_count=Count('posts'),
+            total_engagement=Sum(F('posts__likes') + F('posts__comments') + F('posts__shares')),
+            avg_sentiment=Avg('posts__sentiment_score'),
+            positive_count=Count('posts', filter=Q(posts__sentiment='positive')),
+            neutral_count=Count('posts', filter=Q(posts__sentiment='neutral')),
+            negative_count=Count('posts', filter=Q(posts__sentiment='negative'))
+        ).filter(posts_count__gt=0)
+        
+        if not places.exists():
+            # Return demo data for presentation purposes
+            return Response({
+                'is_demo_data': True,
+                'comparison': {
+                    'most_visited': {
+                        'category': 'Most Visited',
+                        'total_places': 2,
+                        'total_posts': 80,
+                        'total_engagement': 10760,
+                        'average_engagement_per_place': 5380.0,
+                        'sentiment_distribution': {
+                            'positive': 58,
+                            'neutral': 16,
+                            'negative': 6,
+                            'positive_percentage': 72.5,
+                            'neutral_percentage': 20.0,
+                            'negative_percentage': 7.5
+                        },
+                        'average_sentiment_score': 0.60,
+                        'average_rating': 4.60
+                    },
+                    'least_visited': {
+                        'category': 'Least Visited',
+                        'total_places': 2,
+                        'total_posts': 21,
+                        'total_engagement': 1200,
+                        'average_engagement_per_place': 600.0,
+                        'sentiment_distribution': {
+                            'positive': 14,
+                            'neutral': 5,
+                            'negative': 2,
+                            'positive_percentage': 66.7,
+                            'neutral_percentage': 23.8,
+                            'negative_percentage': 9.5
+                        },
+                        'average_sentiment_score': 0.45,
+                        'average_rating': 4.45
+                    }
+                },
+                'insights': [
+                    'Most visited places have 15.0% higher sentiment scores, suggesting visitor satisfaction drives popularity.',
+                    'Most visited places have 5.8% more positive reviews.',
+                    'Most visited places average 5380 engagement points vs 600 for least visited.',
+                    'Despite lower visit numbers, least visited places maintain strong positive sentiment (66.7%), indicating potential hidden gems.'
+                ],
+                'methodology': {
+                    'most_visited_threshold': '≥4500 engagement points (top 33%)',
+                    'least_visited_threshold': '≤1500 engagement points (bottom 33%)',
+                    'total_places_analyzed': 5,
+                    'engagement_calculation': 'likes + comments + shares',
+                    'rating_formula': '((sentiment_score + 1) / 2) * 4 + 1'
+                }
+            })
+        
+        # Calculate engagement percentiles
+        engagements = [p.total_engagement or 0 for p in places]
+        p33 = np.percentile(engagements, 33)
+        p67 = np.percentile(engagements, 67)
+        
+        # Categorize places
+        most_visited = [p for p in places if (p.total_engagement or 0) >= p67]
+        least_visited = [p for p in places if (p.total_engagement or 0) <= p33]
+        
+        def calculate_stats(place_list, category_name):
+            if not place_list:
+                return {
+                    'category': category_name,
+                    'total_places': 0,
+                    'message': 'No data available'
+                }
+            
+            positive_total = sum(p.positive_count for p in place_list)
+            neutral_total = sum(p.neutral_count for p in place_list)
+            negative_total = sum(p.negative_count for p in place_list)
+            total_posts = positive_total + neutral_total + negative_total
+            
+            avg_sentiment = np.mean([p.avg_sentiment for p in place_list if p.avg_sentiment is not None])
+            avg_rating = ((avg_sentiment + 1) / 2) * 4 + 1
+            
+            total_engagement = sum(p.total_engagement or 0 for p in place_list)
+            
+            return {
+                'category': category_name,
+                'total_places': len(place_list),
+                'total_posts': total_posts,
+                'total_engagement': total_engagement,
+                'average_engagement_per_place': round(total_engagement / len(place_list), 1),
+                'sentiment_distribution': {
+                    'positive': positive_total,
+                    'neutral': neutral_total,
+                    'negative': negative_total,
+                    'positive_percentage': round((positive_total / total_posts) * 100, 1) if total_posts > 0 else 0,
+                    'neutral_percentage': round((neutral_total / total_posts) * 100, 1) if total_posts > 0 else 0,
+                    'negative_percentage': round((negative_total / total_posts) * 100, 1) if total_posts > 0 else 0
+                },
+                'average_sentiment_score': round(avg_sentiment, 3),
+                'average_rating': round(avg_rating, 2)
+            }
+        
+        most_stats = calculate_stats(most_visited, 'Most Visited')
+        least_stats = calculate_stats(least_visited, 'Least Visited')
+        
+        # Calculate insights
+        insights = []
+        
+        if most_stats['total_places'] > 0 and least_stats['total_places'] > 0:
+            # Sentiment comparison
+            sentiment_diff = most_stats['average_sentiment_score'] - least_stats['average_sentiment_score']
+            if sentiment_diff > 0.1:
+                insights.append(f"Most visited places have {abs(sentiment_diff):.1%} higher sentiment scores, suggesting visitor satisfaction drives popularity.")
+            elif sentiment_diff < -0.1:
+                insights.append(f"Least visited places have {abs(sentiment_diff):.1%} higher sentiment scores, indicating hidden gems with great reviews.")
+            else:
+                insights.append("Sentiment scores are similar across visit levels, suggesting factors beyond visitor satisfaction drive popularity.")
+            
+            # Positive sentiment comparison
+            pos_diff = most_stats['sentiment_distribution']['positive_percentage'] - least_stats['sentiment_distribution']['positive_percentage']
+            if pos_diff > 10:
+                insights.append(f"Most visited places have {pos_diff:.1f}% more positive reviews.")
+            elif pos_diff < -10:
+                insights.append(f"Least visited places have {abs(pos_diff):.1f}% more positive reviews despite lower visit numbers.")
+            
+            # Engagement correlation
+            insights.append(f"Most visited places average {most_stats['average_engagement_per_place']:.0f} engagement points vs {least_stats['average_engagement_per_place']:.0f} for least visited.")
+        
+        return Response({
+            'comparison': {
+                'most_visited': most_stats,
+                'least_visited': least_stats
+            },
+            'insights': insights,
+            'methodology': {
+                'most_visited_threshold': f'≥{int(p67)} engagement points (top 33%)',
+                'least_visited_threshold': f'≤{int(p33)} engagement points (bottom 33%)',
+                'total_places_analyzed': places.count(),
+                'engagement_calculation': 'likes + comments + shares',
+                'rating_formula': '((sentiment_score + 1) / 2) * 4 + 1'
+            }
+        })

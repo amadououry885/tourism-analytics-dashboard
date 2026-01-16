@@ -5,7 +5,7 @@ export const NavigationButtons: React.FC = () => {
   const location = useLocation();
   
   const isBusinessActive = location.pathname.includes('/business');
-  const isSignInPath = location.pathname.includes('/login');
+  const isSignInPath = location.pathname.includes('/sign-in');
 
   return (
     <div className="flex items-center gap-3">
@@ -20,7 +20,7 @@ export const NavigationButtons: React.FC = () => {
         For Business
       </Link>
       <Link
-        to="/login"
+        to="/sign-in"
         className={`px-4 py-2 rounded-lg transition-colors font-medium shadow-sm ${
           isSignInPath
             ? 'bg-blue-600 text-white hover:bg-blue-700'

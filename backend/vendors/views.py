@@ -116,21 +116,21 @@ class VendorViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[])
     def make_reservation(self, request, pk=None):
-        """Create a reservation and send confirmation email (public endpoint)"""
-        from .emails import send_reservation_confirmation
+        """Create a reservation and send pending notification email (public endpoint)"""
+        from .emails import send_reservation_pending_notification
         
         vendor = self.get_object()
         serializer = ReservationSerializer(data=request.data)
         if serializer.is_valid():
-            reservation = serializer.save(vendor=vendor)
+            reservation = serializer.save(vendor=vendor, status='pending')
             
-            # Send confirmation email
-            email_sent = send_reservation_confirmation(reservation)
+            # Send pending notification email (NOT confirmation - that comes after vendor approves)
+            email_sent = send_reservation_pending_notification(reservation)
             
             return Response({
                 'reservation': serializer.data,
                 'email_sent': email_sent,
-                'message': 'Reservation created successfully!'
+                'message': 'Reservation request submitted! You will receive an email once the restaurant confirms.'
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -368,12 +368,49 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         return Reservation.objects.none()
     
+    def destroy(self, request, *args, **kwargs):
+        """Delete a reservation - vendors can only delete their own reservations"""
+        user = request.user
+        pk = kwargs.get('pk')
+        
+        # Get the reservation directly to avoid permission check on get_object()
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+        except Reservation.DoesNotExist:
+            return Response({'error': 'Reservation not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check permissions manually
+        if user.is_authenticated and user.role == 'admin':
+            # Admin can delete any reservation
+            reservation.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        elif user.is_authenticated and user.role == 'vendor':
+            # Vendor can only delete their own restaurant's reservations
+            vendor_ids = Vendor.objects.filter(owner=user).values_list('id', flat=True)
+            if reservation.vendor_id in vendor_ids:
+                reservation.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(
+                    {'error': 'You can only delete reservations for your own restaurants'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        else:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    
     @action(detail=True, methods=['post'], permission_classes=[])
     def confirm(self, request, pk=None):
-        """Confirm a reservation and send email"""
-        from .emails import send_reservation_status_update
+        """Confirm a reservation and send confirmation email"""
+        from .emails import send_reservation_confirmation
         
-        reservation = self.get_object()
+        # Get reservation directly to avoid permission issue
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+        except Reservation.DoesNotExist:
+            return Response({'error': 'Reservation not found'}, status=status.HTTP_404_NOT_FOUND)
         
         # Check if user owns the vendor for this reservation
         if request.user.is_authenticated and request.user.role == 'vendor':
@@ -382,24 +419,28 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'You can only confirm reservations for your own restaurants'}, 
                               status=status.HTTP_403_FORBIDDEN)
         
-        old_status = reservation.status
         reservation.status = 'confirmed'
         reservation.save()
         
-        email_sent = send_reservation_status_update(reservation, old_status)
+        # Send the actual confirmation email now that vendor has approved
+        email_sent = send_reservation_confirmation(reservation)
         
         return Response({
             'status': 'confirmed',
             'email_sent': email_sent,
-            'message': 'Reservation confirmed successfully!'
+            'message': 'Reservation confirmed successfully! Customer has been notified.'
         })
     
     @action(detail=True, methods=['post'], permission_classes=[])
     def cancel(self, request, pk=None):
-        """Cancel a reservation and send email"""
-        from .emails import send_reservation_status_update
+        """Cancel/Reject a reservation and send email with optional reason"""
+        from .emails import send_reservation_rejection
         
-        reservation = self.get_object()
+        # Get reservation directly to avoid permission issue
+        try:
+            reservation = Reservation.objects.get(pk=pk)
+        except Reservation.DoesNotExist:
+            return Response({'error': 'Reservation not found'}, status=status.HTTP_404_NOT_FOUND)
         
         # Check if user owns the vendor for this reservation
         if request.user.is_authenticated and request.user.role == 'vendor':
@@ -408,28 +449,49 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'You can only cancel reservations for your own restaurants'}, 
                               status=status.HTTP_403_FORBIDDEN)
         
-        old_status = reservation.status
         reservation.status = 'cancelled'
         reservation.save()
         
-        email_sent = send_reservation_status_update(reservation, old_status)
+        # Get rejection reason from request
+        reason = request.data.get('reason', '')
+        
+        email_sent = send_reservation_rejection(reservation, reason)
         
         return Response({
             'status': 'cancelled',
             'email_sent': email_sent,
-            'message': 'Reservation cancelled successfully!'
+            'message': 'Reservation rejected successfully!'
         })
-        from .emails import send_reservation_status_update
+    
+    @action(detail=False, methods=['post'])
+    def cleanup(self, request):
+        """Delete all past and cancelled reservations for the vendor"""
+        from datetime import date
         
-        reservation = self.get_object()
-        old_status = reservation.status
-        reservation.status = 'cancelled'
-        reservation.save()
+        user = request.user
+        if not user.is_authenticated or user.role not in ['vendor', 'admin']:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
         
-        email_sent = send_reservation_status_update(reservation, old_status)
+        today = date.today()
+        
+        if user.role == 'admin':
+            # Admin can cleanup all
+            queryset = Reservation.objects.filter(
+                Q(date__lt=today) | Q(status='cancelled')
+            )
+        else:
+            # Vendor can only cleanup their own
+            vendor_ids = Vendor.objects.filter(owner=user).values_list('id', flat=True)
+            queryset = Reservation.objects.filter(
+                vendor_id__in=vendor_ids
+            ).filter(
+                Q(date__lt=today) | Q(status='cancelled')
+            )
+        
+        count = queryset.count()
+        queryset.delete()
         
         return Response({
-            'status': 'cancelled',
-            'email_sent': email_sent,
-            'message': 'Reservation cancelled successfully!'
+            'deleted_count': count,
+            'message': f'Successfully deleted {count} past/cancelled reservations!'
         })

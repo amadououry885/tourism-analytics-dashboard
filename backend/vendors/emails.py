@@ -6,6 +6,149 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def send_reservation_pending_notification(reservation):
+    """
+    Send notification email when a reservation request is submitted (before vendor approval)
+    """
+    subject = f"Reservation Request Received - {reservation.vendor.name}"
+    
+    html_message = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+            .content {{ background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
+            .reservation-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b; }}
+            .detail-row {{ display: flex; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }}
+            .detail-label {{ font-weight: bold; width: 140px; color: #6b7280; }}
+            .detail-value {{ color: #1f2937; }}
+            .footer {{ text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }}
+            .pending-notice {{ background: #fef3c7; border: 2px solid #f59e0b; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1 style="margin: 0; font-size: 28px;">⏳ Reservation Request Received</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">Awaiting restaurant confirmation</p>
+            </div>
+            
+            <div class="content">
+                <p style="font-size: 18px;">Hi {reservation.customer_name},</p>
+                
+                <p style="font-size: 16px;">
+                    Thank you for your reservation request at <strong>{reservation.vendor.name}</strong>!
+                </p>
+                
+                <div class="pending-notice">
+                    <p style="margin: 0; font-weight: bold; color: #92400e;">
+                        ⏳ Your reservation is pending confirmation
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #92400e; font-size: 14px;">
+                        The restaurant will review your request and you'll receive another email once it's confirmed or if there are any issues.
+                    </p>
+                </div>
+                
+                <div class="reservation-box">
+                    <h2 style="margin-top: 0; color: #f59e0b;">📅 Requested Reservation Details</h2>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Restaurant:</div>
+                        <div class="detail-value">{reservation.vendor.name}</div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Date:</div>
+                        <div class="detail-value">{reservation.date.strftime('%A, %B %d, %Y')}</div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Time:</div>
+                        <div class="detail-value">{reservation.time.strftime('%I:%M %p')}</div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Party Size:</div>
+                        <div class="detail-value">{reservation.party_size} guests</div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-label">Location:</div>
+                        <div class="detail-value">{reservation.vendor.address or reservation.vendor.city}</div>
+                    </div>
+                    
+                    {f'<div class="detail-row" style="border: none;"><div class="detail-label">Special Requests:</div><div class="detail-value">{reservation.special_requests}</div></div>' if reservation.special_requests else ''}
+                </div>
+                
+                <p style="color: #6b7280; font-size: 14px;">
+                    Please wait for confirmation before arriving at the restaurant. 
+                    If you don't hear back within 24 hours, please contact the restaurant directly.
+                </p>
+                
+                {f'<p style="color: #4b5563;"><strong>📞 Contact:</strong> {reservation.vendor.contact_phone}</p>' if reservation.vendor.contact_phone else ''}
+                
+                <p style="margin-top: 30px;">
+                    Thank you for choosing us!<br>
+                    <em>The {reservation.vendor.name} Team</em>
+                </p>
+                
+                <div class="footer">
+                    <p>© 2025 Kedah Tourism Analytics Dashboard</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    plain_message = f"""
+    Reservation Request Received
+    
+    Hi {reservation.customer_name},
+    
+    Thank you for your reservation request at {reservation.vendor.name}!
+    
+    ⏳ YOUR RESERVATION IS PENDING CONFIRMATION
+    The restaurant will review your request and you'll receive another email once it's confirmed.
+    
+    REQUESTED RESERVATION DETAILS:
+    ------------------------------
+    Restaurant: {reservation.vendor.name}
+    Date: {reservation.date.strftime('%A, %B %d, %Y')}
+    Time: {reservation.time.strftime('%I:%M %p')}
+    Party Size: {reservation.party_size} guests
+    Location: {reservation.vendor.address or reservation.vendor.city}
+    {f'Special Requests: {reservation.special_requests}' if reservation.special_requests else ''}
+    
+    Please wait for confirmation before arriving at the restaurant.
+    If you don't hear back within 24 hours, please contact the restaurant directly.
+    {f'Contact: {reservation.vendor.contact_phone}' if reservation.vendor.contact_phone else ''}
+    
+    Thank you for choosing us!
+    The {reservation.vendor.name} Team
+    """
+    
+    try:
+        result = send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[reservation.customer_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        logger.info(f"✅ Reservation pending notification sent to {reservation.customer_email}")
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ Email sending issue (may still work with console backend): {e}")
+        if 'console' in settings.EMAIL_BACKEND.lower():
+            return True
+        return False
+
+
 def send_reservation_confirmation(reservation):
     """
     Send confirmation email when a reservation is made
@@ -131,6 +274,163 @@ def send_reservation_confirmation(reservation):
     except Exception as e:
         logger.warning(f"⚠️ Email sending issue (may still work with console backend): {e}")
         # For console backend, emails are printed to stdout - still count as success
+        if 'console' in settings.EMAIL_BACKEND.lower():
+            return True
+        return False
+
+
+def send_reservation_rejection(reservation, reason=''):
+    """
+    Send email when a reservation is rejected/cancelled by the vendor
+    """
+    subject = f"Reservation Update - {reservation.vendor.name}"
+    
+    reason_html = f"""
+    <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p style="font-weight: bold; color: #991b1b; margin-bottom: 8px;">📝 Message from the restaurant:</p>
+        <p style="color: #7f1d1d; margin: 0; font-style: italic;">"{reason}"</p>
+    </div>
+    """ if reason else ""
+    
+    reason_text = f"\nMessage from restaurant: {reason}" if reason else ""
+    
+    html_message = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+            .content {{ background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
+            .reservation-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #9ca3af; }}
+            .detail-row {{ padding: 10px 0; border-bottom: 1px solid #e5e7eb; }}
+            .detail-label {{ font-weight: bold; color: #6b7280; display: inline; }}
+            .detail-value {{ color: #9ca3af; display: inline; }}
+            .footer {{ text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }}
+            .sorry-box {{ background: #fef3c7; border: 2px solid #f59e0b; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1 style="margin: 0; font-size: 28px;">📋 Reservation Update</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">{reservation.vendor.name}</p>
+            </div>
+            
+            <div class="content">
+                <p style="font-size: 18px;">Dear {reservation.customer_name},</p>
+                
+                <div class="sorry-box">
+                    <p style="margin: 0; font-size: 18px; color: #92400e;">
+                        😔 <strong>We're Sorry</strong>
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #78350f;">
+                        Unfortunately, we are unable to accommodate your reservation request at this time.
+                    </p>
+                </div>
+                
+                <p style="font-size: 15px; color: #4b5563;">
+                    We sincerely apologize for any inconvenience this may cause. We truly appreciate your interest 
+                    in dining with us at <strong>{reservation.vendor.name}</strong>.
+                </p>
+                
+                {reason_html}
+                
+                <div class="reservation-box">
+                    <h3 style="margin-top: 0; color: #6b7280; font-size: 14px; text-transform: uppercase;">Your Original Request</h3>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Restaurant:</span>
+                        <span class="detail-value"> {reservation.vendor.name}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Date:</span>
+                        <span class="detail-value"> {reservation.date.strftime('%A, %B %d, %Y')}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Time:</span>
+                        <span class="detail-value"> {reservation.time.strftime('%I:%M %p')}</span>
+                    </div>
+                    
+                    <div class="detail-row" style="border: none;">
+                        <span class="detail-label">Party Size:</span>
+                        <span class="detail-value"> {reservation.party_size} guests</span>
+                    </div>
+                </div>
+                
+                <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+                    <p style="font-weight: bold; color: #065f46; margin-bottom: 8px;">💡 What you can do:</p>
+                    <ul style="color: #047857; margin: 0; padding-left: 20px;">
+                        <li>Try booking for a different date or time</li>
+                        <li>Check if a smaller party size might work</li>
+                        {f'<li>Contact us directly at <strong>{reservation.vendor.contact_phone}</strong> to discuss alternatives</li>' if reservation.vendor.contact_phone else '<li>Contact the restaurant directly to discuss alternatives</li>'}
+                    </ul>
+                </div>
+                
+                <p style="margin-top: 30px; color: #4b5563;">
+                    We hope to have the opportunity to serve you in the future. Thank you for your understanding!
+                </p>
+                
+                <p style="color: #6b7280;">
+                    Warm regards,<br>
+                    <strong>The {reservation.vendor.name} Team</strong>
+                </p>
+                
+                <div class="footer">
+                    <p>© 2025 Kedah Tourism Analytics Dashboard</p>
+                    <p style="font-size: 11px;">This email was sent regarding your reservation request.</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    plain_message = f"""
+    Reservation Update - {reservation.vendor.name}
+    
+    Dear {reservation.customer_name},
+    
+    We're Sorry 😔
+    
+    Unfortunately, we are unable to accommodate your reservation request at this time.
+    We sincerely apologize for any inconvenience this may cause.
+    {reason_text}
+    
+    YOUR ORIGINAL REQUEST:
+    ----------------------
+    Restaurant: {reservation.vendor.name}
+    Date: {reservation.date.strftime('%A, %B %d, %Y')}
+    Time: {reservation.time.strftime('%I:%M %p')}
+    Party Size: {reservation.party_size} guests
+    
+    WHAT YOU CAN DO:
+    - Try booking for a different date or time
+    - Check if a smaller party size might work
+    {f'- Contact us directly at {reservation.vendor.contact_phone} to discuss alternatives' if reservation.vendor.contact_phone else '- Contact the restaurant directly to discuss alternatives'}
+    
+    We hope to have the opportunity to serve you in the future. Thank you for your understanding!
+    
+    Warm regards,
+    The {reservation.vendor.name} Team
+    """
+    
+    try:
+        result = send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[reservation.customer_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        logger.info(f"✅ Reservation rejection email sent to {reservation.customer_email}")
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ Email sending issue (may still work with console backend): {e}")
         if 'console' in settings.EMAIL_BACKEND.lower():
             return True
         return False

@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api'; // Use configured API instance instead of raw axios
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Calendar, MapPin, Users, TrendingUp, Filter, Search, Clock, Navigation, Share2, ExternalLink, Bell, BellOff, UserCheck, UserX, Home, Utensils, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Users, TrendingUp, Filter, Search, Clock, Navigation, Share2, ExternalLink, Bell, BellOff, UserCheck, UserX, Home, Utensils, Loader2, Tag } from 'lucide-react';
+import { FilterDropdown, SortDropdown, ToggleFilter, FEATURE_COLORS } from './FilterDropdown';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { MasterDetailLayout } from './MasterDetailLayout';
 import { ListItem } from './ListItem';
@@ -26,7 +27,7 @@ interface Event {
   tags: string[];
   is_published?: boolean;
   expected_attendance?: number;
-  actual_attendance?: number;
+  actual_attendance?: number | null;
   lat?: number;
   lon?: number;
   image_url?: string;
@@ -391,11 +392,11 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
         // Fetch events with cache-busting and large page size to get all events
         const timestamp = new Date().getTime();
         const response = await api.get(`/events/?page_size=100&_t=${timestamp}`);
-        const backendEvents = response.data.results || response.data || [];
+        const backendEvents: Event[] = response.data.results || response.data || [];
         
         console.log('[EventsTimeline] Received events:', backendEvents.length, 'events');
         console.log('[EventsTimeline] First event:', backendEvents[0]);
-        console.log('[EventsTimeline] All event start dates:', backendEvents.map(e => ({ title: e.title, start: e.start_date })));
+        console.log('[EventsTimeline] All event start dates:', backendEvents.map((e: Event) => ({ title: e.title, start: e.start_date })));
         
         // If backend has data, use it; otherwise keep demo data
         if (backendEvents.length > 0) {
@@ -407,10 +408,10 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
           setNow(currentTime);
           
           // Calculate and log upcoming count immediately after setting
-          const upcoming = backendEvents.filter(e => new Date(e.start_date) > currentTime);
+          const upcoming = backendEvents.filter((e: Event) => new Date(e.start_date) > currentTime);
           console.log('[EventsTimeline] Upcoming events after fetch:', upcoming.length, 'out of', backendEvents.length);
           console.log('[EventsTimeline] Current time for comparison:', currentTime.toISOString());
-          console.log('[EventsTimeline] Upcoming event titles:', upcoming.map(e => e.title));
+          console.log('[EventsTimeline] Upcoming event titles:', upcoming.map((e: Event) => e.title));
           console.log('[EventsTimeline] Sample date parsing:', {
             rawDate: backendEvents[0]?.start_date,
             parsedDate: new Date(backendEvents[0]?.start_date).toISOString(),
@@ -551,7 +552,42 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   }, [selectedEvent?.id]);
 
   if (loading) {
-    return <div className="text-gray-900">Loading events...</div>;
+    return (
+      <div className="space-y-6">
+        {/* Skeleton Filter Bar */}
+        <Card className="bg-white animate-pulse" style={{ border: '1px solid #E5E7EB' }}>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="h-10 bg-gray-200 rounded-lg w-[200px]"></div>
+              <div className="h-10 bg-gray-200 rounded-lg w-[120px]"></div>
+              <div className="h-10 bg-gray-200 rounded-lg w-[100px]"></div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Skeleton Event Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+              <div className="h-40 bg-gray-200 rounded-t-[14px]"></div>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <div className="h-6 bg-purple-100 rounded-full w-20"></div>
+                    <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                  </div>
+                  <div className="h-5 bg-gray-200 rounded w-4/5"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  <div className="flex gap-4">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // Get unique event types for filter
@@ -567,9 +603,8 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
 
   // ✨ UPDATED: Handle view details with optional scroll-to-image
   const handleViewDetails = (event: Event, scrollToImage: boolean = false) => {
-    setSelectedModal(event);
+    setSelectedEvent(event);
     setShouldScrollToImage(scrollToImage);
-    setIsModalOpen(true);
   };
 
   const upcomingCount = events.filter(e => new Date(e.start_date) > now).length;
@@ -585,7 +620,7 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
   });
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6 animate-fadeIn">
       {/* ✨ NEW: Happening Now Section */}
       {happeningNowEvents.length > 0 && (
         <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl border-2 border-red-700 p-4 sm:p-5 md:p-6 shadow-2xl">
@@ -694,96 +729,70 @@ export function EventsTimeline({ selectedCity, timeRange }: EventsTimelineProps)
       {/* Filters and Search */}
       <Card className="bg-white/95 backdrop-blur-sm border-white/50 shadow-xl">
         <CardContent className="p-3 sm:p-4 md:pt-6">
-          <div className="space-y-3 sm:space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search events..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
-              />
-            </div>
-
-            {/* Filter Buttons Row */}
-            <div className="space-y-2 sm:space-y-3">
-              {/* Event Category Filter */}
-              <div className="flex items-start gap-2">
-                <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 mt-1 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs sm:text-sm font-medium text-gray-700 block mb-1.5 sm:mb-2">Category:</span>
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {[
-                      { value: 'all', label: 'All', icon: '🎯' },
-                      { value: 'sports', label: 'Sports', icon: '⚽' },
-                      { value: 'food', label: 'Food', icon: '🍽️' },
-                      { value: 'festival', label: 'Festival', icon: '🎉' },
-                      { value: 'cultural', label: 'Cultural', icon: '🎭' },
-                      { value: 'business', label: 'Business', icon: '💼' },
-                      { value: 'entertainment', label: 'Fun', icon: '🎪' },
-                      { value: 'exhibition', label: 'Exhibit', icon: '🎨' }
-                    ].map(({ value, label, icon }) => (
-                      <button
-                        key={value}
-                        onClick={() => setSelectedEventType(value)}
-                        className={`px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 rounded-full text-[10px] sm:text-xs md:text-sm font-medium transition-all flex items-center gap-1 sm:gap-2 ${
-                          selectedEventType === value
-                            ? 'bg-blue-600 text-white shadow-md transform scale-105'
-                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-blue-400'
-                        }`}
-                      >
-                        <span>{icon}</span>
-                        <span className="hidden sm:inline">{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px] max-w-[300px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search events..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                />
               </div>
             </div>
 
-            {/* Date Filter & Sort Row */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4">
-              {/* Date Filter */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-medium text-gray-700">Show:</span>
-                <div className="flex gap-1 sm:gap-2">
-                  {(['all', 'upcoming', 'past'] as const).map(filter => (
-                    <button
-                      key={filter}
-                      onClick={() => setDateFilter(filter)}
-                      className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-sm font-medium transition-all ${
-                        dateFilter === filter
-                          ? 'bg-purple-600 text-white shadow-md'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                      }`}
-                    >
-                      {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Category Dropdown */}
+            <FilterDropdown
+              label="Category"
+              icon={<Tag className="w-4 h-4" />}
+              options={[
+                { value: 'all', label: 'All Events', icon: '🎯' },
+                { value: 'sports', label: 'Sports', icon: '⚽' },
+                { value: 'food', label: 'Food', icon: '🍽️' },
+                { value: 'festival', label: 'Festival', icon: '🎉' },
+                { value: 'cultural', label: 'Cultural', icon: '🎭' },
+                { value: 'business', label: 'Business', icon: '💼' },
+                { value: 'entertainment', label: 'Entertainment', icon: '🎪' },
+                { value: 'exhibition', label: 'Exhibition', icon: '🎨' },
+              ]}
+              value={selectedEventType}
+              onChange={(val) => setSelectedEventType(val as string)}
+              accentColor={FEATURE_COLORS.events}
+            />
 
-              {/* Sort Dropdown */}
-              <div className="flex items-center gap-2 sm:ml-auto">
-                <span className="text-xs sm:text-sm font-medium text-gray-700">Sort:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'date' | 'name' | 'attendance')}
-                  className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="date">📅 Date</option>
-                  <option value="name">🔤 Name</option>
-                  <option value="attendance">👥 Attendance</option>
-                </select>
-              </div>
-            </div>
+            {/* Date Filter Dropdown */}
+            <FilterDropdown
+              label="When"
+              icon={<Calendar className="w-4 h-4" />}
+              options={[
+                { value: 'all', label: 'All Dates', icon: '📅' },
+                { value: 'upcoming', label: 'Upcoming', icon: '🔜' },
+                { value: 'past', label: 'Past Events', icon: '📜' },
+              ]}
+              value={dateFilter}
+              onChange={(val) => setDateFilter(val as 'all' | 'upcoming' | 'past')}
+              accentColor={FEATURE_COLORS.events}
+            />
 
-            {/* Results Counter */}
-            <div className="text-xs sm:text-sm text-gray-600 pt-2 border-t border-gray-200">
-              Showing <span className="font-bold text-gray-900">{filteredEvents.length}</span> of{' '}
-              <span className="font-bold text-gray-900">{events.length}</span> events
+            {/* Sort Dropdown */}
+            <SortDropdown
+              options={[
+                { value: 'date', label: 'Date', icon: '📅' },
+                { value: 'name', label: 'Name (A-Z)', icon: '🔤' },
+                { value: 'attendance', label: 'Attendance', icon: '👥' },
+              ]}
+              value={sortBy}
+              onChange={(val) => setSortBy(val as 'date' | 'name' | 'attendance')}
+              accentColor={FEATURE_COLORS.events}
+            />
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-600 ml-auto flex items-center gap-2">
+              <span className="font-bold" style={{ color: FEATURE_COLORS.events }}>{filteredEvents.length}</span>
+              <span className="text-gray-500">of {events.length} events</span>
             </div>
           </div>
         </CardContent>

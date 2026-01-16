@@ -77,6 +77,7 @@ const SignIn: React.FC = () => {
       toast.success('Login successful!');
       
       // Navigate based on user role with a small delay to ensure state is updated
+      console.log('NEW FLOW ACTIVE - SignIn.tsx');
       setTimeout(() => {
         switch (loggedInUser.role) {
           case 'admin':
@@ -92,8 +93,8 @@ const SignIn: React.FC = () => {
             navigate('/stay-owner/dashboard', { replace: true });
             break;
           default:
-            console.log('Navigating to default dashboard');
-            navigate('/dashboard', { replace: true });
+            console.log('No specific role, navigating to home');
+            navigate('/', { replace: true });
         }
       }, 100);
       
