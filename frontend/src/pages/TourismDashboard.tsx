@@ -42,14 +42,15 @@ export default function TourismDashboard() {
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <h1 className="text-white text-base sm:text-xl md:text-2xl font-bold">Kedah Tourism</h1>
+            <Link to="/" className="text-white text-base sm:text-xl md:text-2xl font-bold hover:text-teal-400 transition">Kedah Tourism</Link>
             
             {/* Right side: Nav Links + Filters */}
             <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
               {/* Nav Links */}
               <Link to="/" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 font-medium">🏠 Home</Link>
+              <Link to="/explore" className="text-[10px] sm:text-xs md:text-sm text-teal-400 font-medium">🔍 Explore</Link>
               <Link to="/business" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 hidden sm:inline">💼 Business</Link>
-              <Link to="/sign-in" className="text-[10px] sm:text-xs md:text-sm text-teal-400 font-medium hover:text-teal-300">🔑 Sign In</Link>
+              <Link to="/sign-in" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 font-medium">🔑 Sign In</Link>
               
               {/* Divider */}
               <span className="hidden sm:inline text-slate-600">|</span>

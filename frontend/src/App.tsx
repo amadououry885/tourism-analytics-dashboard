@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
+import HomePage from './pages/HomePage';
 import TourismDashboard from './pages/TourismDashboard';
 import BusinessLanding from './pages/BusinessLanding';
 // SignInPage uses the original AuthModal (centered popup with username + password only)
@@ -26,7 +27,12 @@ export default function App() {
         <div className="App min-h-screen bg-background text-foreground">
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<TourismDashboard />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/explore" element={<TourismDashboard />} />
+            <Route path="/places" element={<Navigate to="/explore?tab=destinations" replace />} />
+            <Route path="/food" element={<Navigate to="/explore?tab=restaurants" replace />} />
+            <Route path="/stays" element={<Navigate to="/explore?tab=accommodation" replace />} />
+            <Route path="/events" element={<Navigate to="/explore?tab=events" replace />} />
             <Route path="/business" element={<BusinessLanding />} />
             {/* /login redirects to /sign-in for unified auth flow */}
             <Route path="/login" element={<Navigate to="/sign-in" replace />} />
