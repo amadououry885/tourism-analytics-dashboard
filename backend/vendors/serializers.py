@@ -7,45 +7,37 @@ from rest_framework import serializers
 from .models import Vendor, MenuItem, OpeningHours, Review, Promotion, Reservation
 
 
+class AllergensField(serializers.Field):
+    """Custom field to handle allergens as JSON string or list"""
+    
+    def to_internal_value(self, data):
+        if data is None:
+            return []
+        if isinstance(data, list):
+            return data
+        if isinstance(data, str):
+            if not data or data == '[]':
+                return []
+            try:
+                parsed = json.loads(data)
+                return parsed if isinstance(parsed, list) else [parsed]
+            except (json.JSONDecodeError, TypeError):
+                return [data] if data else []
+        return []
+    
+    def to_representation(self, value):
+        return value if value else []
+
+
 class MenuItemSerializer(serializers.ModelSerializer):
     # Accept image file upload and convert to base64 data URL
     image = serializers.ImageField(write_only=True, required=False, allow_null=True)
-    # Override allergens to accept JSON string
-    allergens = serializers.JSONField(required=False, default=list)
+    # Custom field to handle allergens properly
+    allergens = AllergensField(required=False, default=list)
     
     class Meta:
         model = MenuItem
         fields = "__all__"
-    
-    def to_internal_value(self, data):
-        # Make a mutable copy
-        if hasattr(data, 'copy'):
-            data = data.copy()
-        else:
-            data = dict(data)
-        
-        # Handle allergens as JSON string from frontend
-        if 'allergens' in data:
-            allergens_value = data.get('allergens')
-            if isinstance(allergens_value, str):
-                try:
-                    # Try to parse as JSON
-                    parsed = json.loads(allergens_value)
-                    data['allergens'] = parsed if isinstance(parsed, list) else [parsed]
-                except (json.JSONDecodeError, TypeError):
-                    # If it's not valid JSON, treat as single value or empty
-                    if allergens_value and allergens_value != '[]':
-                        data['allergens'] = [allergens_value]
-                    else:
-                        data['allergens'] = []
-            elif isinstance(allergens_value, list):
-                data['allergens'] = allergens_value
-            else:
-                data['allergens'] = []
-        else:
-            data['allergens'] = []
-        
-        return super().to_internal_value(data)
     
     def create(self, validated_data):
         # Handle image file upload
