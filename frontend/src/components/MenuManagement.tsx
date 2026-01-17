@@ -88,6 +88,17 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
       return;
     }
     
+    // Validate required fields
+    if (!formData.name.trim()) {
+      alert('Please enter a menu item name');
+      return;
+    }
+    
+    if (!formData.category) {
+      alert('Please select a category');
+      return;
+    }
+    
     // Validate spiciness level
     const spicinessValue = isNaN(formData.spiciness_level) ? 0 : formData.spiciness_level;
     
@@ -95,16 +106,22 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
       // Create FormData for file upload
       const submitData = new FormData();
       submitData.append('vendor', String(formData.vendor));
-      submitData.append('name', formData.name);
-      submitData.append('description', formData.description);
+      submitData.append('name', formData.name.trim());
+      submitData.append('description', formData.description || '');
       submitData.append('category', formData.category);
       submitData.append('price', priceValue.toFixed(2));
-      submitData.append('currency', formData.currency);
+      submitData.append('currency', formData.currency || 'MYR');
       submitData.append('is_available', String(formData.is_available));
       submitData.append('is_vegetarian', String(formData.is_vegetarian));
       submitData.append('is_halal', String(formData.is_halal));
       submitData.append('spiciness_level', String(spicinessValue));
-      formData.allergens.forEach(allergen => submitData.append('allergens', allergen));
+      
+      // Send allergens as JSON string if there are any
+      if (formData.allergens && formData.allergens.length > 0) {
+        submitData.append('allergens', JSON.stringify(formData.allergens));
+      } else {
+        submitData.append('allergens', '[]');
+      }
       
       // Add image file if selected
       if (selectedImage) {
@@ -112,6 +129,14 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
       } else if (formData.image_url) {
         submitData.append('image_url', formData.image_url);
       }
+
+      console.log('Submitting menu item:', {
+        vendor: formData.vendor,
+        name: formData.name,
+        category: formData.category,
+        price: priceValue.toFixed(2),
+        allergens: formData.allergens
+      });
 
       if (editingItem?.id) {
         await api.put(`/menu-items/${editingItem.id}/`, submitData, {
@@ -124,9 +149,11 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
       }
       await fetchMenuItems();
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving menu item:', error);
-      alert('Failed to save menu item');
+      // Show more detailed error message
+      const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : 'Failed to save menu item';
+      alert(`Error: ${errorMsg}`);
     }
   };
 

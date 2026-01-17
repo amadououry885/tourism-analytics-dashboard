@@ -1,6 +1,7 @@
 # backend/vendors/serializers.py
 from datetime import datetime
 import base64
+import json
 from django.db.models import Avg
 from rest_framework import serializers
 from .models import Vendor, MenuItem, OpeningHours, Review, Promotion, Reservation
@@ -13,6 +14,23 @@ class MenuItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuItem
         fields = "__all__"
+    
+    def to_internal_value(self, data):
+        # Handle allergens as JSON string from frontend
+        if 'allergens' in data:
+            allergens_value = data.get('allergens')
+            if isinstance(allergens_value, str):
+                try:
+                    # Try to parse as JSON
+                    data = data.copy() if hasattr(data, 'copy') else dict(data)
+                    data['allergens'] = json.loads(allergens_value)
+                except (json.JSONDecodeError, TypeError):
+                    # If it's not valid JSON, treat as single value or empty
+                    if allergens_value:
+                        data['allergens'] = [allergens_value]
+                    else:
+                        data['allergens'] = []
+        return super().to_internal_value(data)
     
     def create(self, validated_data):
         # Handle image file upload
