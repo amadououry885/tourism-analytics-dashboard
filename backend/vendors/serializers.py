@@ -10,26 +10,41 @@ from .models import Vendor, MenuItem, OpeningHours, Review, Promotion, Reservati
 class MenuItemSerializer(serializers.ModelSerializer):
     # Accept image file upload and convert to base64 data URL
     image = serializers.ImageField(write_only=True, required=False, allow_null=True)
+    # Override allergens to accept JSON string
+    allergens = serializers.JSONField(required=False, default=list)
     
     class Meta:
         model = MenuItem
         fields = "__all__"
     
     def to_internal_value(self, data):
+        # Make a mutable copy
+        if hasattr(data, 'copy'):
+            data = data.copy()
+        else:
+            data = dict(data)
+        
         # Handle allergens as JSON string from frontend
         if 'allergens' in data:
             allergens_value = data.get('allergens')
             if isinstance(allergens_value, str):
                 try:
                     # Try to parse as JSON
-                    data = data.copy() if hasattr(data, 'copy') else dict(data)
-                    data['allergens'] = json.loads(allergens_value)
+                    parsed = json.loads(allergens_value)
+                    data['allergens'] = parsed if isinstance(parsed, list) else [parsed]
                 except (json.JSONDecodeError, TypeError):
                     # If it's not valid JSON, treat as single value or empty
-                    if allergens_value:
+                    if allergens_value and allergens_value != '[]':
                         data['allergens'] = [allergens_value]
                     else:
                         data['allergens'] = []
+            elif isinstance(allergens_value, list):
+                data['allergens'] = allergens_value
+            else:
+                data['allergens'] = []
+        else:
+            data['allergens'] = []
+        
         return super().to_internal_value(data)
     
     def create(self, validated_data):
