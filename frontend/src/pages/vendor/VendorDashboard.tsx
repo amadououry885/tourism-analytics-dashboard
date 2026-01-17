@@ -21,6 +21,11 @@ import {
   ArrowRight,
   Save,
   Calendar,
+  TrendingUp,
+  Star,
+  Eye,
+  DollarSign,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
@@ -73,7 +78,32 @@ interface Restaurant {
   is_open: boolean;
   owner?: number;
   owner_username?: string;
+  rating?: number;
+  total_reviews?: number;
 }
+
+// Dark theme colors for Vendor Portal (Orange/Amber accent)
+const theme = {
+  background: '#0f172a',
+  cardBg: '#1e293b',
+  cardBgHover: '#334155',
+  primary: '#f97316',       // Orange-500
+  primaryLight: '#fb923c',  // Orange-400
+  primaryDark: '#ea580c',   // Orange-600
+  primaryMuted: 'rgba(249, 115, 22, 0.15)',
+  text: '#f8fafc',
+  textSecondary: '#94a3b8',
+  textMuted: '#64748b',
+  border: '#334155',
+  success: '#22c55e',
+  successMuted: 'rgba(34, 197, 94, 0.15)',
+  danger: '#ef4444',
+  dangerMuted: 'rgba(239, 68, 68, 0.15)',
+  warning: '#eab308',
+  warningMuted: 'rgba(234, 179, 8, 0.15)',
+  purple: '#a855f7',
+  purpleMuted: 'rgba(168, 85, 247, 0.15)',
+};
 
 const VendorDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -87,6 +117,7 @@ const VendorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menu' | 'hours' | 'reservations'>('restaurants');
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [formStep, setFormStep] = useState<'basic' | 'details' | 'online' | 'amenities'>('basic');
+  const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
 
   // Debug logging
   useEffect(() => {
@@ -140,19 +171,33 @@ const VendorDashboard: React.FC = () => {
   useEffect(() => {
     console.log('[VendorDashboard] Component mounted, user:', user);
     fetchRestaurants();
+    fetchPendingReservations();
   }, []);
+
+  // Fetch pending reservations count across all vendor's restaurants
+  const fetchPendingReservations = async () => {
+    try {
+      const response = await request('/reservations/');
+      const data = response?.results || response || [];
+      const pendingCount = Array.isArray(data) 
+        ? data.filter((r: any) => r.status === 'pending').length 
+        : 0;
+      setPendingReservationsCount(pendingCount);
+    } catch (error) {
+      console.error('Failed to fetch reservations:', error);
+      setPendingReservationsCount(0);
+    }
+  };
 
   const fetchRestaurants = async () => {
     try {
       console.log('[VendorDashboard] Fetching vendors...');
       console.log('[VendorDashboard] User authenticated:', user);
-      // Add my_restaurants=true to only fetch vendor's own restaurants
       const data = await request('/vendors/?my_restaurants=true');
       console.log('[VendorDashboard] Vendors response:', data);
       console.log('[VendorDashboard] Results array:', data?.results);
       console.log('[VendorDashboard] Results count:', data?.count);
       
-      // Handle paginated response - extract results array
       const restaurantsList = data?.results || data || [];
       console.log('[VendorDashboard] Setting restaurants to:', restaurantsList);
       setRestaurants(restaurantsList);
@@ -180,7 +225,6 @@ const VendorDashboard: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.name || !formData.name.trim()) {
       alert('⚠️ Restaurant name is required!');
       return;
@@ -257,7 +301,6 @@ const VendorDashboard: React.FC = () => {
       console.error('Failed to save restaurant:', error);
       console.error('Error response:', error.response?.data);
       
-      // Show specific validation errors
       if (error.response?.data) {
         const errorData = error.response.data;
         let errorMessage = 'Failed to save restaurant:\n\n';
@@ -319,19 +362,19 @@ const VendorDashboard: React.FC = () => {
       google_maps_url: restaurant.google_maps_url || '',
       logo_url: restaurant.logo_url || '',
       cover_image_url: restaurant.cover_image_url || '',
-      amenities: restaurant.amenities || {
-        parking: false,
-        wifi: false,
-        wheelchair_accessible: false,
-        outdoor_seating: false,
-        halal_certified: false,
-        non_smoking: false,
-        live_music: false,
-        tv_sports: false,
-        private_events: false,
-        delivery: false,
-        takeaway: false,
-        reservations: false,
+      amenities: {
+        parking: restaurant.amenities?.parking ?? false,
+        wifi: restaurant.amenities?.wifi ?? false,
+        wheelchair_accessible: restaurant.amenities?.wheelchair_accessible ?? false,
+        outdoor_seating: restaurant.amenities?.outdoor_seating ?? false,
+        halal_certified: restaurant.amenities?.halal_certified ?? false,
+        non_smoking: restaurant.amenities?.non_smoking ?? false,
+        live_music: restaurant.amenities?.live_music ?? false,
+        tv_sports: restaurant.amenities?.tv_sports ?? false,
+        private_events: restaurant.amenities?.private_events ?? false,
+        delivery: restaurant.amenities?.delivery ?? false,
+        takeaway: restaurant.amenities?.takeaway ?? false,
+        reservations: restaurant.amenities?.reservations ?? false,
       },
       delivery_available: restaurant.delivery_available || false,
       takeaway_available: restaurant.takeaway_available !== undefined ? restaurant.takeaway_available : true,
@@ -395,7 +438,6 @@ const VendorDashboard: React.FC = () => {
         `✅ Restaurant ${currentStatus ? 'closed' : 'opened'} successfully!`
       );
       
-      // Update local state
       setRestaurants(restaurants.map(r => 
         r.id === restaurantId ? { ...r, is_open: response.is_open } : r
       ));
@@ -409,36 +451,90 @@ const VendorDashboard: React.FC = () => {
     navigate('/sign-in');
   };
 
+  // Calculate stats
+  const totalRestaurants = restaurants.length;
+  const openRestaurants = restaurants.filter(r => r.is_open ?? true).length;
+  const closedRestaurants = totalRestaurants - openRestaurants;
+  const avgRating = restaurants.length > 0 
+    ? (restaurants.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / restaurants.length).toFixed(1)
+    : '0.0';
+
   return (
-    <div className="min-h-screen" style={{ background: '#f5f0eb' }}>
-      {/* Header - Warm gradient like Admin */}
-      <header style={{ background: 'linear-gradient(135deg, #d4a574 0%, #e8c9a8 100%)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px', borderRadius: '12px' }}>
-                <Store className="w-7 h-7 text-white" />
+    <div style={{ minHeight: '100vh', background: theme.background }}>
+      {/* Header */}
+      <header style={{ 
+        background: `linear-gradient(135deg, ${theme.cardBg} 0%, ${theme.background} 100%)`,
+        borderBottom: `1px solid ${theme.border}`,
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '16px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ 
+                background: theme.primaryMuted, 
+                padding: '12px', 
+                borderRadius: '14px',
+                border: `1px solid ${theme.primary}30`
+              }}>
+                <Store style={{ width: '28px', height: '28px', color: theme.primary }} />
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-white">Restaurant Dashboard</h1>
-                <p style={{ color: 'rgba(255,255,255,0.85)' }} className="text-sm">Welcome back, {user?.username}</p>
+                <h1 style={{ 
+                  fontSize: '22px', 
+                  fontWeight: '700', 
+                  color: theme.text,
+                  margin: 0,
+                  letterSpacing: '-0.5px'
+                }}>
+                  Restaurant Dashboard
+                </h1>
+                <p style={{ 
+                  color: theme.textSecondary, 
+                  fontSize: '14px',
+                  margin: '2px 0 0 0'
+                }}>
+                  Welcome back, <span style={{ color: theme.primary }}>{user?.username}</span>
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <Link
                 to="/"
-                className="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
+                style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 18px',
+                  background: theme.primaryMuted,
+                  color: theme.primary,
+                  borderRadius: '10px',
+                  textDecoration: 'none',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  border: `1px solid ${theme.primary}40`,
+                  transition: 'all 0.2s'
+                }}
               >
-                <Home className="w-5 h-5" />
-                <span className="font-medium">Dashboard</span>
+                <Home style={{ width: '18px', height: '18px' }} />
+                <span>Dashboard</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
-                style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
+                style={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 18px',
+                  background: theme.cardBg,
+                  color: theme.textSecondary,
+                  borderRadius: '10px',
+                  border: `1px solid ${theme.border}`,
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut style={{ width: '18px', height: '18px' }} />
                 <span>Logout</span>
               </button>
             </div>
@@ -447,242 +543,604 @@ const VendorDashboard: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+        {/* Stats Cards */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          gap: '16px',
+          marginBottom: '24px'
+        }}>
+          {/* Total Restaurants */}
+          <div style={{ 
+            background: theme.cardBg, 
+            borderRadius: '16px', 
+            padding: '20px',
+            border: `1px solid ${theme.border}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: theme.textMuted, fontSize: '13px', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Total Restaurants
+                </p>
+                <p style={{ color: theme.text, fontSize: '32px', fontWeight: '700', margin: 0 }}>
+                  {totalRestaurants}
+                </p>
+              </div>
+              <div style={{ 
+                background: theme.primaryMuted, 
+                padding: '12px', 
+                borderRadius: '12px' 
+              }}>
+                <Store style={{ width: '24px', height: '24px', color: theme.primary }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Open Now */}
+          <div style={{ 
+            background: theme.cardBg, 
+            borderRadius: '16px', 
+            padding: '20px',
+            border: `1px solid ${theme.border}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: theme.textMuted, fontSize: '13px', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Open Now
+                </p>
+                <p style={{ color: theme.success, fontSize: '32px', fontWeight: '700', margin: 0 }}>
+                  {openRestaurants}
+                </p>
+              </div>
+              <div style={{ 
+                background: theme.successMuted, 
+                padding: '12px', 
+                borderRadius: '12px' 
+              }}>
+                <CheckCircle style={{ width: '24px', height: '24px', color: theme.success }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Closed */}
+          <div style={{ 
+            background: theme.cardBg, 
+            borderRadius: '16px', 
+            padding: '20px',
+            border: `1px solid ${theme.border}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: theme.textMuted, fontSize: '13px', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Closed
+                </p>
+                <p style={{ color: theme.danger, fontSize: '32px', fontWeight: '700', margin: 0 }}>
+                  {closedRestaurants}
+                </p>
+              </div>
+              <div style={{ 
+                background: theme.dangerMuted, 
+                padding: '12px', 
+                borderRadius: '12px' 
+              }}>
+                <X style={{ width: '24px', height: '24px', color: theme.danger }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Average Rating */}
+          <div style={{ 
+            background: theme.cardBg, 
+            borderRadius: '16px', 
+            padding: '20px',
+            border: `1px solid ${theme.border}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: theme.textMuted, fontSize: '13px', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Avg Rating
+                </p>
+                <p style={{ color: theme.warning, fontSize: '32px', fontWeight: '700', margin: 0 }}>
+                  {avgRating}
+                </p>
+              </div>
+              <div style={{ 
+                background: theme.warningMuted, 
+                padding: '12px', 
+                borderRadius: '12px' 
+              }}>
+                <Star style={{ width: '24px', height: '24px', color: theme.warning }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Pending Reservations */}
+          <div 
+            style={{ 
+              background: theme.cardBg, 
+              borderRadius: '16px', 
+              padding: '20px',
+              border: pendingReservationsCount > 0 ? `2px solid ${theme.purple}` : `1px solid ${theme.border}`,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onClick={() => {
+              if (restaurants.length > 0) {
+                setSelectedVendorId(restaurants[0].id);
+                setActiveTab('reservations');
+              }
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: theme.textMuted, fontSize: '13px', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Pending
+                </p>
+                <p style={{ color: theme.purple, fontSize: '32px', fontWeight: '700', margin: 0 }}>
+                  {pendingReservationsCount}
+                </p>
+              </div>
+              <div style={{ 
+                background: theme.purpleMuted, 
+                padding: '12px', 
+                borderRadius: '12px',
+                position: 'relative',
+              }}>
+                <Bell style={{ width: '24px', height: '24px', color: theme.purple }} />
+                {pendingReservationsCount > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    width: '12px',
+                    height: '12px',
+                    background: theme.danger,
+                    borderRadius: '50%',
+                    animation: 'pulse 2s infinite',
+                  }} />
+                )}
+              </div>
+            </div>
+            {pendingReservationsCount > 0 && (
+              <p style={{ color: theme.purple, fontSize: '12px', margin: '8px 0 0 0', fontWeight: '500' }}>
+                Click to review →
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Page Header with Action */}
-        <div className="flex items-center justify-between mb-6">
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          marginBottom: '20px' 
+        }}>
           <div>
-            <h2 className="text-2xl font-bold" style={{ color: '#2d2d2d' }}>Manage Restaurants</h2>
-            <p style={{ color: '#666' }}>Add and manage your restaurant listings</p>
+            <h2 style={{ 
+              fontSize: '24px', 
+              fontWeight: '700', 
+              color: theme.text,
+              margin: '0 0 4px 0'
+            }}>
+              Manage Restaurants
+            </h2>
+            <p style={{ color: theme.textSecondary, margin: 0, fontSize: '14px' }}>
+              Add and manage your restaurant listings
+            </p>
           </div>
           <button
             onClick={() => {
               console.log('[VendorDashboard] Add Restaurant button clicked!');
               setShowAddModal(true);
             }}
-            style={{ background: 'linear-gradient(135deg, #d4a574 0%, #c89963 100%)', boxShadow: '0 4px 12px rgba(212, 165, 116, 0.3)' }}
-            className="flex items-center gap-2 px-5 py-2.5 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+            style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+              color: 'white',
+              borderRadius: '12px',
+              border: 'none',
+              fontWeight: '600',
+              fontSize: '14px',
+              cursor: 'pointer',
+              boxShadow: `0 4px 12px ${theme.primary}40`,
+              transition: 'all 0.2s'
+            }}
           >
-            <Plus className="w-5 h-5" />
+            <Plus style={{ width: '20px', height: '20px' }} />
             Add Restaurant
           </button>
         </div>
 
-        {/* Tabs Navigation - Warm color scheme */}
-        <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '24px', overflow: 'hidden' }}>
+        {/* Tabs Navigation */}
+        <div style={{ 
+          background: theme.cardBg, 
+          borderRadius: '16px', 
+          border: `1px solid ${theme.border}`,
+          marginBottom: '24px', 
+          overflow: 'hidden' 
+        }}>
           {/* Colored top band */}
-          <div style={{ height: '4px', background: 'linear-gradient(90deg, #d4a574 0%, #e8c9a8 50%, #d4a574 100%)' }} />
-          <nav className="flex px-4 space-x-6 border-b border-gray-100">
-            <button
-              onClick={() => setActiveTab('restaurants')}
-              style={{
-                borderBottom: activeTab === 'restaurants' ? '3px solid #d4a574' : '3px solid transparent',
-                color: activeTab === 'restaurants' ? '#d4a574' : '#666',
-              }}
-              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
-            >
-              <Store className="w-4 h-4" />
-              My Restaurants
-            </button>
-            <button
-              onClick={() => {
-                if (restaurants.length > 0) {
-                  setSelectedVendorId(restaurants[0].id);
-                  setActiveTab('menu');
-                } else {
-                  alert('Please add a restaurant first');
-                }
-              }}
-              style={{
-                borderBottom: activeTab === 'menu' ? '3px solid #e67e22' : '3px solid transparent',
-                color: activeTab === 'menu' ? '#e67e22' : '#666',
-              }}
-              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
-            >
-              <UtensilsCrossed className="w-4 h-4" />
-              Menu Management
-            </button>
-            <button
-              onClick={() => {
-                if (restaurants.length > 0) {
-                  setSelectedVendorId(restaurants[0].id);
-                  setActiveTab('hours');
-                } else {
-                  alert('Please add a restaurant first');
-                }
-              }}
-              style={{
-                borderBottom: activeTab === 'hours' ? '3px solid #3498db' : '3px solid transparent',
-                color: activeTab === 'hours' ? '#3498db' : '#666',
-              }}
-              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
-            >
-              <Clock className="w-4 h-4" />
-              Opening Hours
-            </button>
-            <button
-              onClick={() => {
-                if (restaurants.length > 0) {
-                  setSelectedVendorId(restaurants[0].id);
-                  setActiveTab('reservations');
-                } else {
-                  alert('Please add a restaurant first');
-                }
-              }}
-              style={{
-                borderBottom: activeTab === 'reservations' ? '3px solid #9b59b6' : '3px solid transparent',
-                color: activeTab === 'reservations' ? '#9b59b6' : '#666',
-              }}
-              className="flex items-center gap-2 py-4 px-1 font-medium text-sm transition-colors"
-            >
-              <Calendar className="w-4 h-4" />
-              Reservations
-            </button>
+          <div style={{ 
+            height: '3px', 
+            background: `linear-gradient(90deg, ${theme.primary} 0%, ${theme.primaryLight} 50%, ${theme.primary} 100%)` 
+          }} />
+          <nav style={{ 
+            display: 'flex', 
+            padding: '0 16px', 
+            gap: '8px',
+            borderBottom: `1px solid ${theme.border}`
+          }}>
+            {[
+              { key: 'restaurants', label: 'My Restaurants', icon: Store, color: theme.primary },
+              { key: 'menu', label: 'Menu Management', icon: UtensilsCrossed, color: '#22c55e' },
+              { key: 'hours', label: 'Opening Hours', icon: Clock, color: '#3b82f6' },
+              { key: 'reservations', label: 'Reservations', icon: Calendar, color: '#a855f7' },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => {
+                    if (tab.key === 'restaurants') {
+                      setActiveTab('restaurants');
+                    } else if (restaurants.length > 0) {
+                      setSelectedVendorId(restaurants[0].id);
+                      setActiveTab(tab.key as any);
+                    } else {
+                      alert('Please add a restaurant first');
+                    }
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '16px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: isActive ? `3px solid ${tab.color}` : '3px solid transparent',
+                    color: isActive ? tab.color : theme.textMuted,
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    marginBottom: '-1px'
+                  }}
+                >
+                  <Icon style={{ width: '18px', height: '18px' }} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Tab Content Area */}
-          <div className="p-6">
-
-        {/* Restaurant Selector (for Menu, Hours & Reservations tabs) */}
-        {(activeTab === 'menu' || activeTab === 'hours' || activeTab === 'reservations') && restaurants.length > 1 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Restaurant:
-            </label>
-            <select
-              value={selectedVendorId || ''}
-              onChange={(e) => setSelectedVendorId(Number(e.target.value))}
-              className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
-            >
-              {restaurants.map(r => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Tab Content */}
-        {activeTab === 'restaurants' && (
-          <>
-        {/* Restaurants Grid */}
-        {restaurants.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '64px 24px', background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <div style={{ width: '80px', height: '80px', background: 'rgba(212, 165, 116, 0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Store style={{ width: '40px', height: '40px', color: '#d4a574' }} />
-            </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#2d2d2d', marginBottom: '8px' }}>No restaurants yet</h3>
-            <p style={{ color: '#666', marginBottom: '24px', maxWidth: '300px', margin: '0 auto 24px' }}>Add your first restaurant to get started with managing your business.</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              style={{ background: 'linear-gradient(135deg, #d4a574 0%, #c89963 100%)', boxShadow: '0 4px 12px rgba(212, 165, 116, 0.3)' }}
-              className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-lg font-medium transition-all hover:shadow-lg"
-            >
-              <Plus className="w-5 h-5" />
-              Add Restaurant
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Restaurant Count */}
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-500">{restaurants.length} restaurant{restaurants.length > 1 ? 's' : ''}</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {restaurants.map((restaurant) => (
-                <div 
-                  key={restaurant.id} 
-                  style={{ 
-                    background: 'white', 
-                    borderRadius: '16px', 
-                    padding: '20px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                    borderLeft: '4px solid #d4a574',
-                    transition: 'all 0.2s'
+          <div style={{ padding: '24px' }}>
+            {/* Restaurant Selector (for Menu, Hours & Reservations tabs) */}
+            {(activeTab === 'menu' || activeTab === 'hours' || activeTab === 'reservations') && restaurants.length > 1 && (
+              <div style={{ 
+                background: theme.background, 
+                border: `1px solid ${theme.border}`,
+                borderRadius: '12px', 
+                padding: '16px', 
+                marginBottom: '20px' 
+              }}>
+                <label style={{ 
+                  display: 'block', 
+                  color: theme.textSecondary, 
+                  fontSize: '13px', 
+                  fontWeight: '500',
+                  marginBottom: '8px' 
+                }}>
+                  Select Restaurant:
+                </label>
+                <select
+                  value={selectedVendorId || ''}
+                  onChange={(e) => setSelectedVendorId(Number(e.target.value))}
+                  style={{
+                    width: '100%',
+                    maxWidth: '300px',
+                    padding: '10px 14px',
+                    background: theme.cardBg,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '8px',
+                    color: theme.text,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    outline: 'none'
                   }}
-                  className="hover:shadow-lg"
                 >
-                  {/* Restaurant Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div style={{ width: '40px', height: '40px', background: 'rgba(212, 165, 116, 0.15)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Store style={{ width: '20px', height: '20px', color: '#d4a574' }} />
-                      </div>
-                      <div>
-                        <h4 style={{ fontWeight: '600', color: '#2d2d2d', fontSize: '16px' }}>{restaurant.name}</h4>
-                        <p style={{ color: '#888', fontSize: '14px' }}>{restaurant.city}</p>
-                      </div>
+                  {restaurants.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Tab Content */}
+            {activeTab === 'restaurants' && (
+              <>
+                {/* Restaurants Grid */}
+                {restaurants.length === 0 ? (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '64px 24px', 
+                    background: theme.background, 
+                    borderRadius: '16px',
+                    border: `1px dashed ${theme.border}`
+                  }}>
+                    <div style={{ 
+                      width: '80px', 
+                      height: '80px', 
+                      background: theme.primaryMuted, 
+                      borderRadius: '50%', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      margin: '0 auto 16px' 
+                    }}>
+                      <Store style={{ width: '40px', height: '40px', color: theme.primary }} />
                     </div>
+                    <h3 style={{ 
+                      fontSize: '22px', 
+                      fontWeight: 'bold', 
+                      color: theme.text, 
+                      marginBottom: '8px' 
+                    }}>
+                      No restaurants yet
+                    </h3>
+                    <p style={{ 
+                      color: theme.textSecondary, 
+                      marginBottom: '24px', 
+                      maxWidth: '300px', 
+                      margin: '0 auto 24px' 
+                    }}>
+                      Add your first restaurant to get started with managing your business.
+                    </p>
                     <button
-                      onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open ?? true)}
-                      style={{
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        borderRadius: '20px',
+                      onClick={() => setShowAddModal(true)}
+                      style={{ 
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '14px 24px',
+                        background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+                        color: 'white',
+                        borderRadius: '12px',
                         border: 'none',
+                        fontWeight: '600',
+                        fontSize: '15px',
                         cursor: 'pointer',
-                        background: (restaurant.is_open ?? true) ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)',
-                        color: (restaurant.is_open ?? true) ? '#27ae60' : '#e74c3c',
-                        transition: 'all 0.2s'
+                        boxShadow: `0 4px 12px ${theme.primary}40`
                       }}
-                      title={`Click to ${(restaurant.is_open ?? true) ? 'close' : 'open'} restaurant`}
                     >
-                      {(restaurant.is_open ?? true) ? '● Open' : '● Closed'}
+                      <Plus style={{ width: '20px', height: '20px' }} />
+                      Add Restaurant
                     </button>
                   </div>
-
-                  {/* Cuisines */}
-                  {restaurant.cuisines && restaurant.cuisines.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div className="flex flex-wrap gap-1.5">
-                        {restaurant.cuisines.map((cuisine, idx) => (
-                          <span key={idx} style={{ padding: '4px 10px', background: 'rgba(212, 165, 116, 0.1)', color: '#a07850', fontSize: '12px', fontWeight: '500', borderRadius: '6px' }}>
-                            {cuisine}
-                          </span>
-                        ))}
-                      </div>
+                ) : (
+                  <>
+                    {/* Restaurant Count */}
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between', 
+                      marginBottom: '16px' 
+                    }}>
+                      <p style={{ color: theme.textSecondary, fontSize: '14px', margin: 0 }}>
+                        {restaurants.length} restaurant{restaurants.length > 1 ? 's' : ''}
+                      </p>
                     </div>
-                  )}
 
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid #eee' }}>
-                    <button
-                      onClick={() => handleEdit(restaurant)}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(212, 165, 116, 0.1)', color: '#a07850', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
-                    >
-                      <Edit2 style={{ width: '16px', height: '16px' }} />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(restaurant.id)}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
-                    >
-                      <Trash2 style={{ width: '16px', height: '16px' }} />
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-        </>
-        )}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', 
+                      gap: '20px' 
+                    }}>
+                      {restaurants.map((restaurant) => (
+                        <div 
+                          key={restaurant.id} 
+                          style={{ 
+                            background: theme.background, 
+                            borderRadius: '16px', 
+                            padding: '20px',
+                            border: `1px solid ${theme.border}`,
+                            borderLeft: `4px solid ${theme.primary}`,
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {/* Restaurant Header */}
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            justifyContent: 'space-between', 
+                            marginBottom: '16px' 
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                              <div style={{ 
+                                width: '48px', 
+                                height: '48px', 
+                                background: theme.primaryMuted, 
+                                borderRadius: '12px', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center' 
+                              }}>
+                                <Store style={{ width: '24px', height: '24px', color: theme.primary }} />
+                              </div>
+                              <div>
+                                <h4 style={{ 
+                                  fontWeight: '600', 
+                                  color: theme.text, 
+                                  fontSize: '17px',
+                                  margin: '0 0 4px 0'
+                                }}>
+                                  {restaurant.name}
+                                </h4>
+                                <p style={{ 
+                                  color: theme.textMuted, 
+                                  fontSize: '13px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  margin: 0
+                                }}>
+                                  <MapPin style={{ width: '12px', height: '12px' }} />
+                                  {restaurant.city}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleToggleStatus(restaurant.id, restaurant.is_open ?? true)}
+                              style={{
+                                padding: '6px 14px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                borderRadius: '20px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: (restaurant.is_open ?? true) ? theme.successMuted : theme.dangerMuted,
+                                color: (restaurant.is_open ?? true) ? theme.success : theme.danger,
+                                transition: 'all 0.2s'
+                              }}
+                              title={`Click to ${(restaurant.is_open ?? true) ? 'close' : 'open'} restaurant`}
+                            >
+                              {(restaurant.is_open ?? true) ? '● Open' : '● Closed'}
+                            </button>
+                          </div>
 
-        {/* Menu Management Tab */}
-        {activeTab === 'menu' && selectedVendorId && (
-          <MenuManagement vendorId={selectedVendorId} />
-        )}
+                          {/* Rating & Price */}
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '16px',
+                            marginBottom: '12px'
+                          }}>
+                            {restaurant.rating && (
+                              <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '4px',
+                                color: theme.warning
+                              }}>
+                                <Star style={{ width: '14px', height: '14px', fill: theme.warning }} />
+                                <span style={{ fontSize: '13px', fontWeight: '600' }}>
+                                  {Number(restaurant.rating).toFixed(1)}
+                                </span>
+                              </div>
+                            )}
+                            {restaurant.price_range && (
+                              <span style={{ 
+                                color: theme.textMuted, 
+                                fontSize: '13px' 
+                              }}>
+                                {restaurant.price_range}
+                              </span>
+                            )}
+                          </div>
 
-        {/* Opening Hours Tab */}
-        {activeTab === 'hours' && selectedVendorId && (
-          <OpeningHoursManagement vendorId={selectedVendorId} />
-        )}
+                          {/* Cuisines */}
+                          {restaurant.cuisines && restaurant.cuisines.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {restaurant.cuisines.map((cuisine, idx) => (
+                                  <span 
+                                    key={idx} 
+                                    style={{ 
+                                      padding: '4px 10px', 
+                                      background: theme.primaryMuted, 
+                                      color: theme.primaryLight, 
+                                      fontSize: '12px', 
+                                      fontWeight: '500', 
+                                      borderRadius: '6px' 
+                                    }}
+                                  >
+                                    {cuisine}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-        {/* Reservations Tab */}
-        {activeTab === 'reservations' && selectedVendorId && (
-          <ReservationManagement vendorId={selectedVendorId} />
-        )}
+                          {/* Action Buttons */}
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '10px', 
+                            paddingTop: '16px', 
+                            borderTop: `1px solid ${theme.border}` 
+                          }}>
+                            <button
+                              onClick={() => handleEdit(restaurant)}
+                              style={{ 
+                                flex: 1, 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                gap: '6px', 
+                                padding: '10px 14px', 
+                                background: theme.primaryMuted, 
+                                color: theme.primary, 
+                                borderRadius: '10px', 
+                                border: 'none', 
+                                cursor: 'pointer', 
+                                fontWeight: '600', 
+                                fontSize: '14px',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <Edit2 style={{ width: '16px', height: '16px' }} />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(restaurant.id)}
+                              style={{ 
+                                flex: 1, 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                gap: '6px', 
+                                padding: '10px 14px', 
+                                background: theme.dangerMuted, 
+                                color: theme.danger, 
+                                borderRadius: '10px', 
+                                border: 'none', 
+                                cursor: 'pointer', 
+                                fontWeight: '600', 
+                                fontSize: '14px',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <Trash2 style={{ width: '16px', height: '16px' }} />
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* Menu Management Tab */}
+            {activeTab === 'menu' && selectedVendorId && (
+              <MenuManagement vendorId={selectedVendorId} />
+            )}
+
+            {/* Opening Hours Tab */}
+            {activeTab === 'hours' && selectedVendorId && (
+              <OpeningHoursManagement vendorId={selectedVendorId} />
+            )}
+
+            {/* Reservations Tab */}
+            {activeTab === 'reservations' && selectedVendorId && (
+              <ReservationManagement vendorId={selectedVendorId} />
+            )}
           </div>
         </div>
       </main>

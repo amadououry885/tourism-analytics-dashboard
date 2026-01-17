@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { BarChart3 } from 'lucide-react';
 
 interface SharedLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ export function SharedHeader() {
 
   const isActive = (path: string) => {
     if (path === '/') return currentPath === '/';
+    if (path === '/analytics') return currentPath.includes('tab=overview') || currentPath === '/analytics';
     return currentPath.startsWith(path);
   };
 
@@ -43,6 +45,10 @@ export function SharedHeader() {
             <Link to="/food" style={linkStyle('/food')}>Food</Link>
             <Link to="/stays" style={linkStyle('/stays')}>Stay</Link>
             <Link to="/events" style={linkStyle('/events')}>Events</Link>
+            <Link to="/analytics" style={{ ...linkStyle('/analytics'), display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <BarChart3 size={14} />
+              Analytics
+            </Link>
             <Link to="/sign-in" style={{ 
               backgroundColor: '#14b8a6', 
               color: 'white', 

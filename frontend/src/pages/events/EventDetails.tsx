@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, Users, Clock, Navigation, Share2, Bell, UserPlus, Home, Utensils } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Users, Clock, Navigation, Share2, Bell, BellOff, UserPlus, UserMinus, Home, Utensils, AlertCircle, CheckCircle, Loader2, Star, ExternalLink } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { EventRegistrationModal } from '../../components/EventRegistrationModal';
 
 interface EventDetail {
   id: number;
@@ -21,16 +23,43 @@ interface EventDetail {
   description?: string;
   lat?: number;
   lon?: number;
-  user_registered?: boolean;
+  requires_approval?: boolean;
 }
+
+interface NearbyPlace {
+  id: number;
+  name: string;
+  city?: string;
+  distance_km?: number;
+  rating?: number;
+  type?: string;
+  image_url?: string;
+}
+
+type RegistrationStatus = 'unknown' | 'not-registered' | 'registered' | 'pending-approval' | 'checking';
 
 export default function EventDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [registering, setRegistering] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState<RegistrationStatus>('unknown');
+  const [unregistering, setUnregistering] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  
+  // Reminder state
+  const [hasReminder, setHasReminder] = useState(false);
+  const [reminderLoading, setReminderLoading] = useState(false);
+  
+  // Nearby places state
+  const [nearbyStays, setNearbyStays] = useState<NearbyPlace[]>([]);
+  const [nearbyRestaurants, setNearbyRestaurants] = useState<NearbyPlace[]>([]);
+  const [loadingNearby, setLoadingNearby] = useState(false);
 
+  // Fetch event data
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -39,7 +68,7 @@ export default function EventDetails() {
         setEvent(response.data);
       } catch (err) {
         console.error('Error fetching event:', err);
-        // Demo data
+        // Demo fallback data
         setEvent({
           id: parseInt(id || '1'),
           title: 'Langkawi International Maritime & Aerospace Exhibition',
@@ -66,6 +95,90 @@ export default function EventDetails() {
     if (id) fetchEvent();
   }, [id]);
 
+  // Check if user is already registered (only if authenticated)
+  useEffect(() => {
+    const checkRegistration = async () => {
+      if (!isAuthenticated || !id) {
+        setRegistrationStatus('not-registered');
+        return;
+      }
+
+      try {
+        setRegistrationStatus('checking');
+        const response = await api.get(`/events/${id}/my_registration/`);
+        // If we get a response, user is registered
+        if (response.data && response.data.status === 'confirmed') {
+          setRegistrationStatus('registered');
+        } else if (response.data && response.data.status === 'pending') {
+          setRegistrationStatus('pending-approval');
+        } else {
+          setRegistrationStatus('not-registered');
+        }
+      } catch (err: any) {
+        // 404 means not registered (expected behavior)
+        if (err.response?.status === 404) {
+          setRegistrationStatus('not-registered');
+        } else {
+          console.error('Error checking registration:', err);
+          setRegistrationStatus('not-registered');
+        }
+      }
+    };
+
+    checkRegistration();
+  }, [id, isAuthenticated]);
+
+  // Fetch nearby stays and restaurants
+  useEffect(() => {
+    const fetchNearbyPlaces = async () => {
+      if (!id) return;
+      
+      setLoadingNearby(true);
+      try {
+        // Fetch nearby stays
+        const staysResponse = await api.get(`/events/${id}/nearby_stays/`);
+        setNearbyStays(staysResponse.data?.stays || staysResponse.data || []);
+      } catch (err) {
+        console.warn('Could not fetch nearby stays:', err);
+        setNearbyStays([]);
+      }
+      
+      try {
+        // Fetch nearby restaurants
+        const restaurantsResponse = await api.get(`/events/${id}/nearby_restaurants/`);
+        setNearbyRestaurants(restaurantsResponse.data?.restaurants || restaurantsResponse.data || []);
+      } catch (err) {
+        console.warn('Could not fetch nearby restaurants:', err);
+        setNearbyRestaurants([]);
+      }
+      
+      setLoadingNearby(false);
+    };
+
+    fetchNearbyPlaces();
+  }, [id]);
+
+  // Check if user has a reminder set (only if authenticated)
+  useEffect(() => {
+    const checkReminder = async () => {
+      if (!isAuthenticated || !id) {
+        setHasReminder(false);
+        return;
+      }
+
+      try {
+        const response = await api.get(`/events/${id}/my_reminders/`);
+        // If we get reminders back, user has at least one set
+        setHasReminder(response.data && response.data.length > 0);
+      } catch (err) {
+        // User doesn't have reminders or not authenticated
+        setHasReminder(false);
+      }
+    };
+
+    checkReminder();
+  }, [id, isAuthenticated]);
+
   const handleGetDirections = () => {
     if (!event) return;
     if (event.lat && event.lon) {
@@ -85,25 +198,91 @@ export default function EventDetails() {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      setActionMessage({ type: 'success', text: 'Link copied to clipboard!' });
+      setTimeout(() => setActionMessage(null), 3000);
     }
   };
 
-  const handleRegister = async () => {
+  // Handle reminder toggle
+  const handleToggleReminder = async () => {
     if (!event) return;
-    setRegistering(true);
+    
+    // Require authentication for reminders
+    if (!isAuthenticated) {
+      navigate('/sign-in', { state: { from: `/events/${event.id}` } });
+      return;
+    }
+    
+    setReminderLoading(true);
+    
     try {
-      await api.post(`/events/${event.id}/register/`);
-      setEvent(prev => prev ? { ...prev, user_registered: true, attendee_count: (prev.attendee_count || 0) + 1 } : null);
-      alert('Successfully registered for event!');
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        alert('Please sign in to register for events.');
+      if (hasReminder) {
+        // Remove reminder
+        await api.post(`/events/${event.id}/remove_reminder/`);
+        setHasReminder(false);
+        setActionMessage({ type: 'success', text: 'Reminder removed.' });
       } else {
-        alert(err.response?.data?.error || 'Registration failed.');
+        // Set reminder (default: 1 day before)
+        await api.post(`/events/${event.id}/set_reminder/`, { reminder_time: '1_day' });
+        setHasReminder(true);
+        setActionMessage({ type: 'success', text: 'Reminder set for 1 day before the event!' });
       }
+      clearMessage();
+    } catch (err: any) {
+      console.error('Reminder error:', err);
+      const errorMsg = err.response?.data?.error || 'Failed to update reminder.';
+      setActionMessage({ type: 'error', text: errorMsg });
+      clearMessage();
     } finally {
-      setRegistering(false);
+      setReminderLoading(false);
+    }
+  };
+
+  const clearMessage = () => {
+    setTimeout(() => setActionMessage(null), 4000);
+  };
+
+  const handleRegister = () => {
+    if (!event) return;
+
+    // Check if event is full
+    if (event.is_full) {
+      setActionMessage({ type: 'error', text: 'This event is at full capacity.' });
+      clearMessage();
+      return;
+    }
+
+    // Open the registration modal - the modal will handle auth check
+    setShowRegistrationModal(true);
+  };
+
+  const handleUnregister = async () => {
+    if (!event || !isAuthenticated) return;
+
+    setUnregistering(true);
+    setActionMessage(null);
+
+    try {
+      const response = await api.post(`/events/${event.id}/cancel_registration/`);
+      
+      // Update local state
+      setRegistrationStatus('not-registered');
+      setEvent(prev => prev ? {
+        ...prev,
+        attendee_count: response.data.attendee_count ?? Math.max(0, (prev.attendee_count || 1) - 1),
+        spots_remaining: response.data.spots_remaining ?? (prev.spots_remaining ? prev.spots_remaining + 1 : undefined),
+        is_full: false,
+      } : null);
+      
+      setActionMessage({ type: 'success', text: 'Successfully cancelled your registration.' });
+      clearMessage();
+    } catch (err: any) {
+      console.error('Unregister error:', err);
+      const errorMsg = err.response?.data?.error || 'Failed to cancel registration. Please try again.';
+      setActionMessage({ type: 'error', text: errorMsg });
+      clearMessage();
+    } finally {
+      setUnregistering(false);
     }
   };
 
@@ -423,18 +602,47 @@ export default function EventDetails() {
           </div>
         )}
 
+        {/* Action Message */}
+        {actionMessage && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '16px 20px',
+            backgroundColor: actionMessage.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+            border: `1px solid ${actionMessage.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+            borderRadius: '12px',
+            marginBottom: '24px',
+          }}>
+            {actionMessage.type === 'success' ? (
+              <CheckCircle size={20} color="#10b981" />
+            ) : (
+              <AlertCircle size={20} color="#ef4444" />
+            )}
+            <span style={{
+              color: actionMessage.type === 'success' ? '#10b981' : '#ef4444',
+              fontSize: '15px',
+              fontWeight: '500',
+            }}>
+              {actionMessage.text}
+            </span>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div style={{
           display: 'flex',
           gap: '16px',
           marginBottom: '40px',
+          flexWrap: 'wrap',
         }}>
-          {!event.is_full && !event.user_registered && (
+          {/* Register Button - Show when not registered, not pending, and event not full */}
+          {registrationStatus !== 'registered' && registrationStatus !== 'pending-approval' && !event.is_full && (
             <button
               onClick={handleRegister}
-              disabled={registering}
               style={{
                 flex: 1,
+                minWidth: '200px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -446,16 +654,98 @@ export default function EventDetails() {
                 borderRadius: '14px',
                 fontSize: '16px',
                 fontWeight: '700',
-                cursor: registering ? 'wait' : 'pointer',
-                opacity: registering ? 0.7 : 1,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
               }}
             >
               <UserPlus size={20} />
-              {registering ? 'Registering...' : 'Register Now'}
+              Register Now
             </button>
           )}
           
-          {event.user_registered && (
+          {/* Pending Approval Status */}
+          {registrationStatus === 'pending-approval' && (
+            <div style={{
+              flex: 1,
+              minWidth: '200px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              padding: '16px 24px',
+              backgroundColor: 'rgba(234, 179, 8, 0.15)',
+              color: '#eab308',
+              border: '2px solid rgba(234, 179, 8, 0.4)',
+              borderRadius: '14px',
+              fontSize: '16px',
+              fontWeight: '700',
+            }}>
+              <Clock size={20} />
+              Pending Approval
+            </div>
+          )}
+          
+          {/* Registered Status with Unregister option */}
+          {registrationStatus === 'registered' && (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                padding: '16px 24px',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                color: '#10b981',
+                border: '2px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '14px',
+                fontSize: '16px',
+                fontWeight: '700',
+              }}>
+                <CheckCircle size={20} />
+                You're Registered
+              </div>
+              <button
+                onClick={handleUnregister}
+                disabled={unregistering}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'transparent',
+                  color: '#94a3b8',
+                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: unregistering ? 'wait' : 'pointer',
+                  opacity: unregistering ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                }}
+              >
+                {unregistering ? (
+                  <>
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <UserMinus size={16} />
+                    Cancel Registration
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+          
+          {/* Event Full - Show when event is at capacity */}
+          {event.is_full && registrationStatus !== 'registered' && (
             <div style={{
               flex: 1,
               display: 'flex',
@@ -463,14 +753,15 @@ export default function EventDetails() {
               justifyContent: 'center',
               gap: '10px',
               padding: '16px 24px',
-              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-              color: '#10b981',
-              border: '2px solid #10b981',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              color: '#ef4444',
+              border: '2px solid rgba(239, 68, 68, 0.3)',
               borderRadius: '14px',
               fontSize: '16px',
               fontWeight: '700',
             }}>
-              ✓ You're Registered
+              <AlertCircle size={20} />
+              Event Full - Registration Closed
             </div>
           )}
           
@@ -511,7 +802,156 @@ export default function EventDetails() {
           >
             <Share2 size={20} />
           </button>
+          
+          {/* Reminder Button */}
+          <button
+            onClick={handleToggleReminder}
+            disabled={reminderLoading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '16px 24px',
+              backgroundColor: hasReminder ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.1)',
+              color: hasReminder ? '#3b82f6' : '#ffffff',
+              border: hasReminder ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '14px',
+              cursor: reminderLoading ? 'wait' : 'pointer',
+              opacity: reminderLoading ? 0.7 : 1,
+              transition: 'all 0.2s',
+            }}
+          >
+            {reminderLoading ? (
+              <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : hasReminder ? (
+              <BellOff size={20} />
+            ) : (
+              <Bell size={20} />
+            )}
+          </button>
         </div>
+
+        {/* Nearby Places Section */}
+        {(nearbyStays.length > 0 || nearbyRestaurants.length > 0) && (
+          <div style={{ marginBottom: '40px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', marginBottom: '20px' }}>
+              Nearby Recommendations
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+              {/* Nearby Stays */}
+              {nearbyStays.length > 0 && (
+                <div style={{
+                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                  border: '1px solid rgba(168, 85, 247, 0.2)',
+                  borderRadius: '16px',
+                  padding: '20px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                    <Home size={20} color="#a855f7" />
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#a855f7', margin: 0 }}>
+                      Nearby Stays
+                    </h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {nearbyStays.slice(0, 3).map((stay) => (
+                      <Link
+                        key={stay.id}
+                        to={`/stays/${stay.id}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 14px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '10px',
+                          textDecoration: 'none',
+                          transition: 'background 0.2s',
+                        }}
+                      >
+                        <div>
+                          <div style={{ color: '#e2e8f0', fontSize: '14px', fontWeight: '600' }}>
+                            {stay.name}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                            {stay.distance_km && (
+                              <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                                {stay.distance_km.toFixed(1)} km away
+                              </span>
+                            )}
+                            {stay.rating && (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#fbbf24', fontSize: '12px' }}>
+                                <Star size={12} fill="#fbbf24" />
+                                {Number(stay.rating).toFixed(1)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <ExternalLink size={16} color="#94a3b8" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Nearby Restaurants */}
+              {nearbyRestaurants.length > 0 && (
+                <div style={{
+                  backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                  border: '1px solid rgba(249, 115, 22, 0.2)',
+                  borderRadius: '16px',
+                  padding: '20px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                    <Utensils size={20} color="#f97316" />
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#f97316', margin: 0 }}>
+                      Nearby Restaurants
+                    </h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {nearbyRestaurants.slice(0, 3).map((restaurant) => (
+                      <Link
+                        key={restaurant.id}
+                        to={`/food/${restaurant.id}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 14px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '10px',
+                          textDecoration: 'none',
+                          transition: 'background 0.2s',
+                        }}
+                      >
+                        <div>
+                          <div style={{ color: '#e2e8f0', fontSize: '14px', fontWeight: '600' }}>
+                            {restaurant.name}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                            {restaurant.distance_km && (
+                              <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                                {restaurant.distance_km.toFixed(1)} km away
+                              </span>
+                            )}
+                            {restaurant.rating && (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#fbbf24', fontSize: '12px' }}>
+                                <Star size={12} fill="#fbbf24" />
+                                {Number(restaurant.rating).toFixed(1)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <ExternalLink size={16} color="#94a3b8" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Description */}
         {event.description && (
@@ -597,6 +1037,38 @@ export default function EventDetails() {
           50% { opacity: 0.7; }
         }
       `}</style>
+
+      {/* Registration Modal */}
+      {event && (
+        <EventRegistrationModal
+          event={{
+            id: event.id,
+            title: event.title,
+            start_date: event.start_date,
+            location_name: event.location_name,
+            city: event.city,
+          }}
+          isOpen={showRegistrationModal}
+          onClose={() => {
+            setShowRegistrationModal(false);
+            // Re-check registration status after modal closes
+            // (in case user completed registration)
+            if (isAuthenticated) {
+              api.get(`/events/${event.id}/my_registration/`)
+                .then(response => {
+                  if (response.data && response.data.status === 'confirmed') {
+                    setRegistrationStatus('registered');
+                    setActionMessage({ type: 'success', text: 'Successfully registered for this event!' });
+                    clearMessage();
+                  }
+                })
+                .catch(() => {
+                  // Not registered or error - keep current status
+                });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

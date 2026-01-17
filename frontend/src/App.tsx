@@ -8,7 +8,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import HomePage from './pages/HomePage';
 import TourismDashboard from './pages/TourismDashboard';
-import BusinessLanding from './pages/BusinessLanding';
 // SignInPage uses the original AuthModal (centered popup with username + password only)
 import SignInPage from './pages/SignInPage';
 import Register from './pages/Register';
@@ -29,6 +28,7 @@ import EventsExplore from './pages/events/EventsExplore';
 import EventDetails from './pages/events/EventDetails';
 import StaysExplore from './pages/stays/StaysExplore';
 import StayDetails from './pages/stays/StayDetails';
+import AnalyticsPage from './pages/analytics/AnalyticsPage';
 
 export default function App() {
   return (
@@ -56,7 +56,11 @@ export default function App() {
             <Route path="/stays" element={<StaysExplore />} />
             <Route path="/stays/:id" element={<StayDetails />} />
             
-            <Route path="/business" element={<BusinessLanding />} />
+            {/* Analytics Page */}
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            
+            {/* /business redirects to /register */}
+            <Route path="/business" element={<Navigate to="/register" replace />} />
             {/* /login redirects to /sign-in for unified auth flow */}
             <Route path="/login" element={<Navigate to="/sign-in" replace />} />
             {/* SignInPage shows the centered AuthModal (username + password only, no portal selector) */}

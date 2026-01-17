@@ -217,7 +217,7 @@ const SignIn: React.FC = () => {
 
                 <p className="text-center text-gray-600 text-sm mt-6">
                   Don't have an account?{' '}
-                  <Link to="/business" className="text-blue-600 font-semibold hover:underline">
+                  <Link to="/register" className="text-blue-600 font-semibold hover:underline">
                     Register Here
                   </Link>
                 </p>

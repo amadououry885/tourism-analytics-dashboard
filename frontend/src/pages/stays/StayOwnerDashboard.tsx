@@ -8,12 +8,6 @@ import {
   LogOut, 
   Phone, 
   MapPin,
-  Wifi,
-  Coffee,
-  Car,
-  Tv,
-  Wind,
-  Users,
   Star,
   DollarSign,
   Home,
@@ -22,17 +16,13 @@ import {
   X,
   Check,
   TrendingUp,
-  TrendingDown,
   MessageCircle,
-  Heart,
-  Eye,
-  BarChart3,
-  Calendar
+  Activity,
+  Save,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
-import { FormInput } from '../../components/FormInput';
-import { FormSelect } from '../../components/FormSelect';
 
 interface StayImage {
   id: number;
@@ -61,11 +51,15 @@ interface Stay {
   landmark?: string;
   distanceKm?: number;
   is_active: boolean;
+  is_open?: boolean;
   owner?: number;
   owner_username?: string;
   booking_com_url?: string;
   agoda_url?: string;
   booking_provider?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  contact_whatsapp?: string;
   social_mentions?: number;
   social_engagement?: number;
   estimated_interest?: number;
@@ -74,9 +68,24 @@ interface Stay {
   social_rating?: number;
 }
 
+// Theme colors - Purple for Stays
+const theme = {
+  primary: '#a855f7',
+  primaryDark: '#9333ea',
+  primaryLight: '#c084fc',
+  background: '#0f172a',
+  cardBg: '#1e293b',
+  cardBorder: '#334155',
+  text: '#e2e8f0',
+  textMuted: '#94a3b8',
+  success: '#22c55e',
+  danger: '#ef4444',
+  warning: '#f59e0b',
+};
+
 const StayOwnerDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const { request, loading } = useApi();
+  const { request } = useApi();
   const navigate = useNavigate();
   
   const [stays, setStays] = useState<Stay[]>([]);
@@ -87,8 +96,6 @@ const StayOwnerDashboard: React.FC = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [selectedStayForAnalytics, setSelectedStayForAnalytics] = useState<Stay | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -113,42 +120,27 @@ const StayOwnerDashboard: React.FC = () => {
     { value: 'Homestay', label: '🏠 Homestay' },
   ];
 
+  const districts = [
+    'Alor Setar', 'Langkawi', 'Kuala Kedah', 'Sungai Petani', 
+    'Kulim', 'Baling', 'Yan', 'Pendang', 'Pokok Sena', 'Kubang Pasu'
+  ];
+
   const commonAmenities = [
-    'WiFi',
-    'Parking',
-    'Pool',
-    'Gym',
-    'Breakfast',
-    'Air Conditioning',
-    'Kitchen',
-    'TV',
-    'Laundry',
-    'Pet Friendly',
+    'WiFi', 'Parking', 'Pool', 'Gym', 'Breakfast',
+    'Air Conditioning', 'Kitchen', 'TV', 'Laundry', 'Pet Friendly',
   ];
 
   useEffect(() => {
-    // NEW FLOW VERIFICATION - Remove after confirming
-    console.log('NEW FLOW ACTIVE - StayOwnerDashboard.tsx');
     fetchStays();
   }, []);
 
   const fetchStays = async () => {
     try {
-      console.log('Fetching stays...');
       const data = await request('/stays/');
-      console.log('Stays data:', data);
-      // Handle paginated response - extract results array
-      setStays(data.results || data); // Use results if paginated, otherwise use data directly
+      setStays(data.results || data);
     } catch (error) {
       console.error('Failed to fetch stays:', error);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
   };
 
   const handleAmenityToggle = (amenity: string) => {
@@ -164,49 +156,58 @@ const StayOwnerDashboard: React.FC = () => {
     e.preventDefault();
     
     try {
+      const payload = {
+        ...formData,
+        priceNight: parseFloat(formData.priceNight),
+        lat: formData.lat ? parseFloat(formData.lat) : null,
+        lon: formData.lon ? parseFloat(formData.lon) : null,
+      };
+
       if (editingStay) {
         await request(
           `/stays/${editingStay.id}/`,
-          {
-            method: 'PUT',
-            body: JSON.stringify(formData),
-          },
-          '✅ Accommodation updated successfully!'
+          { method: 'PUT', body: JSON.stringify(payload) },
+          '✅ Property updated successfully!'
         );
       } else {
         await request(
           '/stays/',
-          {
-            method: 'POST',
-            body: JSON.stringify(formData),
-          },
-          '✅ Accommodation added successfully!'
+          { method: 'POST', body: JSON.stringify(payload) },
+          '✅ Property added successfully!'
         );
       }
       
       fetchStays();
       resetForm();
     } catch (error) {
-      console.error('Failed to save accommodation:', error);
+      console.error('Failed to save property:', error);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this accommodation?')) {
+    if (window.confirm('Are you sure you want to delete this property?')) {
       try {
-        await request(
-          `/stays/${id}/`,
-          { method: 'DELETE' },
-          '✅ Accommodation deleted successfully!'
-        );
+        await request(`/stays/${id}/`, { method: 'DELETE' }, '✅ Property deleted!');
         fetchStays();
       } catch (error) {
-        console.error('Failed to delete accommodation:', error);
+        console.error('Failed to delete:', error);
       }
     }
   };
 
-  // Image Upload Handlers
+  const handleToggleOpen = async (stay: Stay) => {
+    try {
+      await request(
+        `/stays/${stay.id}/`,
+        { method: 'PATCH', body: JSON.stringify({ is_open: !stay.is_open }) },
+        `✅ Property ${stay.is_open ? 'closed' : 'opened'}!`
+      );
+      fetchStays();
+    } catch (error) {
+      console.error('Failed to toggle status:', error);
+    }
+  };
+
   const handleOpenImageModal = (stay: Stay) => {
     setSelectedStayForImages(stay);
     setShowImageModal(true);
@@ -219,8 +220,6 @@ const StayOwnerDashboard: React.FC = () => {
     if (files.length === 0) return;
 
     setImageFiles(prev => [...prev, ...files]);
-
-    // Generate previews
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -240,9 +239,9 @@ const StayOwnerDashboard: React.FC = () => {
 
     try {
       setUploadingImages(true);
-      const formData = new FormData();
+      const formDataObj = new FormData();
       imageFiles.forEach(file => {
-        formData.append('images', file);
+        formDataObj.append('images', file);
       });
 
       const response = await fetch(`/api/stays/stays/${selectedStayForImages.id}/upload_images/`, {
@@ -250,7 +249,7 @@ const StayOwnerDashboard: React.FC = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
-        body: formData,
+        body: formDataObj,
       });
 
       if (!response.ok) throw new Error('Upload failed');
@@ -280,7 +279,6 @@ const StayOwnerDashboard: React.FC = () => {
       });
 
       if (!response.ok) throw new Error('Delete failed');
-
       alert('✅ Image deleted');
       fetchStays();
     } catch (error) {
@@ -300,23 +298,11 @@ const StayOwnerDashboard: React.FC = () => {
       });
 
       if (!response.ok) throw new Error('Set primary failed');
-
       alert('✅ Primary image updated');
       fetchStays();
     } catch (error) {
       console.error('Failed to set primary image:', error);
       alert('❌ Failed to set primary image');
-    }
-  };
-
-  const handleOpenAnalytics = async (stay: Stay) => {
-    try {
-      // Fetch detailed stay with social metrics
-      const data = await request(`/stays/${stay.id}/`);
-      setSelectedStayForAnalytics(data);
-      setShowAnalytics(true);
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
     }
   };
 
@@ -326,7 +312,7 @@ const StayOwnerDashboard: React.FC = () => {
       name: stay.name,
       type: stay.type,
       district: stay.district,
-      priceNight: stay.priceNight.toString(),
+      priceNight: stay.priceNight?.toString() || '',
       amenities: stay.amenities || [],
       landmark: stay.landmark || '',
       lat: stay.lat?.toString() || '',
@@ -334,9 +320,9 @@ const StayOwnerDashboard: React.FC = () => {
       booking_com_url: stay.booking_com_url || '',
       agoda_url: stay.agoda_url || '',
       booking_provider: stay.booking_provider || 'booking.com',
-      contact_email: (stay as any).contact_email || '',
-      contact_phone: (stay as any).contact_phone || '',
-      contact_whatsapp: (stay as any).contact_whatsapp || '',
+      contact_email: stay.contact_email || '',
+      contact_phone: stay.contact_phone || '',
+      contact_whatsapp: stay.contact_whatsapp || '',
     });
     setShowAddModal(true);
   };
@@ -368,567 +354,872 @@ const StayOwnerDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#f5f3ee' }}>
-      {/* Sidebar - SAMS Portal Style */}
-      <div 
-        className="w-40 flex flex-col shadow-2xl"
-        style={{
-          background: 'linear-gradient(180deg, #d4a574 0%, #c89963 100%)'
-        }}
-      >
-        {/* Logo */}
-        <div className="p-6 flex justify-center">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-4xl shadow-lg">
-            🏨
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-3">
-          <button className="w-full text-white bg-white/20 backdrop-blur-sm rounded-lg p-3 text-center hover:bg-white/30 transition-all shadow-md">
-            <Building2 className="w-6 h-6 mx-auto mb-1" />
-            <span className="text-xs font-medium">My Properties</span>
-          </button>
-          
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="w-full text-white hover:bg-white/20 rounded-lg p-3 text-center transition-all"
-          >
-            <Plus className="w-6 h-6 mx-auto mb-1" />
-            <span className="text-xs font-medium">Add Property</span>
-          </button>
-        </nav>
-
-        {/* Logout */}
-        <div className="p-4">
-          <button
-            onClick={handleLogout}
-            className="w-full text-white hover:bg-white/20 rounded-lg p-3 text-center transition-all"
-          >
-            <LogOut className="w-5 h-5 mx-auto mb-1" />
-            <span className="text-xs font-medium">Logout</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ marginLeft: '10rem' }}>
-          <svg width="100%" height="100%">
-            <defs>
-              <pattern id="cross-pattern-stay" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M20 0 L20 40 M0 20 L40 20" stroke="#d4a574" strokeWidth="1" fill="none"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#cross-pattern-stay)"/>
-          </svg>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-8 py-8">
-          {/* Back to Dashboard Button */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 mb-6 px-6 py-3 bg-white border-2 border-gray-900 hover:bg-gray-50 rounded-xl shadow-md transition-all duration-200 hover:shadow-lg"
-          >
-            <Home className="w-5 h-5 text-gray-900" />
-            <span className="text-gray-900 font-bold">Back to Analytics Dashboard</span>
-          </Link>
-
-          {/* Welcome Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Accommodations</h1>
-            <p className="text-lg text-gray-600">Welcome back, {user?.username}! 👋</p>
-          </div>
-
-          {/* Action Card */}
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="w-full mb-8 bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 rounded-2xl shadow-2xl p-8 text-white hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer text-left"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg">
-                🏨
+    <div style={{ minHeight: '100vh', backgroundColor: theme.background }}>
+      {/* Header */}
+      <header style={{
+        background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+        borderBottom: `1px solid ${theme.cardBorder}`,
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '16px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Building2 size={28} color="white" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold mb-2">Manage Your Properties</h2>
-                <p className="text-orange-100 text-lg">
-                  List your hotels, apartments, or homestays and welcome more guests!
+                <h1 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0 }}>
+                  Stay Owner Portal
+                </h1>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+                  Welcome back, {user?.username} 👋
                 </p>
               </div>
             </div>
-          </button>
-
-          {/* Stays Grid */}
-          {stays.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-lg border-2 border-orange-200">
-              <div className="mb-6">
-                <Building2 className="w-24 h-24 text-orange-300 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">No Properties Yet</h3>
-                <p className="text-gray-600 text-lg mb-2">Let's get started! 🚀</p>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  Click the button above to list your accommodation. It's quick and easy!
-                </p>
-              </div>
-            </div>
-          ) : (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Your Properties ({stays.length})
-              </h2>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-xl hover:shadow-lg transition-all font-semibold shadow-md hover:scale-105"
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <Link
+                to="/"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                }}
               >
-                <Plus className="w-5 h-5" />
-                Add Another Property
+                <Home size={18} />
+                Dashboard
+              </Link>
+              <button
+                onClick={handleLogout}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                }}
+              >
+                <LogOut size={18} />
+                Logout
               </button>
             </div>
+          </div>
+        </div>
+      </header>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stays.map((stay) => (
-                <div key={stay.id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all p-6 border-2 border-transparent hover:border-orange-300">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{stay.name}</h3>
-                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-sm font-semibold rounded-full">
-                        {stay.type}
-                      </span>
-                    </div>
+      {/* Main Content */}
+      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '32px 24px' }}>
+        {/* Stats Row */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '20px',
+          marginBottom: '32px',
+        }}>
+          <div style={{
+            background: theme.cardBg,
+            borderRadius: '16px',
+            padding: '24px',
+            border: `1px solid ${theme.cardBorder}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <Building2 size={24} color={theme.primary} />
+              <span style={{ color: theme.textMuted, fontSize: '14px' }}>Total Properties</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '800', color: theme.text }}>{stays.length}</div>
+          </div>
+          <div style={{
+            background: theme.cardBg,
+            borderRadius: '16px',
+            padding: '24px',
+            border: `1px solid ${theme.cardBorder}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <Activity size={24} color={theme.success} />
+              <span style={{ color: theme.textMuted, fontSize: '14px' }}>Open Now</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '800', color: theme.success }}>
+              {stays.filter(s => s.is_open !== false).length}
+            </div>
+          </div>
+          <div style={{
+            background: theme.cardBg,
+            borderRadius: '16px',
+            padding: '24px',
+            border: `1px solid ${theme.cardBorder}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <TrendingUp size={24} color={theme.warning} />
+              <span style={{ color: theme.textMuted, fontSize: '14px' }}>Trending</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '800', color: theme.warning }}>
+              {stays.filter(s => s.is_trending).length}
+            </div>
+          </div>
+          <div style={{
+            background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+            borderRadius: '16px',
+            padding: '24px',
+            cursor: 'pointer',
+          }} onClick={() => setShowAddModal(true)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <Plus size={24} color="white" />
+              <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>Add New</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: 'white' }}>Add Property</div>
+          </div>
+        </div>
+
+        {/* Properties Header */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+        }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: theme.text, margin: 0 }}>
+            Your Properties
+          </h2>
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              background: theme.primary,
+              borderRadius: '12px',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '600',
+            }}
+          >
+            <Plus size={18} />
+            Add Property
+          </button>
+        </div>
+
+        {/* Properties Grid */}
+        {stays.length === 0 ? (
+          <div style={{
+            background: theme.cardBg,
+            borderRadius: '20px',
+            padding: '60px 40px',
+            textAlign: 'center',
+            border: `2px dashed ${theme.cardBorder}`,
+          }}>
+            <Building2 size={64} color={theme.textMuted} style={{ marginBottom: '20px' }} />
+            <h3 style={{ fontSize: '24px', fontWeight: '700', color: theme.text, marginBottom: '12px' }}>
+              No Properties Yet
+            </h3>
+            <p style={{ color: theme.textMuted, marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
+              Get started by adding your first hotel, apartment, or homestay. It only takes a few minutes!
+            </p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '14px 28px',
+                background: theme.primary,
+                borderRadius: '12px',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+              }}
+            >
+              <Plus size={20} />
+              Add Your First Property
+            </button>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+            gap: '24px',
+          }}>
+            {stays.map((stay) => (
+              <div
+                key={stay.id}
+                style={{
+                  background: theme.cardBg,
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  border: `1px solid ${theme.cardBorder}`,
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                }}
+              >
+                {/* Image Header */}
+                <div style={{
+                  height: '160px',
+                  background: stay.main_image_url 
+                    ? `url(${stay.main_image_url}) center/cover`
+                    : `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+                  position: 'relative',
+                }}>
+                  {/* Status Badge */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    background: stay.is_open !== false ? 'rgba(34, 197, 94, 0.9)' : 'rgba(239, 68, 68, 0.9)',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                  }}>
+                    {stay.is_open !== false ? '● OPEN' : '● CLOSED'}
                   </div>
+                  {/* Type Badge */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    left: '12px',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                  }}>
+                    {stay.type}
+                  </div>
+                </div>
 
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0" />
-                      <span className="text-sm">{stay.district}</span>
+                {/* Content */}
+                <div style={{ padding: '20px' }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: theme.text,
+                    marginBottom: '8px',
+                  }}>
+                    {stay.name}
+                  </h3>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <MapPin size={16} color={theme.primary} />
+                      <span style={{ color: theme.textMuted, fontSize: '14px' }}>{stay.district}</span>
                     </div>
                     {stay.landmark && (
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                        <span className="text-xs">Near {stay.landmark}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MapPin size={14} color={theme.textMuted} />
+                        <span style={{ color: theme.textMuted, fontSize: '13px' }}>Near {stay.landmark}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-orange-600 flex-shrink-0" />
-                      <span className="text-lg font-bold text-orange-700">RM {stay.priceNight}/night</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <DollarSign size={16} color={theme.success} />
+                      <span style={{ color: theme.success, fontSize: '16px', fontWeight: '700' }}>
+                        RM {stay.priceNight}/night
+                      </span>
                     </div>
                     {stay.rating && (
-                      <div className="flex items-center gap-2">
-                        <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                        <span className="font-semibold">{stay.rating}/10</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Star size={16} color="#fbbf24" fill="#fbbf24" />
+                        <span style={{ color: theme.text, fontSize: '14px', fontWeight: '600' }}>
+                          {Number(stay.rating).toFixed(1)}/10
+                        </span>
                       </div>
                     )}
                   </div>
 
+                  {/* Amenities */}
                   {stay.amenities && stay.amenities.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3 mb-4">
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
                       {stay.amenities.slice(0, 3).map((amenity, index) => (
-                        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                        <span
+                          key={index}
+                          style={{
+                            padding: '4px 10px',
+                            background: 'rgba(168, 85, 247, 0.15)',
+                            color: theme.primaryLight,
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                          }}
+                        >
                           {amenity}
                         </span>
                       ))}
                       {stay.amenities.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded-full">
+                        <span style={{
+                          padding: '4px 10px',
+                          background: theme.cardBorder,
+                          color: theme.textMuted,
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                        }}>
                           +{stay.amenities.length - 3} more
                         </span>
                       )}
                     </div>
                   )}
 
-                  {/* Social Metrics Summary */}
+                  {/* Social Metrics */}
                   {(stay.social_mentions || stay.is_trending) && (
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 mb-4 border border-purple-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-purple-700">Social Performance</span>
+                    <div style={{
+                      background: 'rgba(168, 85, 247, 0.1)',
+                      border: '1px solid rgba(168, 85, 247, 0.2)',
+                      borderRadius: '10px',
+                      padding: '12px',
+                      marginBottom: '16px',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <MessageCircle size={14} color={theme.primary} />
+                          <span style={{ color: theme.textMuted, fontSize: '12px' }}>
+                            {stay.social_mentions || 0} mentions
+                          </span>
+                        </div>
                         {stay.is_trending && (
-                          <span className="px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            Trending
+                          <span style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 8px',
+                            background: theme.success,
+                            borderRadius: '6px',
+                            color: 'white',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                          }}>
+                            <TrendingUp size={12} /> Trending
                           </span>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {stay.social_mentions !== undefined && (
-                          <div className="flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3 text-purple-600" />
-                            <span className="text-gray-600">{stay.social_mentions} mentions</span>
-                          </div>
-                        )}
-                        {stay.social_rating && (
-                          <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                            <span className="text-gray-600">{stay.social_rating}/10</span>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   )}
 
-                  {/* Image Count */}
+                  {/* Images count */}
                   {stay.stay_images && stay.stay_images.length > 0 && (
-                    <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
-                      <ImageIcon className="w-4 h-4 text-blue-600" />
-                      <span>{stay.stay_images.length} {stay.stay_images.length === 1 ? 'image' : 'images'} uploaded</span>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '16px',
+                      color: theme.textMuted,
+                      fontSize: '13px',
+                    }}>
+                      <ImageIcon size={14} />
+                      {stay.stay_images.length} {stay.stay_images.length === 1 ? 'image' : 'images'} uploaded
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2 pt-4 border-t">
+                  {/* Action Buttons */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '8px',
+                    paddingTop: '16px',
+                    borderTop: `1px solid ${theme.cardBorder}`,
+                  }}>
+                    <button
+                      onClick={() => handleToggleOpen(stay)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '10px',
+                        background: stay.is_open !== false ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                        color: stay.is_open !== false ? theme.danger : theme.success,
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                      }}
+                    >
+                      {stay.is_open !== false ? 'Close' : 'Open'}
+                    </button>
                     <button
                       onClick={() => handleEdit(stay)}
-                      className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '10px',
+                        background: 'rgba(59, 130, 246, 0.15)',
+                        color: '#3b82f6',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                      }}
                     >
-                      <Edit2 className="w-4 h-4" />
-                      Edit
+                      <Edit2 size={14} /> Edit
                     </button>
                     <button
                       onClick={() => handleOpenImageModal(stay)}
-                      className="flex items-center justify-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '10px',
+                        background: 'rgba(168, 85, 247, 0.15)',
+                        color: theme.primary,
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                      }}
                     >
-                      <Upload className="w-4 h-4" />
-                      Images
-                    </button>
-                    <button
-                      onClick={() => handleOpenAnalytics(stay)}
-                      className="flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      Analytics
+                      <Upload size={14} /> Images
                     </button>
                     <button
                       onClick={() => handleDelete(stay.id)}
-                      className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '10px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        color: theme.danger,
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
+                      <Trash2 size={14} /> Delete
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
+              </div>
+            ))}
+          </div>
         )}
-        </div>
-      </div>
+      </main>
 
-      {/* Add/Edit Modal - Vibrant SAMS Portal Style */}
+      {/* Add/Edit Modal */}
       {showAddModal && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 50,
+          }}
           onClick={resetForm}
         >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border-4 border-orange-400"
+          <div
+            style={{
+              background: theme.cardBg,
+              borderRadius: '20px',
+              maxWidth: '700px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              border: `1px solid ${theme.cardBorder}`,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Vibrant Header */}
-            <div className="bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 text-white px-8 py-8">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-4xl shadow-lg">
-                  🏨
+            {/* Modal Header */}
+            <div style={{
+              background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+              padding: '24px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '14px',
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Building2 size={28} color="white" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold">
-                    {editingStay ? 'Update Your Property' : 'Add Your Property'}
+                  <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'white', margin: 0 }}>
+                    {editingStay ? 'Edit Property' : 'Add New Property'}
                   </h2>
-                  <p className="text-orange-100 text-base mt-1">
-                    {editingStay ? 'Make changes to your property information' : "Let's get your accommodation listed!"}
+                  <p style={{ color: 'rgba(255,255,255,0.8)', margin: 0, fontSize: '14px' }}>
+                    {editingStay ? 'Update your property details' : 'List your accommodation'}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Scrollable Form Content */}
-            <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Step 1: Basic Information - Orange */}
-                <div className="bg-gradient-to-r from-orange-100 to-orange-50 border-2 border-orange-300 rounded-xl p-6 shadow-md">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                      1
-                    </div>
+            {/* Modal Content */}
+            <div style={{ padding: '24px', maxHeight: 'calc(90vh - 200px)', overflowY: 'auto' }}>
+              <form onSubmit={handleSubmit}>
+                {/* Basic Info */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ color: theme.text, fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+                    📝 Basic Information
+                  </h3>
+                  <div style={{ display: 'grid', gap: '16px' }}>
                     <div>
-                      <h3 className="font-bold text-orange-900 text-lg">📝 Basic Information</h3>
-                      <p className="text-sm text-orange-700">Tell us about your property</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <FormInput
-                      label="Property Name"
-                      name="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      placeholder="e.g., Sunset Beach Resort"
-                      required
-                      hint="What's the name of your hotel/property?"
-                    />
-
-                    <FormSelect
-                      label="Property Type"
-                      name="type"
-                      value={formData.type}
-                      onChange={(e) => setFormData({...formData, type: e.target.value})}
-                      options={stayTypes}
-                      required
-                      hint="What type of accommodation do you offer?"
-                    />
-                  </div>
-                </div>
-
-                {/* Step 2: Location - Purple */}
-                <div className="bg-gradient-to-r from-purple-100 to-purple-50 border-2 border-purple-300 rounded-xl p-6 shadow-md">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                      2
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-purple-900 text-lg">📍 Location Details</h3>
-                      <p className="text-sm text-purple-700">Where is your property?</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <FormInput
-                      label="District or Area"
-                      name="district"
-                      value={formData.district}
-                      onChange={(e) => setFormData({...formData, district: e.target.value})}
-                      placeholder="e.g., Langkawi, Alor Setar, Kuah"
-                      required
-                      icon={<MapPin className="w-5 h-5" />}
-                      hint="Which area/district is your property in?"
-                    />
-
-                    <FormInput
-                      label="Nearby Landmark (Optional)"
-                      name="landmark"
-                      value={formData.landmark}
-                      onChange={(e) => setFormData({...formData, landmark: e.target.value})}
-                      placeholder="e.g., Near Pantai Cenang Beach"
-                      hint="Any famous place nearby? (You can skip this)"
-                    />
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <FormInput
-                        label="Latitude (Optional)"
-                        name="lat"
-                        type="number"
-                        step="any"
-                        value={formData.lat}
-                        onChange={(e) => setFormData({...formData, lat: e.target.value})}
-                        placeholder="e.g., 6.3500"
-                        hint="GPS latitude"
-                      />
-                      <FormInput
-                        label="Longitude (Optional)"
-                        name="lon"
-                        type="number"
-                        step="any"
-                        value={formData.lon}
-                        onChange={(e) => setFormData({...formData, lon: e.target.value})}
-                        placeholder="e.g., 99.8000"
-                        hint="GPS longitude"
+                      <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                        Property Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="e.g., Sunset Beach Resort"
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          background: theme.background,
+                          border: `1px solid ${theme.cardBorder}`,
+                          borderRadius: '10px',
+                          color: theme.text,
+                          fontSize: '14px',
+                          boxSizing: 'border-box',
+                        }}
                       />
                     </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                          Property Type *
+                        </label>
+                        <select
+                          value={formData.type}
+                          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: theme.background,
+                            border: `1px solid ${theme.cardBorder}`,
+                            borderRadius: '10px',
+                            color: theme.text,
+                            fontSize: '14px',
+                          }}
+                        >
+                          <option value="">Select type...</option>
+                          {stayTypes.map(t => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                          District *
+                        </label>
+                        <select
+                          value={formData.district}
+                          onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: theme.background,
+                            border: `1px solid ${theme.cardBorder}`,
+                            borderRadius: '10px',
+                            color: theme.text,
+                            fontSize: '14px',
+                          }}
+                        >
+                          <option value="">Select district...</option>
+                          {districts.map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                          Price Per Night (RM) *
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.priceNight}
+                          onChange={(e) => setFormData({ ...formData, priceNight: e.target.value })}
+                          placeholder="150.00"
+                          required
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: theme.background,
+                            border: `1px solid ${theme.cardBorder}`,
+                            borderRadius: '10px',
+                            color: theme.text,
+                            fontSize: '14px',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                          Nearby Landmark
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.landmark}
+                          onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
+                          placeholder="e.g., Near Pantai Cenang"
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: theme.background,
+                            border: `1px solid ${theme.cardBorder}`,
+                            borderRadius: '10px',
+                            color: theme.text,
+                            fontSize: '14px',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Step 3: Pricing - Green */}
-                <div className="bg-gradient-to-r from-green-100 to-green-50 border-2 border-green-300 rounded-xl p-6 shadow-md">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                      3
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-green-900 text-lg">💰 Pricing</h3>
-                      <p className="text-sm text-green-700">Set your nightly rate</p>
-                    </div>
-                  </div>
-
-                  <FormInput
-                    label="Price Per Night (RM)"
-                    name="priceNight"
-                    type="number"
-                    step="0.01"
-                    value={formData.priceNight}
-                    onChange={(e) => setFormData({...formData, priceNight: e.target.value})}
-                    placeholder="e.g., 150"
-                    required
-                    icon={<DollarSign className="w-5 h-5" />}
-                    hint="How much do you charge per night? (in Malaysian Ringgit)"
-                  />
-                </div>
-
-                {/* Step 4: Amenities - Blue */}
-                <div className="bg-gradient-to-r from-blue-100 to-blue-50 border-2 border-blue-300 rounded-xl p-6 shadow-md">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                      4
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-blue-900 text-lg">✨ Amenities</h3>
-                      <p className="text-sm text-blue-700">What do you offer?</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {commonAmenities.map((amenity) => (
-                      <label 
-                        key={amenity} 
-                        className={`
-                          flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all
-                          ${formData.amenities.includes(amenity) 
-                            ? 'border-blue-500 bg-blue-50 shadow-md' 
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                          }
-                        `}
+                {/* Amenities */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ color: theme.text, fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+                    ✨ Amenities
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+                    {commonAmenities.map(amenity => (
+                      <label
+                        key={amenity}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '10px 14px',
+                          background: formData.amenities.includes(amenity)
+                            ? 'rgba(168, 85, 247, 0.2)'
+                            : theme.background,
+                          border: `1px solid ${formData.amenities.includes(amenity) ? theme.primary : theme.cardBorder}`,
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}
                       >
                         <input
                           type="checkbox"
                           checked={formData.amenities.includes(amenity)}
                           onChange={() => handleAmenityToggle(amenity)}
-                          className="w-5 h-5 text-blue-600 rounded"
+                          style={{ display: 'none' }}
                         />
-                        <span className="text-sm font-medium">{amenity}</span>
-                        {formData.amenities.includes(amenity) && (
-                          <span className="ml-auto text-blue-600 font-bold">✓</span>
-                        )}
+                        <span style={{
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '4px',
+                          border: `2px solid ${formData.amenities.includes(amenity) ? theme.primary : theme.cardBorder}`,
+                          background: formData.amenities.includes(amenity) ? theme.primary : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          {formData.amenities.includes(amenity) && <Check size={12} color="white" />}
+                        </span>
+                        <span style={{ color: theme.text, fontSize: '13px' }}>{amenity}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                {/* Step 5: Contact Information - Teal */}
-                <div className="bg-gradient-to-r from-teal-100 to-teal-50 border-2 border-teal-300 rounded-xl p-6 shadow-md">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                      5
-                    </div>
+                {/* Contact Info */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ color: theme.text, fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+                    📞 Contact Information
+                  </h3>
+                  <div style={{ display: 'grid', gap: '16px' }}>
                     <div>
-                      <h3 className="font-bold text-teal-900 text-lg">📞 Contact Information</h3>
-                      <p className="text-sm text-teal-700">How can guests reach you?</p>
+                      <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                        Contact Email
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.contact_email}
+                        onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                        placeholder="info@yourhotel.com"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          background: theme.background,
+                          border: `1px solid ${theme.cardBorder}`,
+                          borderRadius: '10px',
+                          color: theme.text,
+                          fontSize: '14px',
+                          boxSizing: 'border-box',
+                        }}
+                      />
                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <FormInput
-                      label="Contact Email"
-                      name="contact_email"
-                      type="email"
-                      value={formData.contact_email}
-                      onChange={(e) => setFormData({...formData, contact_email: e.target.value})}
-                      placeholder="e.g., info@yourhotel.com"
-                      icon={<Phone className="w-5 h-5" />}
-                      hint="Email where guests can reach you"
-                    />
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <FormInput
-                        label="Contact Phone"
-                        name="contact_phone"
-                        type="tel"
-                        value={formData.contact_phone}
-                        onChange={(e) => setFormData({...formData, contact_phone: e.target.value})}
-                        placeholder="e.g., +60123456789"
-                        icon={<Phone className="w-5 h-5" />}
-                        hint="Phone number for calls"
-                      />
-
-                      <FormInput
-                        label="WhatsApp Number"
-                        name="contact_whatsapp"
-                        type="tel"
-                        value={formData.contact_whatsapp}
-                        onChange={(e) => setFormData({...formData, contact_whatsapp: e.target.value})}
-                        placeholder="e.g., +60123456789"
-                        icon={<Phone className="w-5 h-5" />}
-                        hint="WhatsApp for quick messages"
-                      />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.contact_phone}
+                          onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                          placeholder="+60123456789"
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: theme.background,
+                            border: `1px solid ${theme.cardBorder}`,
+                            borderRadius: '10px',
+                            color: theme.text,
+                            fontSize: '14px',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                          WhatsApp
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.contact_whatsapp}
+                          onChange={(e) => setFormData({ ...formData, contact_whatsapp: e.target.value })}
+                          placeholder="+60123456789"
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            background: theme.background,
+                            border: `1px solid ${theme.cardBorder}`,
+                            borderRadius: '10px',
+                            color: theme.text,
+                            fontSize: '14px',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Step 6: Booking Platform Integration - Indigo */}
-                <div className="bg-gradient-to-r from-indigo-100 to-indigo-50 border-2 border-indigo-300 rounded-xl p-6 shadow-md">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                      6
-                    </div>
+                {/* Booking Links */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ color: theme.text, fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+                    🔗 Booking Platform Links
+                  </h3>
+                  <div style={{ display: 'grid', gap: '16px' }}>
                     <div>
-                      <h3 className="font-bold text-indigo-900 text-lg">🔗 Online Booking</h3>
-                      <p className="text-sm text-indigo-700">Add booking platform links (optional)</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <FormSelect
-                      label="Booking Provider"
-                      name="booking_provider"
-                      value={formData.booking_provider}
-                      onChange={(e) => setFormData({...formData, booking_provider: e.target.value})}
-                      options={[
-                        { value: 'booking.com', label: '🔵 Booking.com' },
-                        { value: 'agoda', label: '🟣 Agoda' },
-                        { value: 'both', label: '🎯 Both Platforms' },
-                        { value: 'direct', label: '📞 Direct Booking Only' },
-                      ]}
-                      hint="Where can guests book your property online?"
-                    />
-
-                    {(formData.booking_provider === 'booking.com' || formData.booking_provider === 'both') && (
-                      <FormInput
-                        label="Booking.com Property URL"
-                        name="booking_com_url"
+                      <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                        Booking.com URL
+                      </label>
+                      <input
                         type="url"
                         value={formData.booking_com_url}
-                        onChange={(e) => setFormData({...formData, booking_com_url: e.target.value})}
-                        placeholder="https://www.booking.com/hotel/my/your-property.html"
-                        hint="Copy the full URL from your Booking.com property page"
+                        onChange={(e) => setFormData({ ...formData, booking_com_url: e.target.value })}
+                        placeholder="https://www.booking.com/hotel/..."
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          background: theme.background,
+                          border: `1px solid ${theme.cardBorder}`,
+                          borderRadius: '10px',
+                          color: theme.text,
+                          fontSize: '14px',
+                          boxSizing: 'border-box',
+                        }}
                       />
-                    )}
-
-                    {(formData.booking_provider === 'agoda' || formData.booking_provider === 'both') && (
-                      <FormInput
-                        label="Agoda Property URL"
-                        name="agoda_url"
+                    </div>
+                    <div>
+                      <label style={{ color: theme.textMuted, fontSize: '14px', marginBottom: '6px', display: 'block' }}>
+                        Agoda URL
+                      </label>
+                      <input
                         type="url"
                         value={formData.agoda_url}
-                        onChange={(e) => setFormData({...formData, agoda_url: e.target.value})}
-                        placeholder="https://www.agoda.com/your-property"
-                        hint="Copy the full URL from your Agoda property page"
+                        onChange={(e) => setFormData({ ...formData, agoda_url: e.target.value })}
+                        placeholder="https://www.agoda.com/..."
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          background: theme.background,
+                          border: `1px solid ${theme.cardBorder}`,
+                          borderRadius: '10px',
+                          color: theme.text,
+                          fontSize: '14px',
+                          boxSizing: 'border-box',
+                        }}
                       />
-                    )}
-
-                    {formData.booking_provider === 'direct' && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm text-blue-800">
-                          <strong>💡 Direct Booking:</strong> Guests will be able to search for your property using your property name and location.
-                        </p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </form>
-            </div>
 
-            {/* Sticky Action Buttons */}
-            <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 px-8 py-6 flex gap-4">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold text-lg"
-              >
-                ❌ Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                onClick={handleSubmit}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 text-white rounded-xl hover:shadow-xl transition-all font-semibold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
-              >
-                {loading ? '⏳ Saving...' : (editingStay ? '✅ Update Property' : '✅ Add Property')}
-              </button>
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    style={{
+                      padding: '12px 24px',
+                      background: 'transparent',
+                      border: `1px solid ${theme.cardBorder}`,
+                      borderRadius: '10px',
+                      color: theme.textMuted,
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '12px 24px',
+                      background: theme.primary,
+                      border: 'none',
+                      borderRadius: '10px',
+                      color: 'white',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Save size={18} />
+                    {editingStay ? 'Update Property' : 'Add Property'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -936,73 +1227,136 @@ const StayOwnerDashboard: React.FC = () => {
 
       {/* Image Upload Modal */}
       {showImageModal && selectedStayForImages && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 50,
+          }}
           onClick={() => setShowImageModal(false)}
         >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border-4 border-purple-400"
+          <div
+            style={{
+              background: theme.cardBg,
+              borderRadius: '20px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              border: `1px solid ${theme.cardBorder}`,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-500 via-purple-400 to-pink-500 text-white px-8 py-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg">
-                    📸
-                  </div>
+            {/* Modal Header */}
+            <div style={{
+              background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.primaryDark} 100%)`,
+              padding: '24px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <ImageIcon size={28} color="white" />
                   <div>
-                    <h2 className="text-2xl font-bold">Manage Images</h2>
-                    <p className="text-purple-100 text-sm">{selectedStayForImages.name}</p>
+                    <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0 }}>
+                      Manage Images
+                    </h2>
+                    <p style={{ color: 'rgba(255,255,255,0.8)', margin: 0, fontSize: '14px' }}>
+                      {selectedStayForImages.name}
+                    </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowImageModal(false)}
-                  className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    cursor: 'pointer',
+                  }}
                 >
-                  <X className="w-6 h-6" />
+                  <X size={20} color="white" />
                 </button>
               </div>
             </div>
 
-            <div className="overflow-y-auto max-h-[calc(90vh-160px)] p-8">
-              {/* Existing Images */}
+            {/* Modal Content */}
+            <div style={{ padding: '24px', maxHeight: 'calc(90vh - 200px)', overflowY: 'auto' }}>
+              {/* Current Images */}
               {selectedStayForImages.stay_images && selectedStayForImages.stay_images.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5 text-purple-600" />
-                    Current Images ({selectedStayForImages.stay_images.length})
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div style={{ marginBottom: '24px' }}>
+                  <h4 style={{ color: theme.text, fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>
+                    Current Images
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                     {selectedStayForImages.stay_images.map((img) => (
-                      <div key={img.id} className="relative group rounded-xl overflow-hidden border-2 border-gray-200 hover:border-purple-400 transition-all">
+                      <div
+                        key={img.id}
+                        style={{
+                          position: 'relative',
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          aspectRatio: '1',
+                        }}
+                      >
                         <img
                           src={img.image_url}
-                          alt={img.caption || 'Stay image'}
-                          className="w-full h-40 object-cover"
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                         {img.is_primary && (
-                          <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-white" />
-                            Primary
+                          <div style={{
+                            position: 'absolute',
+                            top: '8px',
+                            left: '8px',
+                            background: theme.primary,
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: '600',
+                          }}>
+                            PRIMARY
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '8px',
+                          right: '8px',
+                          display: 'flex',
+                          gap: '4px',
+                        }}>
                           {!img.is_primary && (
                             <button
                               onClick={() => handleSetPrimaryImage(selectedStayForImages.id, img.id)}
-                              className="bg-yellow-500 text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-yellow-600 flex items-center gap-1"
+                              style={{
+                                background: 'rgba(0,0,0,0.7)',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '6px',
+                                cursor: 'pointer',
+                              }}
+                              title="Set as primary"
                             >
-                              <Star className="w-4 h-4" />
-                              Set Primary
+                              <Star size={14} color="white" />
                             </button>
                           )}
                           <button
                             onClick={() => handleDeleteImage(selectedStayForImages.id, img.id)}
-                            className="bg-red-500 text-white px-3 py-2 rounded-lg font-semibold text-sm hover:bg-red-600 flex items-center gap-1"
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.9)',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '6px',
+                              cursor: 'pointer',
+                            }}
+                            title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
+                            <Trash2 size={14} color="white" />
                           </button>
                         </div>
                       </div>
@@ -1011,247 +1365,99 @@ const StayOwnerDashboard: React.FC = () => {
                 </div>
               )}
 
-              {/* Upload New Images */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
-                  <Upload className="w-5 h-5" />
+              {/* Upload New */}
+              <div>
+                <h4 style={{ color: theme.text, fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>
                   Upload New Images
-                </h3>
+                </h4>
+                <label
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '40px',
+                    border: `2px dashed ${theme.cardBorder}`,
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Upload size={32} color={theme.textMuted} style={{ marginBottom: '12px' }} />
+                  <span style={{ color: theme.text, fontWeight: '600', marginBottom: '4px' }}>
+                    Click to upload images
+                  </span>
+                  <span style={{ color: theme.textMuted, fontSize: '13px' }}>
+                    PNG, JPG up to 5MB each
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageSelect}
+                    style={{ display: 'none' }}
+                  />
+                </label>
 
-                {/* File Input */}
-                <div className="mb-4">
-                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-purple-300 rounded-xl cursor-pointer bg-white hover:bg-purple-50 transition-all">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="w-12 h-12 text-purple-400 mb-3" />
-                      <p className="mb-2 text-sm text-gray-700">
-                        <span className="font-semibold">Click to upload</span> or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-500">PNG, JPG, JPEG up to 10MB</p>
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                {/* Image Previews */}
+                {/* Previews */}
                 {imagePreviews.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                      Ready to Upload ({imagePreviews.length})
-                    </h4>
-                    <div className="grid grid-cols-3 gap-3">
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                       {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative group rounded-lg overflow-hidden border-2 border-purple-200">
+                        <div
+                          key={index}
+                          style={{
+                            position: 'relative',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            aspectRatio: '1',
+                          }}
+                        >
                           <img
                             src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover"
+                            alt=""
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                           <button
                             onClick={() => handleRemovePreview(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              background: 'rgba(239, 68, 68, 0.9)',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px',
+                              cursor: 'pointer',
+                            }}
                           >
-                            <X className="w-4 h-4" />
+                            <X size={12} color="white" />
                           </button>
                         </div>
                       ))}
                     </div>
+                    <button
+                      onClick={handleUploadImages}
+                      disabled={uploadingImages}
+                      style={{
+                        width: '100%',
+                        marginTop: '16px',
+                        padding: '12px',
+                        background: theme.primary,
+                        border: 'none',
+                        borderRadius: '10px',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: uploadingImages ? 'not-allowed' : 'pointer',
+                        opacity: uploadingImages ? 0.7 : 1,
+                      }}
+                    >
+                      {uploadingImages ? 'Uploading...' : `Upload ${imagePreviews.length} Image${imagePreviews.length > 1 ? 's' : ''}`}
+                    </button>
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 px-8 py-4 flex gap-4">
-              <button
-                onClick={() => setShowImageModal(false)}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold"
-              >
-                Close
-              </button>
-              {imageFiles.length > 0 && (
-                <button
-                  onClick={handleUploadImages}
-                  disabled={uploadingImages}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-xl transition-all font-semibold disabled:opacity-50"
-                >
-                  {uploadingImages ? '⏳ Uploading...' : `📤 Upload ${imageFiles.length} Image${imageFiles.length > 1 ? 's' : ''}`}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Analytics Modal */}
-      {showAnalytics && selectedStayForAnalytics && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={() => setShowAnalytics(false)}
-        >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border-4 border-green-400"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white px-8 py-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg">
-                    📊
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Performance Analytics</h2>
-                    <p className="text-green-100 text-sm">{selectedStayForAnalytics.name}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowAnalytics(false)}
-                  className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-y-auto max-h-[calc(90vh-160px)] p-8">
-              {/* Trending Status */}
-              {selectedStayForAnalytics.is_trending !== undefined && (
-                <div className={`rounded-xl p-6 mb-6 ${
-                  selectedStayForAnalytics.is_trending 
-                    ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300'
-                    : 'bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300'
-                }`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    {selectedStayForAnalytics.is_trending ? (
-                      <>
-                        <TrendingUp className="w-8 h-8 text-green-600" />
-                        <div>
-                          <h3 className="text-xl font-bold text-green-900">🔥 Trending Property!</h3>
-                          <p className="text-sm text-green-700">
-                            Growing {selectedStayForAnalytics.trending_percentage?.toFixed(1)}% this week
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <TrendingDown className="w-8 h-8 text-gray-600" />
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">Not Currently Trending</h3>
-                          <p className="text-sm text-gray-600">Keep promoting to boost visibility</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Metrics Grid */}
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
-                {/* Social Rating */}
-                {selectedStayForAnalytics.social_rating && (
-                  <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
-                      <div>
-                        <p className="text-sm text-yellow-700 font-semibold">Social Rating</p>
-                        <p className="text-3xl font-bold text-yellow-900">
-                          {selectedStayForAnalytics.social_rating.toFixed(1)}/10
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-yellow-700">Based on social media sentiment</p>
-                  </div>
-                )}
-
-                {/* Social Mentions */}
-                {selectedStayForAnalytics.social_mentions !== undefined && (
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <MessageCircle className="w-8 h-8 text-purple-600" />
-                      <div>
-                        <p className="text-sm text-purple-700 font-semibold">Social Mentions</p>
-                        <p className="text-3xl font-bold text-purple-900">
-                          {selectedStayForAnalytics.social_mentions}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-purple-700">Posts mentioning your property</p>
-                  </div>
-                )}
-
-                {/* Social Engagement */}
-                {selectedStayForAnalytics.social_engagement !== undefined && (
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Heart className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <p className="text-sm text-blue-700 font-semibold">Total Engagement</p>
-                        <p className="text-3xl font-bold text-blue-900">
-                          {selectedStayForAnalytics.social_engagement?.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-blue-700">Likes, comments & shares</p>
-                  </div>
-                )}
-
-                {/* Estimated Interest */}
-                {selectedStayForAnalytics.estimated_interest !== undefined && (
-                  <div className="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-300 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Eye className="w-8 h-8 text-green-600" />
-                      <div>
-                        <p className="text-sm text-green-700 font-semibold">Estimated Reach</p>
-                        <p className="text-3xl font-bold text-green-900">
-                          {selectedStayForAnalytics.estimated_interest?.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-green-700">Potential viewers</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Tips & Recommendations */}
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-300 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center gap-2">
-                  💡 Tips to Improve Performance
-                </h3>
-                <ul className="space-y-2 text-sm text-indigo-800">
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Upload high-quality photos to attract more bookings</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Encourage guests to share their experience on social media</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Keep your contact information and pricing up to date</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Respond quickly to inquiries to build trust</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 px-8 py-4">
-              <button
-                onClick={() => setShowAnalytics(false)}
-                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl hover:shadow-xl transition-all font-semibold"
-              >
-                Close Analytics
-              </button>
             </div>
           </div>
         </div>

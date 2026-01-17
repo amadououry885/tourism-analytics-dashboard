@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Utensils, Star, DollarSign } from 'lucide-react';
+import { Search, Utensils, Star, DollarSign, Check } from 'lucide-react';
 import api from '../../services/api';
 import { FoodCard, Restaurant } from './FoodCard';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
@@ -14,6 +14,7 @@ export default function FoodExplore() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState('All');
   const [selectedPrice, setSelectedPrice] = useState('All');
+  const [halalOnly, setHalalOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'reviews' | 'name'>('rating');
 
   // Fetch restaurants
@@ -85,6 +86,9 @@ export default function FoodExplore() {
         if (selectedPrice !== 'All' && restaurant.price_range !== selectedPrice) {
           return false;
         }
+        if (halalOnly && !restaurant.is_halal) {
+          return false;
+        }
         return true;
       })
       .sort((a, b) => {
@@ -98,7 +102,7 @@ export default function FoodExplore() {
             return (b.rating || 0) - (a.rating || 0);
         }
       });
-  }, [restaurants, searchTerm, selectedCuisine, selectedPrice, sortBy]);
+  }, [restaurants, searchTerm, selectedCuisine, selectedPrice, halalOnly, sortBy]);
 
   return (
     <div style={{
@@ -241,6 +245,29 @@ export default function FoodExplore() {
             onChange={(val) => setSelectedPrice(val as string)}
             accentColor="#f97316"
           />
+
+          {/* Halal Filter Toggle */}
+          <button
+            onClick={() => setHalalOnly(!halalOnly)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+              borderRadius: '12px',
+              border: halalOnly ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: halalOnly ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+              color: halalOnly ? '#10b981' : '#94a3b8',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>🕌</span>
+            Halal Only
+            {halalOnly && <Check size={16} color="#10b981" />}
+          </button>
 
           {/* Sort */}
           <SortDropdown

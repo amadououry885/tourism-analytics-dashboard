@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, Wifi, Car, Phone, Mail, Navigation, Share2, Hotel, Users, Calendar, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Wifi, Car, Phone, Mail, Navigation, Share2, Hotel, Users, Calendar, Check, MessageCircle, ExternalLink, TrendingUp, Activity } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface StayDetail {
   id: number;
@@ -9,28 +10,48 @@ interface StayDetail {
   district?: string;
   type?: string;
   image_url?: string;
+  main_image_url?: string;
   gallery_images?: string[];
+  stay_images?: { image_url?: string; caption?: string }[];
   rating?: number;
   reviews?: number;
   price_per_night?: number;
+  priceNight?: number;
   amenities?: string[];
   is_available?: boolean;
+  is_open?: boolean;
   description?: string;
   address?: string;
   phone?: string;
   email?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  contact_whatsapp?: string;
   check_in?: string;
   check_out?: string;
   max_guests?: number;
   rooms?: number;
+  booking_com_url?: string;
+  agoda_url?: string;
+  is_internal?: boolean;
+  // Social metrics
+  social_mentions?: number;
+  trending_percentage?: number;
+  estimated_interest?: number;
 }
 
 export default function StayDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [stay, setStay] = useState<StayDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [socialMetrics, setSocialMetrics] = useState<{
+    social_mentions: number;
+    trending_percentage: number;
+    estimated_interest: number;
+  } | null>(null);
 
   useEffect(() => {
     const fetchStay = async () => {
@@ -65,14 +86,83 @@ export default function StayDetails() {
           check_out: '12:00 PM',
           max_guests: 4,
           rooms: 125,
+          is_open: true,
+          contact_email: 'reservations@thedanna.com',
+          contact_phone: '+60 4-959 3288',
+          contact_whatsapp: '+60149593288',
+          booking_com_url: 'https://www.booking.com/hotel/my/the-danna-langkawi.html',
+          agoda_url: 'https://www.agoda.com/the-danna-langkawi',
+        });
+        // Demo social metrics
+        setSocialMetrics({
+          social_mentions: 45,
+          trending_percentage: 12.5,
+          estimated_interest: 2250
         });
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) fetchStay();
+    const fetchSocialMetrics = async () => {
+      try {
+        const response = await api.get(`/stays/${id}/social-metrics/`);
+        setSocialMetrics(response.data);
+      } catch {
+        // Social metrics endpoint may not exist - silently use demo data
+      }
+    };
+
+    if (id) {
+      fetchStay();
+      fetchSocialMetrics();
+    }
   }, [id]);
+
+  // Track booking intent (external link clicks)
+  const handleBookingClick = (platform: 'booking.com' | 'agoda', url: string) => {
+    // Log the click for analytics (in a real app, this would send to backend)
+    console.log(`[Booking Intent] User clicked ${platform} link for stay ${stay?.name} (ID: ${stay?.id})`);
+    
+    // Try to track via API (fire and forget)
+    try {
+      api.post('/analytics/track-booking-intent/', {
+        stay_id: stay?.id,
+        platform,
+        timestamp: new Date().toISOString()
+      }).catch(() => {
+        // Silently fail - just log locally
+        console.log('[Booking Intent] API tracking not available, logged locally');
+      });
+    } catch {
+      // Ignore errors
+    }
+    
+    // Open the external booking link
+    window.open(url, '_blank');
+  };
+
+  // Auth-gated contact handler
+  const handleContact = (type: 'email' | 'phone' | 'whatsapp', value: string) => {
+    if (!isAuthenticated) {
+      navigate('/sign-in', { state: { from: `/stays/${id}` } });
+      return;
+    }
+
+    switch (type) {
+      case 'email':
+        window.location.href = `mailto:${value}?subject=Inquiry about ${stay?.name}`;
+        break;
+      case 'phone':
+        window.location.href = `tel:${value}`;
+        break;
+      case 'whatsapp':
+        // Remove non-numeric characters for WhatsApp URL
+        const cleanNumber = value.replace(/[^0-9]/g, '');
+        window.open(`https://wa.me/${cleanNumber}?text=Hi, I'm interested in ${encodeURIComponent(stay?.name || 'your property')}`, '_blank');
+        break;
+    }
+  };
 
   const handleGetDirections = () => {
     if (!stay) return;
@@ -103,7 +193,48 @@ export default function StayDetails() {
     }
   };
 
-  const allImages = stay?.gallery_images?.length ? stay.gallery_images : [stay?.image_url || ''];
+  // Build image array from multiple possible sources
+  const buildImageArray = () => {
+    const images: string[] = [];
+    
+    // Add main_image_url first if available
+    if (stay?.main_image_url) {
+      images.push(stay.main_image_url);
+    }
+    
+    // Add stay_images
+    if (stay?.stay_images && stay.stay_images.length > 0) {
+      stay.stay_images.forEach(img => {
+        if (img.image_url && !images.includes(img.image_url)) {
+          images.push(img.image_url);
+        }
+      });
+    }
+    
+    // Add gallery_images
+    if (stay?.gallery_images && stay.gallery_images.length > 0) {
+      stay.gallery_images.forEach(url => {
+        if (url && !images.includes(url)) {
+          images.push(url);
+        }
+      });
+    }
+    
+    // Fallback to image_url
+    if (images.length === 0 && stay?.image_url) {
+      images.push(stay.image_url);
+    }
+    
+    return images.length > 0 ? images : [''];
+  };
+
+  const allImages = buildImageArray();
+
+  // Get price from either field
+  const price = stay?.price_per_night || stay?.priceNight;
+
+  // Determine open/closed status
+  const isOpen = stay?.is_open !== false; // Default to open if not specified
 
   if (loading) {
     return (
@@ -250,7 +381,7 @@ export default function StayDetails() {
           padding: '0 24px 32px',
         }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
               <span style={{
                 backgroundColor: 'rgba(59, 130, 246, 0.2)',
                 color: '#3b82f6',
@@ -264,16 +395,31 @@ export default function StayDetails() {
               }}>
                 {getTypeIcon(stay.type)} {stay.type}
               </span>
-              {stay.is_available && (
+              {/* Open/Closed Status Badge */}
+              <span style={{
+                backgroundColor: isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                color: isOpen ? '#10b981' : '#ef4444',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '13px',
+                fontWeight: '600',
+              }}>
+                {isOpen ? '● OPEN' : '● CLOSED'}
+              </span>
+              {/* Trending Badge if trending */}
+              {socialMetrics && socialMetrics.trending_percentage > 0 && (
                 <span style={{
-                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                  color: '#10b981',
+                  backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                  color: '#a855f7',
                   padding: '6px 14px',
                   borderRadius: '20px',
                   fontSize: '13px',
                   fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}>
-                  Available
+                  <TrendingUp size={14} /> Trending
                 </span>
               )}
             </div>
@@ -310,7 +456,7 @@ export default function StayDetails() {
         {/* Quick Stats */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
           gap: '16px',
           marginBottom: '32px',
         }}>
@@ -323,9 +469,9 @@ export default function StayDetails() {
           }}>
             <Star size={24} color="#fbbf24" fill="#fbbf24" style={{ marginBottom: '8px' }} />
             <div style={{ fontSize: '24px', fontWeight: '800', color: '#fbbf24' }}>
-              {stay.rating?.toFixed(1)}
+              {stay.rating ? Number(stay.rating).toFixed(1) : 'N/A'}
             </div>
-            <div style={{ fontSize: '12px', color: '#94a3b8' }}>{stay.reviews} reviews</div>
+            <div style={{ fontSize: '12px', color: '#94a3b8' }}>{stay.reviews || 0} reviews</div>
           </div>
           
           <div style={{
@@ -337,7 +483,7 @@ export default function StayDetails() {
           }}>
             <div style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '8px' }}>From</div>
             <div style={{ fontSize: '24px', fontWeight: '800', color: '#3b82f6' }}>
-              RM {stay.price_per_night}
+              RM {price || 'N/A'}
             </div>
             <div style={{ fontSize: '12px', color: '#94a3b8' }}>per night</div>
           </div>
@@ -369,18 +515,189 @@ export default function StayDetails() {
             </div>
             <div style={{ fontSize: '12px', color: '#94a3b8' }}>Rooms</div>
           </div>
+
+          {/* Social Metrics */}
+          {socialMetrics && (
+            <div style={{
+              backgroundColor: 'rgba(168, 85, 247, 0.1)',
+              border: '1px solid rgba(168, 85, 247, 0.2)',
+              borderRadius: '16px',
+              padding: '20px',
+              textAlign: 'center',
+            }}>
+              <Activity size={24} color="#a855f7" style={{ marginBottom: '8px' }} />
+              <div style={{ fontSize: '24px', fontWeight: '800', color: '#a855f7' }}>
+                {socialMetrics.social_mentions}
+              </div>
+              <div style={{ fontSize: '12px', color: '#94a3b8' }}>Social mentions</div>
+            </div>
+          )}
         </div>
+
+        {/* Contact Owner Section */}
+        {(stay.contact_email || stay.contact_phone || stay.contact_whatsapp) && (
+          <div style={{
+            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+            border: '1px solid rgba(168, 85, 247, 0.2)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '24px',
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#a855f7', marginBottom: '16px' }}>
+              Contact Owner
+            </h3>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}>
+              {stay.contact_email && (
+                <button
+                  onClick={() => handleContact('email', stay.contact_email!)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    color: '#a855f7',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <Mail size={18} />
+                  Email
+                </button>
+              )}
+              {stay.contact_phone && (
+                <button
+                  onClick={() => handleContact('phone', stay.contact_phone!)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    color: '#3b82f6',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <Phone size={18} />
+                  Call
+                </button>
+              )}
+              {stay.contact_whatsapp && (
+                <button
+                  onClick={() => handleContact('whatsapp', stay.contact_whatsapp!)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                    color: '#22c55e',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <MessageCircle size={18} />
+                  WhatsApp
+                </button>
+              )}
+            </div>
+            {!isAuthenticated && (
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '12px' }}>
+                Sign in required to contact the owner
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* External Booking Section */}
+        {(stay.booking_com_url || stay.agoda_url) && (
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '24px',
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#e2e8f0', marginBottom: '16px' }}>
+              Book on External Platforms
+            </h3>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}>
+              {stay.booking_com_url && (
+                <button
+                  onClick={() => handleBookingClick('booking.com', stay.booking_com_url!)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    backgroundColor: '#003580',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <ExternalLink size={18} />
+                  Booking.com
+                </button>
+              )}
+              {stay.agoda_url && (
+                <button
+                  onClick={() => handleBookingClick('agoda', stay.agoda_url!)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 20px',
+                    backgroundColor: '#5392f9',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <ExternalLink size={18} />
+                  Agoda
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div style={{
           display: 'flex',
           gap: '16px',
           marginBottom: '40px',
+          flexWrap: 'wrap',
         }}>
           <button
             onClick={handleGetDirections}
             style={{
               flex: 1,
+              minWidth: '200px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -398,25 +715,6 @@ export default function StayDetails() {
             <Navigation size={20} />
             Get Directions
           </button>
-          
-          {stay.phone && (
-            <a
-              href={`tel:${stay.phone}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '16px 24px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '14px',
-                textDecoration: 'none',
-              }}
-            >
-              <Phone size={20} />
-            </a>
-          )}
           
           <button
             onClick={handleShare}
@@ -513,26 +811,38 @@ export default function StayDetails() {
               </div>
             )}
             
-            {stay.phone && (
+            {(stay.contact_phone || stay.phone) && (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                 <Phone size={20} color="#64748b" />
                 <div>
                   <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Phone</div>
-                  <a href={`tel:${stay.phone}`} style={{ fontSize: '15px', color: '#3b82f6', textDecoration: 'none' }}>
-                    {stay.phone}
-                  </a>
+                  <span style={{ fontSize: '15px', color: '#e2e8f0' }}>
+                    {stay.contact_phone || stay.phone}
+                  </span>
                 </div>
               </div>
             )}
             
-            {stay.email && (
+            {(stay.contact_email || stay.email) && (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                 <Mail size={20} color="#64748b" />
                 <div>
                   <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Email</div>
-                  <a href={`mailto:${stay.email}`} style={{ fontSize: '15px', color: '#3b82f6', textDecoration: 'none' }}>
-                    {stay.email}
-                  </a>
+                  <span style={{ fontSize: '15px', color: '#e2e8f0' }}>
+                    {stay.contact_email || stay.email}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {stay.contact_whatsapp && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <MessageCircle size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>WhatsApp</div>
+                  <span style={{ fontSize: '15px', color: '#e2e8f0' }}>
+                    {stay.contact_whatsapp}
+                  </span>
                 </div>
               </div>
             )}

@@ -16,9 +16,19 @@ const SignInPage: React.FC = () => {
 
   return (
     <>
-      {/* Background - show the tourism dashboard behind the modal */}
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        {/* Semi-transparent overlay with blur effect handled by AuthModal */}
+      {/* Background - dark themed to match the app */}
+      <div className="min-h-screen" style={{ backgroundColor: '#0f172a' }}>
+        {/* Background decoration */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div 
+            className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl"
+            style={{ background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' }}
+          />
+          <div 
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl"
+            style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' }}
+          />
+        </div>
       </div>
       
       {/* Auth Modal - always open on this page */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   Shield, 
   Users, 
@@ -16,13 +16,20 @@ import {
   UserCheck,
   Store,
   Building2,
-  DollarSign,
-  Home
+  Home,
+  Eye,
+  Sparkles,
+  TrendingUp,
+  Send,
+  Bell,
+  FileText,
+  Phone,
+  ExternalLink,
+  AlertCircle,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
-import { FormInput } from '../../components/FormInput';
-import { FormSelect } from '../../components/FormSelect';
 import PlacesManagement from './PlacesManagement';
 
 interface PendingUser {
@@ -33,6 +40,13 @@ interface PendingUser {
   first_name: string;
   last_name: string;
   date_joined: string;
+  // Verification fields
+  phone_number?: string;
+  business_registration_number?: string;
+  verification_document?: string;
+  claimed_vendor_id?: number;
+  claimed_stay_id?: number;
+  business_verification_notes?: string;
 }
 
 interface Event {
@@ -47,6 +61,11 @@ interface Event {
   image_url?: string;
   expected_attendance?: number;
   actual_attendance?: number;
+  // Registration management fields
+  max_capacity?: number;
+  attendee_count?: number;
+  requires_approval?: boolean;
+  pending_registrations_count?: number;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -54,7 +73,6 @@ const AdminDashboard: React.FC = () => {
   const { request, loading } = useApi();
   const navigate = useNavigate();
   
-  // Empty form template
   const emptyEventForm = {
     title: '',
     description: '',
@@ -64,21 +82,23 @@ const AdminDashboard: React.FC = () => {
     tags: [] as string[],
     city: '',
     image_url: '',
-    recurrence_type: 'none', // ✨ NEW: daily, weekly, monthly, yearly, or 'none' for one-time
-    max_capacity: null as number | null, // ✨ NEW: Maximum attendees
+    recurrence_type: 'none',
+    max_capacity: null as number | null,
   };
   
   const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'places'>('approvals');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
-  
   const [showEventModal, setShowEventModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-
   const [eventForm, setEventForm] = useState(emptyEventForm);
-
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  
+  // NEW: States for verification document preview and send reminder modal
+  const [showDocumentModal, setShowDocumentModal] = useState<PendingUser | null>(null);
+  const [showReminderModal, setShowReminderModal] = useState<Event | null>(null);
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderSuccess, setReminderSuccess] = useState(false);
 
   const eventCategories = [
     { value: 'Festival', label: '🎉 Festival' },
@@ -94,8 +114,8 @@ const AdminDashboard: React.FC = () => {
     { value: 'Alor Setar', label: '🏛️ Alor Setar' },
     { value: 'Langkawi', label: '🏝️ Langkawi' },
     { value: 'Sungai Petani', label: '🌳 Sungai Petani' },
-    { value: 'Kedah Darul Aman Negara', label: '👑 Kedah Darul Aman Negara' },
     { value: 'Kuah', label: '⛵ Kuah' },
+    { value: 'Yan', label: '🌾 Yan' },
   ];
 
   useEffect(() => {
@@ -103,13 +123,10 @@ const AdminDashboard: React.FC = () => {
     fetchEvents();
   }, []);
 
-  // Add this new effect to scroll to top when tab changes
   useEffect(() => {
-    // Use setTimeout to ensure DOM is fully updated
     const timer = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
-    
     return () => clearTimeout(timer);
   }, [activeTab]);
 
@@ -124,33 +141,55 @@ const AdminDashboard: React.FC = () => {
 
   const fetchEvents = async () => {
     try {
-      console.log('Fetching events...');
-      // Add timestamp to prevent caching
-      // Use hide_instances=1 to show all events (including newly created ones) without recurring filter
       const timestamp = new Date().getTime();
       const data = await request(`/events/?page_size=100&hide_instances=1&_t=${timestamp}`);
-      console.log('Events data:', data);
-      console.log('Number of events:', data.results?.length || data.length);
-      // Log which events have images
       const eventsArray = data.results || data;
-      eventsArray.forEach((event: Event) => {
-        if (event.image_url && event.image_url.trim() !== '') {
-          console.log(`Event "${event.title}" (ID: ${event.id}) has image (${event.image_url.substring(0, 30)}...)`);
-        }
-      });
-      setEvents(eventsArray);
+      
+      // Fetch pending registration counts for events that require approval
+      const eventsWithPending = await Promise.all(
+        eventsArray.map(async (event: Event) => {
+          if (event.requires_approval) {
+            try {
+              const pendingData = await request(`/events/${event.id}/pending_registrations/`);
+              return { ...event, pending_registrations_count: pendingData.count || 0 };
+            } catch {
+              return { ...event, pending_registrations_count: 0 };
+            }
+          }
+          return { ...event, pending_registrations_count: 0 };
+        })
+      );
+      
+      setEvents(eventsWithPending);
     } catch (error) {
       console.error('Failed to fetch events:', error);
     }
   };
 
+  // NEW: Send reminder to all confirmed attendees
+  const handleSendReminder = async (event: Event) => {
+    if (!event) return;
+    setSendingReminder(true);
+    try {
+      await request(`/events/${event.id}/send_reminder/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          message: `This is a friendly reminder about ${event.title}!\n\nEvent Details:\nDate: ${new Date(event.start_date).toLocaleDateString()}\nLocation: ${event.location_name}\n\nWe look forward to seeing you there!`
+        })
+      }, '✅ Reminders sent to all attendees!');
+      setReminderSuccess(true);
+      setShowReminderModal(null);
+      setTimeout(() => setReminderSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to send reminder:', error);
+    } finally {
+      setSendingReminder(false);
+    }
+  };
+
   const handleApproveUser = async (userId: number) => {
     try {
-      await request(
-        `/auth/admin/users/${userId}/approve/`,
-        { method: 'POST' },
-        '✅ User approved successfully!'
-      );
+      await request(`/auth/admin/users/${userId}/approve/`, { method: 'POST' }, '✅ User approved!');
       fetchPendingUsers();
     } catch (error) {
       console.error('Failed to approve user:', error);
@@ -160,11 +199,7 @@ const AdminDashboard: React.FC = () => {
   const handleRejectUser = async (userId: number) => {
     if (window.confirm('Are you sure you want to reject this user?')) {
       try {
-        await request(
-          `/auth/admin/users/${userId}/reject/`,
-          { method: 'POST' },
-          '✅ User rejected successfully!'
-        );
+        await request(`/auth/admin/users/${userId}/reject/`, { method: 'POST' }, '✅ User rejected!');
         fetchPendingUsers();
       } catch (error) {
         console.error('Failed to reject user:', error);
@@ -176,19 +211,10 @@ const AdminDashboard: React.FC = () => {
     e.preventDefault();
     try {
       if (editingEvent) {
-        await request(
-          `/events/${editingEvent.id}/`,
-          { method: 'PUT', body: JSON.stringify(eventForm) },
-          '✅ Event updated successfully!'
-        );
+        await request(`/events/${editingEvent.id}/`, { method: 'PUT', body: JSON.stringify(eventForm) }, '✅ Event updated!');
       } else {
-        await request(
-          '/events/',
-          { method: 'POST', body: JSON.stringify(eventForm) },
-          '✅ Event added successfully!'
-        );
+        await request('/events/', { method: 'POST', body: JSON.stringify(eventForm) }, '✅ Event created!');
       }
-      // Small delay to ensure backend has processed the update
       await new Promise(resolve => setTimeout(resolve, 300));
       await fetchEvents();
       resetEventForm();
@@ -212,27 +238,19 @@ const AdminDashboard: React.FC = () => {
     setEventForm(emptyEventForm);
     setEditingEvent(null);
     setShowEventModal(false);
-    setImageFile(null);
     setImagePreview('');
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files && e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Please select an image smaller than 5MB');
-      return;
-    }
+    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Please select an image smaller than 5MB'); return; }
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64 = reader.result as string;
       setEventForm({ ...eventForm, image_url: base64 });
       setImagePreview(base64);
-      setImageFile(file);
     };
     reader.readAsDataURL(file);
   };
@@ -242,59 +260,52 @@ const AdminDashboard: React.FC = () => {
     navigate('/sign-in');
   };
 
+  // Calculate stats
+  const now = new Date();
+  const upcomingEvents = events.filter(e => new Date(e.end_date || e.start_date) >= now);
+  const pastEvents = events.filter(e => new Date(e.end_date || e.start_date) < now);
+  const nextEvent = upcomingEvents.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0];
+  const daysUntilNext = nextEvent ? Math.ceil((new Date(nextEvent.start_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
   return (
-    <div style={{ 
-      display: 'flex', 
-      minHeight: '100vh', 
-      background: `linear-gradient(rgba(245, 243, 238, 0.95), rgba(245, 243, 238, 0.95))`,
-      backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4a574' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-    }}>
-      {/* Left Sidebar - Orange Gradient */}
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0f172a' }}>
+      {/* Sidebar */}
       <div style={{
-        width: '160px',
-        background: 'linear-gradient(180deg, #d4a574 0%, #c89963 100%)',
-        padding: '32px 16px',
-        flexShrink: 0,
-        boxShadow: '4px 0 12px rgba(0,0,0,0.1)',
+        width: '260px',
+        background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '24px 16px',
+        display: 'flex',
+        flexDirection: 'column',
       }}>
         {/* Logo */}
-        <div style={{ 
-          textAlign: 'center', 
-          marginBottom: '48px',
-          paddingBottom: '24px',
-          borderBottom: '1px solid rgba(255,255,255,0.2)',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px', padding: '0 8px' }}>
           <div style={{
-            width: '64px',
-            height: '64px',
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: '50%',
+            width: '48px',
+            height: '48px',
+            background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+            borderRadius: '14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px',
-            fontSize: '32px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
           }}>
-            🛡️
+            <Shield style={{ width: '26px', height: '26px', color: 'white' }} />
           </div>
-          <div style={{ 
-            fontSize: '11px', 
-            fontWeight: '600', 
-            color: 'white',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}>
-            ADMIN
+          <div>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: '#ffffff' }}>Admin Portal</div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Kedah Tourism</div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav style={{ marginBottom: '32px' }}>
+        <nav style={{ flex: 1 }}>
+          <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', padding: '0 12px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Management
+          </div>
           {[
-            { id: 'approvals', label: 'User Approvals', icon: Users, badge: pendingUsers.length },
-            { id: 'events', label: 'Events', icon: Calendar, badge: 0 },
-            { id: 'places', label: 'Places', icon: MapPin, badge: 0 },
+            { id: 'approvals', label: 'User Approvals', icon: Users, badge: pendingUsers.length, color: '#f59e0b' },
+            { id: 'events', label: 'Events', icon: Calendar, badge: upcomingEvents.length, color: '#a855f7' },
+            { id: 'places', label: 'Places', icon: MapPin, badge: 0, color: '#22c55e' },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -305,479 +316,587 @@ const AdminDashboard: React.FC = () => {
                 style={{
                   width: '100%',
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '16px 8px',
-                  marginBottom: '8px',
-                  background: isActive ? 'rgba(255,255,255,0.2)' : 'transparent',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  marginBottom: '6px',
+                  background: isActive ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
                   border: 'none',
                   borderRadius: '12px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  position: 'relative',
+                  borderLeft: isActive ? '3px solid #a855f7' : '3px solid transparent',
                 }}
-                onMouseEnter={(e) => !isActive && (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-                onMouseLeave={(e) => !isActive && (e.currentTarget.style.background = 'transparent')}
               >
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  background: isActive ? 'white' : 'rgba(255,255,255,0.2)',
+                  background: isActive ? item.color : 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                  <Icon style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    color: isActive ? '#d4a574' : 'white' 
-                  }} />
+                  <Icon style={{ width: '20px', height: '20px', color: isActive ? 'white' : '#94a3b8' }} />
                 </div>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  color: 'white',
-                  textAlign: 'center',
-                  lineHeight: '1.2',
-                }}>
+                <span style={{ flex: 1, textAlign: 'left', fontSize: '15px', fontWeight: isActive ? '600' : '500', color: isActive ? '#ffffff' : '#94a3b8' }}>
                   {item.label}
                 </span>
                 {item.badge > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    background: 'red',
-                    color: 'white',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    padding: '2px 6px',
-                    borderRadius: '10px',
-                    minWidth: '18px',
-                    textAlign: 'center',
-                    animation: 'pulse 2s infinite',
+                  <span style={{
+                    background: item.id === 'approvals' ? '#ef4444' : 'rgba(168, 85, 247, 0.3)',
+                    color: item.id === 'approvals' ? 'white' : '#a855f7',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
                   }}>
                     {item.badge}
-                  </div>
+                  </span>
                 )}
               </button>
             );
           })}
         </nav>
 
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '16px 8px',
-            background: 'rgba(255,255,255,0.1)',
-            border: 'none',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            marginTop: 'auto',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-        >
-          <div style={{
-            width: '40px',
-            height: '40px',
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <LogOut style={{ width: '20px', height: '20px', color: 'white' }} />
+        {/* User Profile & Logout */}
+        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', marginBottom: '12px' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: 'white',
+            }}>
+              {user?.username?.charAt(0).toUpperCase() || 'A'}
+            </div>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '600', color: '#ffffff' }}>{user?.username || 'Admin'}</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Administrator</div>
+            </div>
           </div>
-          <span style={{
-            fontSize: '11px',
-            fontWeight: '600',
-            color: 'white',
-            textAlign: 'center',
-          }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 16px',
+              background: 'transparent',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              marginBottom: '10px',
+              color: '#94a3b8',
+              fontSize: '14px',
+            }}
+          >
+            <Home style={{ width: '18px', height: '18px' }} />
+            Back to Dashboard
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 16px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              color: '#ef4444',
+              fontSize: '14px',
+            }}
+          >
+            <LogOut style={{ width: '18px', height: '18px' }} />
             Logout
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Center Content Area */}
-        <div style={{ flex: 1, padding: '40px', overflow: 'auto' }}>
-          {/* Header */}
-          <div style={{ marginBottom: '32px' }}>
-            {/* Back to Dashboard Button */}
-            <button
-              onClick={() => navigate('/')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                background: 'white',
-                border: '2px solid #d4a574',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#d4a574',
-                cursor: 'pointer',
-                marginBottom: '24px',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#d4a574';
-                e.currentTarget.style.color = 'white';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'white';
-                e.currentTarget.style.color = '#d4a574';
-              }}
-            >
-              <Home style={{ width: '18px', height: '18px' }} />
-              Back to Analytics Dashboard
-            </button>
-
-            <h1 style={{ 
-              fontSize: '32px', 
-              fontWeight: 'bold', 
-              margin: 0,
-              marginBottom: '8px',
-              color: '#2d2d2d',
-            }}>
-              Admin Control Panel 🛡️
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {/* Top Header */}
+        <div style={{
+          background: 'rgba(30, 41, 59, 0.5)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '24px 32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {activeTab === 'approvals' && <><Users size={28} style={{ color: '#f59e0b' }} /> User Approvals</>}
+              {activeTab === 'events' && <><Calendar size={28} style={{ color: '#a855f7' }} /> Event Management</>}
+              {activeTab === 'places' && <><MapPin size={28} style={{ color: '#22c55e' }} /> Places Management</>}
             </h1>
-            <p style={{ 
-              fontSize: '16px', 
-              color: '#666',
-              margin: 0,
-            }}>
-              Welcome back, {user?.username}! Manage your tourism platform
+            <p style={{ fontSize: '15px', color: '#64748b', margin: '6px 0 0 0' }}>
+              {activeTab === 'approvals' && 'Review and approve vendor registrations'}
+              {activeTab === 'events' && 'Create and manage tourism events'}
+              {activeTab === 'places' && 'Manage tourist attractions and places'}
             </p>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {activeTab === 'events' && (
+              <button
+                onClick={() => setShowEventModal(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+              >
+                <Plus size={20} />
+                Add Event
+              </button>
+            )}
+          </div>
+        </div>
 
-        {/* User Approvals Tab */}
-        {activeTab === 'approvals' && (
-          <div>
-            <div style={{
-              background: 'linear-gradient(135deg, #d4a574 0%, #c89963 100%)',
-              borderRadius: '16px',
-              padding: '24px',
-              marginBottom: '24px',
-              color: 'white',
-              boxShadow: '0 4px 12px rgba(212, 165, 116, 0.3)',
-            }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', margin: 0 }}>
-                👥 Pending User Approvals
-              </h2>
-              <p style={{ color: 'rgba(255,255,255,0.9)', margin: 0 }}>
-                Review and approve vendor and stay owner registrations
-              </p>
+        {/* Content Area */}
+        <div style={{ padding: '28px 32px' }}>
+          {/* Stats Cards */}
+          {activeTab === 'events' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '28px' }}>
+              {[
+                { label: 'Total Events', value: events.length, icon: Calendar, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },
+                { label: 'Upcoming', value: upcomingEvents.length, icon: TrendingUp, color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)' },
+                { label: 'Past Events', value: pastEvents.length, icon: Clock, color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
+                { label: 'Days to Next', value: daysUntilNext, icon: Sparkles, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
+              ].map((stat, i) => (
+                <div key={i} style={{
+                  background: 'rgba(30, 41, 59, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '20px',
+                }}>
+                  <div style={{ width: '56px', height: '56px', background: stat.bg, borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <stat.icon size={28} style={{ color: stat.color }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '32px', fontWeight: '700', color: '#ffffff' }}>{stat.value}</div>
+                    <div style={{ fontSize: '14px', color: '#64748b' }}>{stat.label}</div>
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
 
-            {pendingUsers.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '64px 24px',
-                background: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              }}>
-                <UserCheck style={{ width: '96px', height: '96px', color: '#d4a574', margin: '0 auto 16px' }} />
-                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#2d2d2d', marginBottom: '8px' }}>
-                  ✅ All Caught Up!
-                </h3>
-                <p style={{ fontSize: '18px', color: '#666' }}>
-                  No pending user approvals at the moment.
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px' }}>
-                {pendingUsers.map((pendingUser) => (
-                  <div key={pendingUser.id} style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '24px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    borderLeft: '4px solid #d4a574',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 16px rgba(212,165,116,0.3)'}
-                  onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {pendingUser.role === 'vendor' ? (
-                          <div style={{ padding: '12px', background: 'rgba(212, 165, 116, 0.1)', borderRadius: '12px' }}>
-                            <Store style={{ width: '32px', height: '32px', color: '#d4a574' }} />
+          {/* User Approvals Tab */}
+          {activeTab === 'approvals' && (
+            <div>
+              {pendingUsers.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '100px 24px',
+                  background: 'rgba(30, 41, 59, 0.5)',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}>
+                  <UserCheck style={{ width: '96px', height: '96px', color: '#22c55e', margin: '0 auto 24px' }} />
+                  <h3 style={{ fontSize: '28px', fontWeight: '700', color: '#ffffff', marginBottom: '12px' }}>All Caught Up! ✅</h3>
+                  <p style={{ fontSize: '18px', color: '#64748b' }}>No pending user approvals at the moment.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '24px' }}>
+                  {pendingUsers.map((pendingUser) => (
+                    <div key={pendingUser.id} style={{
+                      background: 'rgba(30, 41, 59, 0.5)',
+                      borderRadius: '20px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{ padding: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                          <div style={{
+                            width: '64px',
+                            height: '64px',
+                            background: pendingUser.role === 'vendor' 
+                              ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                              : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                            borderRadius: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                            {pendingUser.role === 'vendor' 
+                              ? <Store style={{ width: '32px', height: '32px', color: 'white' }} />
+                              : <Building2 style={{ width: '32px', height: '32px', color: 'white' }} />
+                            }
                           </div>
-                        ) : (
-                          <div style={{ padding: '12px', background: 'rgba(107, 165, 135, 0.1)', borderRadius: '12px' }}>
-                            <Building2 style={{ width: '32px', height: '32px', color: '#6ba587' }} />
+                          <div style={{ flex: 1 }}>
+                            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+                              {pendingUser.first_name} {pendingUser.last_name}
+                            </h3>
+                            <span style={{
+                              display: 'inline-block',
+                              marginTop: '6px',
+                              padding: '6px 14px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              borderRadius: '20px',
+                              background: pendingUser.role === 'vendor' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)',
+                              color: pendingUser.role === 'vendor' ? '#f59e0b' : '#22c55e',
+                            }}>
+                              {pendingUser.role === 'vendor' ? '🍽️ Restaurant Owner' : '🏨 Stay Owner'}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div style={{ 
+                          background: 'rgba(0, 0, 0, 0.2)', 
+                          borderRadius: '14px', 
+                          padding: '18px',
+                          marginBottom: '20px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#94a3b8', fontSize: '15px' }}>
+                            <Users size={18} style={{ color: '#a855f7' }} />
+                            <span style={{ color: '#64748b' }}>@{pendingUser.username}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#94a3b8', fontSize: '15px' }}>
+                            <Mail size={18} style={{ color: '#a855f7' }} />
+                            <span>{pendingUser.email}</span>
+                          </div>
+                          {pendingUser.phone_number && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#94a3b8', fontSize: '15px' }}>
+                              <Phone size={18} style={{ color: '#a855f7' }} />
+                              <span>{pendingUser.phone_number}</span>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#94a3b8', fontSize: '15px' }}>
+                            <Clock size={18} style={{ color: '#a855f7' }} />
+                            <span>Joined {new Date(pendingUser.date_joined).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+
+                        {/* Verification Info Section */}
+                        {(pendingUser.business_registration_number || pendingUser.verification_document) && (
+                          <div style={{ 
+                            background: 'rgba(168, 85, 247, 0.1)', 
+                            borderRadius: '14px', 
+                            padding: '18px',
+                            marginBottom: '20px',
+                            border: '1px solid rgba(168, 85, 247, 0.2)',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                              <FileText size={18} style={{ color: '#a855f7' }} />
+                              <span style={{ fontSize: '14px', fontWeight: '600', color: '#a855f7' }}>Verification Documents</span>
+                            </div>
+                            
+                            {pendingUser.business_registration_number && (
+                              <div style={{ marginBottom: '10px', fontSize: '14px', color: '#94a3b8' }}>
+                                <span style={{ fontWeight: '500' }}>Registration #:</span>{' '}
+                                <span style={{ color: '#ffffff' }}>{pendingUser.business_registration_number}</span>
+                              </div>
+                            )}
+                            
+                            {pendingUser.verification_document && (
+                              <button
+                                onClick={() => setShowDocumentModal(pendingUser)}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '10px 16px',
+                                  background: 'rgba(168, 85, 247, 0.2)',
+                                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                                  borderRadius: '10px',
+                                  color: '#a855f7',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  width: '100%',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <Eye size={16} />
+                                View Document
+                              </button>
+                            )}
                           </div>
                         )}
-                        <div>
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#2d2d2d', marginBottom: '4px' }}>
-                            {pendingUser.first_name} {pendingUser.last_name}
-                          </h3>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '4px 12px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            borderRadius: '12px',
-                            background: pendingUser.role === 'vendor' ? 'rgba(212, 165, 116, 0.1)' : 'rgba(107, 165, 135, 0.1)',
-                            color: pendingUser.role === 'vendor' ? '#d4a574' : '#6ba587',
+
+                        {/* Warning if no verification document */}
+                        {!pendingUser.verification_document && !pendingUser.business_registration_number && (
+                          <div style={{ 
+                            background: 'rgba(245, 158, 11, 0.1)', 
+                            borderRadius: '14px', 
+                            padding: '14px',
+                            marginBottom: '20px',
+                            border: '1px solid rgba(245, 158, 11, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
                           }}>
-                            {pendingUser.role === 'vendor' ? '🍽️ Restaurant Owner' : '🏨 Hotel Owner'}
-                          </span>
+                            <AlertCircle size={18} style={{ color: '#f59e0b' }} />
+                            <span style={{ fontSize: '13px', color: '#f59e0b' }}>No verification documents provided</span>
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '14px' }}>
+                          <button
+                            onClick={() => handleRejectUser(pendingUser.id)}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              padding: '14px',
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              borderRadius: '12px',
+                              color: '#ef4444',
+                              fontSize: '15px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <XCircle size={20} />
+                            Reject
+                          </button>
+                          <button
+                            onClick={() => handleApproveUser(pendingUser.id)}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              padding: '14px',
+                              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                              border: 'none',
+                              borderRadius: '12px',
+                              color: 'white',
+                              fontSize: '15px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <CheckCircle size={20} />
+                            Approve
+                          </button>
                         </div>
                       </div>
                     </div>
-
-                    <div style={{ marginBottom: '24px', background: '#f8f8f8', padding: '16px', borderRadius: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
-                        <Users style={{ width: '16px', height: '16px', color: '#d4a574' }} />
-                        <span style={{ fontWeight: '600' }}>Username:</span>
-                        <span style={{ color: '#666' }}>@{pendingUser.username}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '8px' }}>
-                        <Mail style={{ width: '16px', height: '16px', color: '#d4a574' }} />
-                        <span style={{ fontWeight: '600' }}>Email:</span>
-                        <span style={{ color: '#666' }}>{pendingUser.email}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-                        <Clock style={{ width: '16px', height: '16px', color: '#d4a574' }} />
-                        <span style={{ fontWeight: '600' }}>Registered:</span>
-                        <span style={{ color: '#666' }}>{new Date(pendingUser.date_joined).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <button
-                        onClick={() => handleApproveUser(pendingUser.id)}
-                        disabled={loading}
-                        style={{
-                          flex: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          padding: '12px 16px',
-                          background: loading ? '#ccc' : '#6ba587',
-                          border: 'none',
-                          borderRadius: '8px',
-                          color: 'white',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          cursor: loading ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#5a9175')}
-                        onMouseLeave={(e) => !loading && (e.currentTarget.style.background = '#6ba587')}
-                      >
-                        <CheckCircle style={{ width: '20px', height: '20px' }} />
-                        ✅ Approve
-                      </button>
-                      <button
-                        onClick={() => handleRejectUser(pendingUser.id)}
-                        disabled={loading}
-                        style={{
-                          flex: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          padding: '12px 16px',
-                          background: loading ? '#ccc' : '#e74c3c',
-                          border: 'none',
-                          borderRadius: '8px',
-                          color: 'white',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          cursor: loading ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#c0392b')}
-                        onMouseLeave={(e) => !loading && (e.currentTarget.style.background = '#e74c3c')}
-                      >
-                        <XCircle style={{ width: '20px', height: '20px' }} />
-                        ❌ Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Events Tab */}
-        {activeTab === 'events' && (
-          <div>
-            {/* Action Card - Add Event */}
-            <button
-              onClick={() => {
-                setEventForm(emptyEventForm);
-                setImagePreview('');
-                setImageFile(null);
-                setEditingEvent(null);
-                setShowEventModal(true);
-              }}
-              style={{
-                width: '100%',
-                minHeight: '180px',
-                background: 'linear-gradient(135deg, #d4a574 0%, #c89963 100%)',
-                border: 'none',
-                borderRadius: '16px',
-                padding: '32px',
-                cursor: 'pointer',
-                marginBottom: '24px',
-                boxShadow: '0 4px 12px rgba(212, 165, 116, 0.3)',
-                transition: 'all 0.2s',
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 165, 116, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 165, 116, 0.3)';
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
-                    🎉 Add New Tourism Event
-                  </h2>
-                  <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', marginBottom: '16px' }}>
-                    Create festivals, concerts, exhibitions, and attractions
-                  </p>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: 'white' }}>
-                    <Plus style={{ width: '20px', height: '20px' }} />
-                    Click to Add Event
-                  </div>
+                  ))}
                 </div>
-                <Calendar style={{ width: '64px', height: '64px', color: 'rgba(255,255,255,0.3)' }} />
-              </div>
-            </button>
+              )}
+            </div>
+          )}
 
-            {events.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '80px 24px',
-                background: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              }}>
-                <Calendar style={{ width: '128px', height: '128px', color: '#d4a574', margin: '0 auto 24px', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2d2d2d', marginBottom: '12px' }}>
-                  No Events Yet 📅
-                </h3>
-                <p style={{ fontSize: '18px', color: '#666', marginBottom: '32px', maxWidth: '500px', margin: '0 auto 32px' }}>
-                  Use the action card above to create your first tourism event!
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-200">
-                {/* Single Scrollable Card Container */}
-                <div className="max-h-[800px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
-                  {(() => {
-                    const now = new Date();
-                    // Filter: Upcoming = not yet ended (end_date >= now OR no end_date but start_date >= now)
-                    const upcomingEvents = events.filter(event => {
-                      const endDate = event.end_date ? new Date(event.end_date) : null;
-                      const startDate = new Date(event.start_date);
-                      // Show if: has end_date and not ended yet, OR no end_date but hasn't started yet
-                      return endDate ? endDate >= now : startDate >= now;
-                    });
-                    const pastEvents = events.filter(event => {
-                      const endDate = event.end_date ? new Date(event.end_date) : null;
-                      const startDate = new Date(event.start_date);
-                      // Past if: has end_date and it's passed, OR no end_date but start has passed
-                      return endDate ? endDate < now : startDate < now;
-                    });
-
-                    return (
-                      <div className="space-y-8">
-                        {/* Upcoming Events Section */}
-                        {upcomingEvents.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-3 mb-4 sticky top-0 bg-white py-2 z-10">
-                              <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-lg">
-                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                                <h3 className="text-xl font-bold text-green-900">🔥 ACTIVE & UPCOMING EVENTS</h3>
-                              </div>
-                              <span className="text-gray-500 text-lg">({upcomingEvents.length} event{upcomingEvents.length !== 1 ? 's' : ''})</span>
-                            </div>
-                          <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                            {upcomingEvents.map((event) => (
-                              <div key={event.id} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all p-3 border border-green-200 hover:border-green-400 relative overflow-hidden">
-                                {/* Event Image */}
-                                {event.image_url && event.image_url.trim() !== '' ? (
-                                  <div className="mb-2 -mx-3 -mt-3 bg-gray-100">
-                                    <img 
-                                      key={`event-img-${event.id}-${Date.now()}`}
-                                      src={event.image_url} 
-                                      alt={event.title}
-                                      className="w-full h-24 object-cover"
-                                      onLoad={() => console.log(`✅ Image loaded for event ${event.id}: ${event.title}`)}
-                                      onError={(e) => {
-                                        console.error('❌ Image failed to load for event:', event.id, event.title);
-                                        console.error('Image URL length:', event.image_url?.length);
-                                        console.error('Image URL start:', event.image_url?.substring(0, 50));
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
-                                  </div>
+          {/* Events Tab */}
+          {activeTab === 'events' && (
+            <div>
+              {events.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '100px 24px',
+                  background: 'rgba(30, 41, 59, 0.5)',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                }}>
+                  <Calendar style={{ width: '96px', height: '96px', color: '#a855f7', margin: '0 auto 24px', opacity: 0.5 }} />
+                  <h3 style={{ fontSize: '28px', fontWeight: '700', color: '#ffffff', marginBottom: '12px' }}>No Events Yet</h3>
+                  <p style={{ fontSize: '18px', color: '#64748b', marginBottom: '28px' }}>Create your first tourism event to get started!</p>
+                  <button
+                    onClick={() => setShowEventModal(true)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '14px 28px',
+                      background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: 'white',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={20} />
+                    Add Event
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Upcoming Events */}
+                  {upcomingEvents.length > 0 && (
+                    <div style={{ marginBottom: '40px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(34, 197, 94, 0.15)', padding: '10px 20px', borderRadius: '24px' }}>
+                          <div style={{ width: '10px', height: '10px', background: '#22c55e', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
+                          <span style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>🔜 Upcoming Events</span>
+                        </div>
+                        <span style={{ fontSize: '15px', color: '#64748b' }}>({upcomingEvents.length} events)</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
+                        {upcomingEvents.map((event) => {
+                          const daysUntil = Math.ceil((new Date(event.start_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          return (
+                            <div key={event.id} style={{
+                              background: 'rgba(30, 41, 59, 0.5)',
+                              borderRadius: '20px',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              overflow: 'hidden',
+                              transition: 'all 0.3s',
+                            }}>
+                              {/* Image */}
+                              <div style={{ position: 'relative', height: '180px', background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' }}>
+                                {event.image_url ? (
+                                  <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
-                                  <div className="mb-2 -mx-3 -mt-3 bg-gradient-to-br from-purple-100 to-blue-100 h-24 flex items-center justify-center">
-                                    <Calendar className="w-8 h-8 text-purple-400" />
+                                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Calendar size={56} style={{ color: 'rgba(255,255,255,0.3)' }} />
                                   </div>
                                 )}
+                                <div style={{
+                                  position: 'absolute',
+                                  top: '14px',
+                                  left: '14px',
+                                  background: 'rgba(0, 0, 0, 0.7)',
+                                  backdropFilter: 'blur(8px)',
+                                  padding: '8px 14px',
+                                  borderRadius: '10px',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  color: 'white',
+                                }}>
+                                  In {daysUntil} days
+                                </div>
+                                <div style={{
+                                  position: 'absolute',
+                                  top: '14px',
+                                  right: '14px',
+                                  background: '#a855f7',
+                                  padding: '8px 14px',
+                                  borderRadius: '10px',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  color: 'white',
+                                }}>
+                                  {event.tags?.[0] || 'Event'}
+                                </div>
+                              </div>
+                              {/* Content */}
+                              <div style={{ padding: '24px' }}>
+                                <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginBottom: '14px', lineHeight: '1.4' }}>{event.title}</h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>
+                                  <Calendar size={16} style={{ color: '#a855f7' }} />
+                                  <span>{new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} → {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: '#94a3b8', fontSize: '14px' }}>
+                                  <MapPin size={16} style={{ color: '#a855f7' }} />
+                                  <span>{event.location_name}</span>
+                                </div>
                                 
-                                {/* Active Badge */}
-                                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow">
-                                  ✓ ACTIVE
+                                {/* Registration Stats */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                  {event.max_capacity && (
+                                    <div style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '6px 12px',
+                                      background: 'rgba(168, 85, 247, 0.15)',
+                                      borderRadius: '8px',
+                                      fontSize: '13px',
+                                      color: '#a855f7',
+                                    }}>
+                                      <Users size={14} />
+                                      {event.attendee_count || 0}/{event.max_capacity}
+                                    </div>
+                                  )}
+                                  {(event.pending_registrations_count ?? 0) > 0 && (
+                                    <div style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '6px 12px',
+                                      background: 'rgba(245, 158, 11, 0.15)',
+                                      borderRadius: '8px',
+                                      fontSize: '13px',
+                                      color: '#f59e0b',
+                                      fontWeight: '600',
+                                    }}>
+                                      <Clock size={14} />
+                                      {event.pending_registrations_count} pending
+                                    </div>
+                                  )}
                                 </div>
-
-                                <div className="mb-2">
-                                  <h3 className="text-sm font-bold text-gray-900 mb-1 pr-12 line-clamp-2">{event.title}</h3>
-                                  <span className="inline-block px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-semibold rounded-full">
-                                    {event.tags && event.tags.length > 0 ? event.tags[0] : 'Event'}
-                                  </span>
-                                </div>
-
-                                <div className="space-y-1 text-xs text-gray-600 mb-2">
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3 text-green-600 flex-shrink-0" />
-                                    <span className="font-medium truncate">{event.location_name}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3 text-green-600 flex-shrink-0" />
-                                    <span className="text-[10px] font-semibold truncate">
-                                      {new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} → {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="flex gap-1 pt-2 border-t border-gray-100">
+                                
+                                {/* Actions Row 1: Attendees + Send Reminder */}
+                                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                                   <button
                                     onClick={() => navigate(`/admin/events/${event.id}/registrations`)}
-                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors font-bold shadow-sm"
+                                    style={{
+                                      flex: 1,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '8px',
+                                      padding: '12px',
+                                      background: 'rgba(34, 197, 94, 0.15)',
+                                      border: 'none',
+                                      borderRadius: '10px',
+                                      color: '#22c55e',
+                                      fontSize: '14px',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                    }}
                                   >
-                                    <Users className="w-3 h-3" />
+                                    <Eye size={18} />
                                     Attendees
                                   </button>
+                                  <button
+                                    onClick={() => setShowReminderModal(event)}
+                                    disabled={(event.attendee_count || 0) === 0}
+                                    style={{
+                                      flex: 1,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '8px',
+                                      padding: '12px',
+                                      background: 'rgba(59, 130, 246, 0.15)',
+                                      border: 'none',
+                                      borderRadius: '10px',
+                                      color: '#3b82f6',
+                                      fontSize: '14px',
+                                      fontWeight: '600',
+                                      cursor: (event.attendee_count || 0) === 0 ? 'not-allowed' : 'pointer',
+                                      opacity: (event.attendee_count || 0) === 0 ? 0.5 : 1,
+                                    }}
+                                  >
+                                    <Bell size={18} />
+                                    Remind
+                                  </button>
+                                </div>
+                                
+                                {/* Actions Row 2: Edit + Delete */}
+                                <div style={{ display: 'flex', gap: '10px' }}>
                                   <button
                                     onClick={() => {
                                       setEditingEvent(event);
@@ -790,432 +909,764 @@ const AdminDashboard: React.FC = () => {
                                         tags: event.tags || [],
                                         city: event.city || '',
                                         image_url: event.image_url || '',
+                                        recurrence_type: 'none',
+                                        max_capacity: null,
                                       });
                                       setImagePreview(event.image_url || '');
                                       setShowEventModal(true);
                                     }}
-                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors font-bold shadow-sm"
+                                    style={{
+                                      flex: 1,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '8px',
+                                      padding: '12px',
+                                      background: 'rgba(168, 85, 247, 0.15)',
+                                      border: 'none',
+                                      borderRadius: '10px',
+                                      color: '#a855f7',
+                                      fontSize: '14px',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                    }}
                                   >
-                                    <Edit2 className="w-3 h-3" />
+                                    <Edit2 size={18} />
                                     Edit
                                   </button>
                                   <button
                                     onClick={() => handleDeleteEvent(event.id)}
-                                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors font-bold shadow-sm"
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      padding: '12px',
+                                      background: 'rgba(239, 68, 68, 0.15)',
+                                      border: 'none',
+                                      borderRadius: '10px',
+                                      color: '#ef4444',
+                                      cursor: 'pointer',
+                                    }}
                                   >
-                                    <Trash2 className="w-3 h-3" />
-                                    Delete
+                                    <Trash2 size={18} />
                                   </button>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Past Events Section */}
-                      {pastEvents.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-3 mb-4 mt-8">
-                            <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
-                              <Clock className="w-5 h-5 text-gray-600" />
-                              <h3 className="text-xl font-bold text-gray-700">PAST EVENTS (Read-Only)</h3>
                             </div>
-                            <span className="text-gray-500 text-lg">({pastEvents.length} event{pastEvents.length !== 1 ? 's' : ''})</span>
-                          </div>
-                          <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                            {pastEvents.map((event) => (
-                              <div key={event.id} className="bg-gray-50 rounded-lg shadow-sm p-3 border border-gray-200 opacity-75 relative">
-                                {/* Event Image (grayscale for past events) */}
-                                {event.image_url && event.image_url.trim() !== '' ? (
-                                  <div className="mb-2 -mx-3 -mt-3 bg-gray-200">
-                                    <img 
-                                      key={`past-event-img-${event.id}-${Date.now()}`}
-                                      src={event.image_url} 
-                                      alt={event.title}
-                                      className="w-full h-24 object-cover grayscale"
-                                      onLoad={() => console.log(`✅ Past event image loaded for ${event.id}: ${event.title}`)}
-                                      onError={(e) => {
-                                        console.error('❌ Image failed to load for past event:', event.id, event.title);
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="mb-2 -mx-3 -mt-3 bg-gradient-to-br from-gray-200 to-gray-300 h-24 flex items-center justify-center">
-                                    <Calendar className="w-8 h-8 text-gray-400" />
-                                  </div>
-                                )}
-                                
-                                {/* Past Badge */}
-                                <div className="absolute top-2 right-2 bg-gray-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
-                                  ✓ ENDED
-                                </div>
-
-                                <div className="mb-2">
-                                  <h3 className="text-sm font-bold text-gray-700 mb-1 pr-12 line-clamp-2">{event.title}</h3>
-                                  <span className="inline-block px-2 py-0.5 bg-gray-200 text-gray-700 text-[10px] font-semibold rounded-full">
-                                    {event.tags && event.tags.length > 0 ? event.tags[0] : 'Event'}
-                                  </span>
-                                </div>
-
-                                <div className="space-y-1 text-xs text-gray-500 mb-2">
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">{event.location_name}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3 flex-shrink-0" />
-                                    <span className="text-[10px] truncate">
-                                      {new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="pt-2 border-t border-gray-200">
-                                  <div className="text-center text-gray-500 italic text-[10px] py-1">
-                                    📅 Event ended
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                          );
+                        })}
                       </div>
-                    );
-                  })()}
+                    </div>
+                  )}
+
+                  {/* Past Events */}
+                  {pastEvents.length > 0 && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(100, 116, 139, 0.15)', padding: '10px 20px', borderRadius: '24px' }}>
+                          <Clock size={18} style={{ color: '#64748b' }} />
+                          <span style={{ fontSize: '16px', fontWeight: '600', color: '#64748b' }}>📆 Past Events</span>
+                        </div>
+                        <span style={{ fontSize: '15px', color: '#475569' }}>({pastEvents.length} events)</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px', opacity: 0.7 }}>
+                        {pastEvents.map((event) => (
+                          <div key={event.id} style={{
+                            background: 'rgba(30, 41, 59, 0.3)',
+                            borderRadius: '20px',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                            overflow: 'hidden',
+                          }}>
+                            <div style={{ position: 'relative', height: '140px', background: 'rgba(100, 116, 139, 0.2)' }}>
+                              {event.image_url ? (
+                                <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(50%)' }} />
+                              ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <Calendar size={40} style={{ color: 'rgba(100, 116, 139, 0.5)' }} />
+                                </div>
+                              )}
+                              <div style={{
+                                position: 'absolute',
+                                top: '14px',
+                                right: '14px',
+                                background: 'rgba(100, 116, 139, 0.8)',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: 'white',
+                              }}>
+                                ENDED
+                              </div>
+                            </div>
+                            <div style={{ padding: '20px' }}>
+                              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#94a3b8', marginBottom: '10px' }}>{event.title}</h3>
+                              <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                {new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(event.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Places Tab */}
+          {activeTab === 'places' && <PlacesManagement />}
+        </div>
+      </div>
+
+      {/* Event Modal */}
+      {showEventModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          zIndex: 50,
+        }} onClick={(e) => e.target === e.currentTarget && resetEventForm()}>
+          <div style={{
+            background: '#1e293b',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            maxWidth: '640px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+              padding: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '18px',
+            }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: '32px' }}>{editingEvent ? '✏️' : '🎉'}</span>
+              </div>
+              <div>
+                <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'white', margin: 0 }}>
+                  {editingEvent ? 'Edit Event' : 'Create New Event'}
+                </h2>
+                <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.8)', margin: '6px 0 0 0' }}>
+                  {editingEvent ? 'Update event information' : 'Add a new tourism event'}
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleEventSubmit} style={{ padding: '28px', maxHeight: 'calc(90vh - 200px)', overflowY: 'auto' }}>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '10px' }}>Event Title *</label>
+                <input
+                  type="text"
+                  value={eventForm.title}
+                  onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                  placeholder="e.g., Langkawi Jazz Festival"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '14px 18px',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    color: '#ffffff',
+                    fontSize: '15px',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '10px' }}>Description</label>
+                <textarea
+                  value={eventForm.description}
+                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                  placeholder="Describe your event..."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '14px 18px',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    color: '#ffffff',
+                    fontSize: '15px',
+                    outline: 'none',
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '10px' }}>Start Date *</label>
+                  <input
+                    type="date"
+                    value={eventForm.start_date}
+                    onChange={(e) => setEventForm({ ...eventForm, start_date: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '14px 18px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: '#ffffff',
+                      fontSize: '15px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '10px' }}>End Date *</label>
+                  <input
+                    type="date"
+                    value={eventForm.end_date}
+                    onChange={(e) => setEventForm({ ...eventForm, end_date: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '14px 18px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: '#ffffff',
+                      fontSize: '15px',
+                      outline: 'none',
+                    }}
+                  />
                 </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Places Tab */}
-        {activeTab === 'places' && (
-          <PlacesManagement />
-        )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '10px' }}>Location *</label>
+                  <input
+                    type="text"
+                    value={eventForm.location_name}
+                    onChange={(e) => setEventForm({ ...eventForm, location_name: e.target.value })}
+                    placeholder="e.g., Pantai Cenang"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '14px 18px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: '#ffffff',
+                      fontSize: '15px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '10px' }}>City</label>
+                  <select
+                    value={eventForm.city}
+                    onChange={(e) => setEventForm({ ...eventForm, city: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '14px 18px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      color: '#ffffff',
+                      fontSize: '15px',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="">Select city...</option>
+                    {cityOptions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+              </div>
 
-        {/* Event Modal */}
-        {showEventModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={(e) => e.target === e.currentTarget && resetEventForm()}>
-            <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden" style={{ border: '3px solid #d4a574' }}>
-              {/* Vibrant Header */}
-              <div className="bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 px-8 py-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-4xl">{editingEvent ? '✏️' : '🎉'}</span>
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-bold text-white mb-1">
-                      {editingEvent ? 'Edit Tourism Event' : 'Add New Tourism Event'}
-                    </h2>
-                    <p className="text-orange-100 text-base">
-                      {editingEvent ? 'Update event information below' : 'Create an exciting event to attract tourists!'}
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '12px' }}>Category</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {eventCategories.map((cat) => {
+                    const isSelected = eventForm.tags.includes(cat.value.toLowerCase());
+                    return (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => {
+                          const tag = cat.value.toLowerCase();
+                          if (isSelected) {
+                            setEventForm({ ...eventForm, tags: eventForm.tags.filter(t => t !== tag) });
+                          } else {
+                            setEventForm({ ...eventForm, tags: [...eventForm.tags, tag] });
+                          }
+                        }}
+                        style={{
+                          padding: '10px 18px',
+                          borderRadius: '24px',
+                          border: isSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                          background: isSelected ? 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' : 'transparent',
+                          color: isSelected ? 'white' : '#94a3b8',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '28px' }}>
+                <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', color: '#ffffff', marginBottom: '12px' }}>Event Image</label>
+                <div style={{
+                  border: '2px dashed rgba(255, 255, 255, 0.2)',
+                  borderRadius: '16px',
+                  padding: '28px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  background: imagePreview ? `url(${imagePreview}) center/cover` : 'transparent',
+                  minHeight: '140px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                }}>
+                  {imagePreview && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', borderRadius: '14px' }} />}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                  />
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <Plus size={36} style={{ color: '#a855f7', margin: '0 auto 10px' }} />
+                    <p style={{ color: '#94a3b8', fontSize: '15px', margin: 0 }}>
+                      {imagePreview ? 'Click to change image' : 'Click to upload image'}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
-                <form onSubmit={handleEventSubmit} className="p-8 space-y-8">
-                  {/* Step 1 */}
-                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6 border-2 border-orange-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        1
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-orange-900">📋 Event Details</h3>
-                        <p className="text-sm text-orange-700">What is this event called?</p>
-                      </div>
-                    </div>
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <button
+                  type="button"
+                  onClick={resetEventForm}
+                  style={{
+                    flex: 1,
+                    padding: '16px',
+                    background: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    color: '#94a3b8',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    flex: 1,
+                    padding: '16px',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                >
+                  {loading ? 'Saving...' : editingEvent ? 'Update Event' : 'Create Event'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-                <FormInput
-                  label="Event Name"
-                  name="title"
-                  value={eventForm.title}
-                  onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
-                  placeholder="e.g., Langkawi International Maritime & Aerospace Exhibition"
-                  required
-                  hint="Give your event a clear, attractive name"
-                />
+      {/* Verification Document Modal */}
+      {showDocumentModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          zIndex: 50,
+        }} onClick={(e) => e.target === e.currentTarget && setShowDocumentModal(null)}>
+          <div style={{
+            background: '#1e293b',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+              padding: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <FileText size={28} style={{ color: 'white' }} />
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0 }}>Verification Documents</h2>
+                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: '4px 0 0 0' }}>
+                    {showDocumentModal.first_name} {showDocumentModal.last_name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDocumentModal(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '10px',
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={20} style={{ color: 'white' }} />
+              </button>
+            </div>
 
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        2
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-purple-900">🎭 Event Category</h3>
-                        <p className="text-sm text-purple-700">Choose the type that best fits</p>
-                      </div>
-                    </div>
-
-                <FormSelect
-                  label="Event Category"
-                  name="tags"
-                  value={eventForm.tags && eventForm.tags.length > 0 ? eventForm.tags[0] : ''}
-                  onChange={(e) => setEventForm({...eventForm, tags: e.target.value ? [e.target.value] : []})}
-                  options={eventCategories}
-                  required
-                  hint="This helps tourists find events they're interested in"
-                />
-
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        3
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-green-900">📍 Event Location</h3>
-                        <p className="text-sm text-green-700">Where will it happen?</p>
-                      </div>
-                    </div>
-
-                <FormInput
-                  label="Event Location"
-                  name="location_name"
-                  value={eventForm.location_name}
-                  onChange={(e) => setEventForm({...eventForm, location_name: e.target.value})}
-                  placeholder="e.g., Mahsuri International Exhibition Centre, Langkawi"
-                  required
-                  icon={<MapPin className="w-5 h-5" />}
-                  hint="Include the venue name and city"
-                />
-
-                    <div className="mt-6 pt-6 border-t-2 border-green-200">
-                      <div className="mb-4">
-                        <h4 className="font-bold text-green-900 mb-1 flex items-center gap-2">
-                          <span className="text-lg">🏙️</span> City
-                        </h4>
-                        <p className="text-sm text-green-700">Which city is this event in?</p>
-                      </div>
-
-                <FormSelect
-                  label="📍 City"
-                  name="city"
-                  value={eventForm.city}
-                  onChange={(e) => setEventForm({...eventForm, city: e.target.value})}
-                  options={cityOptions}
-                  required
-                  hint="Select the city where the event will take place"
-                />
-
-                    </div>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        4
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-blue-900">📅 Event Dates</h3>
-                        <p className="text-sm text-blue-700">When will it take place?</p>
-                      </div>
-                    </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
+            {/* Modal Body */}
+            <div style={{ padding: '24px' }}>
+              {/* User Info */}
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.2)',
+                borderRadius: '14px',
+                padding: '18px',
+                marginBottom: '20px',
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Start Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="start_date"
-                      value={eventForm.start_date}
-                      onChange={(e) => setEventForm({...eventForm, start_date: e.target.value})}
-                      required
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">When does it start?</p>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Role</div>
+                    <div style={{ fontSize: '15px', color: '#ffffff', fontWeight: '500' }}>
+                      {showDocumentModal.role === 'vendor' ? '🍽️ Restaurant Owner' : '🏨 Stay Owner'}
+                    </div>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      End Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="end_date"
-                      value={eventForm.end_date}
-                      onChange={(e) => setEventForm({...eventForm, end_date: e.target.value})}
-                      required
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">When does it end?</p>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Email</div>
+                    <div style={{ fontSize: '15px', color: '#ffffff' }}>{showDocumentModal.email}</div>
                   </div>
-                </div>
-
-                  </div>
-
-                  {/* Step 5 */}
-                  <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-xl p-6 border-2 border-pink-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        5
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-pink-900">📝 Event Description</h3>
-                        <p className="text-sm text-pink-700">Tell us what makes this event special (optional)</p>
-                      </div>
+                  {showDocumentModal.phone_number && (
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Phone</div>
+                      <div style={{ fontSize: '15px', color: '#ffffff' }}>{showDocumentModal.phone_number}</div>
                     </div>
+                  )}
+                  {showDocumentModal.business_registration_number && (
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Registration Number</div>
+                      <div style={{ fontSize: '15px', color: '#ffffff', fontWeight: '600' }}>{showDocumentModal.business_registration_number}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-                <FormInput
-                  label="Event Description"
-                  name="description"
-                  value={eventForm.description}
-                  onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
-                  placeholder="Tell tourists what they can expect at this event..."
-                  multiline
-                  rows={4}
-                  hint="You can skip this if you want"
-                />
-
-                {/* Image upload for event (optional) */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Event Image (optional)</label>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="text-sm text-gray-700"
-                    />
-                    {imagePreview ? (
-                      <div className="w-28 h-20 rounded overflow-hidden border">
-                        <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
-                      </div>
+              {/* Document Preview */}
+              {showDocumentModal.verification_document && (
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', marginBottom: '12px' }}>Uploaded Document</div>
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    borderRadius: '14px',
+                    padding: '20px',
+                    textAlign: 'center',
+                  }}>
+                    {/* Check if it's an image */}
+                    {showDocumentModal.verification_document.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                      <img
+                        src={showDocumentModal.verification_document}
+                        alt="Verification Document"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '400px',
+                          borderRadius: '10px',
+                          marginBottom: '16px',
+                        }}
+                      />
                     ) : (
-                      <div className="w-28 h-20 rounded border flex items-center justify-center text-gray-400">No image</div>
+                      <div style={{ marginBottom: '16px' }}>
+                        <FileText size={64} style={{ color: '#64748b', margin: '0 auto 12px' }} />
+                        <p style={{ color: '#94a3b8', fontSize: '14px' }}>Document file uploaded</p>
+                      </div>
                     )}
+                    
+                    <a
+                      href={showDocumentModal.verification_document}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px 20px',
+                        background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                        border: 'none',
+                        borderRadius: '10px',
+                        color: 'white',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <ExternalLink size={16} />
+                      Open in New Tab
+                    </a>
                   </div>
-                  <p className="text-xs text-gray-500">Tip: Upload a poster or hero image (max 5MB). We accept JPG, PNG.</p>
                 </div>
-                  </div>
+              )}
 
-                  {/* ✨ NEW: Step 6 - Recurring Event Settings */}
-                  <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl p-6 border-2 border-indigo-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-md">
-                        6
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-indigo-900">🔄 Advanced Settings (Optional)</h3>
-                        <p className="text-sm text-indigo-700">Make this event recurring and set capacity</p>
-                      </div>
-                    </div>
-
-                    {/* Recurring Event Toggle */}
-                    <div className="space-y-4">
-                      <div className="bg-white rounded-lg p-4 border-2 border-indigo-200">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          🔄 Recurring Event
-                        </label>
-                        <select
-                          name="recurrence_type"
-                          value={eventForm.recurrence_type || ''}
-                          onChange={(e) => setEventForm({...eventForm, recurrence_type: e.target.value})}
-                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500 bg-white"
-                        >
-                          <option value="">📅 One-time event (no repeat)</option>
-                          <option value="daily">🌅 Daily - Repeats every day</option>
-                          <option value="weekly">📆 Weekly - Repeats every week</option>
-                          <option value="monthly">🗓️ Monthly - Repeats every month</option>
-                          <option value="yearly">🎊 Yearly - Repeats every year</option>
-                        </select>
-                        <p className="mt-2 text-sm text-indigo-600 flex items-start gap-2">
-                          <span className="text-lg">💡</span>
-                          <span>
-                            {eventForm.recurrence_type ? (
-                              <>
-                                <strong>Recurring event enabled!</strong> New instances will be automatically created {eventForm.recurrence_type}.
-                                Example: Weekly markets, annual festivals, daily tours.
-                              </>
-                            ) : (
-                              <>Select a recurrence pattern to automatically generate future event instances. Perfect for regular markets, tours, or annual celebrations!</>
-                            )}
-                          </span>
-                        </p>
-                      </div>
-
-                      {/* Max Capacity */}
-                      <div className="bg-white rounded-lg p-4 border-2 border-indigo-200">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          👥 Maximum Capacity (Optional)
-                        </label>
-                        <input
-                          type="number"
-                          name="max_capacity"
-                          value={eventForm.max_capacity || ''}
-                          onChange={(e) => setEventForm({...eventForm, max_capacity: e.target.value ? parseInt(e.target.value) : null})}
-                          placeholder="e.g., 500"
-                          min="1"
-                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-indigo-500"
-                        />
-                        <p className="mt-2 text-sm text-gray-600">
-                          💡 Set a maximum number of attendees. Leave blank for unlimited capacity.
-                        </p>
-                      </div>
-
-                      {/* Visual Indicator when Recurring is Active */}
-                      {eventForm.recurrence_type && (
-                        <div className="bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-purple-300 rounded-lg p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center animate-pulse">
-                              <span className="text-2xl">🔄</span>
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-purple-900">Recurring Event Active</h4>
-                              <p className="text-sm text-purple-700">
-                                This event will automatically repeat <strong>{eventForm.recurrence_type}</strong>. 
-                                Create once, runs forever!
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-4 sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-2">
-                  <button
-                    type="button"
-                    onClick={resetEventForm}
-                    className="flex-1 px-8 py-4 bg-white border-3 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-bold text-lg shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                  >
-                    <span className="text-xl">❌</span> Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 px-8 py-4 bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 text-white rounded-xl hover:from-orange-600 hover:via-orange-500 hover:to-yellow-600 transition-all font-bold text-lg shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:scale-105"
-                  >
-                    {loading ? (
-                      <><span className="text-xl">⏳</span> Saving...</>
-                    ) : editingEvent ? (
-                      <><span className="text-xl">✅</span> Update Event</>
-                    ) : (
-                      <><span className="text-xl">✅</span> Add Event</>
-                    )}
-                  </button>
-                </div>
-              </form>
+              {/* Approve/Reject Buttons */}
+              <div style={{ display: 'flex', gap: '14px', marginTop: '24px' }}>
+                <button
+                  onClick={() => {
+                    handleRejectUser(showDocumentModal.id);
+                    setShowDocumentModal(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '14px',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '12px',
+                    color: '#ef4444',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <XCircle size={20} />
+                  Reject
+                </button>
+                <button
+                  onClick={() => {
+                    handleApproveUser(showDocumentModal.id);
+                    setShowDocumentModal(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '14px',
+                    background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <CheckCircle size={20} />
+                  Approve
+                </button>
               </div>
             </div>
           </div>
-        )}
         </div>
-      </div>
+      )}
+
+      {/* Send Reminder Modal */}
+      {showReminderModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          zIndex: 50,
+        }} onClick={(e) => e.target === e.currentTarget && setShowReminderModal(null)}>
+          <div style={{
+            background: '#1e293b',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            maxWidth: '480px',
+            width: '100%',
+            overflow: 'hidden',
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              padding: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+            }}>
+              <div style={{
+                width: '52px',
+                height: '52px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Bell size={26} style={{ color: 'white' }} />
+              </div>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0 }}>Send Reminder</h2>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', margin: '4px 0 0 0' }}>
+                  Notify all attendees
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px' }}>
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.2)',
+                borderRadius: '14px',
+                padding: '18px',
+                marginBottom: '20px',
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#ffffff', margin: '0 0 8px 0' }}>{showReminderModal.title}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '14px' }}>
+                  <Calendar size={14} />
+                  {new Date(showReminderModal.start_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '14px', marginTop: '6px' }}>
+                  <Users size={14} />
+                  {showReminderModal.attendee_count || 0} confirmed attendees
+                </div>
+              </div>
+
+              <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '20px', lineHeight: '1.6' }}>
+                This will send a reminder email to all confirmed attendees with event details and location information.
+              </p>
+
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <button
+                  onClick={() => setShowReminderModal(null)}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    background: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    color: '#94a3b8',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSendReminder(showReminderModal)}
+                  disabled={sendingReminder}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '14px',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    cursor: sendingReminder ? 'not-allowed' : 'pointer',
+                    opacity: sendingReminder ? 0.7 : 1,
+                  }}
+                >
+                  <Send size={18} />
+                  {sendingReminder ? 'Sending...' : 'Send Reminder'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reminder Success Notification */}
+      {reminderSuccess && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+          padding: '18px 24px',
+          borderRadius: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+          zIndex: 100,
+          animation: 'slideIn 0.3s ease-out',
+        }}>
+          <CheckCircle size={24} style={{ color: 'white' }} />
+          <div>
+            <div style={{ fontWeight: '700', color: 'white', fontSize: '16px' }}>Reminders Sent!</div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>All attendees have been notified</div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        @keyframes slideIn {
+          from { transform: translateX(100px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        input::placeholder, textarea::placeholder {
+          color: #64748b;
+        }
+        input:focus, textarea:focus, select:focus {
+          border-color: #a855f7 !important;
+        }
+        option {
+          background: #1e293b;
+          color: white;
+        }
+      `}</style>
     </div>
   );
 };

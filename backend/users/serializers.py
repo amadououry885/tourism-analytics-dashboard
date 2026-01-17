@@ -1,7 +1,13 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from .models import User
+
+
+def simple_password_validator(password):
+    """Simple validator: password must be at least 4 characters"""
+    if len(password) < 4:
+        raise ValidationError("Password must be at least 4 characters long.")
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -35,8 +41,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, 
         required=True, 
-        validators=[validate_password],
-        style={'input_type': 'password'}
+        validators=[simple_password_validator],
+        style={'input_type': 'password'},
+        min_length=4,
+        help_text="Password must be at least 4 characters"
     )
     password2 = serializers.CharField(
         write_only=True, 

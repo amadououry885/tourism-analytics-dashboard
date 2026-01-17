@@ -6,6 +6,7 @@ import { AccommodationStats } from '../components/AccommodationStats';
 import { SentimentAnalysis } from '../components/SentimentAnalysis';
 import { SentimentComparison } from '../components/SentimentComparison';
 import { RestaurantVendors } from '../components/RestaurantVendors';
+import { AnalyticsOverview } from '../components/AnalyticsOverview';
 import AccommodationSearch from '../pages/accommodation/AccommodationSearch';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CitySelector } from '../components/CitySelector';
@@ -49,7 +50,7 @@ export default function TourismDashboard() {
               {/* Nav Links */}
               <Link to="/" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 font-medium">🏠 Home</Link>
               <Link to="/explore" className="text-[10px] sm:text-xs md:text-sm text-teal-400 font-medium">🔍 Explore</Link>
-              <Link to="/business" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 hidden sm:inline">💼 Business</Link>
+              <Link to="/register" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 hidden sm:inline">💼 Business</Link>
               <Link to="/sign-in" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 font-medium">🔑 Sign In</Link>
               
               {/* Divider */}
@@ -111,14 +112,8 @@ export default function TourismDashboard() {
       <main className="flex-1 overflow-hidden">
         <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-8 h-full">
           {activeTab === 'overview' && (
-            <div className="space-y-6 h-full overflow-y-auto">
-              <div className="flex flex-col gap-6">
-                {/* Most Visited & Least Visited Places - NEW */}
-                <SentimentComparison />
-                <SocialMediaCharts selectedCity={selectedCity} timeRange={timeRange} />
-                <SentimentAnalysis selectedCity={selectedCity} timeRange={timeRange} />
-                <AccommodationStats selectedCity={selectedCity} timeRange={timeRange} />
-              </div>
+            <div className="h-full overflow-y-auto">
+              <AnalyticsOverview selectedCity={selectedCity} timeRange={timeRange} />
             </div>
           )}
 

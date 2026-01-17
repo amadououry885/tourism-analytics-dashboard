@@ -55,8 +55,8 @@ const ResetPassword: React.FC = () => {
       return;
     }
 
-    if (password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+    if (password.length < 4) {
+      toast.error('Password must be at least 4 characters');
       return;
     }
 
@@ -193,7 +193,7 @@ const ResetPassword: React.FC = () => {
                 disabled={isLoading}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 pr-12"
                 placeholder="Enter new password"
-                minLength={8}
+                minLength={4}
               />
               <button
                 type="button"
@@ -203,7 +203,7 @@ const ResetPassword: React.FC = () => {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+            <p className="text-xs text-gray-500 mt-1">Must be at least 4 characters</p>
           </div>
 
           <div>

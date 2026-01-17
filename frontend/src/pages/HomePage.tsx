@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, Utensils, Hotel, Calendar } from 'lucide-react';
+import { ArrowRight, MapPin, Utensils, Hotel, Calendar, BarChart3 } from 'lucide-react';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -28,6 +28,10 @@ export default function HomePage() {
               <Link to="/food" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Food</Link>
               <Link to="/stays" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Stay</Link>
               <Link to="/events" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Events</Link>
+              <Link to="/analytics" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <BarChart3 size={14} />
+                Analytics
+              </Link>
               <Link to="/sign-in" style={{ backgroundColor: '#14b8a6', color: 'white', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>
                 Sign In
               </Link>
@@ -235,6 +239,51 @@ export default function HomePage() {
               <div style={{ position: 'absolute', bottom: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Calendar size={24} color="#c084fc" />
                 <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Events</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Analytics Banner - Full Width */}
+          <div
+            onClick={() => navigate('/analytics')}
+            style={{
+              marginTop: '24px',
+              position: 'relative',
+              height: '160px',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #db2777 100%)'
+            }}
+          >
+            <div style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: '100%', 
+              height: '100%',
+              background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+              opacity: 0.5
+            }} />
+            <div style={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px',
+              textAlign: 'center'
+            }}>
+              <BarChart3 size={40} color="white" />
+              <div>
+                <span style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', display: 'block' }}>
+                  Tourism Analytics
+                </span>
+                <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', display: 'block', marginTop: '4px' }}>
+                  Real-time insights • Social media metrics • Visitor sentiment
+                </span>
               </div>
             </div>
           </div>

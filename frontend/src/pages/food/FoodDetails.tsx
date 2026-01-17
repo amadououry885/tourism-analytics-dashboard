@@ -1,17 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, Clock, Navigation, Share2, Phone, Mail, Globe, DollarSign, Utensils, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Clock, Navigation, Share2, Phone, Mail, Globe, DollarSign, Utensils, Users, Calendar } from 'lucide-react';
 import api from '../../services/api';
+import { ReservationModal } from '../../components/ReservationModal';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 interface MenuItem {
   id: number;
   name: string;
   description?: string;
-  price: string;
+  price: string | number;
   category?: string;
   is_available?: boolean;
   is_vegetarian?: boolean;
+  is_halal?: boolean;
   spiciness_level?: number;
+  image_url?: string;
+}
+
+interface OpeningHour {
+  day_of_week: number;
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
 }
 
 interface RestaurantDetail {
@@ -28,19 +40,88 @@ interface RestaurantDetail {
   description?: string;
   address?: string;
   opening_hours?: string;
+  opening_hours_data?: OpeningHour[];
   phone?: string;
   email?: string;
   website?: string;
   is_halal?: boolean;
 }
 
+// Helper function to compute real-time open/closed status
+function computeOpenStatus(openingHoursData?: OpeningHour[]): { isOpen: boolean; statusText: string } {
+  if (!openingHoursData || openingHoursData.length === 0) {
+    return { isOpen: true, statusText: 'OPEN' }; // Default to open if no hours data
+  }
+
+  const now = new Date();
+  const currentDay = now.getDay() === 0 ? 6 : now.getDay() - 1; // Convert to 0=Monday format
+  const currentTime = now.getHours() * 60 + now.getMinutes(); // Minutes since midnight
+
+  // Find today's hours
+  const todayHours = openingHoursData.find(h => h.day_of_week === currentDay);
+  
+  if (!todayHours || todayHours.is_closed) {
+    // Find next opening day
+    for (let i = 1; i <= 7; i++) {
+      const nextDay = (currentDay + i) % 7;
+      const nextHours = openingHoursData.find(h => h.day_of_week === nextDay && !h.is_closed);
+      if (nextHours) {
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        return { isOpen: false, statusText: `CLOSED · Opens ${days[nextDay]}` };
+      }
+    }
+    return { isOpen: false, statusText: 'CLOSED' };
+  }
+
+  // Parse opening and closing times
+  const [openHour, openMin] = todayHours.open_time.split(':').map(Number);
+  const [closeHour, closeMin] = todayHours.close_time.split(':').map(Number);
+  const openTime = openHour * 60 + openMin;
+  const closeTime = closeHour * 60 + closeMin;
+
+  if (currentTime >= openTime && currentTime < closeTime) {
+    // Currently open
+    const closeFormatted = todayHours.close_time.slice(0, 5);
+    return { isOpen: true, statusText: `OPEN · Closes ${closeFormatted}` };
+  } else if (currentTime < openTime) {
+    // Not yet open today
+    const openFormatted = todayHours.open_time.slice(0, 5);
+    return { isOpen: false, statusText: `CLOSED · Opens ${openFormatted}` };
+  } else {
+    // Already closed today, find next opening
+    for (let i = 1; i <= 7; i++) {
+      const nextDay = (currentDay + i) % 7;
+      const nextHours = openingHoursData.find(h => h.day_of_week === nextDay && !h.is_closed);
+      if (nextHours) {
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const openFormatted = nextHours.open_time.slice(0, 5);
+        return { isOpen: false, statusText: `CLOSED · Opens ${days[nextDay]} ${openFormatted}` };
+      }
+    }
+    return { isOpen: false, statusText: 'CLOSED' };
+  }
+}
+
 export default function FoodDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [restaurant, setRestaurant] = useState<RestaurantDetail | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeMenuCategory, setActiveMenuCategory] = useState('All');
+  const [showReservationModal, setShowReservationModal] = useState(false);
+  const [openStatus, setOpenStatus] = useState<{ isOpen: boolean; statusText: string }>({ isOpen: true, statusText: 'OPEN' });
+
+  // Handle reservation button click with auth check
+  const handleMakeReservation = () => {
+    if (!user) {
+      toast.info('Please sign in to make a reservation');
+      navigate('/sign-in');
+      return;
+    }
+    setShowReservationModal(true);
+  };
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -48,6 +129,9 @@ export default function FoodDetails() {
         setLoading(true);
         const response = await api.get(`/vendors/${id}/`);
         const vendor = response.data;
+        
+        // Store opening hours data for real-time computation
+        const openingHoursData = vendor.opening_hours_list || vendor.opening_hours_data || [];
         
         setRestaurant({
           id: vendor.id,
@@ -63,11 +147,24 @@ export default function FoodDetails() {
           description: vendor.description,
           address: vendor.address,
           opening_hours: vendor.opening_hours,
+          opening_hours_data: openingHoursData,
           phone: vendor.phone,
           email: vendor.email,
           website: vendor.website,
           is_halal: vendor.is_halal,
         });
+
+        // Compute real-time open/closed status from opening hours
+        if (openingHoursData && openingHoursData.length > 0) {
+          const status = computeOpenStatus(openingHoursData);
+          setOpenStatus(status);
+        } else {
+          // Fallback to vendor's is_open field
+          setOpenStatus({
+            isOpen: vendor.is_open !== undefined ? vendor.is_open : true,
+            statusText: vendor.is_open !== false ? 'OPEN' : 'CLOSED',
+          });
+        }
 
         // Fetch menu
         try {
@@ -251,7 +348,7 @@ export default function FoodDetails() {
           gap: '12px',
         }}>
           <div style={{
-            backgroundColor: restaurant.is_open ? '#10b981' : '#ef4444',
+            backgroundColor: openStatus.isOpen ? '#10b981' : '#ef4444',
             color: '#ffffff',
             padding: '10px 16px',
             borderRadius: '12px',
@@ -262,7 +359,7 @@ export default function FoodDetails() {
             gap: '6px',
           }}>
             <Clock size={16} />
-            {restaurant.is_open ? 'OPEN NOW' : 'CLOSED'}
+            {openStatus.statusText}
           </div>
           
           {restaurant.is_halal && (
@@ -418,6 +515,28 @@ export default function FoodDetails() {
             Get Directions
           </button>
           
+          <button
+            onClick={handleMakeReservation}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              padding: '16px 24px',
+              backgroundColor: '#a855f7',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '14px',
+              fontSize: '16px',
+              fontWeight: '700',
+              cursor: 'pointer',
+            }}
+          >
+            <Calendar size={20} />
+            Make Reservation
+          </button>
+          
           {restaurant.phone && (
             <a
               href={`tel:${restaurant.phone}`}
@@ -508,19 +627,38 @@ export default function FoodDetails() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    gap: '16px',
                   }}
                 >
-                  <div>
+                  {/* Menu Item Image */}
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '12px',
+                        objectFit: 'cover',
+                        flexShrink: 0,
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                  <div style={{ flex: 1 }}>
                     <h4 style={{ color: '#ffffff', fontWeight: '600', marginBottom: '4px' }}>
                       {item.name}
                       {item.is_vegetarian && <span style={{ marginLeft: '8px' }}>🥬</span>}
+                      {item.is_halal && <span style={{ marginLeft: '8px' }}>🕌</span>}
                     </h4>
                     {item.description && (
                       <p style={{ color: '#64748b', fontSize: '13px' }}>{item.description}</p>
                     )}
                   </div>
-                  <span style={{ color: '#f97316', fontWeight: '700', fontSize: '16px' }}>
-                    {item.price}
+                  <span style={{ color: '#f97316', fontWeight: '700', fontSize: '16px', flexShrink: 0 }}>
+                    {typeof item.price === 'number' ? `RM ${item.price.toFixed(2)}` : item.price}
                   </span>
                 </div>
               ))}
@@ -595,6 +733,19 @@ export default function FoodDetails() {
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Reservation Modal */}
+      {restaurant && (
+        <ReservationModal
+          isOpen={showReservationModal}
+          onClose={() => setShowReservationModal(false)}
+          restaurant={{
+            id: restaurant.id,
+            name: restaurant.name,
+            city: restaurant.city || 'Kedah',
+          }}
+        />
+      )}
     </div>
   );
 }

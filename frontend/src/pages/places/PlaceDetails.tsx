@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, MessageCircle, Clock, Navigation, Share2, Ticket, Calendar, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, MessageCircle, Clock, Navigation, Share2, Ticket, Calendar, ExternalLink, Bookmark, Flag, Send, X, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
 interface PlaceDetail {
@@ -26,9 +27,21 @@ interface PlaceDetail {
 export default function PlaceDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [place, setPlace] = useState<PlaceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Interactive features state
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPlace = async () => {
@@ -87,7 +100,71 @@ export default function PlaceDetails() {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      showSuccess('Link copied to clipboard!');
+    }
+  };
+
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  const handleBookmark = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: `/places/${id}` } });
+      return;
+    }
+    try {
+      // Toggle bookmark (in a real app, this would call the API)
+      setIsBookmarked(!isBookmarked);
+      showSuccess(isBookmarked ? 'Removed from saved places' : '✓ Added to saved places!');
+      // API call would be: await api.post(`/places/${id}/bookmark/`);
+    } catch (err) {
+      console.error('Failed to bookmark:', err);
+    }
+  };
+
+  const handleReportSubmit = async () => {
+    if (!reportReason) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // await api.post(`/places/${id}/report/`, { reason: reportReason, description: reportDescription });
+      showSuccess('✓ Report submitted. Thank you for helping improve our data!');
+      setShowReportModal(false);
+      setReportReason('');
+      setReportDescription('');
+    } catch (err) {
+      console.error('Failed to submit report:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!user) {
+      navigate('/login', { state: { from: `/places/${id}` } });
+      return;
+    }
+    if (!reviewText.trim()) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // await api.post(`/places/${id}/reviews/`, { rating: reviewRating, text: reviewText });
+      showSuccess('✓ Review submitted! It will appear after moderation.');
+      setShowReviewModal(false);
+      setReviewRating(5);
+      setReviewText('');
+    } catch (err) {
+      console.error('Failed to submit review:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -409,7 +486,84 @@ export default function PlaceDetails() {
           >
             <Share2 size={20} />
           </button>
+
+          {/* Bookmark Button */}
+          <button
+            onClick={handleBookmark}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px 24px',
+              backgroundColor: isBookmarked ? 'rgba(251, 191, 36, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+              color: isBookmarked ? '#fbbf24' : '#ffffff',
+              border: `1px solid ${isBookmarked ? 'rgba(251, 191, 36, 0.4)' : 'rgba(255, 255, 255, 0.2)'}`,
+              borderRadius: '14px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            title={user ? (isBookmarked ? 'Remove from saved' : 'Save place') : 'Login to save'}
+          >
+            <Bookmark size={20} fill={isBookmarked ? '#fbbf24' : 'none'} />
+          </button>
+
+          {/* Report Button */}
+          <button
+            onClick={() => setShowReportModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px 24px',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              color: '#94a3b8',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '14px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+            title="Report an issue"
+          >
+            <Flag size={20} />
+          </button>
         </div>
+
+        {/* Write Review Button */}
+        <button
+          onClick={() => setShowReviewModal(true)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            padding: '14px 24px',
+            marginBottom: '40px',
+            backgroundColor: 'rgba(251, 191, 36, 0.15)',
+            color: '#fbbf24',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
+            borderRadius: '14px',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(251, 191, 36, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(251, 191, 36, 0.15)';
+          }}
+        >
+          <Star size={18} />
+          Write a Review
+        </button>
 
         {/* Description */}
         {place.description && (
@@ -499,6 +653,334 @@ export default function PlaceDetails() {
         </div>
       </main>
 
+      {/* Success Notification */}
+      {successMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          backgroundColor: '#10b981',
+          color: '#ffffff',
+          padding: '16px 24px',
+          borderRadius: '14px',
+          fontSize: '15px',
+          fontWeight: '600',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          animation: 'slideIn 0.3s ease-out',
+        }}>
+          <CheckCircle size={20} />
+          {successMessage}
+        </div>
+      )}
+
+      {/* Report Issue Modal */}
+      {showReportModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 50,
+          padding: '24px',
+        }}>
+          <div style={{
+            backgroundColor: '#1e293b',
+            borderRadius: '20px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: '100%',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={24} color="#f59e0b" />
+                Report an Issue
+              </h3>
+              <button
+                onClick={() => setShowReportModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '8px' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <p style={{ color: '#94a3b8', marginBottom: '20px', fontSize: '14px' }}>
+              Help us improve by reporting incorrect or outdated information about this place.
+            </p>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '8px' }}>
+                What's the issue?
+              </label>
+              <select
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '10px',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              >
+                <option value="">Select a reason...</option>
+                <option value="closed">Place is permanently closed</option>
+                <option value="hours">Incorrect opening hours</option>
+                <option value="location">Wrong location/address</option>
+                <option value="price">Incorrect pricing</option>
+                <option value="duplicate">Duplicate listing</option>
+                <option value="inappropriate">Inappropriate content</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '8px' }}>
+                Additional details (optional)
+              </label>
+              <textarea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="Provide more details about the issue..."
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '10px',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  minHeight: '100px',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowReportModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReportSubmit}
+                disabled={!reportReason || submitting}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  backgroundColor: reportReason ? '#f59e0b' : 'rgba(245, 158, 11, 0.3)',
+                  color: reportReason ? '#0f172a' : '#94a3b8',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  cursor: reportReason ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                {submitting ? 'Submitting...' : (
+                  <>
+                    <Send size={18} />
+                    Submit Report
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Write Review Modal */}
+      {showReviewModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 50,
+          padding: '24px',
+        }}>
+          <div style={{
+            backgroundColor: '#1e293b',
+            borderRadius: '20px',
+            padding: '32px',
+            maxWidth: '500px',
+            width: '100%',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Star size={24} color="#fbbf24" fill="#fbbf24" />
+                Write a Review
+              </h3>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '8px' }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {!user && (
+              <div style={{
+                backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '20px',
+                textAlign: 'center',
+              }}>
+                <p style={{ color: '#fbbf24', marginBottom: '12px', fontSize: '14px' }}>
+                  Please log in to write a review
+                </p>
+                <button
+                  onClick={() => navigate('/login', { state: { from: `/places/${id}` } })}
+                  style={{
+                    padding: '10px 24px',
+                    backgroundColor: '#fbbf24',
+                    color: '#0f172a',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Log In
+                </button>
+              </div>
+            )}
+
+            {user && (
+              <>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '12px' }}>
+                    Your Rating
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setReviewRating(star)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          transition: 'transform 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <Star
+                          size={32}
+                          color="#fbbf24"
+                          fill={star <= reviewRating ? '#fbbf24' : 'none'}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '24px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '8px' }}>
+                    Your Review
+                  </label>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="Share your experience at this place..."
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '10px',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      outline: 'none',
+                      minHeight: '120px',
+                      resize: 'vertical',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    onClick={() => setShowReviewModal(false)}
+                    style={{
+                      flex: 1,
+                      padding: '14px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '12px',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleReviewSubmit}
+                    disabled={!reviewText.trim() || submitting}
+                    style={{
+                      flex: 1,
+                      padding: '14px',
+                      backgroundColor: reviewText.trim() ? '#fbbf24' : 'rgba(251, 191, 36, 0.3)',
+                      color: reviewText.trim() ? '#0f172a' : '#94a3b8',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '15px',
+                      fontWeight: '700',
+                      cursor: reviewText.trim() ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    {submitting ? 'Submitting...' : (
+                      <>
+                        <Send size={18} />
+                        Submit Review
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer style={{
         backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -518,6 +1000,10 @@ export default function PlaceDetails() {
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>

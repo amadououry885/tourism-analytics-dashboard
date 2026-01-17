@@ -1,14 +1,38 @@
 # backend/vendors/serializers.py
 from datetime import datetime
+import base64
 from django.db.models import Avg
 from rest_framework import serializers
 from .models import Vendor, MenuItem, OpeningHours, Review, Promotion, Reservation
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
+    # Accept image file upload and convert to base64 data URL
+    image = serializers.ImageField(write_only=True, required=False, allow_null=True)
+    
     class Meta:
         model = MenuItem
         fields = "__all__"
+    
+    def create(self, validated_data):
+        # Handle image file upload
+        image_file = validated_data.pop('image', None)
+        if image_file:
+            # Convert to base64 data URL
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
+            content_type = image_file.content_type or 'image/jpeg'
+            validated_data['image_url'] = f"data:{content_type};base64,{image_data}"
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        # Handle image file upload
+        image_file = validated_data.pop('image', None)
+        if image_file:
+            # Convert to base64 data URL
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
+            content_type = image_file.content_type or 'image/jpeg'
+            validated_data['image_url'] = f"data:{content_type};base64,{image_data}"
+        return super().update(instance, validated_data)
 
 
 class OpeningHoursSerializer(serializers.ModelSerializer):
@@ -69,7 +93,7 @@ class VendorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
         fields = [
-            "id", "name", "city", "cuisines", "lat", "lon", "is_active", "is_open",
+            "id", "name", "city", "cuisines", "lat", "lon", "is_active", "is_open", "is_halal",
             "created_at", "updated_at", "menu_items", "opening_hours",
             "reviews", "active_promotions", "rating_summary", "owner", "owner_username"
         ]
@@ -124,7 +148,7 @@ class VendorListSerializer(serializers.ModelSerializer):
             'tripadvisor_url', 'google_maps_url',
             'logo_url', 'cover_image_url', 'gallery_images',
             'amenities', 'delivery_available', 'takeaway_available',
-            'reservation_required', 'dress_code',
+            'reservation_required', 'dress_code', 'is_halal',
             'rating_average', 'total_reviews', 'is_active', 'is_open',
             'owner', 'owner_username', 'created_at', 'updated_at'
         ]

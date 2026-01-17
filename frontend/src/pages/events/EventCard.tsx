@@ -17,6 +17,9 @@ export interface Event {
   is_full?: boolean;
   is_happening_now?: boolean;
   description?: string;
+  // User registration status
+  user_registered?: boolean;
+  registration_status?: 'confirmed' | 'pending' | 'cancelled' | null;
 }
 
 interface EventCardProps {
@@ -150,7 +153,7 @@ export function EventCard({ event }: EventCardProps) {
         )}
         
         {/* Capacity Badge */}
-        {event.is_full && (
+        {event.is_full && !event.user_registered && (
           <div style={{
             position: 'absolute',
             bottom: '12px',
@@ -163,6 +166,26 @@ export function EventCard({ event }: EventCardProps) {
             fontWeight: '700',
           }}>
             SOLD OUT
+          </div>
+        )}
+        
+        {/* User Registration Badge */}
+        {event.user_registered && (
+          <div style={{
+            position: 'absolute',
+            bottom: '12px',
+            right: '12px',
+            backgroundColor: event.registration_status === 'pending' ? '#f59e0b' : '#10b981',
+            color: '#ffffff',
+            padding: '6px 12px',
+            borderRadius: '20px',
+            fontSize: '11px',
+            fontWeight: '700',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}>
+            {event.registration_status === 'pending' ? '⏳ Pending' : '✓ Registered'}
           </div>
         )}
       </div>

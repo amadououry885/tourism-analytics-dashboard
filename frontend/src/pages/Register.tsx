@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { ArrowLeft, Search, Building2, Hotel } from 'lucide-react';
+import { 
+  X, Search, Building2, Hotel, UserPlus, 
+  Mail, Lock, Phone, FileText, Upload, User,
+  Briefcase, CheckCircle2, Sparkles, Eye, EyeOff
+} from 'lucide-react';
 import api from '../services/api';
 
 interface Business {
@@ -30,16 +34,20 @@ const Register: React.FC = () => {
   });
   const [verificationDocument, setVerificationDocument] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(false);
   const [availableBusinesses, setAvailableBusinesses] = useState<Business[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showBusinessDropdown, setShowBusinessDropdown] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword2, setShowPassword2] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
   // Fetch available businesses when role changes
   useEffect(() => {
     const fetchBusinesses = async () => {
+      setIsLoadingBusinesses(true);
       try {
         const type = formData.role === 'vendor' ? 'vendor' : 'stay';
         const response = await api.get(`/auth/available-businesses/?type=${type}`);
@@ -47,6 +55,9 @@ const Register: React.FC = () => {
         setAvailableBusinesses(businesses || []);
       } catch (error) {
         console.error('Failed to fetch businesses:', error);
+        setAvailableBusinesses([]);
+      } finally {
+        setIsLoadingBusinesses(false);
       }
     };
 
@@ -57,17 +68,12 @@ const Register: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
     
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    
-    // Reset claimed business when role changes
     if (name === 'role') {
       setFormData(prev => ({
         ...prev,
-        [name]: value,
+        role: value as 'vendor' | 'stay_owner',
         claimed_vendor_id: null,
         claimed_stay_id: null,
       }));
@@ -94,22 +100,19 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate passwords match
     if (formData.password !== formData.password2) {
-      toast.error('⚠️ Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
-    // Validate phone number
     if (!formData.phone_number) {
-      toast.error('⚠️ Phone number is required');
+      toast.error('Phone number is required');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Create FormData for file upload
       const submitData = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null && value !== '') {
@@ -117,7 +120,6 @@ const Register: React.FC = () => {
         }
       });
       
-      // Add verification document if provided
       if (verificationDocument) {
         submitData.append('verification_document', verificationDocument);
       }
@@ -125,75 +127,106 @@ const Register: React.FC = () => {
       const result = await register(submitData);
       
       if (result.requiresApproval) {
-        toast.success('✅ Registration successful! Please wait for admin approval.');
-        toast.info('📧 You will receive a notification once your account is approved.');
+        toast.success('Registration successful! Please wait for admin approval.');
       } else {
-        toast.success('✅ Registration successful!');
+        toast.success('Registration successful!');
       }
       
-      // Redirect to sign-in after 2 seconds (NEW unified auth flow)
-      setTimeout(() => {
-        navigate('/sign-in');
-      }, 2000);
+      setTimeout(() => navigate('/sign-in'), 2000);
     } catch (error: any) {
-      console.error('Registration failed:', error);
-      const errorMessage = error.message || 'Registration failed. Please try again.';
-      toast.error(`⚠️ ${errorMessage}`);
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputStyle = {
+    backgroundColor: '#0f172a',
+    border: '2px solid #334155',
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="bg-white rounded-xl shadow-2xl p-8">
-          {/* Back Button */}
-          <Link
-            to="/business"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-indigo-600 font-medium mb-6 transition-colors group"
+    <div 
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: '#0f172a' }}
+    >
+      {/* Background decoration */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div 
+          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)' }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl"
+          style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' }}
+        />
+      </div>
+
+      {/* Modal Card */}
+      <div 
+        className="relative w-full max-w-md rounded-2xl overflow-hidden"
+        style={{
+          backgroundColor: '#1e293b',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          maxHeight: '90vh',
+        }}
+      >
+        {/* Header */}
+        <div 
+          className="px-6 pt-6 pb-4 relative"
+          style={{ background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)' }}
+        >
+          <button
+            onClick={() => navigate('/')}
+            className="absolute top-4 right-4 p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-all"
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Business Portal
-          </Link>
+            <X className="w-5 h-5" />
+          </button>
 
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Create Account
-            </h2>
-            <p className="text-gray-600">
-              Join the Kedah Tourism Network
-            </p>
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm mb-3">
+              <UserPlus className="w-7 h-7 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Create Account</h2>
+            <p className="text-white/70 text-sm">Join Kedah Tourism Network</p>
           </div>
+        </div>
 
-          {/* Registration Form */}
-          <form className="space-y-5" onSubmit={handleSubmit}>
+        {/* Scrollable Form */}
+        <div 
+          className="px-6 py-5 overflow-y-auto"
+          style={{ maxHeight: 'calc(90vh - 140px)' }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Role Selection */}
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                I am a... <span className="text-red-500">*</span>
+              <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-2">
+                <Briefcase className="w-3.5 h-3.5 text-purple-400" />
+                I am a... <span className="text-red-400">*</span>
               </label>
               <select
-                id="role"
                 name="role"
-                required
                 value={formData.role}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="w-full px-3 py-2.5 rounded-lg text-white text-sm transition-all focus:outline-none"
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                onBlur={(e) => e.target.style.borderColor = '#334155'}
               >
                 <option value="vendor">🍜 Restaurant/Business Owner</option>
                 <option value="stay_owner">🏨 Hotel/Accommodation Owner</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Your account will require approval from the tourism council
-              </p>
             </div>
 
             {/* Business Claiming */}
             <div className="relative">
-              <label htmlFor="business" className="block text-sm font-medium text-gray-700 mb-2">
-                {formData.role === 'vendor' ? '🏪 Claim Your Restaurant' : '🏨 Claim Your Hotel'} <span className="text-gray-400">(Optional)</span>
+              <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-2">
+                {formData.role === 'vendor' ? (
+                  <Building2 className="w-3.5 h-3.5 text-purple-400" />
+                ) : (
+                  <Hotel className="w-3.5 h-3.5 text-purple-400" />
+                )}
+                Claim Your {formData.role === 'vendor' ? 'Restaurant' : 'Hotel'} <span className="text-gray-600">(Optional)</span>
               </label>
               <div className="relative">
                 <input
@@ -203,284 +236,311 @@ const Register: React.FC = () => {
                     setSearchTerm(e.target.value);
                     setShowBusinessDropdown(true);
                   }}
-                  onFocus={() => setShowBusinessDropdown(true)}
-                  placeholder={formData.role === 'vendor' ? 'Search for your restaurant...' : 'Search for your hotel...'}
-                  className="appearance-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  onFocus={(e) => {
+                    setShowBusinessDropdown(true);
+                    e.target.style.borderColor = '#a855f7';
+                  }}
+                  onBlur={(e) => {
+                    setTimeout(() => setShowBusinessDropdown(false), 200);
+                    e.target.style.borderColor = '#334155';
+                  }}
+                  placeholder={`Search ${formData.role === 'vendor' ? 'restaurants' : 'hotels'}...`}
+                  className="w-full px-3 py-2.5 pl-9 rounded-lg text-white placeholder-gray-500 text-sm transition-all focus:outline-none"
+                  style={inputStyle}
                 />
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
               </div>
               
-              {showBusinessDropdown && filteredBusinesses.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {filteredBusinesses.map((business) => (
-                    <div
-                      key={business.id}
-                      onClick={() => handleBusinessSelect(business)}
-                      className="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="flex items-start gap-3">
-                        {formData.role === 'vendor' ? (
-                          <Building2 className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <Hotel className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{business.name}</p>
-                          <p className="text-xs text-gray-500">{business.city}</p>
-                          {business.cuisines && business.cuisines.length > 0 && (
-                            <p className="text-xs text-gray-400 mt-0.5">{business.cuisines.join(', ')}</p>
-                          )}
-                          {business.type && (
-                            <p className="text-xs text-gray-400 mt-0.5">{business.type}</p>
-                          )}
-                        </div>
-                      </div>
+              {showBusinessDropdown && (
+                <div 
+                  className="absolute z-20 w-full mt-1 rounded-lg shadow-xl max-h-40 overflow-y-auto"
+                  style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
+                >
+                  {isLoadingBusinesses ? (
+                    <div className="px-3 py-4 text-center">
+                      <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
                     </div>
-                  ))}
+                  ) : filteredBusinesses.length > 0 ? (
+                    filteredBusinesses.slice(0, 5).map((business) => (
+                      <div
+                        key={business.id}
+                        onClick={() => handleBusinessSelect(business)}
+                        className="px-3 py-2 hover:bg-purple-500/20 cursor-pointer text-sm"
+                      >
+                        <p className="text-white truncate">{business.name}</p>
+                        <p className="text-xs text-gray-500">{business.city}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-3 text-center text-gray-500 text-xs">
+                      No {formData.role === 'vendor' ? 'restaurants' : 'hotels'} available
+                    </div>
+                  )}
                 </div>
               )}
               
               {selectedBusiness && (
-                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
-                    ✅ Selected: <strong>{selectedBusiness.name}</strong> ({selectedBusiness.city})
-                  </p>
+                <div className="mt-2 p-2 rounded-lg flex items-center justify-between text-xs" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
+                  <span className="text-green-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {selectedBusiness.name}
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedBusiness(null);
                       setSearchTerm('');
-                      setFormData(prev => ({
-                        ...prev,
-                        claimed_vendor_id: null,
-                        claimed_stay_id: null,
-                      }));
+                      setFormData(prev => ({ ...prev, claimed_vendor_id: null, claimed_stay_id: null }));
                     }}
-                    className="text-xs text-green-700 hover:text-green-900 mt-1 underline"
+                    className="text-green-400 hover:text-green-300"
                   >
-                    Clear selection
+                    ✕
                   </button>
                 </div>
               )}
-              
-              <p className="mt-1 text-xs text-gray-500">
-                {availableBusinesses.length === 0 ? (
-                  'No unclaimed businesses available at the moment'
-                ) : (
-                  `${availableBusinesses.length} ${formData.role === 'vendor' ? 'restaurant(s)' : 'hotel(s)'} available to claim`
-                )}
-              </p>
             </div>
 
-            {/* Username */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                Username <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
-                required
-                value={formData.username}
-                onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Choose a username"
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="your@email.com"
-              />
-            </div>
-
-            {/* First and Last Name */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Username & Email */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
+                <label className="flex items-center gap-1 text-xs font-medium text-gray-400 mb-1.5">
+                  <User className="w-3.5 h-3.5 text-purple-400" />
+                  Username <span className="text-red-400">*</span>
                 </label>
                 <input
-                  id="first_name"
+                  name="username"
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                  style={inputStyle}
+                  onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                  onBlur={(e) => e.target.style.borderColor = '#334155'}
+                  placeholder="Username"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-1 text-xs font-medium text-gray-400 mb-1.5">
+                  <Mail className="w-3.5 h-3.5 text-purple-400" />
+                  Email <span className="text-red-400">*</span>
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                  style={inputStyle}
+                  onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                  onBlur={(e) => e.target.style.borderColor = '#334155'}
+                  placeholder="Email"
+                />
+              </div>
+            </div>
+
+            {/* First & Last Name */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-400 mb-1.5 block">First Name</label>
+                <input
                   name="first_name"
                   type="text"
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full px-3 py-2.5 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                  style={inputStyle}
+                  onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                  onBlur={(e) => e.target.style.borderColor = '#334155'}
                   placeholder="First name"
                 />
               </div>
               <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
-                </label>
+                <label className="text-xs font-medium text-gray-400 mb-1.5 block">Last Name</label>
                 <input
-                  id="last_name"
                   name="last_name"
                   type="text"
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full px-3 py-2.5 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                  style={inputStyle}
+                  onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                  onBlur={(e) => e.target.style.borderColor = '#334155'}
                   placeholder="Last name"
                 />
               </div>
             </div>
 
-            {/* Phone Number */}
+            {/* Phone */}
             <div>
-              <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number <span className="text-red-500">*</span>
+              <label className="flex items-center gap-1 text-xs font-medium text-gray-400 mb-1.5">
+                <Phone className="w-3.5 h-3.5 text-purple-400" />
+                Phone Number <span className="text-red-400">*</span>
               </label>
               <input
-                id="phone_number"
                 name="phone_number"
                 type="tel"
                 required
                 value={formData.phone_number}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="w-full px-3 py-2.5 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                onBlur={(e) => e.target.style.borderColor = '#334155'}
                 placeholder="+60 12-345 6789"
               />
-              <p className="mt-1 text-xs text-gray-500">Required for verification purposes</p>
             </div>
 
-            {/* Business Registration Number (Optional) */}
+            {/* Business Reg Number */}
             <div>
-              <label htmlFor="business_registration_number" className="block text-sm font-medium text-gray-700 mb-2">
-                Business Registration Number <span className="text-gray-400">(Optional)</span>
+              <label className="flex items-center gap-1 text-xs font-medium text-gray-400 mb-1.5">
+                <FileText className="w-3.5 h-3.5 text-purple-400" />
+                Business Reg. Number <span className="text-gray-600">(Optional)</span>
               </label>
               <input
-                id="business_registration_number"
                 name="business_registration_number"
                 type="text"
                 value={formData.business_registration_number}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="e.g., SSM-1234567-A"
+                className="w-full px-3 py-2.5 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                style={inputStyle}
+                onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                onBlur={(e) => e.target.style.borderColor = '#334155'}
+                placeholder="SSM-1234567-A"
               />
-              <p className="mt-1 text-xs text-gray-500">Your official business license/registration number</p>
             </div>
 
-            {/* Verification Document Upload */}
+            {/* Document Upload */}
             <div>
-              <label htmlFor="verification_document" className="block text-sm font-medium text-gray-700 mb-2">
-                Verification Document <span className="text-gray-400">(Optional)</span>
+              <label className="flex items-center gap-1 text-xs font-medium text-gray-400 mb-1.5">
+                <Upload className="w-3.5 h-3.5 text-purple-400" />
+                Verification Document <span className="text-gray-600">(Optional)</span>
               </label>
-              <input
-                id="verification_document"
-                name="verification_document"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    // Check file size (max 5MB)
-                    if (file.size > 5 * 1024 * 1024) {
-                      toast.error('File size must be less than 5MB');
-                      e.target.value = '';
-                      return;
-                    }
-                    setVerificationDocument(file);
-                  }
-                }}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-              />
-              <p className="mt-1 text-xs text-gray-500">Upload ID, business license, or ownership proof (PDF, Image, max 5MB)</p>
-              {verificationDocument && (
-                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  {verificationDocument.name}
-                </p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="At least 8 characters"
-              />
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="password2"
-                name="password2"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={formData.password2}
-                onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Re-enter your password"
-              />
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              <div 
+                className="relative rounded-lg p-3 text-center cursor-pointer transition-all hover:border-purple-500"
+                style={{ backgroundColor: '#0f172a', border: '2px dashed #334155' }}
               >
-                {isLoading ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating account...
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && file.size <= 5 * 1024 * 1024) {
+                      setVerificationDocument(file);
+                    } else if (file) {
+                      toast.error('File must be less than 5MB');
+                    }
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                {verificationDocument ? (
+                  <span className="text-green-400 text-xs flex items-center justify-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    {verificationDocument.name}
                   </span>
                 ) : (
-                  'Create Account'
+                  <span className="text-gray-500 text-xs">Click to upload (PDF, Image)</span>
                 )}
-              </button>
+              </div>
             </div>
-          </form>
 
-          {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            {/* Passwords */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="flex items-center gap-1 text-xs font-medium text-gray-400 mb-1.5">
+                  <Lock className="w-3.5 h-3.5 text-purple-400" />
+                  Password <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 pr-9 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                    style={inputStyle}
+                    onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                    onBlur={(e) => e.target.style.borderColor = '#334155'}
+                    placeholder="Password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-2.5 text-gray-500 hover:text-purple-400"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-1 text-xs font-medium text-gray-400 mb-1.5">
+                  <Lock className="w-3.5 h-3.5 text-purple-400" />
+                  Confirm <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    name="password2"
+                    type={showPassword2 ? 'text' : 'password'}
+                    required
+                    value={formData.password2}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 pr-9 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none"
+                    style={inputStyle}
+                    onFocus={(e) => e.target.style.borderColor = '#a855f7'}
+                    onBlur={(e) => e.target.style.borderColor = '#334155'}
+                    placeholder="Confirm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword2(!showPassword2)}
+                    className="absolute right-2.5 top-2.5 text-gray-500 hover:text-purple-400"
+                  >
+                    {showPassword2 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 rounded-lg font-semibold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{
+                background: isLoading ? '#6b7280' : 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
+                boxShadow: isLoading ? 'none' : '0 4px 15px rgba(168, 85, 247, 0.4)'
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Create Account
+                </>
+              )}
+            </button>
+
+            {/* Sign In Link */}
+            <p className="text-center text-gray-400 text-sm">
               Already have an account?{' '}
-              <Link
-                to="/sign-in"
-                className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
-              >
+              <Link to="/sign-in" className="text-purple-400 hover:text-purple-300 font-semibold">
                 Sign in
               </Link>
             </p>
-          </div>
+          </form>
         </div>
+
+        {/* Footer gradient */}
+        <div 
+          className="h-1"
+          style={{ background: 'linear-gradient(90deg, #a855f7 0%, #6366f1 50%, #3b82f6 100%)' }}
+        />
       </div>
     </div>
   );

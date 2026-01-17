@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 
 from common.permissions import IsVendorOwnerOrReadOnly
 
@@ -15,9 +16,18 @@ from .serializers import (
     ReservationSerializer
 )
 
+
+class VendorPagination(PageNumberPagination):
+    """Custom pagination for vendors - show all restaurants by default"""
+    page_size = 200  # Show up to 200 restaurants
+    page_size_query_param = 'page_size'
+    max_page_size = 500
+
+
 class VendorViewSet(viewsets.ModelViewSet):
     queryset = Vendor.objects.all().order_by("city", "name")
     permission_classes = [IsVendorOwnerOrReadOnly]
+    pagination_class = VendorPagination  # Use custom pagination to show all restaurants
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -268,10 +278,24 @@ class MenuItemViewSet(viewsets.ModelViewSet):
         
         if user.is_authenticated and user.role == 'vendor':
             # Vendors see all their menu items
-            vendor_ids = user.vendor_set.values_list('id', flat=True)
+            vendor_ids = user.owned_vendors.values_list('id', flat=True)
             return MenuItem.objects.filter(vendor_id__in=vendor_ids)
         
         return MenuItem.objects.none()
+    
+    def get_serializer(self, *args, **kwargs):
+        # Handle allergens as list from FormData
+        if self.request.method in ['POST', 'PUT', 'PATCH']:
+            data = self.request.data
+            if hasattr(data, 'getlist'):
+                # FormData - convert allergens list
+                mutable_data = data.copy() if hasattr(data, 'copy') else dict(data)
+                allergens = data.getlist('allergens', [])
+                if allergens:
+                    import json
+                    mutable_data['allergens'] = allergens
+                kwargs['data'] = mutable_data
+        return super().get_serializer(*args, **kwargs)
     
     def perform_create(self, serializer):
         # Ensure vendor is owned by current user
@@ -297,7 +321,7 @@ class OpeningHoursViewSet(viewsets.ModelViewSet):
             return OpeningHours.objects.filter(vendor_id=vendor_id)
         
         if user.is_authenticated and user.role == 'vendor':
-            vendor_ids = user.vendor_set.values_list('id', flat=True)
+            vendor_ids = user.owned_vendors.values_list('id', flat=True)
             return OpeningHours.objects.filter(vendor_id__in=vendor_ids)
         
         return OpeningHours.objects.none()
@@ -331,8 +355,8 @@ class PromotionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Vendors can only see/edit their own promotions
         user = self.request.user
-        if user.is_authenticated and hasattr(user, 'vendor_set'):
-            vendor_ids = user.vendor_set.values_list('id', flat=True)
+        if user.is_authenticated and hasattr(user, 'owned_vendors'):
+            vendor_ids = user.owned_vendors.values_list('id', flat=True)
             return Promotion.objects.filter(vendor_id__in=vendor_ids)
         return Promotion.objects.none()
 
