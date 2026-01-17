@@ -135,6 +135,39 @@ class IsVendorOwnerOrReadOnly(BasePermission):
         )
 
 
+class IsMenuItemOwner(BasePermission):
+    """
+    Permission class for MenuItem resources.
+    - Approved vendors: Can create/update menu items for their vendors
+    - Others: Read-only access
+    """
+    
+    def has_permission(self, request, view):
+        # Read permissions allowed for everyone
+        if request.method in SAFE_METHODS:
+            return True
+        
+        # Create/write requires approved vendor role
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'vendor' and
+            request.user.is_approved
+        )
+    
+    def has_object_permission(self, request, view, obj):
+        # Read permissions for safe methods
+        if request.method in SAFE_METHODS:
+            return True
+            
+        # For MenuItem, check if the user owns the vendor
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'vendor' and
+            request.user.is_approved and
+            obj.vendor.owner_id == request.user.id
+        )
+
+
 class IsStayOwnerOrReadOnly(BasePermission):
     """
     Permission class specifically for Stay resources.

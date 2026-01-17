@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 
-from common.permissions import IsVendorOwnerOrReadOnly
+from common.permissions import IsVendorOwnerOrReadOnly, IsMenuItemOwner
 
 from .models import Vendor, MenuItem, OpeningHours, Review, Promotion, Reservation
 from .serializers import (
@@ -265,7 +265,7 @@ class VendorSearchView(APIView):
 class MenuItemViewSet(viewsets.ModelViewSet):
     """CRUD for menu items - vendor owners only"""
     serializer_class = MenuItemSerializer
-    permission_classes = [IsVendorOwnerOrReadOnly]
+    permission_classes = [IsMenuItemOwner]
     
     def get_queryset(self):
         # Vendors can only see/edit their own menu items
