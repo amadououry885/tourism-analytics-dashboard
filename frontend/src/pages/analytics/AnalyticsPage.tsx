@@ -96,6 +96,34 @@ const defaultLeastVisited = [
   { id: 10, name: 'Pekan Rabu', category: 'Shopping', city: 'Alor Setar', engagement: 320, posts: 6, sentiment: 65, rating: 4.0 },
 ];
 
+const defaultSentimentComparison = {
+  mostVisited: {
+    places: 7,
+    posts: 58,
+    engagement: 746889,
+    avgEngagement: 106698,
+    positive: 72,
+    neutral: 20,
+    negative: 8,
+    rating: 4.6,
+  },
+  leastVisited: {
+    places: 7,
+    posts: 19,
+    engagement: 5222,
+    avgEngagement: 746,
+    positive: 63,
+    neutral: 26,
+    negative: 11,
+    rating: 4.2,
+  },
+  insights: [
+    'Most visited places have higher sentiment scores, suggesting visitor satisfaction drives popularity.',
+    'Hidden gems maintain strong positive sentiment despite lower engagement, indicating potential for growth.',
+    'Engagement is 143x higher for popular places, showing significant room to promote hidden gems.',
+  ]
+};
+
 const CITIES = [
   { value: 'all', label: 'All Regions', icon: '🌍' },
   { value: 'langkawi', label: 'Langkawi', icon: '🏝️' },
@@ -121,6 +149,7 @@ export default function AnalyticsPage() {
   const [topPlaces, setTopPlaces] = useState(defaultPlaces);
   const [mostVisited, setMostVisited] = useState(defaultMostVisited);
   const [leastVisited, setLeastVisited] = useState(defaultLeastVisited);
+  const [sentimentComparison, setSentimentComparison] = useState(defaultSentimentComparison);
   const [loading, setLoading] = useState(true);
   
   // Filters
@@ -138,12 +167,13 @@ export default function AnalyticsPage() {
         }
         params.append('period', timeRange);
 
-        const [metricsRes, placesRes, sentimentRes, mostVisitedRes, leastVisitedRes] = await Promise.all([
+        const [metricsRes, placesRes, sentimentRes, mostVisitedRes, leastVisitedRes, sentimentComparisonRes] = await Promise.all([
           api.get(`/analytics/overview-metrics/?${params.toString()}`).catch(() => ({ data: null })),
           api.get(`/analytics/places/popular/?${params.toString()}`).catch(() => ({ data: [] })),
           api.get(`/analytics/sentiment/summary/?${params.toString()}`).catch(() => ({ data: null })),
           api.get(`/analytics/places/by-visit-level/?level=most`).catch(() => ({ data: [] })),
-          api.get(`/analytics/places/by-visit-level/?level=least`).catch(() => ({ data: [] }))
+          api.get(`/analytics/places/by-visit-level/?level=least`).catch(() => ({ data: [] })),
+          api.get(`/analytics/sentiment/comparison/`).catch(() => ({ data: null }))
         ]);
 
         if (metricsRes.data) {
@@ -203,6 +233,34 @@ export default function AnalyticsPage() {
             sentiment: p.sentiment?.positive_percentage || 70,
             rating: p.sentiment?.rating || p.rating || 4.0
           })));
+        }
+
+        // Set sentiment comparison data
+        if (sentimentComparisonRes.data && sentimentComparisonRes.data.comparison) {
+          const comp = sentimentComparisonRes.data;
+          setSentimentComparison({
+            mostVisited: {
+              places: comp.comparison.most_visited?.total_places || defaultSentimentComparison.mostVisited.places,
+              posts: comp.comparison.most_visited?.total_posts || defaultSentimentComparison.mostVisited.posts,
+              engagement: comp.comparison.most_visited?.total_engagement || defaultSentimentComparison.mostVisited.engagement,
+              avgEngagement: comp.comparison.most_visited?.average_engagement_per_place || defaultSentimentComparison.mostVisited.avgEngagement,
+              positive: comp.comparison.most_visited?.sentiment_distribution?.positive_percentage || defaultSentimentComparison.mostVisited.positive,
+              neutral: comp.comparison.most_visited?.sentiment_distribution?.neutral_percentage || defaultSentimentComparison.mostVisited.neutral,
+              negative: comp.comparison.most_visited?.sentiment_distribution?.negative_percentage || defaultSentimentComparison.mostVisited.negative,
+              rating: comp.comparison.most_visited?.average_rating || defaultSentimentComparison.mostVisited.rating,
+            },
+            leastVisited: {
+              places: comp.comparison.least_visited?.total_places || defaultSentimentComparison.leastVisited.places,
+              posts: comp.comparison.least_visited?.total_posts || defaultSentimentComparison.leastVisited.posts,
+              engagement: comp.comparison.least_visited?.total_engagement || defaultSentimentComparison.leastVisited.engagement,
+              avgEngagement: comp.comparison.least_visited?.average_engagement_per_place || defaultSentimentComparison.leastVisited.avgEngagement,
+              positive: comp.comparison.least_visited?.sentiment_distribution?.positive_percentage || defaultSentimentComparison.leastVisited.positive,
+              neutral: comp.comparison.least_visited?.sentiment_distribution?.neutral_percentage || defaultSentimentComparison.leastVisited.neutral,
+              negative: comp.comparison.least_visited?.sentiment_distribution?.negative_percentage || defaultSentimentComparison.leastVisited.negative,
+              rating: comp.comparison.least_visited?.average_rating || defaultSentimentComparison.leastVisited.rating,
+            },
+            insights: comp.insights || defaultSentimentComparison.insights,
+          });
         }
       } catch (err) {
         console.error('Error fetching analytics:', err);
@@ -910,6 +968,206 @@ export default function AnalyticsPage() {
                     <p style={{ color: '#f97316', fontSize: '13px', fontWeight: '500', margin: 0 }}>
                       🌟 These hidden gems have great ratings but less traffic. Perfect for visitors seeking authentic experiences!
                     </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ============================================ */}
+            {/* SENTIMENT ANALYTICS COMPARISON SECTION */}
+            {/* ============================================ */}
+            <section style={{ marginBottom: '32px' }}>
+              <div style={{
+                backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                borderRadius: '16px',
+                padding: '24px',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+              }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '24px' }}>🧠</span>
+                    Sentiment Analytics
+                  </h3>
+                  <p style={{ fontSize: '14px', color: '#94a3b8' }}>
+                    Compare visitor sentiment between popular destinations and hidden gems
+                  </p>
+                </div>
+
+                {/* Comparison Cards */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: '20px',
+                  marginBottom: '24px',
+                }}>
+                  {/* Most Visited Sentiment */}
+                  <div style={{
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <TrendingUp size={20} color="#22c55e" />
+                      <span style={{ color: '#22c55e', fontWeight: '600', fontSize: '16px' }}>Most Visited</span>
+                      <span style={{ 
+                        backgroundColor: '#22c55e', 
+                        color: 'white', 
+                        padding: '2px 8px', 
+                        borderRadius: '10px', 
+                        fontSize: '11px',
+                        fontWeight: '600'
+                      }}>Top 33%</span>
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Places</div>
+                        <div style={{ color: '#ffffff', fontSize: '24px', fontWeight: '700' }}>{sentimentComparison.mostVisited.places}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Posts</div>
+                        <div style={{ color: '#ffffff', fontSize: '24px', fontWeight: '700' }}>{sentimentComparison.mostVisited.posts}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Positive 😊</div>
+                        <div style={{ color: '#22c55e', fontSize: '24px', fontWeight: '700' }}>{sentimentComparison.mostVisited.positive.toFixed(0)}%</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Rating</div>
+                        <div style={{ color: '#eab308', fontSize: '24px', fontWeight: '700' }}>★ {sentimentComparison.mostVisited.rating.toFixed(1)}</div>
+                      </div>
+                    </div>
+
+                    {/* Sentiment Bar */}
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${sentimentComparison.mostVisited.positive}%`, backgroundColor: '#22c55e' }} />
+                        <div style={{ width: `${sentimentComparison.mostVisited.neutral}%`, backgroundColor: '#f59e0b' }} />
+                        <div style={{ width: `${sentimentComparison.mostVisited.negative}%`, backgroundColor: '#ef4444' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px' }}>
+                        <span style={{ color: '#22c55e' }}>😊 {sentimentComparison.mostVisited.positive.toFixed(0)}%</span>
+                        <span style={{ color: '#f59e0b' }}>😐 {sentimentComparison.mostVisited.neutral.toFixed(0)}%</span>
+                        <span style={{ color: '#ef4444' }}>😞 {sentimentComparison.mostVisited.negative.toFixed(0)}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hidden Gems Sentiment */}
+                  <div style={{
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    border: '1px solid rgba(249, 115, 22, 0.3)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '20px' }}>💎</span>
+                      <span style={{ color: '#f97316', fontWeight: '600', fontSize: '16px' }}>Hidden Gems</span>
+                      <span style={{ 
+                        backgroundColor: '#f97316', 
+                        color: 'white', 
+                        padding: '2px 8px', 
+                        borderRadius: '10px', 
+                        fontSize: '11px',
+                        fontWeight: '600'
+                      }}>Bottom 33%</span>
+                    </div>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Places</div>
+                        <div style={{ color: '#ffffff', fontSize: '24px', fontWeight: '700' }}>{sentimentComparison.leastVisited.places}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Posts</div>
+                        <div style={{ color: '#ffffff', fontSize: '24px', fontWeight: '700' }}>{sentimentComparison.leastVisited.posts}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Positive 😊</div>
+                        <div style={{ color: '#f97316', fontSize: '24px', fontWeight: '700' }}>{sentimentComparison.leastVisited.positive.toFixed(0)}%</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}>Rating</div>
+                        <div style={{ color: '#eab308', fontSize: '24px', fontWeight: '700' }}>★ {sentimentComparison.leastVisited.rating.toFixed(1)}</div>
+                      </div>
+                    </div>
+
+                    {/* Sentiment Bar */}
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${sentimentComparison.leastVisited.positive}%`, backgroundColor: '#22c55e' }} />
+                        <div style={{ width: `${sentimentComparison.leastVisited.neutral}%`, backgroundColor: '#f59e0b' }} />
+                        <div style={{ width: `${sentimentComparison.leastVisited.negative}%`, backgroundColor: '#ef4444' }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px' }}>
+                        <span style={{ color: '#22c55e' }}>😊 {sentimentComparison.leastVisited.positive.toFixed(0)}%</span>
+                        <span style={{ color: '#f59e0b' }}>😐 {sentimentComparison.leastVisited.neutral.toFixed(0)}%</span>
+                        <span style={{ color: '#ef4444' }}>😞 {sentimentComparison.leastVisited.negative.toFixed(0)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Engagement Comparison */}
+                <div style={{
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  marginBottom: '20px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '20px' }}>📊</span>
+                      <div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px' }}>Engagement Gap</div>
+                        <div style={{ color: '#3b82f6', fontSize: '20px', fontWeight: '700' }}>
+                          {Math.round(sentimentComparison.mostVisited.avgEngagement / Math.max(sentimentComparison.leastVisited.avgEngagement, 1))}x higher
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '12px' }}>Most Visited Avg</div>
+                      <div style={{ color: '#22c55e', fontSize: '18px', fontWeight: '600' }}>{formatNumber(sentimentComparison.mostVisited.avgEngagement)}</div>
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: '20px' }}>vs</div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ color: '#94a3b8', fontSize: '12px' }}>Hidden Gems Avg</div>
+                      <div style={{ color: '#f97316', fontSize: '18px', fontWeight: '600' }}>{formatNumber(sentimentComparison.leastVisited.avgEngagement)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Insights */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '18px' }}>💡</span>
+                    <span style={{ color: '#ffffff', fontWeight: '600', fontSize: '16px' }}>AI-Generated Insights</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {sentimentComparison.insights.map((insight, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(139, 92, 246, 0.2)',
+                        }}
+                      >
+                        <span style={{ 
+                          color: '#8b5cf6', 
+                          fontWeight: '700', 
+                          fontSize: '14px',
+                          minWidth: '20px',
+                        }}>{index + 1}.</span>
+                        <span style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.5' }}>{insight}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
