@@ -283,32 +283,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
         
         return MenuItem.objects.none()
     
-    def get_serializer(self, *args, **kwargs):
-        # Handle allergens from FormData - could be JSON string or list
-        if self.request.method in ['POST', 'PUT', 'PATCH']:
-            data = self.request.data
-            if hasattr(data, 'copy'):
-                import json
-                mutable_data = data.copy()
-                
-                # Check if allergens is a JSON string
-                allergens_value = data.get('allergens')
-                if allergens_value:
-                    if isinstance(allergens_value, str):
-                        try:
-                            # Parse JSON string
-                            mutable_data['allergens'] = json.loads(allergens_value)
-                        except (json.JSONDecodeError, TypeError):
-                            # Maybe it's a single value
-                            mutable_data['allergens'] = [allergens_value] if allergens_value else []
-                    elif hasattr(data, 'getlist'):
-                        # Multiple values from FormData
-                        mutable_data['allergens'] = data.getlist('allergens', [])
-                else:
-                    mutable_data['allergens'] = []
-                
-                kwargs['data'] = mutable_data
-        return super().get_serializer(*args, **kwargs)
+    # Serializer handles allergens parsing via to_internal_value
     
     def perform_create(self, serializer):
         # Ensure vendor is owned by current user
