@@ -147,7 +147,7 @@ const Register: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 py-8"
+      className="min-h-screen overflow-y-auto"
       style={{ backgroundColor: '#0f172a' }}
     >
       {/* Background decoration */}
@@ -162,15 +162,16 @@ const Register: React.FC = () => {
         />
       </div>
 
-      {/* Modal Card */}
-      <div 
-        className="relative w-full max-w-md rounded-2xl overflow-hidden"
-        style={{
-          backgroundColor: '#1e293b',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          maxHeight: '95vh',
-        }}
-      >
+      {/* Centered Container */}
+      <div className="flex items-center justify-center min-h-screen py-8 px-4">
+        {/* Modal Card */}
+        <div 
+          className="relative w-full max-w-md rounded-2xl overflow-visible"
+          style={{
+            backgroundColor: '#1e293b',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          }}
+        >
         {/* Header */}
         <div 
           className="px-6 pt-6 pb-4 relative"
@@ -192,11 +193,8 @@ const Register: React.FC = () => {
           </div>
         </div>
 
-        {/* Scrollable Form */}
-        <div 
-          className="px-6 py-5 overflow-y-auto"
-          style={{ maxHeight: 'calc(95vh - 160px)' }}
-        >
+        {/* Form Container - no max height, natural flow */}
+        <div className="px-6 py-5">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Role Selection */}
             <div>
@@ -527,7 +525,7 @@ const Register: React.FC = () => {
             </button>
 
             {/* Sign In Link */}
-            <p className="text-center text-gray-400 text-sm">
+            <p className="text-center text-gray-400 text-sm pb-2">
               Already have an account?{' '}
               <Link to="/sign-in" className="text-purple-400 hover:text-purple-300 font-semibold">
                 Sign in
@@ -541,6 +539,7 @@ const Register: React.FC = () => {
           className="h-1"
           style={{ background: 'linear-gradient(90deg, #a855f7 0%, #6366f1 50%, #3b82f6 100%)' }}
         />
+        </div>
       </div>
     </div>
   );
