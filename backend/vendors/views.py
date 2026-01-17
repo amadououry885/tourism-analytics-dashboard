@@ -300,9 +300,17 @@ class MenuItemViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Ensure vendor is owned by current user
         vendor = serializer.validated_data['vendor']
-        if vendor.owner != self.request.user:
+        user = self.request.user
+        
+        # Check if user owns this vendor
+        if vendor.owner is None:
             from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied('You can only add menu items to your own restaurants')
+            raise PermissionDenied(f'This restaurant ({vendor.name}) has no owner assigned. Please contact admin to complete your approval.')
+        
+        if vendor.owner != user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(f'You do not own this restaurant. Owner is: {vendor.owner.username}')
+        
         serializer.save()
 
 
