@@ -80,6 +80,17 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate price
+    const priceValue = parseFloat(formData.price);
+    if (isNaN(priceValue) || priceValue < 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+    
+    // Validate spiciness level
+    const spicinessValue = isNaN(formData.spiciness_level) ? 0 : formData.spiciness_level;
+    
     try {
       // Create FormData for file upload
       const submitData = new FormData();
@@ -87,12 +98,12 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
       submitData.append('name', formData.name);
       submitData.append('description', formData.description);
       submitData.append('category', formData.category);
-      submitData.append('price', formData.price);
+      submitData.append('price', priceValue.toFixed(2));
       submitData.append('currency', formData.currency);
       submitData.append('is_available', String(formData.is_available));
       submitData.append('is_vegetarian', String(formData.is_vegetarian));
       submitData.append('is_halal', String(formData.is_halal));
-      submitData.append('spiciness_level', String(formData.spiciness_level));
+      submitData.append('spiciness_level', String(spicinessValue));
       formData.allergens.forEach(allergen => submitData.append('allergens', allergen));
       
       // Add image file if selected
@@ -409,7 +420,7 @@ export const MenuManagement: React.FC<MenuManagementProps> = ({ vendorId }) => {
                       min="0"
                       max="5"
                       value={formData.spiciness_level}
-                      onChange={(e) => setFormData({ ...formData, spiciness_level: parseInt(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, spiciness_level: parseInt(e.target.value) || 0 })}
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900 transition-all"
                     />
                   </div>
