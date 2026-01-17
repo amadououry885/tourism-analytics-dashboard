@@ -6,19 +6,19 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Create main admin user
-        if User.objects.filter(email='admin@kedahtourism.com').exists():
-            self.stdout.write(self.style.WARNING('Admin user (admin@kedahtourism.com) already exists'))
+        if User.objects.filter(username='admin').exists():
+            self.stdout.write(self.style.WARNING('Admin user (admin) already exists'))
         else:
             admin_user = User.objects.create_user(
+                username='admin',
                 email='admin@kedahtourism.com',
                 password='admin123',
-                name='Admin User',
                 role='admin',
                 is_staff=True,
                 is_superuser=True,
                 is_approved=True
             )
-            self.stdout.write(self.style.SUCCESS(f'✅ Created admin user: {admin_user.email}'))
+            self.stdout.write(self.style.SUCCESS(f'✅ Created admin user: admin'))
             self.stdout.write(self.style.WARNING('⚠️  Default password: admin123'))
 
         # Create second admin user (adminn) for group mate
