@@ -147,7 +147,7 @@ const Register: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex items-center justify-center p-4 py-8"
       style={{ backgroundColor: '#0f172a' }}
     >
       {/* Background decoration */}
@@ -168,7 +168,7 @@ const Register: React.FC = () => {
         style={{
           backgroundColor: '#1e293b',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          maxHeight: '90vh',
+          maxHeight: '95vh',
         }}
       >
         {/* Header */}
@@ -195,7 +195,7 @@ const Register: React.FC = () => {
         {/* Scrollable Form */}
         <div 
           className="px-6 py-5 overflow-y-auto"
-          style={{ maxHeight: 'calc(90vh - 140px)' }}
+          style={{ maxHeight: 'calc(95vh - 160px)' }}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Role Selection */}
