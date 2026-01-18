@@ -3,8 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Star, Clock, Navigation, Share2, Phone, Mail, Globe, DollarSign, Utensils, Users, Calendar } from 'lucide-react';
 import api from '../../services/api';
 import { ReservationModal } from '../../components/ReservationModal';
-import { useAuth } from '../../contexts/AuthContext';
-import { toast } from 'react-toastify';
 
 interface MenuItem {
   id: number;
@@ -105,7 +103,6 @@ function computeOpenStatus(openingHoursData?: OpeningHour[]): { isOpen: boolean;
 export default function FoodDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [restaurant, setRestaurant] = useState<RestaurantDetail | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,13 +110,8 @@ export default function FoodDetails() {
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [openStatus, setOpenStatus] = useState<{ isOpen: boolean; statusText: string }>({ isOpen: true, statusText: 'OPEN' });
 
-  // Handle reservation button click with auth check
+  // Handle reservation button click - no sign-in required for tourists
   const handleMakeReservation = () => {
-    if (!user) {
-      toast.info('Please sign in to make a reservation');
-      navigate('/sign-in');
-      return;
-    }
     setShowReservationModal(true);
   };
 

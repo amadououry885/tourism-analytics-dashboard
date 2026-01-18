@@ -60,6 +60,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
       toast.success(`Welcome back, ${user.first_name || user.username}!`);
       onClose();
       
+      // Check if there's a redirect URL stored (e.g., from reservation flow)
+      const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectUrl) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirectUrl);
+        return;
+      }
+      
       // Navigate based on user role
       const role = user.role;
       console.log('Navigating based on role:', role);
