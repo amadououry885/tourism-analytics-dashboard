@@ -484,9 +484,10 @@ const Register: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-2.5 text-gray-500 hover:text-purple-400"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-400 transition-colors p-1"
+                    title={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
@@ -511,9 +512,10 @@ const Register: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword2(!showPassword2)}
-                    className="absolute right-2.5 top-2.5 text-gray-500 hover:text-purple-400"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-400 transition-colors p-1"
+                    title={showPassword2 ? "Hide password" : "Show password"}
                   >
-                    {showPassword2 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword2 ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
