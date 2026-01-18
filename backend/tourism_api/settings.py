@@ -110,15 +110,23 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 import logging
 logger = logging.getLogger(__name__)
 
+DATABASES = None
+
 if DATABASE_URL and DATABASE_URL.startswith(("postgres://", "postgresql://")):
     # Production: Use PostgreSQL from DATABASE_URL
-    logger.info(f"Using PostgreSQL database from DATABASE_URL")
-    DATABASES = {
-        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
-    }
-else:
-    # Development: Use SQLite (also fallback if DATABASE_URL is invalid)
-    logger.warning(f"DATABASE_URL not found or invalid, using SQLite at {SQLITE_PATH}")
+    try:
+        DATABASES = {
+            "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+        }
+        logger.info("Successfully connected to PostgreSQL database")
+    except Exception as e:
+        logger.error(f"Failed to parse DATABASE_URL: {e}")
+        logger.error(f"DATABASE_URL starts with: {DATABASE_URL[:30]}...")
+        DATABASES = None
+
+if DATABASES is None:
+    # Development or fallback: Use SQLite
+    logger.warning(f"Using SQLite at {SQLITE_PATH}")
     DATABASES = {
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": SQLITE_PATH}
     }
