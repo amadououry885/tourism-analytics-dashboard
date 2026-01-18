@@ -18,6 +18,7 @@ import PlacesManagement from './pages/admin/PlacesManagement';
 import EventRegistrations from './pages/EventRegistrations';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import StayOwnerDashboard from './pages/stays/StayOwnerDashboard';
+import PlaceOwnerDashboard from './pages/places/PlaceOwnerDashboard';
 
 // New Explore → Detail pages
 import PlacesExplore from './pages/places/PlacesExplore';
@@ -127,6 +128,24 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['stay_owner']} requireApproval={true}>
                   <StayOwnerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Place Owner Routes */}
+            <Route
+              path="/place-owner/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['place_owner']} requireApproval={true}>
+                  <PlaceOwnerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/places/my-places"
+              element={
+                <ProtectedRoute allowedRoles={['place_owner']} requireApproval={true}>
+                  <PlaceOwnerDashboard />
                 </ProtectedRoute>
               }
             />

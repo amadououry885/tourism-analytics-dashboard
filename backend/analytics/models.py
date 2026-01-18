@@ -57,6 +57,24 @@ class Place(models.Model):
         related_name='created_places',
         help_text="Admin user who created this place"
     )
+    
+    # Private place ownership (for non-council managed attractions)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='owned_places',
+        help_text="Place owner user who manages this attraction"
+    )
+    is_council_managed = models.BooleanField(
+        default=True,
+        help_text="True if managed by tourism council (admin), False if privately managed"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether the place is active/visible on the platform"
+    )
 
     def __str__(self):
         # Extra defensive (avoids admin rendering surprises)

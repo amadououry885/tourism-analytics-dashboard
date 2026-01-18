@@ -78,6 +78,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
         navigate('/vendor/dashboard');
       } else if (role === 'stay_owner') {
         navigate('/stay-owner/dashboard');
+      } else if (role === 'place_owner') {
+        navigate('/place-owner/dashboard');
       } else {
         navigate('/');
       }

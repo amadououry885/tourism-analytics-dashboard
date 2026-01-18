@@ -205,6 +205,66 @@ class IsStayOwnerOrReadOnly(BasePermission):
         )
 
 
+class IsApprovedPlaceOwner(BasePermission):
+    """
+    Permission class for approved place owner users.
+    Place owners must be approved by admin before accessing protected endpoints.
+    """
+    
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and 
+            request.user.role == 'place_owner' and 
+            request.user.is_approved
+        )
+
+
+class IsPlaceOwnerOrReadOnly(BasePermission):
+    """
+    Permission class specifically for Place resources with private ownership.
+    - Approved place_owners: Can create/update own places
+    - Admin: Full access to all places
+    - Others: Read-only access to active places
+    """
+    
+    def has_permission(self, request, view):
+        # Read permissions allowed for everyone
+        if request.method in SAFE_METHODS:
+            return True
+        
+        # Admin has full access
+        if request.user.is_authenticated and request.user.role == 'admin':
+            return True
+        
+        # Create/write requires approved place_owner role
+        if request.method == 'POST':
+            return (
+                request.user.is_authenticated and
+                request.user.role == 'place_owner' and
+                request.user.is_approved
+            )
+        
+        # Update/delete checked at object level
+        return request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        # Read permissions for safe methods
+        if request.method in SAFE_METHODS:
+            return True
+        
+        # Admin has full access
+        if request.user.is_authenticated and request.user.role == 'admin':
+            return True
+            
+        # Owner check for write operations
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'place_owner' and
+            request.user.is_approved and
+            obj.owner_id == request.user.id
+        )
+
+
 class IsOwner(BasePermission):
     """
     Permission class that only allows owners of an object to access it.

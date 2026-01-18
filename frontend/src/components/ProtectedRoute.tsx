@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'vendor' | 'stay_owner')[];
+  allowedRoles?: ('admin' | 'vendor' | 'stay_owner' | 'place_owner')[];
   requireApproval?: boolean;
 }
 
@@ -42,6 +42,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return <Navigate to="/vendor/dashboard" replace />;
       case 'stay_owner':
         return <Navigate to="/stay-owner/dashboard" replace />;
+      case 'place_owner':
+        return <Navigate to="/place-owner/dashboard" replace />;
       default:
         return <Navigate to="/" replace />;
     }

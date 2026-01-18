@@ -72,9 +72,10 @@ const ApprovalQueue: React.FC = () => {
     const badges = {
       vendor: 'bg-purple-100 text-purple-800',
       stay_owner: 'bg-blue-100 text-blue-800',
+      place_owner: 'bg-teal-100 text-teal-800',
     };
     const colors = badges[role as keyof typeof badges] || 'bg-gray-100 text-gray-800';
-    const label = role === 'stay_owner' ? 'Hotel Owner' : 'Restaurant Owner';
+    const label = role === 'stay_owner' ? 'Hotel Owner' : role === 'place_owner' ? 'Attraction Owner' : 'Restaurant Owner';
     
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${colors}`}>

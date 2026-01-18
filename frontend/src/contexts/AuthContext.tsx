@@ -5,7 +5,7 @@ interface User {
   id: number;
   username: string;
   email: string;
-  role: 'admin' | 'vendor' | 'stay_owner';
+  role: 'admin' | 'vendor' | 'stay_owner' | 'place_owner' | 'place_owner';
   is_approved: boolean;
   is_active: boolean;
   first_name?: string;
@@ -39,7 +39,7 @@ interface RegisterData {
   email: string;
   password: string;
   password2: string;
-  role: 'vendor' | 'stay_owner';
+  role: 'vendor' | 'stay_owner' | 'place_owner';
   first_name?: string;
   last_name?: string;
 }
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         id: typeof decoded.user_id === 'string' ? parseInt(decoded.user_id) : decoded.user_id,
         username: decoded.username,
         email: decoded.email,
-        role: decoded.role as 'admin' | 'vendor' | 'stay_owner',
+        role: decoded.role as 'admin' | 'vendor' | 'stay_owner' | 'place_owner',
         is_approved: decoded.is_approved,
         is_active: true,
       });
@@ -139,7 +139,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               id: typeof decoded.user_id === 'string' ? parseInt(decoded.user_id) : decoded.user_id,
               username: decoded.username,
               email: decoded.email,
-              role: decoded.role as 'admin' | 'vendor' | 'stay_owner',
+              role: decoded.role as 'admin' | 'vendor' | 'stay_owner' | 'place_owner',
               is_approved: decoded.is_approved,
               is_active: true,
             });
@@ -184,7 +184,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: data.user.id,
           username: data.user.username,
           email: data.user.email,
-          role: data.user.role as 'admin' | 'vendor' | 'stay_owner',
+          role: data.user.role as 'admin' | 'vendor' | 'stay_owner' | 'place_owner',
           is_approved: data.user.is_approved,
           is_active: data.user.is_active,
         };
@@ -196,7 +196,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           id: typeof decoded.user_id === 'string' ? parseInt(decoded.user_id) : decoded.user_id,
           username: decoded.username || username,
           email: decoded.email || '',
-          role: (decoded.role || 'admin') as 'admin' | 'vendor' | 'stay_owner',
+          role: (decoded.role || 'admin') as 'admin' | 'vendor' | 'stay_owner' | 'place_owner',
           is_approved: decoded.is_approved !== false,
           is_active: true,
         };

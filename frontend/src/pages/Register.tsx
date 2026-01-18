@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { 
   X, Search, Building2, Hotel, UserPlus, 
   Mail, Lock, Phone, FileText, Upload, User,
-  Briefcase, CheckCircle2, Sparkles, Eye, EyeOff
+  Briefcase, CheckCircle2, Sparkles, Eye, EyeOff, MapPin
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -24,11 +24,12 @@ const Register: React.FC = () => {
     email: '',
     password: '',
     password2: '',
-    role: 'vendor' as 'vendor' | 'stay_owner',
+    role: 'vendor' as 'vendor' | 'stay_owner' | 'place_owner',
     first_name: '',
     last_name: '',
     claimed_vendor_id: null as number | null,
     claimed_stay_id: null as number | null,
+    claimed_place_id: null as number | null,
     phone_number: '',
     business_registration_number: '',
   });
@@ -49,9 +50,13 @@ const Register: React.FC = () => {
     const fetchBusinesses = async () => {
       setIsLoadingBusinesses(true);
       try {
-        const type = formData.role === 'vendor' ? 'vendor' : 'stay';
+        const type = formData.role === 'vendor' ? 'vendor' : formData.role === 'stay_owner' ? 'stay' : 'place';
         const response = await api.get(`/auth/available-businesses/?type=${type}`);
-        const businesses = formData.role === 'vendor' ? response.data.vendors : response.data.stays;
+        const businesses = formData.role === 'vendor' 
+          ? response.data.vendors 
+          : formData.role === 'stay_owner' 
+            ? response.data.stays 
+            : response.data.places;
         setAvailableBusinesses(businesses || []);
       } catch (error) {
         console.error('Failed to fetch businesses:', error);
@@ -73,9 +78,10 @@ const Register: React.FC = () => {
     if (name === 'role') {
       setFormData(prev => ({
         ...prev,
-        role: value as 'vendor' | 'stay_owner',
+        role: value as 'vendor' | 'stay_owner' | 'place_owner',
         claimed_vendor_id: null,
         claimed_stay_id: null,
+        claimed_place_id: null,
       }));
     }
   };
@@ -86,9 +92,11 @@ const Register: React.FC = () => {
     setShowBusinessDropdown(false);
     
     if (formData.role === 'vendor') {
-      setFormData(prev => ({ ...prev, claimed_vendor_id: business.id, claimed_stay_id: null }));
+      setFormData(prev => ({ ...prev, claimed_vendor_id: business.id, claimed_stay_id: null, claimed_place_id: null }));
+    } else if (formData.role === 'stay_owner') {
+      setFormData(prev => ({ ...prev, claimed_stay_id: business.id, claimed_vendor_id: null, claimed_place_id: null }));
     } else {
-      setFormData(prev => ({ ...prev, claimed_stay_id: business.id, claimed_vendor_id: null }));
+      setFormData(prev => ({ ...prev, claimed_place_id: business.id, claimed_vendor_id: null, claimed_stay_id: null }));
     }
   };
 
@@ -213,6 +221,7 @@ const Register: React.FC = () => {
               >
                 <option value="vendor">🍜 Restaurant/Business Owner</option>
                 <option value="stay_owner">🏨 Hotel/Accommodation Owner</option>
+                <option value="place_owner">🏛️ Attraction/Place Owner</option>
               </select>
             </div>
 
@@ -221,10 +230,12 @@ const Register: React.FC = () => {
               <label className="flex items-center gap-2 text-xs font-medium text-gray-400 mb-2">
                 {formData.role === 'vendor' ? (
                   <Building2 className="w-3.5 h-3.5 text-purple-400" />
-                ) : (
+                ) : formData.role === 'stay_owner' ? (
                   <Hotel className="w-3.5 h-3.5 text-purple-400" />
+                ) : (
+                  <MapPin className="w-3.5 h-3.5 text-purple-400" />
                 )}
-                Claim Your {formData.role === 'vendor' ? 'Restaurant' : 'Hotel'} <span className="text-gray-600">(Optional)</span>
+                Claim Your {formData.role === 'vendor' ? 'Restaurant' : formData.role === 'stay_owner' ? 'Hotel' : 'Attraction'} <span className="text-gray-600">(Optional)</span>
               </label>
               <div className="relative">
                 <input
@@ -242,7 +253,7 @@ const Register: React.FC = () => {
                     setTimeout(() => setShowBusinessDropdown(false), 200);
                     e.target.style.borderColor = '#334155';
                   }}
-                  placeholder={`Search ${formData.role === 'vendor' ? 'restaurants' : 'hotels'}...`}
+                  placeholder={`Search ${formData.role === 'vendor' ? 'restaurants' : formData.role === 'stay_owner' ? 'hotels' : 'attractions'}...`}
                   className="w-full px-3 py-2.5 pl-9 rounded-lg text-white placeholder-gray-500 text-sm transition-all focus:outline-none"
                   style={inputStyle}
                 />

@@ -413,11 +413,11 @@ def confirm_password_reset(request):
 @permission_classes([AllowAny])
 def available_businesses(request):
     """
-    List available businesses (restaurants and hotels) for claiming.
+    List available businesses (restaurants, hotels, and places) for claiming.
     Returns businesses that don't have an owner yet.
     Public endpoint for registration process.
     """
-    business_type = request.query_params.get('type', 'all')  # 'vendor', 'stay', or 'all'
+    business_type = request.query_params.get('type', 'all')  # 'vendor', 'stay', 'place', or 'all'
     search = request.query_params.get('search', '')
     
     result = {}
@@ -456,6 +456,24 @@ def available_businesses(request):
                 'address': s.address
             }
             for s in stays[:50]  # Limit to 50 results
+        ]
+    
+    if business_type in ['place', 'all']:
+        from analytics.models import Place
+        places = Place.objects.filter(owner__isnull=True)
+        
+        if search:
+            places = places.filter(name__icontains=search)
+        
+        result['places'] = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'city': p.city,
+                'category': p.category,
+                'address': p.address
+            }
+            for p in places[:50]  # Limit to 50 results
         ]
     
     return Response(result)

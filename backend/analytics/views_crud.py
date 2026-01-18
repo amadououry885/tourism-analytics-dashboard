@@ -1,10 +1,10 @@
 from django.db.models import Q
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 
-from common.permissions import AdminOrReadOnly
+from common.permissions import AdminOrReadOnly, IsPlaceOwnerOrReadOnly
 
 from .models import Place, SocialPost
 from .serializers import PlaceSerializer, SocialPostSerializer
@@ -21,24 +21,43 @@ class PlaceViewSet(viewsets.ModelViewSet):
     /api/analytics/places/
       GET (list), POST (create), GET /:id, PUT/PATCH /:id, DELETE /:id
     Query params (optional): q, city, state, country, category, is_free
+    
+    Supports both:
+    - Admin: Full access to all places (council-managed)
+    - Place Owner: CRUD on their own places (privately-managed)
     """
     queryset = Place.objects.all().order_by("name")
     serializer_class = PlaceSerializer
     pagination_class = StandardPagination
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["name", "city", "state", "country"]
-    permission_classes = [AdminOrReadOnly]
+    permission_classes = [IsPlaceOwnerOrReadOnly]
 
     def perform_create(self, serializer):
-        """Automatically set created_by to current user"""
-        serializer.save(created_by=self.request.user)
+        """Automatically set created_by/owner based on user role"""
+        user = self.request.user
+        if user.role == 'place_owner':
+            # Place owner creates privately-managed place
+            serializer.save(owner=user, is_council_managed=False)
+        else:
+            # Admin creates council-managed place
+            serializer.save(created_by=user, is_council_managed=True)
     
     def perform_update(self, serializer):
-        """Keep original created_by on updates"""
+        """Keep original ownership on updates"""
         serializer.save()
 
     def get_queryset(self):
         qs = super().get_queryset()
+        user = self.request.user
+        
+        # If user is authenticated place_owner, show only their places
+        if user.is_authenticated and user.role == 'place_owner':
+            qs = qs.filter(owner=user)
+        elif not (user.is_authenticated and user.role == 'admin'):
+            # Public users see only active places
+            qs = qs.filter(is_active=True)
+        
         p = self.request.query_params
         q = (p.get("q") or "").strip()
         if q:
@@ -66,6 +85,17 @@ class PlaceViewSet(viewsets.ModelViewSet):
         return Response({
             'is_open': place.is_open,
             'message': f"Place is now {'OPEN' if place.is_open else 'CLOSED'}"
+        })
+    
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        """Toggle place active/inactive status (visibility)"""
+        place = self.get_object()
+        place.is_active = not place.is_active
+        place.save()
+        return Response({
+            'is_active': place.is_active,
+            'message': f"Place is now {'ACTIVE' if place.is_active else 'INACTIVE'}"
         })
 
 

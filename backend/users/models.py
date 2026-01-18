@@ -14,6 +14,7 @@ class User(AbstractUser):
         ('admin', 'Admin'),
         ('vendor', 'Vendor'),
         ('stay_owner', 'Stay Owner'),
+        ('place_owner', 'Place Owner'),
     ]
     
     role = models.CharField(
@@ -37,6 +38,11 @@ class User(AbstractUser):
         null=True,
         blank=True,
         help_text="ID of the hotel/stay this user claims to own (pending approval)"
+    )
+    claimed_place_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="ID of the place/attraction this user claims to own (pending approval)"
     )
     business_verification_notes = models.TextField(
         blank=True,
