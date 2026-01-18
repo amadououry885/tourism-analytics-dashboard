@@ -135,12 +135,19 @@ const Register: React.FC = () => {
       const result = await register(submitData);
       
       if (result.requiresApproval) {
-        toast.success('Registration successful! Please wait for admin approval.');
+        // Role-specific success message
+        const roleMessages: Record<string, string> = {
+          vendor: '🍜 Restaurant registration submitted! Our team will review your application and notify you via email within 24-48 hours.',
+          stay_owner: '🏨 Hotel registration submitted! Our team will review your application and notify you via email within 24-48 hours.',
+          place_owner: '🏛️ Attraction registration submitted! Our team will review your application and notify you via email within 24-48 hours.',
+        };
+        const message = roleMessages[formData.role] || 'Registration successful! Please wait for admin approval.';
+        toast.success(message, { autoClose: 5000 });
       } else {
-        toast.success('Registration successful!');
+        toast.success('🎉 Registration successful! You can now sign in.');
       }
       
-      setTimeout(() => navigate('/sign-in'), 2000);
+      setTimeout(() => navigate('/sign-in'), 3000);
     } catch (error: any) {
       toast.error(error.message || 'Registration failed. Please try again.');
     } finally {

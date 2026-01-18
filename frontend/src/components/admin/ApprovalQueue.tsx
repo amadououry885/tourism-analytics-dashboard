@@ -37,8 +37,16 @@ const ApprovalQueue: React.FC = () => {
   const handleApprove = async (userId: number, username: string) => {
     setProcessingId(userId);
     try {
+      const user = pendingUsers.find(u => u.id === userId);
       await adminAPI.approveUser(userId);
-      toast.success(`✅ ${username} has been approved!`);
+      
+      // Role-specific approval message
+      const roleLabel = user?.role === 'vendor' ? 'Restaurant Owner' 
+        : user?.role === 'stay_owner' ? 'Hotel Owner' 
+        : user?.role === 'place_owner' ? 'Attraction Owner' 
+        : 'User';
+      
+      toast.success(`🎉 ${username} (${roleLabel}) has been approved! They will receive a welcome email shortly.`, { autoClose: 4000 });
       setPendingUsers(pendingUsers.filter(u => u.id !== userId));
     } catch (error: any) {
       console.error('Approval failed:', error);
@@ -50,14 +58,20 @@ const ApprovalQueue: React.FC = () => {
   };
 
   const handleReject = async (userId: number, username: string) => {
-    if (!window.confirm(`Are you sure you want to reject ${username}'s application?`)) {
+    const user = pendingUsers.find(u => u.id === userId);
+    const roleLabel = user?.role === 'vendor' ? 'Restaurant Owner' 
+      : user?.role === 'stay_owner' ? 'Hotel Owner' 
+      : user?.role === 'place_owner' ? 'Attraction Owner' 
+      : 'User';
+    
+    if (!window.confirm(`Are you sure you want to reject ${username}'s ${roleLabel} application? They will be notified via email.`)) {
       return;
     }
 
     setProcessingId(userId);
     try {
       await adminAPI.rejectUser(userId);
-      toast.success(`✅ ${username}'s application has been rejected`);
+      toast.success(`❌ ${username}'s application has been rejected. A notification email has been sent.`, { autoClose: 4000 });
       setPendingUsers(pendingUsers.filter(u => u.id !== userId));
     } catch (error: any) {
       console.error('Rejection failed:', error);
