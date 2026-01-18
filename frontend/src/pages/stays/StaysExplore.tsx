@@ -4,6 +4,9 @@ import api from '../../services/api';
 import { StayCard, Stay } from './StayCard';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 9;
 
 const STAY_TYPES = [
   { value: 'All', label: 'All Types', icon: '🏨' },
@@ -32,6 +35,9 @@ export default function StaysExplore() {
   const [selectedType, setSelectedType] = useState('All');
   const [selectedDistrict, setSelectedDistrict] = useState('All');
   const [sortBy, setSortBy] = useState<'rating' | 'price' | 'name'>('rating');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch stays
   useEffect(() => {
@@ -114,6 +120,18 @@ export default function StaysExplore() {
         }
       });
   }, [stays, searchTerm, selectedType, selectedDistrict, sortBy]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedType, selectedDistrict, sortBy]);
+
+  // Paginated stays
+  const totalPages = Math.ceil(filteredStays.length / ITEMS_PER_PAGE);
+  const paginatedStays = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredStays.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredStays, currentPage]);
 
   return (
     <div style={{
@@ -291,15 +309,25 @@ export default function StaysExplore() {
             </p>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '24px',
-          }}>
-            {filteredStays.map((stay) => (
-              <StayCard key={stay.id} stay={stay} />
-            ))}
-          </div>
+          <>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '24px',
+            }}>
+              {paginatedStays.map((stay) => (
+                <StayCard key={stay.id} stay={stay} />
+              ))}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filteredStays.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              accentColor="#3b82f6"
+            />
+          </>
         )}
       </main>
 

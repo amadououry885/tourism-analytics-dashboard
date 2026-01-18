@@ -4,6 +4,9 @@ import api from '../../services/api';
 import { FoodCard, Restaurant } from './FoodCard';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
+import Pagination from '../../components/Pagination';
+
+const ITEMS_PER_PAGE = 12;
 
 export default function FoodExplore() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -16,13 +19,16 @@ export default function FoodExplore() {
   const [selectedPrice, setSelectedPrice] = useState('All');
   const [halalOnly, setHalalOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'reviews' | 'name'>('rating');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch restaurants
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/vendors/');
+        const response = await api.get('/vendors/?page_size=100');
         const data = response.data.results || response.data || [];
         
         const transformedRestaurants: Restaurant[] = data.map((vendor: any, index: number) => ({
@@ -60,6 +66,11 @@ export default function FoodExplore() {
 
     fetchRestaurants();
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCuisine, selectedPrice, halalOnly, sortBy]);
 
   // Get unique cuisines - extracted to ensure proper typing
   const cuisines = useMemo(() => {
@@ -103,6 +114,13 @@ export default function FoodExplore() {
         }
       });
   }, [restaurants, searchTerm, selectedCuisine, selectedPrice, halalOnly, sortBy]);
+
+  // Paginated restaurants
+  const totalPages = Math.ceil(filteredRestaurants.length / ITEMS_PER_PAGE);
+  const paginatedRestaurants = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredRestaurants.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredRestaurants, currentPage]);
 
   return (
     <div style={{
@@ -321,15 +339,27 @@ export default function FoodExplore() {
             </p>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '24px',
-          }}>
-            {filteredRestaurants.map((restaurant) => (
-              <FoodCard key={restaurant.id} restaurant={restaurant} />
-            ))}
-          </div>
+          <>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '24px',
+            }}>
+              {paginatedRestaurants.map((restaurant) => (
+                <FoodCard key={restaurant.id} restaurant={restaurant} />
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filteredRestaurants.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              accentColor="#f97316"
+            />
+          </>
         )}
       </main>
 

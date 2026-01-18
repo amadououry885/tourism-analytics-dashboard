@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { EventCard, Event } from './EventCard';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
+import Pagination from '../../components/Pagination';
 
 const EVENT_TYPES = [
   { value: 'All', label: 'All Events', icon: '🎉' },
@@ -15,6 +16,8 @@ const EVENT_TYPES = [
   { value: 'entertainment', label: 'Entertainment', icon: '🎵' },
 ];
 
+const ITEMS_PER_PAGE = 9;
+
 export default function EventsExplore() {
   const [events, setEvents] = useState<Event[]>([]);
   const [liveEvents, setLiveEvents] = useState<Event[]>([]);
@@ -24,6 +27,10 @@ export default function EventsExplore() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
   const [sortBy, setSortBy] = useState<'date' | 'attendance' | 'name'>('date');
+  
+  // Pagination for each section
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
 
   // Fetch events
   useEffect(() => {
@@ -174,6 +181,26 @@ export default function EventsExplore() {
 
     return { upcomingEvents: upcoming, pastEvents: past };
   }, [baseFilteredEvents, liveEventIds, sortBy]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setUpcomingPage(1);
+    setPastPage(1);
+  }, [searchTerm, selectedType, sortBy]);
+
+  // Paginated events
+  const upcomingTotalPages = Math.ceil(upcomingEvents.length / ITEMS_PER_PAGE);
+  const pastTotalPages = Math.ceil(pastEvents.length / ITEMS_PER_PAGE);
+  
+  const paginatedUpcoming = useMemo(() => {
+    const startIndex = (upcomingPage - 1) * ITEMS_PER_PAGE;
+    return upcomingEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [upcomingEvents, upcomingPage]);
+  
+  const paginatedPast = useMemo(() => {
+    const startIndex = (pastPage - 1) * ITEMS_PER_PAGE;
+    return pastEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [pastEvents, pastPage]);
 
   // For display count
   const totalFilteredCount = upcomingEvents.length + pastEvents.length;
@@ -408,15 +435,25 @@ export default function EventsExplore() {
                   </p>
                 </div>
               ) : (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                  gap: '24px',
-                }}>
-                  {upcomingEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
-                </div>
+                <>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                    gap: '24px',
+                  }}>
+                    {paginatedUpcoming.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                  <Pagination
+                    currentPage={upcomingPage}
+                    totalPages={upcomingTotalPages}
+                    onPageChange={setUpcomingPage}
+                    totalItems={upcomingEvents.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    accentColor="#22c55e"
+                  />
+                </>
               )}
             </section>
 
@@ -468,16 +505,26 @@ export default function EventsExplore() {
                   </p>
                 </div>
               ) : (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                  gap: '24px',
-                  opacity: 0.85,
-                }}>
-                  {pastEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
-                </div>
+                <>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                    gap: '24px',
+                    opacity: 0.85,
+                  }}>
+                    {paginatedPast.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
+                  </div>
+                  <Pagination
+                    currentPage={pastPage}
+                    totalPages={pastTotalPages}
+                    onPageChange={setPastPage}
+                    totalItems={pastEvents.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    accentColor="#94a3b8"
+                  />
+                </>
               )}
             </section>
           </>

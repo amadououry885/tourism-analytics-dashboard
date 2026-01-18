@@ -4,8 +4,10 @@ import api from '../../services/api';
 import { PlaceCard, Place } from './PlaceCard';
 import { FilterDropdown, SortDropdown, ToggleFilter } from '../../components/FilterDropdown';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
+import Pagination from '../../components/Pagination';
 
 const COLORS = ['#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+const ITEMS_PER_PAGE = 9;
 
 export default function PlacesExplore() {
   const [places, setPlaces] = useState<Place[]>([]);
@@ -17,6 +19,9 @@ export default function PlacesExplore() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState<'popularity' | 'rating' | 'name'>('popularity');
   const [showFreeOnly, setShowFreeOnly] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch places
   useEffect(() => {
@@ -94,6 +99,18 @@ export default function PlacesExplore() {
         }
       });
   }, [places, searchTerm, selectedCategory, showFreeOnly, sortBy]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, showFreeOnly, sortBy]);
+
+  // Paginated places
+  const totalPages = Math.ceil(filteredPlaces.length / ITEMS_PER_PAGE);
+  const paginatedPlaces = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredPlaces.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredPlaces, currentPage]);
 
   return (
     <div style={{
@@ -280,15 +297,25 @@ export default function PlacesExplore() {
             </p>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '24px',
-          }}>
-            {filteredPlaces.map((place) => (
-              <PlaceCard key={place.id} place={place} />
-            ))}
-          </div>
+          <>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '24px',
+            }}>
+              {paginatedPlaces.map((place) => (
+                <PlaceCard key={place.id} place={place} />
+              ))}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={filteredPlaces.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              accentColor="#2dd4bf"
+            />
+          </>
         )}
       </main>
 
