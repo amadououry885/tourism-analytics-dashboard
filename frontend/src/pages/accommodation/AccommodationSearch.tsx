@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../lib/api';
+import api from '../../services/api';
 import { Search, Filter, MapPin, DollarSign, Star, Home, X, ChevronDown, Sparkles, TrendingUp, Navigation, Share2, Clock, Users, Wifi, Car, Mail, Phone as PhoneIcon, MessageCircle, Heart, Eye, Award, Image as ImageIcon, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
 import { MasterDetailLayout } from '../../components/MasterDetailLayout';
 import { ListItem } from '../../components/ListItem';

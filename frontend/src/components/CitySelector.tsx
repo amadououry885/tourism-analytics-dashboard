@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, MapPin, Search } from 'lucide-react';
-import api from '../lib/api';
+import api from '../services/api';
 
 interface CitySelectorProps {
   selectedCity: string;

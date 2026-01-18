@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import api from '../lib/api';
+import api from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { MapPin, TrendingUp, TrendingDown, Filter, Search, SortAsc, SortDesc, Star, MessageCircle, Navigation, Share2, DollarSign, Globe, Phone, Mail, Clock, ExternalLink, Grid, Sparkles, Ticket } from 'lucide-react';

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import api from '../lib/api';
+import api from '../services/api';
 import { TrendingUp, Heart, MessageCircle, Share2, Eye, ThumbsUp, ThumbsDown, Meh, Twitter, Instagram, Facebook } from 'lucide-react';
 
 interface SocialMediaChartsProps {
