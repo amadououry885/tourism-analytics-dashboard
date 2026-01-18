@@ -86,8 +86,25 @@ export default function EventsExplore() {
       try {
         const response = await api.get('/events/happening_now/');
         const data = response.data.results || response.data || [];
-        const liveEventIds = data.map((e: any) => e.id);
-        setLiveEvents(data.map((event: any) => ({
+        
+        // Filter out events that are clearly not "happening now"
+        // (e.g., events that started more than 7 days ago without a valid end_date)
+        const now = new Date();
+        const validLiveEvents = data.filter((event: any) => {
+          const startDate = new Date(event.start_date);
+          const endDate = event.end_date ? new Date(event.end_date) : null;
+          
+          // If there's an end_date, check if we're still within the event period
+          if (endDate) {
+            return startDate <= now && endDate >= now;
+          }
+          
+          // If no end_date, only allow events from today or yesterday (timezone tolerance)
+          const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          return daysSinceStart <= 1;
+        });
+        
+        setLiveEvents(validLiveEvents.map((event: any) => ({
           id: event.id,
           title: event.title,
           start_date: event.start_date,

@@ -51,6 +51,25 @@ export function EventCard({ event }: EventCardProps) {
     ? Math.round((event.attendee_count / event.max_capacity) * 100)
     : null;
 
+  // Validate is_happening_now - don't trust backend if event started more than 7 days ago
+  // and has no end_date, or if end_date is clearly in the past
+  const isActuallyHappeningNow = (() => {
+    if (!event.is_happening_now) return false;
+    
+    const now = new Date();
+    const startDate = new Date(event.start_date);
+    const endDate = event.end_date ? new Date(event.end_date) : null;
+    
+    // If there's an end_date, check if it's still valid
+    if (endDate) {
+      return startDate <= now && endDate >= now;
+    }
+    
+    // If no end_date, event should be same day only (not weeks ago)
+    const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysSinceStart <= 1; // Allow 1 day tolerance for timezone issues
+  })();
+
   return (
     <Link 
       to={`/events/${event.id}`}
@@ -90,7 +109,7 @@ export function EventCard({ event }: EventCardProps) {
         />
         
         {/* Live Now Badge */}
-        {event.is_happening_now && (
+        {isActuallyHappeningNow && (
           <div style={{
             position: 'absolute',
             top: '12px',
@@ -117,7 +136,7 @@ export function EventCard({ event }: EventCardProps) {
         )}
         
         {/* Days Until Badge */}
-        {!event.is_happening_now && daysUntil > 0 && (
+        {!isActuallyHappeningNow && daysUntil > 0 && (
           <div style={{
             position: 'absolute',
             top: '12px',
