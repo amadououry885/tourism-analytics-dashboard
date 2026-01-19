@@ -32,7 +32,8 @@ if ENV == "production":
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = _split_env(
         "CORS_ALLOWED_ORIGINS",
-        "https://tourism-analytics-dashboard.vercel.app"
+        "https://tourism-analytics-dashboard.vercel.app, https://tourism-analytics-dashboard.onrender.com, http://localhost:3000"
+
     )
 else:
     CORS_ALLOW_ALL_ORIGINS = True
