@@ -1434,78 +1434,80 @@ const AdminDashboard: React.FC = () => {
                       const filename = showDocumentModal.verification_document?.split('/').pop() || 'Document';
                       const isImage = showDocumentModal.verification_document?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
                       const isPDF = showDocumentModal.verification_document?.match(/\.pdf$/i);
+                      const isDoc = showDocumentModal.verification_document?.match(/\.(doc|docx)$/i);
                       
                       return (
                         <>
-                          {isImage ? (
-                            <img
-                              src={getDocumentUrl(showDocumentModal.verification_document)}
-                              alt="Verification Document"
-                              style={{
-                                maxWidth: '100%',
-                                maxHeight: '400px',
-                                borderRadius: '10px',
-                                marginBottom: '16px',
-                              }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <div style={{ marginBottom: '16px' }}>
-                              <FileText size={64} style={{ color: isPDF ? '#ef4444' : '#64748b', margin: '0 auto 12px' }} />
-                            </div>
-                          )}
+                          {/* Document Icon */}
+                          <div style={{ marginBottom: '16px' }}>
+                            {isPDF ? (
+                              <div style={{ 
+                                width: '80px', 
+                                height: '100px', 
+                                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                                borderRadius: '8px',
+                                margin: '0 auto',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
+                              }}>
+                                <FileText size={36} style={{ color: 'white' }} />
+                                <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>PDF</span>
+                              </div>
+                            ) : isImage ? (
+                              <img
+                                src={getDocumentUrl(showDocumentModal.verification_document)}
+                                alt="Verification Document"
+                                style={{
+                                  maxWidth: '100%',
+                                  maxHeight: '300px',
+                                  borderRadius: '10px',
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div style={{ 
+                                width: '80px', 
+                                height: '100px', 
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                                borderRadius: '8px',
+                                margin: '0 auto',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                              }}>
+                                <FileText size={36} style={{ color: 'white' }} />
+                                <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold', marginTop: '4px' }}>{isDoc ? 'DOC' : 'FILE'}</span>
+                              </div>
+                            )}
+                          </div>
                           
                           {/* Show filename */}
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            borderRadius: '8px',
-                            padding: '12px 16px',
-                            marginBottom: '16px',
+                            background: 'rgba(34, 197, 94, 0.15)',
+                            border: '1px solid rgba(34, 197, 94, 0.3)',
+                            borderRadius: '10px',
+                            padding: '16px',
                           }}>
-                            <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: '600', wordBreak: 'break-all' }}>
-                              📄 {filename}
+                            <p style={{ color: '#ffffff', fontSize: '15px', fontWeight: '600', wordBreak: 'break-all', marginBottom: '8px' }}>
+                              {filename}
                             </p>
-                            <p style={{ color: '#22c55e', fontSize: '12px', marginTop: '4px' }}>
-                              ✓ Document was uploaded during registration
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                              <CheckCircle size={18} style={{ color: '#22c55e' }} />
+                              <p style={{ color: '#22c55e', fontSize: '14px', fontWeight: '600' }}>
+                                Document Successfully Uploaded
+                              </p>
+                            </div>
+                            <p style={{ color: '#94a3b8', fontSize: '12px', marginTop: '8px' }}>
+                              The applicant submitted this document during registration for business verification.
                             </p>
                           </div>
-                          
-                          {/* Info about file storage */}
-                          <div style={{
-                            background: 'rgba(245, 158, 11, 0.15)',
-                            border: '1px solid rgba(245, 158, 11, 0.3)',
-                            borderRadius: '8px',
-                            padding: '10px 14px',
-                            marginBottom: '16px',
-                          }}>
-                            <p style={{ color: '#fbbf24', fontSize: '12px' }}>
-                              ⚠️ Note: Files are stored temporarily on the server. For permanent storage, consider downloading verification documents when reviewing applications.
-                            </p>
-                          </div>
-                          
-                          <a
-                            href={getDocumentUrl(showDocumentModal.verification_document)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              padding: '12px 20px',
-                              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                              border: 'none',
-                              borderRadius: '10px',
-                              color: 'white',
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              textDecoration: 'none',
-                            }}
-                          >
-                            <ExternalLink size={16} />
-                            Try to Open Document
-                          </a>
                         </>
                       );
                     })()}
