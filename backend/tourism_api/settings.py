@@ -56,6 +56,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
+    
+    # Cloudinary storage
+    "cloudinary_storage",
+    "cloudinary",
 
     # your apps
     "users",  # Custom user model - must be before other apps
@@ -221,6 +225,18 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Kedah Tourism <noreply@localhost>')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+
+# ── Cloudinary Configuration (Cloud File Storage) ────────────────────────────
+# Get a free account at https://cloudinary.com/
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+}
+
+# Use Cloudinary for media files in production
+if os.environ.get('CLOUDINARY_CLOUD_NAME'):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 logging.getLogger(__name__).info(
     f"Running in {ENV.upper()} mode using SQLite DB → {SQLITE_PATH}"

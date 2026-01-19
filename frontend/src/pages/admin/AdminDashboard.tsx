@@ -1431,16 +1431,33 @@ const AdminDashboard: React.FC = () => {
                   }}>
                     {/* Extract filename from path */}
                     {(() => {
+                      const docUrl = getDocumentUrl(showDocumentModal.verification_document);
                       const filename = showDocumentModal.verification_document?.split('/').pop() || 'Document';
+                      const isCloudinary = docUrl.includes('cloudinary.com') || docUrl.includes('res.cloudinary');
                       const isImage = showDocumentModal.verification_document?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
                       const isPDF = showDocumentModal.verification_document?.match(/\.pdf$/i);
                       const isDoc = showDocumentModal.verification_document?.match(/\.(doc|docx)$/i);
                       
                       return (
                         <>
-                          {/* Document Icon */}
+                          {/* Document Icon or Image Preview */}
                           <div style={{ marginBottom: '16px' }}>
-                            {isPDF ? (
+                            {isImage ? (
+                              <img
+                                src={docUrl}
+                                alt="Verification Document"
+                                style={{
+                                  maxWidth: '100%',
+                                  maxHeight: '300px',
+                                  borderRadius: '10px',
+                                  border: '2px solid rgba(255,255,255,0.2)',
+                                }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            ) : isPDF ? (
                               <div style={{ 
                                 width: '80px', 
                                 height: '100px', 
@@ -1456,19 +1473,6 @@ const AdminDashboard: React.FC = () => {
                                 <FileText size={36} style={{ color: 'white' }} />
                                 <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>PDF</span>
                               </div>
-                            ) : isImage ? (
-                              <img
-                                src={getDocumentUrl(showDocumentModal.verification_document)}
-                                alt="Verification Document"
-                                style={{
-                                  maxWidth: '100%',
-                                  maxHeight: '300px',
-                                  borderRadius: '10px',
-                                }}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
                             ) : (
                               <div style={{ 
                                 width: '80px', 
@@ -1488,12 +1492,13 @@ const AdminDashboard: React.FC = () => {
                             )}
                           </div>
                           
-                          {/* Show filename */}
+                          {/* Show filename and status */}
                           <div style={{
                             background: 'rgba(34, 197, 94, 0.15)',
                             border: '1px solid rgba(34, 197, 94, 0.3)',
                             borderRadius: '10px',
                             padding: '16px',
+                            marginBottom: '16px',
                           }}>
                             <p style={{ color: '#ffffff', fontSize: '15px', fontWeight: '600', wordBreak: 'break-all', marginBottom: '8px' }}>
                               {filename}
@@ -1504,10 +1509,46 @@ const AdminDashboard: React.FC = () => {
                                 Document Successfully Uploaded
                               </p>
                             </div>
-                            <p style={{ color: '#94a3b8', fontSize: '12px', marginTop: '8px' }}>
-                              The applicant submitted this document during registration for business verification.
-                            </p>
                           </div>
+                          
+                          {/* Open Document Button */}
+                          <a
+                            href={docUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '14px 24px',
+                              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                              border: 'none',
+                              borderRadius: '12px',
+                              color: 'white',
+                              fontSize: '15px',
+                              fontWeight: '600',
+                              textDecoration: 'none',
+                              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.4)',
+                              transition: 'transform 0.2s, box-shadow 0.2s',
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.transform = 'scale(1.02)';
+                              e.currentTarget.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.5)';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.4)';
+                            }}
+                          >
+                            <ExternalLink size={18} />
+                            Open Document
+                          </a>
+                          
+                          {!isCloudinary && (
+                            <p style={{ color: '#f59e0b', fontSize: '11px', marginTop: '12px' }}>
+                              ⚠️ Note: Document may not be available if server was restarted
+                            </p>
+                          )}
                         </>
                       );
                     })()}

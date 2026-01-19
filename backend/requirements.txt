@@ -55,3 +55,9 @@ cryptography==46.0.2
 # =========================
 tweepy==4.16.0
 google-generativeai==0.8.5
+
+# =========================
+# Cloud Storage
+# =========================
+cloudinary==1.44.1
+django-cloudinary-storage==0.3.0
