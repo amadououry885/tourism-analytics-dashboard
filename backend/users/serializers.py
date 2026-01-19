@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.core.exceptions import ValidationError
+from django.contrib.auth.validators import UnicodeUsernameValidator
+import re
 from .models import User
 
 
@@ -38,6 +40,14 @@ class UserSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for user registration with business claiming support"""
     
+    # Override username field to remove strict validator
+    username = serializers.CharField(
+        required=True,
+        min_length=2,
+        max_length=150,
+        help_text="Username (spaces will be replaced with underscores)"
+    )
+    
     password = serializers.CharField(
         write_only=True, 
         required=True, 
@@ -62,6 +72,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text="ID of the hotel/stay this owner claims to own"
     )
+    claimed_place_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="ID of the place/attraction this owner claims to own"
+    )
     phone_number = serializers.CharField(
         required=True,
         help_text="Contact phone number for verification"
@@ -79,7 +94,23 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2', 'role', 'first_name', 'last_name', 'claimed_vendor_id', 'claimed_stay_id', 'phone_number', 'business_registration_number', 'verification_document']
+        fields = ['username', 'email', 'password', 'password2', 'role', 'first_name', 'last_name', 'claimed_vendor_id', 'claimed_stay_id', 'claimed_place_id', 'phone_number', 'business_registration_number', 'verification_document']
+    
+    def validate_username(self, value):
+        """Clean username: replace spaces with underscores, remove special chars"""
+        # Replace spaces with underscores
+        cleaned = value.replace(' ', '_')
+        # Remove any characters that are not letters, numbers, or @/./+/-/_
+        cleaned = re.sub(r'[^a-zA-Z0-9@.+\-_]', '', cleaned)
+        
+        if len(cleaned) < 2:
+            raise serializers.ValidationError("Username must be at least 2 characters after cleaning.")
+        
+        # Check if username already exists
+        if User.objects.filter(username=cleaned).exists():
+            raise serializers.ValidationError("A user with this username already exists.")
+        
+        return cleaned
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:

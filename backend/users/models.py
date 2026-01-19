@@ -3,6 +3,14 @@ from django.db import models
 import secrets
 from datetime import timedelta
 from django.utils import timezone
+from django.core.validators import RegexValidator
+
+
+# Simple username validator that allows more characters
+simple_username_validator = RegexValidator(
+    regex=r'^[\w.@+-]+$',
+    message='Enter a valid username. This value may contain letters, numbers, and @/./+/-/_ characters.',
+)
 
 
 class User(AbstractUser):
@@ -10,6 +18,16 @@ class User(AbstractUser):
     Custom User model with role-based access control.
     Extends Django's AbstractUser to add role and approval status.
     """
+    # Override username field to use simpler validation
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[simple_username_validator],
+        error_messages={
+            'unique': "A user with that username already exists.",
+        },
+    )
+    
     ROLE_CHOICES = [
         ('admin', 'Admin'),
         ('vendor', 'Vendor'),
