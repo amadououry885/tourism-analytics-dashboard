@@ -98,16 +98,17 @@ def approve_user(request, user_id):
     try:
         user = User.objects.get(id=user_id)
         
-        # Only vendor and stay_owner can be approved
-        if user.role not in ('vendor', 'stay_owner'):
+        # Only vendor, stay_owner, and place_owner can be approved
+        if user.role not in ('vendor', 'stay_owner', 'place_owner'):
             return Response(
-                {'detail': f'Only vendor or stay_owner accounts can be approved. User has role: {user.role}'},
+                {'detail': f'Only vendor, stay_owner, or place_owner accounts can be approved. User has role: {user.role}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         # Get business assignment from request (optional)
         vendor_id = request.data.get('vendor_id', user.claimed_vendor_id)
         stay_id = request.data.get('stay_id', user.claimed_stay_id)
+        place_id = request.data.get('place_id', getattr(user, 'claimed_place_id', None))
         admin_notes = request.data.get('admin_notes', '')
         
         # Assign business ownership if provided
@@ -155,6 +156,28 @@ def approve_user(request, user_id):
                     {'error': f'Stay with ID {stay_id} not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
+        
+        elif user.role == 'place_owner' and place_id:
+            try:
+                from analytics.models import Place
+                place = Place.objects.get(id=place_id)
+                
+                # Check if place already has an owner
+                if hasattr(place, 'owner') and place.owner and place.owner != user:
+                    return Response(
+                        {'error': f'This place already has an owner: {place.owner.username}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Only set owner if the field exists
+                if hasattr(place, 'owner'):
+                    place.owner = user
+                    place.save()
+                assigned_business = place.name
+                logger.info(f"Assigned place {place.name} (ID: {place_id}) to user {user.username}")
+            except Exception as e:
+                logger.warning(f"Could not assign place: {e}")
+                # Don't fail approval if place assignment fails
         
         # Approve user and save admin notes
         user.is_approved = True

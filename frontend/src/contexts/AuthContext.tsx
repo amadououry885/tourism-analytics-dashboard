@@ -256,10 +256,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Helper function for making authenticated API calls
-  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+  const apiCall = async (endpoint: string, options: RequestInit = {}, isRetry = false) => {
+    // Get the latest token from localStorage (in case state hasn't updated yet)
+    const currentToken = localStorage.getItem('accessToken') || accessToken;
+    
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      ...(currentToken && { 'Authorization': `Bearer ${currentToken}` }),
       ...options.headers,
     };
 
@@ -268,12 +271,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       headers,
     });
 
-    if (response.status === 401) {
-      // Token expired, try to refresh
-      if (refreshToken) {
-        await refreshAccessTokenInternal(refreshToken);
-        // Retry the request with new token
-        return apiCall(endpoint, options);
+    if (response.status === 401 && !isRetry) {
+      // Token expired, try to refresh (only once)
+      const currentRefreshToken = localStorage.getItem('refreshToken') || refreshToken;
+      if (currentRefreshToken) {
+        try {
+          await refreshAccessTokenInternal(currentRefreshToken);
+          // Retry the request with new token (mark as retry to prevent infinite loop)
+          return apiCall(endpoint, options, true);
+        } catch (refreshError) {
+          console.error('Token refresh failed during apiCall:', refreshError);
+          throw new Error('Session expired. Please log in again.');
+        }
       }
       throw new Error('Authentication required');
     }
