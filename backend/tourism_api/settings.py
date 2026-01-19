@@ -25,22 +25,23 @@ def _split_env(name: str, default: str = ""):
 
 # ── Hosts / CORS / CSRF ───────────────────────────────────────────────────────
 # ✨ UPDATED: Production-ready hosts (includes AWS EB)
-ALLOWED_HOSTS = _split_env("ALLOWED_HOSTS", "localhost,127.0.0.1,.onrender.com,.vercel.app,.elasticbeanstalk.com,.amazonaws.com")
+ALLOWED_HOSTS = _split_env("ALLOWED_HOSTS", "localhost,127.0.0.1,.onrender.com,.elasticbeanstalk.com,.amazonaws.com")
 
 # ✨ UPDATED: Production CORS
 if ENV == "production":
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = _split_env(
         "CORS_ALLOWED_ORIGINS",
-        "https://tourism-analytics-dashboard.vercel.app,http://localhost:3000"
+        "https://tourism-analytics-dashboard.vercel.app,http://localhost:3000,http://127.0.0.1:3000"
 
     )
+    CORS_ALLOW_ALL_ORIGIN_RGEXES = [r"^https://.*\.vercel\.app$", r"^https://.*\.onrender\.com$"]                                                                                                                                                                                                                                                                                                                                                               
 else:
     CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = _split_env(
     "CSRF_TRUSTED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000,https://*.vercel.app,https://*.onrender.com,https://*.elasticbeanstalk.com,https://*.amazonaws.com"
+    "http://localhost:3000,http://127.0.0.1:3000,https://*.vercel.app,https://*.onrender.com"
 )
 
 # ── Google Maps API ───────────────────────────────────────────────────────────

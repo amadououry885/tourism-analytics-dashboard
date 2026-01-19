@@ -340,17 +340,20 @@ export function FilterDropdown({
           </span>
         )}
         
-        {/* Clear button for single select with selection */}
+        {/* Clear button for single select with selection - using span to avoid button nesting */}
         {!multiple && hasSelection && (
-          <button
+          <span
+            role="button"
+            tabIndex={0}
             onClick={handleClear}
-            className="p-1 rounded-full transition-colors"
+            onKeyDown={(e) => e.key === 'Enter' && handleClear(e as unknown as React.MouseEvent)}
+            className="p-1 rounded-full transition-colors cursor-pointer hover:opacity-80"
             style={{ 
               backgroundColor: `${accentColor}20`,
             }}
           >
             <X className="w-3 h-3" style={{ color: accentColor }} />
-          </button>
+          </span>
         )}
         
         <ChevronDown 

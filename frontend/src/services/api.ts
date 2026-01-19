@@ -1,8 +1,8 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 
-// Use localhost in development, production URL in production
+// Use local proxy in development, production URL in production
 const API_BASE_URL = import.meta.env.DEV 
-  ? 'https://tourism-analytics-backend.onrender.com/api'  // Vite proxy will forward to localhost:8000
+  ? '/api'  // Vite proxy will forward to localhost:8000
   : 'https://tourism-analytics-backend.onrender.com/api';
 
 // Set axios defaults globally so ALL axios calls use the correct base URL
