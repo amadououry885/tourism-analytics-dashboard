@@ -50,15 +50,18 @@ class PlaceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
+        p = self.request.query_params
         
-        # If user is authenticated place_owner, show only their places
-        if user.is_authenticated and user.role == 'place_owner':
+        # Check if requesting "all public" places (for explore pages)
+        show_all = p.get("public") in {"1", "true", "yes"}
+        
+        # If user is authenticated place_owner and NOT requesting public view, show only their places
+        if user.is_authenticated and user.role == 'place_owner' and not show_all:
             qs = qs.filter(owner=user)
         elif not (user.is_authenticated and user.role == 'admin'):
             # Public users see only active places
             qs = qs.filter(is_active=True)
         
-        p = self.request.query_params
         q = (p.get("q") or "").strip()
         if q:
             qs = qs.filter(

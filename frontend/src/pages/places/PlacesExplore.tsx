@@ -28,8 +28,8 @@ export default function PlacesExplore() {
     const fetchPlaces = async () => {
       try {
         setLoading(true);
-        // Use /places/ endpoint to get all active places
-        const response = await api.get('/places/?page_size=100');
+        // Use /places/?public=true to get all active places (bypasses owner filter)
+        const response = await api.get('/places/?page_size=100&public=true');
         const data = response.data.results || response.data || [];
         
         const transformedPlaces: Place[] = data.map((place: any, index: number) => ({
