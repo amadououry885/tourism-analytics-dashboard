@@ -709,19 +709,51 @@ export default function PlacesManagement() {
                       type="url"
                       name="image_url"
                       value={formData.image_url}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        setImagePreview(''); // Clear file preview when URL is entered
+                        setImageFile(null);
+                      }}
                       placeholder="Paste image URL"
                       style={{ ...inputStyle, flex: 1, minWidth: '200px' }}
                     />
                   </div>
                   {(imagePreview || formData.image_url) && (
-                    <div style={{ marginTop: '12px' }}>
+                    <div style={{ marginTop: '12px', position: 'relative', display: 'inline-block' }}>
                       <img
                         src={imagePreview || formData.image_url}
                         alt="Preview"
                         style={{ width: '150px', height: '100px', objectFit: 'cover', borderRadius: '10px', border: '2px solid rgba(255, 255, 255, 0.1)' }}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview('');
+                          setFormData(prev => ({ ...prev, image_url: '' }));
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          right: '-8px',
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: '#ef4444',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                        }}
+                        title="Remove image"
+                      >
+                        ×
+                      </button>
                     </div>
                   )}
                 </div>

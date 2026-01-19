@@ -77,6 +77,13 @@ const PlaceOwnerDashboard: React.FC = () => {
   const [places, setPlaces] = useState<Place[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPlace, setEditingPlace] = useState<Place | null>(null);
+  
+  // Image upload state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -118,6 +125,62 @@ const PlaceOwnerDashboard: React.FC = () => {
     'Cafe', 'Guided Tours', 'Audio Guide', 'Photography Allowed', 'Pet Friendly',
   ];
 
+  // Image upload handlers
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    processImageFile(file);
+  };
+
+  const processImageFile = (file: File | undefined) => {
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPG, PNG, GIF, WebP)');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+    
+    setImageFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    processImageFile(file);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, image_url: '' }));
+  };
+
   useEffect(() => {
     fetchPlaces();
   }, []);
@@ -143,10 +206,15 @@ const PlaceOwnerDashboard: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploadingImage(true);
     
     try {
+      // If there's a new image file, use the base64 preview as the image_url
+      const finalImageUrl = imagePreview || formData.image_url;
+      
       const payload = {
         ...formData,
+        image_url: finalImageUrl,
         price: formData.is_free ? null : (formData.price ? parseFloat(formData.price) : null),
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
@@ -170,6 +238,8 @@ const PlaceOwnerDashboard: React.FC = () => {
       resetForm();
     } catch (error) {
       console.error('Failed to save place:', error);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -236,6 +306,9 @@ const PlaceOwnerDashboard: React.FC = () => {
       best_time_to_visit: place.best_time_to_visit || '',
       amenities: place.amenities || {},
     });
+    // Set image preview from existing place image
+    setImagePreview(place.image_url || '');
+    setImageFile(null);
     setShowAddModal(true);
   };
 
@@ -266,6 +339,9 @@ const PlaceOwnerDashboard: React.FC = () => {
     });
     setEditingPlace(null);
     setShowAddModal(false);
+    // Clear image state
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const handleLogout = () => {
@@ -1090,32 +1166,118 @@ const PlaceOwnerDashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Image Upload Section */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: '600', color: theme.primary, marginBottom: '12px' }}>
+                  Place Image
+                </h3>
+                
+                {/* Image Preview or Upload Area */}
+                {imagePreview || formData.image_url ? (
+                  <div style={{ position: 'relative', marginBottom: '12px' }}>
+                    <img
+                      src={imagePreview || formData.image_url}
+                      alt="Place preview"
+                      style={{
+                        width: '100%',
+                        height: '200px',
+                        objectFit: 'cover',
+                        borderRadius: '12px',
+                        border: `1px solid ${theme.cardBorder}`,
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: 'rgba(239, 68, 68, 0.9)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                      }}
+                      title="Remove image"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    style={{
+                      border: `2px dashed ${dragActive ? theme.primary : theme.cardBorder}`,
+                      borderRadius: '12px',
+                      padding: '32px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      background: dragActive ? `${theme.primary}10` : theme.card,
+                      transition: 'all 0.2s ease',
+                      marginBottom: '12px',
+                    }}
+                    onClick={() => document.getElementById('place-image-upload')?.click()}
+                  >
+                    <Upload size={32} style={{ color: theme.textMuted, marginBottom: '8px' }} />
+                    <p style={{ color: theme.text, fontWeight: '500', marginBottom: '4px' }}>
+                      Drag & drop an image here
+                    </p>
+                    <p style={{ color: theme.textMuted, fontSize: '13px' }}>
+                      or click to browse (max 5MB)
+                    </p>
+                  </div>
+                )}
+                
+                <input
+                  id="place-image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                />
+                
+                {/* Alternative: URL input */}
+                <div style={{ marginTop: '12px' }}>
+                  <label style={{ fontSize: '12px', color: theme.textMuted, display: 'block', marginBottom: '4px' }}>
+                    Or paste image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.image_url}
+                    onChange={e => {
+                      setFormData({ ...formData, image_url: e.target.value });
+                      setImagePreview(''); // Clear file preview when URL is entered
+                      setImageFile(null);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      background: theme.background,
+                      border: `1px solid ${theme.cardBorder}`,
+                      borderRadius: '8px',
+                      color: theme.text,
+                      fontSize: '13px',
+                    }}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              </div>
+
               {/* Links */}
               <div style={{ marginBottom: '24px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: '600', color: theme.primary, marginBottom: '12px' }}>
                   External Links
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ fontSize: '13px', color: theme.textMuted, display: 'block', marginBottom: '6px' }}>
-                      Image URL
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.image_url}
-                      onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        background: theme.background,
-                        border: `1px solid ${theme.cardBorder}`,
-                        borderRadius: '8px',
-                        color: theme.text,
-                        fontSize: '14px',
-                      }}
-                      placeholder="https://..."
-                    />
-                  </div>
                   <div>
                     <label style={{ fontSize: '13px', color: theme.textMuted, display: 'block', marginBottom: '6px' }}>
                       Official Website
