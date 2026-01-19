@@ -81,28 +81,47 @@ today = now.date()
 # Seed Places (Analytics & Transport)
 # ───────────────────────────────────────────────────────────
 kedah_places = [
-    # name, city, lat, lon
-    ("Alor Setar",     "Alor Setar",    6.1248, 100.3676),
-    ("Langkawi",       "Langkawi",      6.3500,  99.8000),
-    ("Gunung Jerai",   "Gurun",         5.7900, 100.4300),
-    ("Sungai Petani",  "Sungai Petani", 5.6497, 100.4873),
-    ("Kulim",          "Kulim",         5.3647, 100.5616),
-]
-
-outside_places = [
-    ("Kuala Lumpur",   3.1390, 101.6869),
-    ("George Town",    5.4141, 100.3288),  # Penang
-    ("Ipoh",           4.5975, 101.0901),
+    # (name, city, lat, lon, category)
+    # Alor Setar attractions
+    ("Menara Alor Setar", "Alor Setar", 6.1185, 100.3680, "Attraction"),
+    ("Zahir Mosque", "Alor Setar", 6.1180, 100.3660, "Religious Site"),
+    ("Alor Setar Tower", "Alor Setar", 6.1248, 100.3676, "Landmark"),
+    ("Pekan Rabu Complex", "Alor Setar", 6.1200, 100.3690, "Shopping"),
+    ("Balai Nobat", "Alor Setar", 6.1175, 100.3665, "Historical"),
+    
+    # Langkawi attractions
+    ("Pantai Cenang", "Langkawi", 6.2850, 99.7260, "Beach"),
+    ("Langkawi Sky Bridge", "Langkawi", 6.3800, 99.6650, "Attraction"),
+    ("Eagle Square (Dataran Lang)", "Langkawi", 6.3070, 99.8490, "Landmark"),
+    ("Kilim Karst Geoforest Park", "Langkawi", 6.4330, 99.8650, "Nature"),
+    ("Underwater World Langkawi", "Langkawi", 6.2800, 99.7240, "Attraction"),
+    ("Langkawi Cable Car", "Langkawi", 6.3800, 99.6650, "Attraction"),
+    ("Tanjung Rhu Beach", "Langkawi", 6.4320, 99.8230, "Beach"),
+    
+    # Gunung Jerai attractions
+    ("Gunung Jerai", "Gurun", 5.7900, 100.4300, "Nature"),
+    ("Sungai Teroi Forest Recreation", "Gurun", 5.7800, 100.4200, "Nature"),
+    
+    # Sungai Petani attractions
+    ("Bujang Valley", "Sungai Petani", 5.6300, 100.4650, "Historical"),
+    ("Candi Bukit Batu Pahat", "Sungai Petani", 5.6350, 100.4600, "Historical"),
+    
+    # Kulim attractions
+    ("Kulim Golf & Country Resort", "Kulim", 5.3650, 100.5620, "Recreation"),
+    ("Lunas Hot Springs", "Kulim", 5.4100, 100.5400, "Nature"),
 ]
 
 # Analytics places (richer schema)
 aplace_objs = []
-for name, city, lat, lon in kedah_places:
+for item in kedah_places:
+    name, city, lat, lon = item[0], item[1], item[2], item[3]
+    category = item[4] if len(item) > 4 else random.choice(["Attraction", "Nature", "Beach", "Food", "Shopping"])
+    
     obj, _ = APlace.objects.get_or_create(
         name=name,
         defaults=dict(
             description=fake.paragraph(nb_sentences=3),
-            category=random.choice(["Attraction", "Nature", "Beach", "Food", "Shopping"]),
+            category=category,
             city=city,
             state="Kedah",
             country="Malaysia",
@@ -125,7 +144,7 @@ cuisine_pool = [
     "Malay", "Nasi Kandar", "Seafood", "Thai", "Indian-Muslim", "Cafe",
     "Western", "Satay", "Laksa", "Dessert"
 ]
-vendor_cities = [c for _, c, _, _ in kedah_places]
+vendor_cities = list(set([p[1] for p in kedah_places]))  # Unique cities from places
 
 created = 0
 for i in range(18):
@@ -188,7 +207,7 @@ for i in range(12):
     else:
         start = now + timedelta(days=random.randint(1, 25))
     end = start + timedelta(hours=random.randint(2, 48))
-    city = random.choice([c for _, c, _, _ in kedah_places])
+    city = random.choice(vendor_cities)
 
     obj, made = Event.objects.get_or_create(
         title=f"{random.choice(['Festival','Food Fair','Cultural Night','Marathon','Carnival','Expo'])} {fake.color_name()}",
