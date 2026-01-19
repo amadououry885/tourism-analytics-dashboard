@@ -61,7 +61,7 @@ def current_user(request):
 def pending_users(request):
     """
     List users pending approval (admin only).
-    Only returns vendor and stay_owner roles that require approval.
+    Only returns vendor, stay_owner, and place_owner roles that require approval.
     Tourists are anonymous/unauthenticated and never appear here.
     """
     # Check if user is admin
@@ -71,9 +71,9 @@ def pending_users(request):
             status=status.HTTP_403_FORBIDDEN
         )
     
-    # Only vendor and stay_owner roles require approval
+    # Vendor, stay_owner, and place_owner roles require approval
     users = User.objects.filter(
-        role__in=['vendor', 'stay_owner'],
+        role__in=['vendor', 'stay_owner', 'place_owner'],
         is_approved=False
     ).order_by('-date_joined')
     serializer = UserSerializer(users, many=True)
