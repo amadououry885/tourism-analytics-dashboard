@@ -119,24 +119,27 @@ const BusinessManagement: React.FC = () => {
     const getConfig = () => {
       switch (type) {
         case 'place': return { 
-          icon: <MapPin className="w-6 h-6" />, 
-          gradient: 'from-teal-500 to-emerald-600',
-          bg: 'bg-gradient-to-br from-teal-500/20 to-emerald-500/10',
-          border: 'border-teal-500/50',
+          icon: <MapPin className="w-7 h-7" />, 
+          iconBg: 'bg-teal-500',
+          cardBg: 'bg-teal-50',
+          border: 'border-teal-300',
+          headerBg: 'bg-teal-500',
           label: business.category || 'Place'
         };
         case 'vendor': return { 
-          icon: <Utensils className="w-6 h-6" />, 
-          gradient: 'from-orange-500 to-amber-600',
-          bg: 'bg-gradient-to-br from-orange-500/20 to-amber-500/10',
-          border: 'border-orange-500/50',
+          icon: <Utensils className="w-7 h-7" />, 
+          iconBg: 'bg-orange-500',
+          cardBg: 'bg-orange-50',
+          border: 'border-orange-300',
+          headerBg: 'bg-orange-500',
           label: business.cuisines?.slice(0, 2).join(', ') || 'Restaurant'
         };
         case 'stay': return { 
-          icon: <Hotel className="w-6 h-6" />, 
-          gradient: 'from-purple-500 to-pink-600',
-          bg: 'bg-gradient-to-br from-purple-500/20 to-pink-500/10',
-          border: 'border-purple-500/50',
+          icon: <Hotel className="w-7 h-7" />, 
+          iconBg: 'bg-purple-500',
+          cardBg: 'bg-purple-50',
+          border: 'border-purple-300',
+          headerBg: 'bg-purple-500',
           label: business.type || 'Stay'
         };
       }
@@ -148,112 +151,114 @@ const BusinessManagement: React.FC = () => {
     return (
       <div 
         key={`${type}-${business.id}`}
-        className={`${config.bg} rounded-2xl p-5 border-2 ${config.border} transition-all hover:scale-[1.02] hover:shadow-2xl flex flex-col ${
+        className={`${config.cardBg} rounded-2xl overflow-hidden border-2 ${config.border} shadow-lg hover:shadow-xl transition-all ${
           !business.is_active ? 'opacity-70' : ''
         }`}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        {/* Colored Header Bar */}
+        <div className={`${config.headerBg} px-5 py-3 flex items-center justify-between`}>
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-xl bg-gradient-to-br ${config.gradient} text-white shadow-lg`}>
+            <div className="p-2 bg-white/20 rounded-lg text-white">
               {config.icon}
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-white text-lg leading-tight truncate">{business.name}</h3>
-              <p className="text-sm text-gray-300 font-medium">{config.label}</p>
+            <div>
+              <h3 className="font-bold text-white text-lg leading-tight truncate max-w-[180px]">{business.name}</h3>
+              <p className="text-sm text-white/80 font-medium">{config.label}</p>
             </div>
           </div>
           
           {/* Status Badge */}
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg whitespace-nowrap ${
+          <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold shadow ${
             business.is_active 
-              ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' 
-              : 'bg-gradient-to-r from-red-500 to-rose-600 text-white'
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
           }`}>
             {business.is_active ? (
-              <><CheckCircle className="w-3.5 h-3.5" /> Active</>
+              <><CheckCircle className="w-4 h-4" /> Active</>
             ) : (
-              <><XCircle className="w-3.5 h-3.5" /> Disabled</>
+              <><XCircle className="w-4 h-4" /> Disabled</>
             )}
           </div>
         </div>
 
-        {/* Location */}
-        <div className="flex items-center gap-2 mb-4 text-gray-300">
-          <span className="text-xl">📍</span>
-          <span className="font-semibold">{location}</span>
-          {type === 'place' && business.is_council_managed === false && (
-            <span className="ml-auto px-2 py-1 bg-amber-500 text-black text-xs rounded-full font-bold">Private</span>
-          )}
-        </div>
-
-        {/* Owner Info */}
-        <div className={`rounded-xl p-4 mb-4 flex-1 ${business.owner ? 'bg-slate-800/80' : 'bg-slate-800/40'}`}>
-          {business.owner ? (
-            <>
-              <p className="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">👤 Owner</p>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-white font-semibold">
-                  <User className="w-4 h-4 text-cyan-400" />
-                  {business.owner.username}
-                </div>
-                <div className="flex items-center gap-2 text-gray-300 text-sm">
-                  <Mail className="w-4 h-4 text-blue-400" />
-                  <span className="truncate">{business.owner.email}</span>
-                </div>
-                {business.owner.phone_number && (
-                  <div className="flex items-center gap-2 text-gray-300 text-sm">
-                    <Phone className="w-4 h-4 text-green-400" />
-                    {business.owner.phone_number}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-2">
-              <p className="text-gray-400 font-medium">🏛️ Council Managed</p>
-              <p className="text-xs text-gray-500">No private owner</p>
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-3 border-t border-white/10">
-          <button
-            onClick={() => handleToggle(type, business.id, business.is_active, business.name)}
-            disabled={isLoading}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all transform hover:scale-105 ${
-              business.is_active
-                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50'
-                : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50'
-            } disabled:opacity-50 disabled:transform-none`}
-          >
-            {isLoading ? (
-              <RefreshCw className="w-5 h-5 animate-spin" />
-            ) : business.is_active ? (
-              <><ToggleRight className="w-5 h-5" /> Disable</>
-            ) : (
-              <><ToggleLeft className="w-5 h-5" /> Enable</>
+        <div className="p-5">
+          {/* Location */}
+          <div className="flex items-center gap-2 mb-4 text-gray-700 bg-white rounded-lg px-4 py-3 border border-gray-200">
+            <span className="text-2xl">📍</span>
+            <span className="font-bold text-lg">{location}</span>
+            {type === 'place' && business.is_council_managed === false && (
+              <span className="ml-auto px-3 py-1 bg-amber-400 text-black text-sm rounded-full font-bold">Private</span>
             )}
-          </button>
-          
-          <button
-            onClick={() => setDeleteModal({ show: true, type, id: business.id, name: business.name })}
-            disabled={isDeleting}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
-          >
-            {isDeleting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
-          </button>
+          </div>
+
+          {/* Owner Info */}
+          <div className={`rounded-xl p-4 mb-5 ${business.owner ? 'bg-white border-2 border-blue-200' : 'bg-gray-100 border border-gray-200'}`}>
+            {business.owner ? (
+              <>
+                <p className="text-xs text-blue-600 mb-3 font-bold uppercase tracking-wider">👤 Owner Information</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-gray-800 font-bold text-base">
+                    <User className="w-5 h-5 text-blue-500" />
+                    {business.owner.username}
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Mail className="w-5 h-5 text-blue-400" />
+                    <span className="truncate">{business.owner.email}</span>
+                  </div>
+                  {business.owner.phone_number && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone className="w-5 h-5 text-green-500" />
+                      {business.owner.phone_number}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-3">
+                <p className="text-gray-600 font-bold text-lg">🏛️ Council Managed</p>
+                <p className="text-sm text-gray-500">No private owner</p>
+              </div>
+            )}
+          </div>
+
+          {/* Actions - BIGGER BUTTONS */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleToggle(type, business.id, business.is_active, business.name)}
+              disabled={isLoading}
+              className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-xl text-base font-bold transition-all transform hover:scale-105 ${
+                business.is_active
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg'
+                  : 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
+              } disabled:opacity-50 disabled:transform-none`}
+            >
+              {isLoading ? (
+                <RefreshCw className="w-6 h-6 animate-spin" />
+              ) : business.is_active ? (
+                <><ToggleRight className="w-6 h-6" /> DISABLE</>
+              ) : (
+                <><ToggleLeft className="w-6 h-6" /> ENABLE</>
+              )}
+            </button>
+            
+            <button
+              onClick={() => setDeleteModal({ show: true, type, id: business.id, name: business.name })}
+              disabled={isDeleting}
+              className="flex items-center justify-center gap-2 px-5 py-4 rounded-xl text-base font-bold bg-red-500 hover:bg-red-600 text-white shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+            >
+              {isDeleting ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Trash2 className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
     );
   };
 
   const tabs = [
-    { id: 'all', label: 'All', icon: <Building2 className="w-4 h-4" />, gradient: 'from-slate-500 to-slate-600' },
-    { id: 'place', label: 'Places', icon: <MapPin className="w-4 h-4" />, gradient: 'from-teal-500 to-emerald-600' },
-    { id: 'vendor', label: 'Restaurants', icon: <Utensils className="w-4 h-4" />, gradient: 'from-orange-500 to-amber-600' },
-    { id: 'stay', label: 'Stays', icon: <Hotel className="w-4 h-4" />, gradient: 'from-purple-500 to-pink-600' },
+    { id: 'all', label: 'All', icon: <Building2 className="w-5 h-5" />, bg: 'bg-gray-600', activeBg: 'bg-gray-700' },
+    { id: 'place', label: 'Places', icon: <MapPin className="w-5 h-5" />, bg: 'bg-teal-500', activeBg: 'bg-teal-600' },
+    { id: 'vendor', label: 'Restaurants', icon: <Utensils className="w-5 h-5" />, bg: 'bg-orange-500', activeBg: 'bg-orange-600' },
+    { id: 'stay', label: 'Stays', icon: <Hotel className="w-5 h-5" />, bg: 'bg-purple-500', activeBg: 'bg-purple-600' },
   ];
 
   const allBusinesses: { business: Business; type: 'place' | 'vendor' | 'stay' }[] = [
@@ -284,105 +289,107 @@ const BusinessManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-orange-400 mb-2">
-          Business Management
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-50 p-6">
+      {/* Header - Green Banner */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-6 mb-8 shadow-xl">
+        <h1 className="text-3xl font-black text-white mb-2">
+          🏢 Business Management
         </h1>
-        <p className="text-gray-400 text-lg">Manage all places, restaurants, and stays on the platform</p>
+        <p className="text-green-100 text-lg">Manage all places, restaurants, and stays on the platform</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Colorful */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl p-5 border border-slate-600 shadow-xl">
-          <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Total</p>
-          <p className="text-3xl font-black text-white">{stats.total}</p>
+        <div className="bg-white rounded-2xl p-5 border-2 border-gray-200 shadow-lg">
+          <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Total</p>
+          <p className="text-4xl font-black text-gray-800">{stats.total}</p>
         </div>
-        <div className="bg-gradient-to-br from-green-900/50 to-emerald-900/50 rounded-2xl p-5 border border-green-500/30 shadow-xl">
-          <p className="text-xs text-green-400 font-bold uppercase tracking-wider mb-1">Active</p>
-          <p className="text-3xl font-black text-green-400">{stats.active}</p>
+        <div className="bg-green-500 rounded-2xl p-5 shadow-lg">
+          <p className="text-sm text-green-100 font-bold uppercase tracking-wider mb-1">Active</p>
+          <p className="text-4xl font-black text-white">{stats.active}</p>
         </div>
-        <div className="bg-gradient-to-br from-red-900/50 to-rose-900/50 rounded-2xl p-5 border border-red-500/30 shadow-xl">
-          <p className="text-xs text-red-400 font-bold uppercase tracking-wider mb-1">Disabled</p>
-          <p className="text-3xl font-black text-red-400">{stats.inactive}</p>
+        <div className="bg-red-500 rounded-2xl p-5 shadow-lg">
+          <p className="text-sm text-red-100 font-bold uppercase tracking-wider mb-1">Disabled</p>
+          <p className="text-4xl font-black text-white">{stats.inactive}</p>
         </div>
-        <div className="bg-gradient-to-br from-teal-900/50 to-emerald-900/50 rounded-2xl p-5 border border-teal-500/30 shadow-xl">
-          <p className="text-xs text-teal-400 font-bold uppercase tracking-wider mb-1">Places</p>
-          <p className="text-3xl font-black text-teal-400">{stats.places}</p>
+        <div className="bg-teal-500 rounded-2xl p-5 shadow-lg">
+          <p className="text-sm text-teal-100 font-bold uppercase tracking-wider mb-1">Places</p>
+          <p className="text-4xl font-black text-white">{stats.places}</p>
         </div>
-        <div className="bg-gradient-to-br from-orange-900/50 to-amber-900/50 rounded-2xl p-5 border border-orange-500/30 shadow-xl">
-          <p className="text-xs text-orange-400 font-bold uppercase tracking-wider mb-1">Restaurants</p>
-          <p className="text-3xl font-black text-orange-400">{stats.vendors}</p>
+        <div className="bg-orange-500 rounded-2xl p-5 shadow-lg">
+          <p className="text-sm text-orange-100 font-bold uppercase tracking-wider mb-1">Restaurants</p>
+          <p className="text-4xl font-black text-white">{stats.vendors}</p>
         </div>
-        <div className="bg-gradient-to-br from-purple-900/50 to-pink-900/50 rounded-2xl p-5 border border-purple-500/30 shadow-xl">
-          <p className="text-xs text-purple-400 font-bold uppercase tracking-wider mb-1">Stays</p>
-          <p className="text-3xl font-black text-purple-400">{stats.stays}</p>
+        <div className="bg-purple-500 rounded-2xl p-5 shadow-lg">
+          <p className="text-sm text-purple-100 font-bold uppercase tracking-wider mb-1">Stays</p>
+          <p className="text-4xl font-black text-white">{stats.stays}</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-8">
-        {/* Tabs */}
-        <div className="flex bg-slate-800/80 rounded-2xl p-1.5 border border-slate-700 shadow-lg">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeTab === tab.id
-                  ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg`
-                  : 'text-gray-400 hover:text-white hover:bg-slate-700/50'
-              }`}
+      {/* Filters - White/Light Background */}
+      <div className="bg-white rounded-2xl p-4 border-2 border-gray-200 shadow-lg mb-8">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Tabs */}
+          <div className="flex bg-gray-100 rounded-xl p-1.5">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`flex items-center gap-2 px-5 py-3 rounded-lg text-base font-bold transition-all ${
+                  activeTab === tab.id
+                    ? `${tab.bg} text-white shadow-lg`
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search businesses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-14 pr-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base font-medium"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+              className="appearance-none pl-12 pr-12 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:border-blue-500 cursor-pointer font-bold text-base"
             >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
+              <option value="all">All Status</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Disabled Only</option>
+            </select>
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500" />
+            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          </div>
 
-        {/* Search */}
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search businesses..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-800/80 border border-slate-700 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-base shadow-lg"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <div className="relative">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="appearance-none pl-12 pr-12 py-3 bg-slate-800/80 border border-slate-700 rounded-2xl text-white focus:outline-none focus:border-purple-500 cursor-pointer font-semibold shadow-lg"
+          {/* Refresh Button - BIG */}
+          <button
+            onClick={fetchBusinesses}
+            disabled={loading}
+            className="flex items-center gap-3 px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-bold text-base transition-all disabled:opacity-50 shadow-lg"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Disabled Only</option>
-          </select>
-          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <RefreshCw className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
-
-        {/* Refresh */}
-        <button
-          onClick={fetchBusinesses}
-          disabled={loading}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl text-white font-bold hover:shadow-lg hover:shadow-purple-500/30 transition-all disabled:opacity-50 shadow-lg"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
       </div>
 
       {/* Showing count */}
       {!loading && currentItems.length > 0 && (
-        <div className="mb-4 text-gray-400">
-          Showing <span className="text-white font-bold">{startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, currentItems.length)}</span> of <span className="text-white font-bold">{currentItems.length}</span> businesses
+        <div className="mb-6 text-gray-600 font-medium text-lg">
+          Showing <span className="text-gray-900 font-bold">{startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, currentItems.length)}</span> of <span className="text-gray-900 font-bold">{currentItems.length}</span> businesses
         </div>
       )}
 
@@ -390,29 +397,26 @@ const BusinessManagement: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700 animate-pulse">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-14 h-14 bg-slate-700 rounded-xl" />
-                <div className="flex-1">
-                  <div className="h-5 bg-slate-700 rounded w-3/4 mb-2" />
-                  <div className="h-4 bg-slate-700 rounded w-1/2" />
+            <div key={i} className="bg-white rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg animate-pulse">
+              <div className="h-20 bg-gray-300" />
+              <div className="p-5">
+                <div className="h-12 bg-gray-200 rounded-lg mb-4" />
+                <div className="h-24 bg-gray-100 rounded-xl mb-5" />
+                <div className="flex gap-3">
+                  <div className="flex-1 h-14 bg-gray-200 rounded-xl" />
+                  <div className="w-16 h-14 bg-gray-200 rounded-xl" />
                 </div>
-              </div>
-              <div className="h-24 bg-slate-700/50 rounded-xl mb-4" />
-              <div className="flex gap-3">
-                <div className="flex-1 h-12 bg-slate-700 rounded-xl" />
-                <div className="w-14 h-12 bg-slate-700 rounded-xl" />
               </div>
             </div>
           ))}
         </div>
       ) : currentItems.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-24 h-24 bg-gradient-to-br from-slate-700 to-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-            <Building2 className="w-12 h-12 text-gray-500" />
+        <div className="text-center py-16 bg-white rounded-2xl border-2 border-gray-200 shadow-lg">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Building2 className="w-12 h-12 text-gray-400" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-2">No businesses found</h3>
-          <p className="text-gray-400 text-lg">Try adjusting your search or filters</p>
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">No businesses found</h3>
+          <p className="text-gray-500 text-lg">Try adjusting your search or filters</p>
         </div>
       ) : (
         <>
@@ -420,19 +424,19 @@ const BusinessManagement: React.FC = () => {
             {paginatedItems.map(({ business, type }) => renderBusinessCard(business, type))}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination - BIGGER BUTTONS */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-10">
+            <div className="flex items-center justify-center gap-3 mt-10 bg-white rounded-2xl p-4 border-2 border-gray-200 shadow-lg">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 px-4 py-2.5 bg-slate-800 border border-slate-600 rounded-xl text-white font-semibold hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-800 rounded-xl text-white font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                <ChevronLeft className="w-5 h-5" />
-                Prev
+                <ChevronLeft className="w-6 h-6" />
+                Previous
               </button>
               
-              <div className="flex gap-1.5">
+              <div className="flex gap-2">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
                   if (
                     page === 1 ||
@@ -443,10 +447,10 @@ const BusinessManagement: React.FC = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-11 h-11 rounded-xl font-bold transition-all ${
+                        className={`w-12 h-12 rounded-xl font-bold text-lg transition-all ${
                           currentPage === page
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30'
-                            : 'bg-slate-800 border border-slate-600 text-gray-300 hover:text-white hover:bg-slate-700'
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-gray-100 border-2 border-gray-300 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
                         {page}
@@ -456,7 +460,7 @@ const BusinessManagement: React.FC = () => {
                     (page === currentPage - 2 && currentPage > 3) ||
                     (page === currentPage + 2 && currentPage < totalPages - 2)
                   ) {
-                    return <span key={page} className="text-gray-500 px-2 self-center">...</span>;
+                    return <span key={page} className="text-gray-400 px-2 self-center font-bold">...</span>;
                   }
                   return null;
                 })}
@@ -465,10 +469,10 @@ const BusinessManagement: React.FC = () => {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-4 py-2.5 bg-slate-800 border border-slate-600 rounded-xl text-white font-semibold hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-800 rounded-xl text-white font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 Next
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-6 h-6" />
               </button>
             </div>
           )}
@@ -477,39 +481,39 @@ const BusinessManagement: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-8 max-w-md w-full border border-slate-700 shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full border-2 border-gray-200 shadow-2xl">
             <div className="flex items-center gap-4 mb-6">
-              <div className="p-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl shadow-lg shadow-red-500/30">
+              <div className="p-4 bg-red-500 rounded-2xl shadow-lg">
                 <AlertTriangle className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">Delete Business</h3>
-                <p className="text-gray-400">This action cannot be undone</p>
+                <h3 className="text-xl font-bold text-gray-800">Delete Business</h3>
+                <p className="text-gray-500">This action cannot be undone</p>
               </div>
             </div>
             
-            <p className="text-gray-300 mb-8 text-lg">
-              Are you sure you want to permanently delete <strong className="text-white">{deleteModal.name}</strong>? 
+            <p className="text-gray-600 mb-8 text-lg">
+              Are you sure you want to permanently delete <strong className="text-gray-900">{deleteModal.name}</strong>? 
               All associated data will be removed.
             </p>
             
             <div className="flex gap-4">
               <button
                 onClick={() => setDeleteModal(null)}
-                className="flex-1 px-6 py-3 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600 transition-all"
+                className="flex-1 px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-base transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={actionLoading !== null}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-red-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-base transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {actionLoading ? (
-                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  <RefreshCw className="w-6 h-6 animate-spin" />
                 ) : (
-                  <><Trash2 className="w-5 h-5" /> Delete</>
+                  <><Trash2 className="w-6 h-6" /> DELETE</>
                 )}
               </button>
             </div>
