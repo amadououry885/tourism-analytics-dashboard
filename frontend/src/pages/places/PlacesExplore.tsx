@@ -28,7 +28,8 @@ export default function PlacesExplore() {
     const fetchPlaces = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/analytics/places/popular/');
+        // Use /places/ endpoint to get all active places
+        const response = await api.get('/places/?page_size=100');
         const data = response.data.results || response.data || [];
         
         const transformedPlaces: Place[] = data.map((place: any, index: number) => ({
@@ -49,15 +50,8 @@ export default function PlacesExplore() {
       } catch (err) {
         console.error('Error fetching places:', err);
         setError('Failed to load places. Please try again.');
-        // Set demo data on error
-        setPlaces([
-          { id: 1, name: 'Menara Alor Setar', city: 'Alor Setar', category: 'Landmark', rating: 4.5, posts: 1250, is_open: true, is_free: false, image_url: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=600' },
-          { id: 2, name: 'Pantai Cenang', city: 'Langkawi', category: 'Beach', rating: 4.8, posts: 3200, is_open: true, is_free: true, image_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600' },
-          { id: 3, name: 'Langkawi Sky Bridge', city: 'Langkawi', category: 'Attraction', rating: 4.7, posts: 2800, is_open: true, is_free: false, image_url: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=600' },
-          { id: 4, name: 'Masjid Zahir', city: 'Alor Setar', category: 'Heritage', rating: 4.9, posts: 980, is_open: true, is_free: true, image_url: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?w=600' },
-          { id: 5, name: 'Pekan Rabu', city: 'Alor Setar', category: 'Market', rating: 4.3, posts: 750, is_open: true, is_free: true, image_url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600' },
-          { id: 6, name: 'Kilim Geoforest Park', city: 'Langkawi', category: 'Nature', rating: 4.6, posts: 1890, is_open: true, is_free: false, image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600' },
-        ]);
+        // Keep empty array on error - no fake demo data
+        setPlaces([]);
       } finally {
         setLoading(false);
       }

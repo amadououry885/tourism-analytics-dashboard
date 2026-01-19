@@ -47,30 +47,14 @@ export default function PlaceDetails() {
     const fetchPlace = async () => {
       try {
         setLoading(true);
-        // Try to fetch from API
-        const response = await api.get(`/analytics/places/${id}/`);
+        // Try to fetch from API - use /places/ endpoint
+        const response = await api.get(`/places/${id}/`);
         setPlace(response.data);
         setError(null);
       } catch (err) {
         console.error('Error fetching place:', err);
-        // Set demo data if API fails
-        setPlace({
-          id: parseInt(id || '1'),
-          name: 'Menara Alor Setar',
-          city: 'Alor Setar',
-          category: 'Landmark',
-          image_url: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=1200',
-          rating: 4.5,
-          posts: 1250,
-          is_open: true,
-          is_free: false,
-          description: 'Menara Alor Setar is a 165.5 m telecommunications tower in Alor Setar, Kedah, Malaysia. It is the second tallest telecommunications tower in the country after the Kuala Lumpur Tower. The tower offers breathtaking panoramic views of Alor Setar city and the surrounding paddy fields.',
-          address: 'Jalan Langgar, 05460 Alor Setar, Kedah, Malaysia',
-          opening_hours: 'Daily: 9:00 AM - 10:00 PM',
-          entry_fee: 'RM 12 (Adult), RM 6 (Child)',
-          latitude: 6.1211,
-          longitude: 100.3683,
-        });
+        setError('Place not found');
+        setPlace(null);
       } finally {
         setLoading(false);
       }
