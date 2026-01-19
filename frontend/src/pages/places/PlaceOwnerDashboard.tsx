@@ -124,7 +124,7 @@ const PlaceOwnerDashboard: React.FC = () => {
 
   const fetchPlaces = async () => {
     try {
-      const data = await request('/analytics/places/');
+      const data = await request('/places/');
       setPlaces(data.results || data);
     } catch (error) {
       console.error('Failed to fetch places:', error);
@@ -154,13 +154,13 @@ const PlaceOwnerDashboard: React.FC = () => {
 
       if (editingPlace) {
         await request(
-          `/analytics/places/${editingPlace.id}/`,
+          `/places/${editingPlace.id}/`,
           { method: 'PUT', body: JSON.stringify(payload) },
           '✅ Place updated successfully!'
         );
       } else {
         await request(
-          '/analytics/places/',
+          '/places/',
           { method: 'POST', body: JSON.stringify(payload) },
           '✅ Place added successfully!'
         );
@@ -176,7 +176,7 @@ const PlaceOwnerDashboard: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this place?')) {
       try {
-        await request(`/analytics/places/${id}/`, { method: 'DELETE' }, '✅ Place deleted!');
+        await request(`/places/${id}/`, { method: 'DELETE' }, '✅ Place deleted!');
         fetchPlaces();
       } catch (error) {
         console.error('Failed to delete:', error);
@@ -187,7 +187,7 @@ const PlaceOwnerDashboard: React.FC = () => {
   const handleToggleOpen = async (place: Place) => {
     try {
       await request(
-        `/analytics/places/${place.id}/toggle_status/`,
+        `/places/${place.id}/toggle_status/`,
         { method: 'POST' },
         `✅ Place ${place.is_open ? 'closed' : 'opened'}!`
       );
@@ -200,7 +200,7 @@ const PlaceOwnerDashboard: React.FC = () => {
   const handleToggleActive = async (place: Place) => {
     try {
       await request(
-        `/analytics/places/${place.id}/toggle_active/`,
+        `/places/${place.id}/toggle_active/`,
         { method: 'POST' },
         `✅ Place ${place.is_active ? 'hidden' : 'visible'}!`
       );
