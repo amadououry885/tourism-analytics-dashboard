@@ -138,42 +138,42 @@ const BusinessManagement: React.FC = () => {
     return (
       <div 
         key={`${type}-${business.id}`}
-        className={`bg-slate-800/50 rounded-xl p-4 border transition-all ${
+        className={`bg-slate-800 rounded-xl p-4 border-2 transition-all flex flex-col ${
           business.is_active 
-            ? 'border-slate-700 hover:border-slate-600' 
-            : 'border-red-900/50 bg-red-950/20'
+            ? 'border-slate-600 hover:border-slate-500' 
+            : 'border-red-600/50 bg-red-950/30'
         }`}
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${
-              type === 'place' ? 'bg-teal-500/10' :
-              type === 'vendor' ? 'bg-orange-500/10' :
-              'bg-purple-500/10'
+            <div className={`p-2.5 rounded-lg ${
+              type === 'place' ? 'bg-teal-500/20' :
+              type === 'vendor' ? 'bg-orange-500/20' :
+              'bg-purple-500/20'
             }`}>
               {getIcon()}
             </div>
             <div>
-              <h3 className="font-semibold text-white">{business.name}</h3>
+              <h3 className="font-bold text-white text-base">{business.name}</h3>
               <p className="text-xs text-gray-400">{getTypeLabel()}</p>
             </div>
           </div>
           
           {/* Status Badge */}
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
             business.is_active 
-              ? 'bg-green-500/10 text-green-400' 
-              : 'bg-red-500/10 text-red-400'
+              ? 'bg-green-600 text-white' 
+              : 'bg-red-600 text-white'
           }`}>
             {business.is_active ? (
               <>
-                <CheckCircle className="w-3 h-3" />
+                <CheckCircle className="w-3.5 h-3.5" />
                 Active
               </>
             ) : (
               <>
-                <XCircle className="w-3 h-3" />
+                <XCircle className="w-3.5 h-3.5" />
                 Disabled
               </>
             )}
@@ -181,50 +181,51 @@ const BusinessManagement: React.FC = () => {
         </div>
 
         {/* Location */}
-        <div className="text-sm text-gray-400 mb-3">
-          📍 {getLocation()}
+        <div className="text-sm text-gray-300 mb-3 flex items-center gap-2">
+          <span className="text-lg">📍</span> 
+          <span className="font-medium">{getLocation()}</span>
           {type === 'place' && business.is_council_managed === false && (
-            <span className="ml-2 text-xs text-amber-400">(Private)</span>
+            <span className="ml-1 px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-full font-medium">Private</span>
           )}
         </div>
 
         {/* Owner Info */}
         {business.owner ? (
-          <div className="bg-slate-900/50 rounded-lg p-3 mb-3">
-            <p className="text-xs text-gray-500 mb-1.5">Owner</p>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm text-white">
-                <User className="w-3.5 h-3.5 text-gray-400" />
+          <div className="bg-slate-700/50 rounded-lg p-3 mb-3 flex-1">
+            <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">Owner</p>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-sm text-white font-medium">
+                <User className="w-4 h-4 text-purple-400" />
                 {business.owner.username}
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <Mail className="w-3 h-3" />
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <Mail className="w-3.5 h-3.5 text-blue-400" />
                 {business.owner.email}
               </div>
               {business.owner.phone_number && (
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <Phone className="w-3 h-3" />
+                <div className="flex items-center gap-2 text-sm text-gray-300">
+                  <Phone className="w-3.5 h-3.5 text-green-400" />
                   {business.owner.phone_number}
                 </div>
               )}
             </div>
           </div>
         ) : (
-          <div className="bg-slate-900/30 rounded-lg p-3 mb-3 text-center">
-            <p className="text-xs text-gray-500">No owner assigned</p>
-            <p className="text-xs text-gray-600">Council managed</p>
+          <div className="bg-slate-700/30 rounded-lg p-3 mb-3 text-center flex-1 flex flex-col justify-center">
+            <p className="text-sm text-gray-400 font-medium">No owner assigned</p>
+            <p className="text-xs text-gray-500">Council managed</p>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto pt-3 border-t border-slate-700/50">
           <button
             onClick={() => handleToggle(type, business.id, business.is_active, business.name)}
             disabled={isLoading}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
               business.is_active
-                ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
-                : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                ? 'bg-amber-600 text-white hover:bg-amber-500 shadow-lg shadow-amber-600/20'
+                : 'bg-green-600 text-white hover:bg-green-500 shadow-lg shadow-green-600/20'
             } disabled:opacity-50`}
           >
             {isLoading ? (
@@ -245,7 +246,7 @@ const BusinessManagement: React.FC = () => {
           <button
             onClick={() => setDeleteModal({ show: true, type, id: business.id, name: business.name })}
             disabled={isDeleting}
-            className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-500 shadow-lg shadow-red-600/20 transition-all disabled:opacity-50"
           >
             {isDeleting ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
