@@ -56,10 +56,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
-    
-    # Cloudinary storage
-    "cloudinary_storage",
-    "cloudinary",
 
     # your apps
     "users",  # Custom user model - must be before other apps
@@ -70,6 +66,10 @@ INSTALLED_APPS = [
     "api",
     
 ]
+
+# Add Cloudinary apps only if configured
+if os.environ.get('CLOUDINARY_CLOUD_NAME'):
+    INSTALLED_APPS = ["cloudinary_storage", "cloudinary"] + INSTALLED_APPS
 
 # ── Middleware ────────────────────────────────────────────────────────────────
 MIDDLEWARE = [
