@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import PlacesManagement from './PlacesManagement';
+import BusinessManagement from './BusinessManagement';
 
 interface PendingUser {
   id: number;
@@ -86,7 +87,7 @@ const AdminDashboard: React.FC = () => {
     max_capacity: null as number | null,
   };
   
-  const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'places'>('approvals');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'events' | 'places' | 'businesses'>('approvals');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [showEventModal, setShowEventModal] = useState(false);
@@ -306,6 +307,7 @@ const AdminDashboard: React.FC = () => {
             { id: 'approvals', label: 'User Approvals', icon: Users, badge: pendingUsers.length, color: '#f59e0b' },
             { id: 'events', label: 'Events', icon: Calendar, badge: upcomingEvents.length, color: '#a855f7' },
             { id: 'places', label: 'Places', icon: MapPin, badge: 0, color: '#22c55e' },
+            { id: 'businesses', label: 'All Businesses', icon: Building2, badge: 0, color: '#14b8a6' },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -439,11 +441,13 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'approvals' && <><Users size={28} style={{ color: '#f59e0b' }} /> User Approvals</>}
               {activeTab === 'events' && <><Calendar size={28} style={{ color: '#a855f7' }} /> Event Management</>}
               {activeTab === 'places' && <><MapPin size={28} style={{ color: '#22c55e' }} /> Places Management</>}
+              {activeTab === 'businesses' && <><Building2 size={28} style={{ color: '#14b8a6' }} /> Business Management</>}
             </h1>
             <p style={{ fontSize: '15px', color: '#64748b', margin: '6px 0 0 0' }}>
               {activeTab === 'approvals' && 'Review and approve vendor registrations'}
               {activeTab === 'events' && 'Create and manage tourism events'}
               {activeTab === 'places' && 'Manage tourist attractions and places'}
+              {activeTab === 'businesses' && 'Manage all places, restaurants, and stays'}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1017,6 +1021,9 @@ const AdminDashboard: React.FC = () => {
 
           {/* Places Tab */}
           {activeTab === 'places' && <PlacesManagement />}
+          
+          {/* Business Management Tab */}
+          {activeTab === 'businesses' && <BusinessManagement />}
         </div>
       </div>
 

@@ -15,6 +15,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PlacesManagement from './pages/admin/PlacesManagement';
+import BusinessManagement from './pages/admin/BusinessManagement';
 import EventRegistrations from './pages/EventRegistrations';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import StayOwnerDashboard from './pages/stays/StayOwnerDashboard';
@@ -84,6 +85,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <PlacesManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/businesses"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <BusinessManagement />
                 </ProtectedRoute>
               }
             />

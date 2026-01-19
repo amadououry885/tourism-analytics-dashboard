@@ -30,4 +30,9 @@ urlpatterns = [
     path('admin/users/pending/', views.pending_users, name='pending_users'),
     path('admin/users/<int:user_id>/approve/', views.approve_user, name='approve_user'),
     path('admin/users/<int:user_id>/reject/', views.reject_user, name='reject_user'),
+    
+    # Admin - Business Management
+    path('admin/businesses/', views.admin_all_businesses, name='admin_all_businesses'),
+    path('admin/businesses/toggle/', views.admin_toggle_business, name='admin_toggle_business'),
+    path('admin/businesses/delete/', views.admin_delete_business, name='admin_delete_business'),
 ]

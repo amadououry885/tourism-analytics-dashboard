@@ -477,3 +477,199 @@ def available_businesses(request):
         ]
     
     return Response(result)
+
+
+# =============================================================================
+# ADMIN BUSINESS MANAGEMENT ENDPOINTS
+# =============================================================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_all_businesses(request):
+    """
+    List all businesses (places, vendors, stays) for admin management.
+    Admin only endpoint.
+    """
+    if request.user.role != 'admin':
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+    
+    business_type = request.query_params.get('type', 'all')  # 'place', 'vendor', 'stay', or 'all'
+    search = request.query_params.get('search', '')
+    status_filter = request.query_params.get('status', 'all')  # 'all', 'active', 'inactive'
+    
+    result = {}
+    
+    if business_type in ['place', 'all']:
+        from analytics.models import Place
+        places = Place.objects.all().select_related('owner', 'created_by')
+        
+        if search:
+            places = places.filter(name__icontains=search)
+        if status_filter == 'active':
+            places = places.filter(is_active=True)
+        elif status_filter == 'inactive':
+            places = places.filter(is_active=False)
+        
+        result['places'] = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'city': p.city,
+                'category': p.category,
+                'address': p.address,
+                'is_active': p.is_active,
+                'is_council_managed': getattr(p, 'is_council_managed', True),
+                'owner': {
+                    'id': p.owner.id,
+                    'username': p.owner.username,
+                    'email': p.owner.email,
+                    'phone_number': p.owner.phone_number
+                } if p.owner else None,
+                'created_by': p.created_by.username if p.created_by else None
+            }
+            for p in places[:100]
+        ]
+    
+    if business_type in ['vendor', 'all']:
+        from vendors.models import Vendor
+        vendors = Vendor.objects.all().select_related('owner')
+        
+        if search:
+            vendors = vendors.filter(name__icontains=search)
+        if status_filter == 'active':
+            vendors = vendors.filter(is_active=True)
+        elif status_filter == 'inactive':
+            vendors = vendors.filter(is_active=False)
+        
+        result['vendors'] = [
+            {
+                'id': v.id,
+                'name': v.name,
+                'city': v.city,
+                'cuisines': v.cuisines,
+                'address': v.address,
+                'is_active': v.is_active,
+                'owner': {
+                    'id': v.owner.id,
+                    'username': v.owner.username,
+                    'email': v.owner.email,
+                    'phone_number': v.owner.phone_number
+                } if v.owner else None
+            }
+            for v in vendors[:100]
+        ]
+    
+    if business_type in ['stay', 'all']:
+        from stays.models import Stay
+        stays = Stay.objects.all().select_related('owner')
+        
+        if search:
+            stays = stays.filter(name__icontains=search)
+        if status_filter == 'active':
+            stays = stays.filter(is_active=True)
+        elif status_filter == 'inactive':
+            stays = stays.filter(is_active=False)
+        
+        result['stays'] = [
+            {
+                'id': s.id,
+                'name': s.name,
+                'district': s.district,
+                'type': s.type,
+                'is_active': s.is_active,
+                'owner': {
+                    'id': s.owner.id,
+                    'username': s.owner.username,
+                    'email': s.owner.email,
+                    'phone_number': s.owner.phone_number
+                } if s.owner else None
+            }
+            for s in stays[:100]
+        ]
+    
+    return Response(result)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_toggle_business(request):
+    """
+    Enable or disable a business. Admin only.
+    """
+    if request.user.role != 'admin':
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+    
+    business_type = request.data.get('type')  # 'place', 'vendor', 'stay'
+    business_id = request.data.get('id')
+    action = request.data.get('action')  # 'enable' or 'disable'
+    
+    if not all([business_type, business_id, action]):
+        return Response({'error': 'Missing required fields: type, id, action'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if action not in ['enable', 'disable']:
+        return Response({'error': 'Action must be "enable" or "disable"'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    new_status = action == 'enable'
+    
+    try:
+        if business_type == 'place':
+            from analytics.models import Place
+            business = Place.objects.get(id=business_id)
+        elif business_type == 'vendor':
+            from vendors.models import Vendor
+            business = Vendor.objects.get(id=business_id)
+        elif business_type == 'stay':
+            from stays.models import Stay
+            business = Stay.objects.get(id=business_id)
+        else:
+            return Response({'error': 'Invalid business type'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        business.is_active = new_status
+        business.save()
+        
+        return Response({
+            'message': f'{business_type.title()} "{business.name}" has been {"enabled" if new_status else "disabled"}.',
+            'is_active': new_status
+        })
+    
+    except Exception as e:
+        return Response({'error': f'{business_type.title()} not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_delete_business(request):
+    """
+    Permanently delete a business. Admin only.
+    """
+    if request.user.role != 'admin':
+        return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+    
+    business_type = request.query_params.get('type')  # 'place', 'vendor', 'stay'
+    business_id = request.query_params.get('id')
+    
+    if not all([business_type, business_id]):
+        return Response({'error': 'Missing required fields: type, id'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        if business_type == 'place':
+            from analytics.models import Place
+            business = Place.objects.get(id=business_id)
+        elif business_type == 'vendor':
+            from vendors.models import Vendor
+            business = Vendor.objects.get(id=business_id)
+        elif business_type == 'stay':
+            from stays.models import Stay
+            business = Stay.objects.get(id=business_id)
+        else:
+            return Response({'error': 'Invalid business type'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        name = business.name
+        business.delete()
+        
+        return Response({
+            'message': f'{business_type.title()} "{name}" has been permanently deleted.'
+        })
+    
+    except Exception as e:
+        return Response({'error': f'{business_type.title()} not found'}, status=status.HTTP_404_NOT_FOUND)
