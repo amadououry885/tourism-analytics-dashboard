@@ -1429,46 +1429,86 @@ const AdminDashboard: React.FC = () => {
                     padding: '20px',
                     textAlign: 'center',
                   }}>
-                    {/* Check if it's an image */}
-                    {showDocumentModal.verification_document.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                      <img
-                        src={getDocumentUrl(showDocumentModal.verification_document)}
-                        alt="Verification Document"
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: '400px',
-                          borderRadius: '10px',
-                          marginBottom: '16px',
-                        }}
-                      />
-                    ) : (
-                      <div style={{ marginBottom: '16px' }}>
-                        <FileText size={64} style={{ color: '#64748b', margin: '0 auto 12px' }} />
-                        <p style={{ color: '#94a3b8', fontSize: '14px' }}>Document file uploaded</p>
-                      </div>
-                    )}
-                    
-                    <a
-                      href={getDocumentUrl(showDocumentModal.verification_document)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '12px 20px',
-                        background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-                        border: 'none',
-                        borderRadius: '10px',
-                        color: 'white',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <ExternalLink size={16} />
-                      Open in New Tab
-                    </a>
+                    {/* Extract filename from path */}
+                    {(() => {
+                      const filename = showDocumentModal.verification_document?.split('/').pop() || 'Document';
+                      const isImage = showDocumentModal.verification_document?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                      const isPDF = showDocumentModal.verification_document?.match(/\.pdf$/i);
+                      
+                      return (
+                        <>
+                          {isImage ? (
+                            <img
+                              src={getDocumentUrl(showDocumentModal.verification_document)}
+                              alt="Verification Document"
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: '400px',
+                                borderRadius: '10px',
+                                marginBottom: '16px',
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div style={{ marginBottom: '16px' }}>
+                              <FileText size={64} style={{ color: isPDF ? '#ef4444' : '#64748b', margin: '0 auto 12px' }} />
+                            </div>
+                          )}
+                          
+                          {/* Show filename */}
+                          <div style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            borderRadius: '8px',
+                            padding: '12px 16px',
+                            marginBottom: '16px',
+                          }}>
+                            <p style={{ color: '#ffffff', fontSize: '14px', fontWeight: '600', wordBreak: 'break-all' }}>
+                              📄 {filename}
+                            </p>
+                            <p style={{ color: '#22c55e', fontSize: '12px', marginTop: '4px' }}>
+                              ✓ Document was uploaded during registration
+                            </p>
+                          </div>
+                          
+                          {/* Info about file storage */}
+                          <div style={{
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            borderRadius: '8px',
+                            padding: '10px 14px',
+                            marginBottom: '16px',
+                          }}>
+                            <p style={{ color: '#fbbf24', fontSize: '12px' }}>
+                              ⚠️ Note: Files are stored temporarily on the server. For permanent storage, consider downloading verification documents when reviewing applications.
+                            </p>
+                          </div>
+                          
+                          <a
+                            href={getDocumentUrl(showDocumentModal.verification_document)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              padding: '12px 20px',
+                              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                              border: 'none',
+                              borderRadius: '10px',
+                              color: 'white',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              textDecoration: 'none',
+                            }}
+                          >
+                            <ExternalLink size={16} />
+                            Try to Open Document
+                          </a>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
