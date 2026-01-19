@@ -33,6 +33,22 @@ import { useApi } from '../../hooks/useApi';
 import PlacesManagement from './PlacesManagement';
 import BusinessManagement from './BusinessManagement';
 
+// Backend URL for media files
+const BACKEND_URL = import.meta.env.DEV 
+  ? 'http://localhost:8000'
+  : 'https://tourism-analytics-dashboard.onrender.com';
+
+// Helper to get full document URL
+const getDocumentUrl = (documentPath: string | undefined): string => {
+  if (!documentPath) return '';
+  // If it's already a full URL, return as is
+  if (documentPath.startsWith('http://') || documentPath.startsWith('https://')) {
+    return documentPath;
+  }
+  // Otherwise prepend backend URL
+  return `${BACKEND_URL}${documentPath}`;
+};
+
 interface PendingUser {
   id: number;
   username: string;
@@ -1416,7 +1432,7 @@ const AdminDashboard: React.FC = () => {
                     {/* Check if it's an image */}
                     {showDocumentModal.verification_document.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                       <img
-                        src={showDocumentModal.verification_document}
+                        src={getDocumentUrl(showDocumentModal.verification_document)}
                         alt="Verification Document"
                         style={{
                           maxWidth: '100%',
@@ -1433,7 +1449,7 @@ const AdminDashboard: React.FC = () => {
                     )}
                     
                     <a
-                      href={showDocumentModal.verification_document}
+                      href={getDocumentUrl(showDocumentModal.verification_document)}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
