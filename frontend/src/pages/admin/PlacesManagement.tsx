@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, MapPin, Upload, Power, Search, Globe, Phone, Clock, Wifi, Car, Accessibility, UtensilsCrossed, Bath } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Edit2, Trash2, Save, X, MapPin, Upload, Power, Search, Globe, Phone, Clock, Wifi, Car, Accessibility, UtensilsCrossed, Bath, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from '../../services/api';
+
+const ITEMS_PER_PAGE = 12;
 
 interface Place {
   id?: number;
@@ -94,6 +96,7 @@ export default function PlacesManagement() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchPlaces();
@@ -234,12 +237,26 @@ export default function PlacesManagement() {
     return found || { label: cat, color: '#64748b' };
   };
 
-  const filteredPlaces = places.filter(place => {
-    const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         place.city.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !categoryFilter || place.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredPlaces = useMemo(() => {
+    return places.filter(place => {
+      const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           place.city.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = !categoryFilter || place.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [places, searchQuery, categoryFilter]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredPlaces.length / ITEMS_PER_PAGE);
+  const paginatedPlaces = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredPlaces.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredPlaces, currentPage]);
 
   if (loading) {
     return (
@@ -389,11 +406,16 @@ export default function PlacesManagement() {
 
       {/* Places Grid */}
       <div style={{ marginBottom: '20px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginBottom: '20px' }}>
-          All Places ({filteredPlaces.length})
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+            All Places ({filteredPlaces.length})
+          </h3>
+          <span style={{ fontSize: '14px', color: '#64748b' }}>
+            Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredPlaces.length)} of {filteredPlaces.length}
+          </span>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-          {filteredPlaces.map((place) => {
+          {paginatedPlaces.map((place) => {
             const catStyle = getCategoryStyle(place.category);
             return (
               <div key={place.id} style={{
@@ -518,6 +540,95 @@ export default function PlacesManagement() {
             );
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && filteredPlaces.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            marginTop: '32px',
+            paddingTop: '24px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: currentPage === 1 ? 'transparent' : 'rgba(34, 197, 94, 0.1)',
+                color: currentPage === 1 ? '#475569' : '#22c55e',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => {
+                if (page === 1 || page === totalPages) return true;
+                if (Math.abs(page - currentPage) <= 1) return true;
+                return false;
+              })
+              .map((page, idx, arr) => {
+                const showEllipsisBefore = idx > 0 && page - arr[idx - 1] > 1;
+                return (
+                  <React.Fragment key={page}>
+                    {showEllipsisBefore && (
+                      <span style={{ color: '#64748b', padding: '0 4px' }}>...</span>
+                    )}
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      style={{
+                        minWidth: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        border: page === currentPage ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: page === currentPage 
+                          ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' 
+                          : 'transparent',
+                        color: page === currentPage ? 'white' : '#94a3b8',
+                        fontSize: '14px',
+                        fontWeight: page === currentPage ? '600' : '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {page}
+                    </button>
+                  </React.Fragment>
+                );
+              })}
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: currentPage === totalPages ? 'transparent' : 'rgba(34, 197, 94, 0.1)',
+                color: currentPage === totalPages ? '#475569' : '#22c55e',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
 
         {filteredPlaces.length === 0 && (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
