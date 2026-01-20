@@ -3,6 +3,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.pagination import PageNumberPagination
 from django.utils.timezone import now
 from django.db.models import Q
 from django.db import models
@@ -20,10 +21,18 @@ from common.permissions import AdminOrReadOnly
 from .emails import send_registration_confirmation, send_event_reminder
 
 
+class EventPagination(PageNumberPagination):
+    """Custom pagination for events - show more events by default"""
+    page_size = 100  # Show up to 100 events by default
+    page_size_query_param = 'page_size'
+    max_page_size = 500
+
+
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all().order_by("start_date")
     serializer_class = EventSerializer
     permission_classes = [AdminOrReadOnly]
+    pagination_class = EventPagination  # Use custom pagination to show all events
 
     def get_serializer_class(self):
         """Use detailed serializer for retrieve action"""
