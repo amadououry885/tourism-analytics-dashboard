@@ -1,272 +1,38 @@
-/*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Custom Animations for Business Landing Page */
+/* ===== Custom animations ===== */
 @keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-  }
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Custom Scrollbar Styles */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 8px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 10px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #3b82f6;
-  border-radius: 10px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
-}
-
-/* Custom scrollbar for detail panels */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 12px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f8fafc;
-  border-left: 1px solid #e2e8f0;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 6px;
-  border: 2px solid #f8fafc;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f8fafc;
-}
-
-.animate-blob {
-  animation: blob 7s infinite;
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* Force 2-column grid on mobile for metric cards */
-.mobile-grid-2 {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 0.5rem !important;
-}
-
-@media (min-width: 640px) {
-  .mobile-grid-2 {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 0.75rem !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .mobile-grid-2 {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 1rem !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mobile-grid-2 {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 1.5rem !important;
-  }
-}
-
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-
-@layer theme {
-  :root, :host {
-    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  }
-}
-
+/* ===== Base overrides ===== */
 @layer base {
-  *, :after, :before, ::backdrop {
+  *, *::before, *::after {
     box-sizing: border-box;
-    border: 0 solid;
-    margin: 0;
-    padding: 0;
   }
 
-  /* ... keeping standard resets ... */
-  html, :host {
-    -webkit-text-size-adjust: 100%;
-    tab-size: 4;
-    line-height: 1.5;
-    font-family: var(--font-sans);
-    -webkit-tap-highlight-color: transparent;
+  html {
+    font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   }
-
-  body {
-    line-height: inherit;
-    background-color: var(--background);
-    color: var(--foreground);
-  }
-
-  /* ... rest of base styles ... */
-  hr { height: 0; color: inherit; border-top-width: 1px; }
-  abbr:where([title]) { -webkit-text-decoration: underline dotted; text-decoration: underline dotted; }
-  h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
-  a { color: inherit; text-decoration: inherit; }
-  b, strong { font-weight: bolder; }
-  code, kbd, samp, pre { font-family: var(--font-mono); font-size: 1em; }
-  small { font-size: 80%; }
-  sub, sup { vertical-align: baseline; font-size: 75%; line-height: 0; position: relative; }
-  sub { bottom: -.25em; }
-  sup { top: -.5em; }
-  table { text-indent: 0; border-color: inherit; border-collapse: collapse; }
-  :-moz-focusring { outline: auto; }
-  progress { vertical-align: baseline; }
-  summary { display: list-item; }
-  ol, ul, menu { list-style: none; }
-  img, svg, video, canvas, audio, iframe, embed, object { vertical-align: middle; display: block; }
-  img, video { max-width: 100%; height: auto; }
-  button, input, select, optgroup, textarea { font: inherit; letter-spacing: inherit; color: inherit; opacity: 1; background-color: transparent; border-radius: 0; }
-  ::file-selector-button { margin-inline-end: 4px; }
-  ::placeholder { opacity: 1; color: #9ca3af; }
-  textarea { resize: vertical; }
-  ::-webkit-search-decoration { -webkit-appearance: none; }
-  ::-webkit-date-and-time-value { min-height: 1lh; text-align: inherit; }
-  ::-webkit-datetime-edit { display: inline-flex; padding-block: 0; }
-  ::-webkit-datetime-edit-fields-wrapper { padding: 0; }
-  ::-webkit-datetime-edit-year-field { padding-block: 0; }
-  ::-webkit-datetime-edit-month-field { padding-block: 0; }
-  ::-webkit-datetime-edit-day-field { padding-block: 0; }
-  ::-webkit-datetime-edit-hour-field { padding-block: 0; }
-  ::-webkit-datetime-edit-minute-field { padding-block: 0; }
-  ::-webkit-datetime-edit-second-field { padding-block: 0; }
-  ::-webkit-datetime-edit-millisecond-field { padding-block: 0; }
-  ::-webkit-datetime-edit-meridiem-field { padding-block: 0; }
-  :-moz-ui-invalid { box-shadow: none; }
-  button, input:where([type="button"], [type="reset"], [type="submit"]) { appearance: button; }
-  ::file-selector-button { appearance: button; }
-  ::-webkit-inner-spin-button { height: auto; }
-  ::-webkit-outer-spin-button { height: auto; }
-  [hidden]:where(:not([hidden="until-found"])) { display: none !important; }
 }
 
+/* ===== Utilities ===== */
 @layer utilities {
-  .shadow-soft {
-    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.08);
+  .animate-blob {
+    animation: blob 7s infinite;
   }
-  .shadow-soft-lg {
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
   }
-}
-
-/*
-  BRIGHT & STUNNING LIGHT THEME
-  Strict enforcement of light mode variables.
-*/
-:root {
-  --font-size: 16px;
-  
-  /* Base Colors - Soft, clean off-white */
-  --background: #F8F9FA;
-  --foreground: #1F2937; /* Charcoal */
-
-  /* Card Colors - Pure white for pop */
-  --card: #FFFFFF;
-  --card-foreground: #1F2937;
-
-  /* Popovers */
-  --popover: #FFFFFF;
-  --popover-foreground: #1F2937;
-
-  /* Primary Color - Ocean Blue */
-  --primary: #0ea5e9; /* Sky 500 / Ocean Blue */
-  --primary-foreground: #FFFFFF;
-
-  /* Secondary Color - Very light gray for backgrounds */
-  --secondary: #F3F4F6;
-  --secondary-foreground: #1F2937;
-
-  /* Muted - For subtle text */
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280; /* Gray 500 */
-
-  /* Accent - Golden Orange for highlights */
-  --accent: #F59E0B; /* Amber 500 */
-  --accent-foreground: #FFFFFF;
-
-  /* Destructive - Alert Red */
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
-
-  /* Borders & Inputs */
-  --border: #E5E7EB; /* Gray 200 */
-  --input: #E5E7EB;
-  --input-background: #FFFFFF;
-  --ring: #0ea5e9; /* Focus ring same as primary */
-
-  /* Chart Colors - Bright & Distinct */
-  --chart-1: #0ea5e9; /* Ocean Blue */
-  --chart-2: #F59E0B; /* Golden Orange */
-  --chart-3: #10B981; /* Emerald Green */
-  --chart-4: #8B5CF6; /* Violet */
-  --chart-5: #F43F5E; /* Rose */
-
-  /* Misc */
-  --radius: 0.75rem; /* More rounded for modern feel */
-}
-
-/*
-  Removed .dark block completely.
-  Any system preference for dark mode will be ignored
-  as we are not using media queries for these variables anymore.
-*/
-
-html {
-  font-size: var(--font-size);
 }
