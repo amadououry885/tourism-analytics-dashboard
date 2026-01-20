@@ -1,251 +1,226 @@
 [
-{
-  "model": "events.event",
-  "pk": 70,
-  "fields": {
-    "title": "Langkawi Art & Craft Market",
-    "description": "Discover local artisans and their handcrafted products at this beachside market.",
-    "start_date": "2026-03-25T02:00:00Z",
-    "end_date": "2026-03-27T12:00:00Z",
-    "location_name": "Kuah Town Square",
-    "city": "Langkawi",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "cultural",
-      "exhibition"
-    ],
-    "is_published": true,
-    "expected_attendance": 4000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800",
-    "created_by": 1,
-    "max_capacity": 5000,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Langkawi Art & Craft Market",
+      "description": "Discover local artisans and their handcrafted products at this beachside market.",
+      "start_date": "2026-03-25T02:00:00+00:00",
+      "end_date": "2026-03-27T12:00:00+00:00",
+      "location_name": "Kuah Town Square",
+      "city": "Langkawi",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "cultural",
+        "exhibition"
+      ],
+      "is_published": true,
+      "expected_attendance": 4000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800",
+      "max_capacity": 5000,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
+  },
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Kedah Tech Innovation Summit",
+      "description": "A tech conference bringing together entrepreneurs, investors, and innovators from across Southeast Asia.",
+      "start_date": "2026-03-20T01:00:00+00:00",
+      "end_date": "2026-03-21T09:00:00+00:00",
+      "location_name": "Aman Central Convention Hall",
+      "city": "Alor Setar",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "business",
+        "technology"
+      ],
+      "is_published": true,
+      "expected_attendance": 3000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
+      "max_capacity": 3500,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
+  },
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Langkawi International Triathlon",
+      "description": "A challenging triathlon event with swimming, cycling, and running across Langkawi's scenic routes.",
+      "start_date": "2026-03-14T22:00:00+00:00",
+      "end_date": "2026-03-15T06:00:00+00:00",
+      "location_name": "Pantai Cenang",
+      "city": "Langkawi",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "sport",
+        "outdoor"
+      ],
+      "is_published": true,
+      "expected_attendance": 3000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800",
+      "max_capacity": 5000,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
+  },
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Kedah Paddy Harvest Festival",
+      "description": "Experience the traditional rice harvest celebration with cultural performances and village activities.",
+      "start_date": "2026-03-10T00:00:00+00:00",
+      "end_date": "2026-03-12T10:00:00+00:00",
+      "location_name": "Yan Rice Fields",
+      "city": "Yan",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "cultural",
+        "festival"
+      ],
+      "is_published": true,
+      "expected_attendance": 5000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800",
+      "max_capacity": 6000,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
+  },
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Langkawi Jazz Festival",
+      "description": "An evening of smooth jazz under the stars featuring international and local jazz artists.",
+      "start_date": "2026-03-05T10:00:00+00:00",
+      "end_date": "2026-03-07T15:00:00+00:00",
+      "location_name": "Pantai Tengah Beach",
+      "city": "Langkawi",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "entertainment",
+        "music"
+      ],
+      "is_published": true,
+      "expected_attendance": 5000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=800",
+      "max_capacity": 6000,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
+  },
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Kedah Food & Culture Fair",
+      "description": "A gastronomic journey through Kedah's finest cuisines with cooking demonstrations and food stalls.",
+      "start_date": "2026-02-25T03:00:00+00:00",
+      "end_date": "2026-02-28T13:00:00+00:00",
+      "location_name": "Aman Central",
+      "city": "Alor Setar",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "food",
+        "cultural"
+      ],
+      "is_published": true,
+      "expected_attendance": 12000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800",
+      "max_capacity": 15000,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
+  },
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Alor Setar Heritage Festival",
+      "description": "Celebrate the rich cultural heritage of Kedah with traditional performances, crafts, and local delicacies.",
+      "start_date": "2026-02-20T02:00:00+00:00",
+      "end_date": "2026-02-22T14:00:00+00:00",
+      "location_name": "Dataran Alor Setar",
+      "city": "Alor Setar",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "cultural",
+        "festival"
+      ],
+      "is_published": true,
+      "expected_attendance": 8000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800",
+      "max_capacity": 10000,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
+  },
+  {
+    "model": "events.event",
+    "fields": {
+      "title": "Langkawi International Maritime & Aerospace Exhibition",
+      "description": "Southeast Asia's premier aerospace and maritime showcase featuring aircraft displays, naval vessels, and industry exhibitions.",
+      "start_date": "2026-02-15T01:00:00+00:00",
+      "end_date": "2026-02-18T10:00:00+00:00",
+      "location_name": "Mahsuri International Exhibition Centre",
+      "city": "Langkawi",
+      "lat": null,
+      "lon": null,
+      "tags": [
+        "business",
+        "exhibition"
+      ],
+      "is_published": true,
+      "expected_attendance": 15000,
+      "actual_attendance": null,
+      "image_url": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
+      "max_capacity": 20000,
+      "requires_approval": false,
+      "registration_form_config": [],
+      "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
+      "recurrence_type": "none",
+      "recurrence_end_date": null,
+      "is_recurring_instance": false
+    }
   }
-},
-{
-  "model": "events.event",
-  "pk": 69,
-  "fields": {
-    "title": "Kedah Tech Innovation Summit",
-    "description": "A tech conference bringing together entrepreneurs, investors, and innovators from across Southeast Asia.",
-    "start_date": "2026-03-20T01:00:00Z",
-    "end_date": "2026-03-21T09:00:00Z",
-    "location_name": "Aman Central Convention Hall",
-    "city": "Alor Setar",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "business",
-      "technology"
-    ],
-    "is_published": true,
-    "expected_attendance": 3000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-    "created_by": 1,
-    "max_capacity": 3500,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
-  }
-},
-{
-  "model": "events.event",
-  "pk": 68,
-  "fields": {
-    "title": "Langkawi International Triathlon",
-    "description": "A challenging triathlon event with swimming, cycling, and running across Langkawi's scenic routes.",
-    "start_date": "2026-03-14T22:00:00Z",
-    "end_date": "2026-03-15T06:00:00Z",
-    "location_name": "Pantai Cenang",
-    "city": "Langkawi",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "sport",
-      "outdoor"
-    ],
-    "is_published": true,
-    "expected_attendance": 3000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800",
-    "created_by": 1,
-    "max_capacity": 5000,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
-  }
-},
-{
-  "model": "events.event",
-  "pk": 67,
-  "fields": {
-    "title": "Kedah Paddy Harvest Festival",
-    "description": "Experience the traditional rice harvest celebration with cultural performances and village activities.",
-    "start_date": "2026-03-10T00:00:00Z",
-    "end_date": "2026-03-12T10:00:00Z",
-    "location_name": "Yan Rice Fields",
-    "city": "Yan",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "cultural",
-      "festival"
-    ],
-    "is_published": true,
-    "expected_attendance": 5000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800",
-    "created_by": 1,
-    "max_capacity": 6000,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
-  }
-},
-{
-  "model": "events.event",
-  "pk": 66,
-  "fields": {
-    "title": "Langkawi Jazz Festival",
-    "description": "An evening of smooth jazz under the stars featuring international and local jazz artists.",
-    "start_date": "2026-03-05T10:00:00Z",
-    "end_date": "2026-03-07T15:00:00Z",
-    "location_name": "Pantai Tengah Beach",
-    "city": "Langkawi",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "entertainment",
-      "music"
-    ],
-    "is_published": true,
-    "expected_attendance": 5000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1511735111819-9a3f7709049c?w=800",
-    "created_by": 1,
-    "max_capacity": 6000,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
-  }
-},
-{
-  "model": "events.event",
-  "pk": 65,
-  "fields": {
-    "title": "Kedah Food & Culture Fair",
-    "description": "A gastronomic journey through Kedah's finest cuisines with cooking demonstrations and food stalls.",
-    "start_date": "2026-02-25T03:00:00Z",
-    "end_date": "2026-02-28T13:00:00Z",
-    "location_name": "Aman Central",
-    "city": "Alor Setar",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "food",
-      "cultural"
-    ],
-    "is_published": true,
-    "expected_attendance": 12000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800",
-    "created_by": 1,
-    "max_capacity": 15000,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
-  }
-},
-{
-  "model": "events.event",
-  "pk": 64,
-  "fields": {
-    "title": "Alor Setar Heritage Festival",
-    "description": "Celebrate the rich cultural heritage of Kedah with traditional performances, crafts, and local delicacies.",
-    "start_date": "2026-02-20T02:00:00Z",
-    "end_date": "2026-02-22T14:00:00Z",
-    "location_name": "Dataran Alor Setar",
-    "city": "Alor Setar",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "cultural",
-      "festival"
-    ],
-    "is_published": true,
-    "expected_attendance": 8000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800",
-    "created_by": 1,
-    "max_capacity": 10000,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
-  }
-},
-{
-  "model": "events.event",
-  "pk": 63,
-  "fields": {
-    "title": "Langkawi International Maritime & Aerospace Exhibition",
-    "description": "Southeast Asia's premier aerospace and maritime showcase featuring aircraft displays, naval vessels, and industry exhibitions.",
-    "start_date": "2026-02-15T01:00:00Z",
-    "end_date": "2026-02-18T10:00:00Z",
-    "location_name": "Mahsuri International Exhibition Centre",
-    "city": "Langkawi",
-    "lat": null,
-    "lon": null,
-    "tags": [
-      "business",
-      "exhibition"
-    ],
-    "is_published": true,
-    "expected_attendance": 15000,
-    "actual_attendance": null,
-    "image_url": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-    "created_by": 1,
-    "max_capacity": 20000,
-    "requires_approval": false,
-    "registration_form_config": [],
-    "approval_message": "Your registration is pending approval. You will receive an email once reviewed.",
-    "recurrence_type": "none",
-    "recurrence_end_date": null,
-    "parent_event": null,
-    "is_recurring_instance": false
-  }
-}
 ]
-
