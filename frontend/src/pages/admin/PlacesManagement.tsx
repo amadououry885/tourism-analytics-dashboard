@@ -186,7 +186,26 @@ export default function PlacesManagement() {
 
   const handleEdit = (place: Place) => {
     setEditingPlace(place);
-    setFormData(place);
+    // Properly transform the place data for the form
+    setFormData({
+      ...place,
+      // Ensure price is a string for the input field
+      price: place.price !== null && place.price !== undefined ? String(place.price) : '0.00',
+      // Ensure is_free is a boolean
+      is_free: place.is_free ?? true,
+      // Ensure is_open is a boolean
+      is_open: place.is_open ?? true,
+      // Ensure currency has a default
+      currency: place.currency || 'MYR',
+      // Ensure amenities object exists
+      amenities: place.amenities || {
+        parking: false,
+        wifi: false,
+        wheelchair_accessible: false,
+        restaurant: false,
+        restroom: false
+      }
+    });
     setImageFile(null);
     setImagePreview(place.image_url || '');
     setShowModal(true);
