@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://tourism-analytics-dashboard.onrender.com/api/:path*"
+      "destination": "https://tourism-analytics-backend.onrender.com/api/:path*"
     },
     {
       "source": "/((?!assets|api).*)",

@@ -36,7 +36,7 @@ import BusinessManagement from './BusinessManagement';
 // Backend URL for media files
 const BACKEND_URL = import.meta.env.DEV 
   ? 'http://localhost:8000'
-  : 'https://tourism-analytics-dashboard.onrender.com';
+  : 'https://tourism-analytics-backend.onrender.com';
 
 // Helper to get full document URL
 const getDocumentUrl = (documentPath: string | undefined): string => {

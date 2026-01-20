@@ -62,7 +62,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Use same API URL logic as api.ts service
 const API_BASE_URL = import.meta.env.DEV 
   ? '/api'  // Vite proxy will forward to localhost:8000
-  : 'https://tourism-analytics-dashboard.onrender.com/api';
+  : 'https://tourism-analytics-backend.onrender.com/api';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
