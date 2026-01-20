@@ -3,12 +3,13 @@ Add social media posts for new Alor Setar destinations
 """
 import os
 import django
-from datetime import datetime, timedelta
+from datetime import timedelta
 import random
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tourism_api.settings')
 django.setup()
 
+from django.utils import timezone
 from analytics.models import Place, SocialPost
 
 # Get all Alor Setar places that don't have posts yet
@@ -93,9 +94,9 @@ for place in alor_setar_places:
         template = random.choice(templates)
         content = template.format(name=place.name)
         
-        # Random date within last 30 days
+        # Random date within last 30 days (timezone-aware)
         days_ago = random.randint(1, 30)
-        post_date = datetime.now() - timedelta(days=days_ago)
+        post_date = timezone.now() - timedelta(days=days_ago)
         
         # Random engagement numbers
         likes = random.randint(50, 500)

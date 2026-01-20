@@ -7,8 +7,10 @@ Works with or without API keys (gracefully degrades to demo data).
 
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import timedelta
 import random
+
+from django.utils import timezone
 
 # Add the parent directory to the path so we can import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -117,7 +119,7 @@ class SocialMediaScraper:
                     'post_id': str(tweet.id),
                     'content': tweet.text,
                     'url': f"https://twitter.com/user/status/{tweet.id}",
-                    'created_at': tweet.created_at.isoformat() if tweet.created_at else datetime.now().isoformat(),
+                    'created_at': tweet.created_at.isoformat() if tweet.created_at else timezone.now().isoformat(),
                     'likes': metrics.get('like_count', 0),
                     'comments': metrics.get('reply_count', 0),
                     'shares': metrics.get('retweet_count', 0),
@@ -204,7 +206,7 @@ class SocialMediaScraper:
                                     'post_id': post.get('id', f'ig_{random.randint(1000, 9999)}'),
                                     'content': caption or f'Instagram post about tourism',
                                     'url': post.get('permalink', f'https://instagram.com/'),
-                                    'created_at': post.get('timestamp', datetime.now().isoformat()),
+                                    'created_at': post.get('timestamp', timezone.now().isoformat()),
                                     'likes': post.get('like_count', 0),
                                     'comments': post.get('comments_count', 0),
                                     'shares': 0,
@@ -294,7 +296,7 @@ class SocialMediaScraper:
                 'post_id': f'demo_twitter_{i}_{random.randint(1000, 9999)}',
                 'content': content,
                 'url': f'https://twitter.com/demo/status/{random.randint(100000, 999999)}',
-                'created_at': (datetime.now() - timedelta(days=random.randint(0, 30))).isoformat(),
+                'created_at': (timezone.now() - timedelta(days=random.randint(0, 30))).isoformat(),
                 'likes': random.randint(50, 5000),
                 'comments': random.randint(5, 500),
                 'shares': random.randint(10, 1000),
@@ -315,7 +317,7 @@ class SocialMediaScraper:
                 'post_id': f'demo_facebook_{i}_{random.randint(1000, 9999)}',
                 'content': f'Great day trip to {place} with the family! 👨‍👩‍👧‍👦',
                 'url': f'https://facebook.com/demo/posts/{random.randint(100000, 999999)}',
-                'created_at': (datetime.now() - timedelta(days=random.randint(0, 30))).isoformat(),
+                'created_at': (timezone.now() - timedelta(days=random.randint(0, 30))).isoformat(),
                 'likes': random.randint(100, 10000),
                 'comments': random.randint(10, 1000),
                 'shares': random.randint(20, 2000),
@@ -336,7 +338,7 @@ class SocialMediaScraper:
                 'post_id': f'demo_tiktok_{i}_{random.randint(1000, 9999)}',
                 'content': f'Check out this amazing view at {place}! #travel #tourism',
                 'url': f'https://tiktok.com/@demo/video/{random.randint(100000, 999999)}',
-                'created_at': (datetime.now() - timedelta(days=random.randint(0, 30))).isoformat(),
+                'created_at': (timezone.now() - timedelta(days=random.randint(0, 30))).isoformat(),
                 'likes': random.randint(1000, 100000),
                 'comments': random.randint(50, 5000),
                 'shares': random.randint(100, 10000),
