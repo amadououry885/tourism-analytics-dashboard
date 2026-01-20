@@ -215,8 +215,8 @@ def approve_user(request, user_id):
 def reject_user(request, user_id):
     """
     Admin rejects/deactivates a user (admin only).
-    Only vendor and stay_owner accounts can be rejected.
-    Admin accounts and tourists are not subject to rejection.
+    Only vendor, stay_owner, and place_owner accounts can be rejected.
+    Admin accounts are not subject to rejection.
     
     Request body (optional):
         {
@@ -233,10 +233,10 @@ def reject_user(request, user_id):
     try:
         user = User.objects.get(id=user_id)
         
-        # Only vendor and stay_owner can be rejected
-        if user.role not in ('vendor', 'stay_owner'):
+        # Vendor, stay_owner, and place_owner can be rejected
+        if user.role not in ('vendor', 'stay_owner', 'place_owner'):
             return Response(
-                {'detail': f'Only vendor or stay_owner accounts can be rejected. User has role: {user.role}'},
+                {'detail': f'Only vendor, stay_owner, or place_owner accounts can be rejected. User has role: {user.role}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
