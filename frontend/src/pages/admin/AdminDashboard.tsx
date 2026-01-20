@@ -217,7 +217,10 @@ const AdminDashboard: React.FC = () => {
     if (window.confirm('Are you sure you want to reject this user?')) {
       try {
         await request(`/auth/admin/users/${userId}/reject/`, { method: 'POST' }, '✅ User rejected!');
-        fetchPendingUsers();
+        // Immediately remove from local state for instant UI feedback
+        setPendingUsers(prev => prev.filter(u => u.id !== userId));
+        // Also refresh from server to ensure sync
+        await fetchPendingUsers();
       } catch (error) {
         console.error('Failed to reject user:', error);
       }
