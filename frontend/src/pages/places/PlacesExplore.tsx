@@ -21,8 +21,8 @@ interface Place {
 
 // --- Theme Constants ---
 const THEME = {
-  bg: '#0f172a',
-  bgCard: '#1e293b',
+  bg: '#374870ff',
+  bgCard: '#093172ff',
   text: '#ffffff',
   textSecondary: '#94a3b8',
   accent: '#2dd4bf',       // Teal

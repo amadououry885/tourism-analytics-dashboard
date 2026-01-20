@@ -89,6 +89,24 @@ const defaultPlaces = [
   { name: 'Eagle Square', visitors: 38500, rating: 4.4, trend: 5 }
 ];
 
+// Default data for Most Visited Places
+const defaultMostVisited = [
+  { id: 1, name: 'Langkawi Sky Bridge', category: 'Landmark', city: 'Langkawi', engagement: 125000, posts: 89, sentiment: 85, rating: 4.7 },
+  { id: 2, name: 'Menara Alor Setar', category: 'Landmark', city: 'Alor Setar', engagement: 58400, posts: 42, sentiment: 78, rating: 4.5 },
+  { id: 3, name: 'Zahir Mosque', category: 'Religious', city: 'Alor Setar', engagement: 49200, posts: 38, sentiment: 82, rating: 4.6 },
+  { id: 4, name: 'Underwater World', category: 'Attraction', city: 'Langkawi', engagement: 42000, posts: 35, sentiment: 75, rating: 4.3 },
+  { id: 5, name: 'Eagle Square', category: 'Landmark', city: 'Langkawi', engagement: 38500, posts: 31, sentiment: 80, rating: 4.4 },
+];
+
+// Default data for Hidden Gems (Least Visited)
+const defaultLeastVisited = [
+  { id: 6, name: 'Nobat Tower', category: 'Historical', city: 'Alor Setar', engagement: 680, posts: 12, sentiment: 72, rating: 4.3 },
+  { id: 7, name: 'Royal Museum', category: 'Museum', city: 'Alor Setar', engagement: 520, posts: 9, sentiment: 68, rating: 4.2 },
+  { id: 8, name: 'Balai Besar', category: 'Historical', city: 'Alor Setar', engagement: 450, posts: 8, sentiment: 70, rating: 4.1 },
+  { id: 9, name: 'Laman Padi', category: 'Cultural', city: 'Langkawi', engagement: 380, posts: 7, sentiment: 75, rating: 4.4 },
+  { id: 10, name: 'Pekan Rabu', category: 'Shopping', city: 'Alor Setar', engagement: 320, posts: 6, sentiment: 65, rating: 4.0 },
+];
+
 const CITIES = [
   { value: 'all', label: 'All Regions', icon: '🌍' },
   { value: 'langkawi', label: 'Langkawi', icon: '🏝️' },
@@ -112,6 +130,8 @@ const SENTIMENT_COLORS = {
 export default function AnalyticsPage() {
   const [metrics, setMetrics] = useState<OverviewMetrics>(defaultMetrics);
   const [topPlaces, setTopPlaces] = useState(defaultPlaces);
+  const [mostVisited, setMostVisited] = useState(defaultMostVisited);
+  const [leastVisited, setLeastVisited] = useState(defaultLeastVisited);
   const [loading, setLoading] = useState(true);
   
   const [selectedCity, setSelectedCity] = useState('all');
@@ -125,17 +145,19 @@ export default function AnalyticsPage() {
         if (selectedCity && selectedCity !== 'all') params.append('city', selectedCity);
         params.append('period', timeRange);
 
-        const [metricsRes, placesRes, sentimentRes] = await Promise.all([
+        const [metricsRes, placesRes, sentimentRes, mostVisitedRes, leastVisitedRes] = await Promise.all([
           api.get(`/analytics/overview-metrics/?${params.toString()}`).catch(() => ({ data: null })),
           api.get(`/analytics/places/popular/?${params.toString()}`).catch(() => ({ data: [] })),
           api.get(`/analytics/sentiment/summary/?${params.toString()}`).catch(() => ({ data: null })),
+          api.get(`/analytics/places/by-visit-level/?level=most`).catch(() => ({ data: [] })),
+          api.get(`/analytics/places/by-visit-level/?level=least`).catch(() => ({ data: [] })),
         ]);
+
+        // Helper to check if array has data
+        const hasData = (arr: any) => Array.isArray(arr) && arr.length > 0;
 
         if (metricsRes.data) {
           const data = metricsRes.data;
-          
-          // Helper to check if array has data
-          const hasData = (arr: any) => Array.isArray(arr) && arr.length > 0;
           
           setMetrics({
             totalPosts: data.total_posts || defaultMetrics.totalPosts,
@@ -163,6 +185,34 @@ export default function AnalyticsPage() {
             visitors: p.total_engagement || p.visitors || p.posts || 0,
             rating: p.rating || p.avg_rating || 4.0,
             trend: Math.floor(Math.random() * 20) - 5
+          })));
+        }
+
+        // Set most visited places
+        if (hasData(mostVisitedRes.data)) {
+          setMostVisited(mostVisitedRes.data.slice(0, 5).map((p: any) => ({
+            id: p.id,
+            name: p.name || p.place_name,
+            category: p.category || 'Attraction',
+            city: p.city || 'Kedah',
+            engagement: p.total_engagement || p.engagement || 0,
+            posts: p.posts_count || p.posts || 0,
+            sentiment: p.sentiment?.positive_percentage || 75,
+            rating: p.sentiment?.rating || p.rating || 4.0
+          })));
+        }
+
+        // Set least visited places (hidden gems)
+        if (hasData(leastVisitedRes.data)) {
+          setLeastVisited(leastVisitedRes.data.slice(0, 5).map((p: any) => ({
+            id: p.id,
+            name: p.name || p.place_name,
+            category: p.category || 'Attraction',
+            city: p.city || 'Kedah',
+            engagement: p.total_engagement || p.engagement || 0,
+            posts: p.posts_count || p.posts || 0,
+            sentiment: p.sentiment?.positive_percentage || 70,
+            rating: p.sentiment?.rating || p.rating || 4.0
           })));
         }
       } catch (err) {
@@ -296,7 +346,6 @@ export default function AnalyticsPage() {
             value={timeRange}
             onChange={(val) => setTimeRange(val as string)}
             accentColor={THEME.accent}
-            icon={<Calendar size={16} />}
           />
         </div>
       </div>
@@ -574,6 +623,186 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
+              </div>
+            </section>
+
+            {/* Most Visited & Hidden Gems Section */}
+            <section style={{ marginBottom: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
+                
+                {/* Most Visited Places */}
+                <div style={{
+                  backgroundColor: THEME.bgCard,
+                  borderRadius: '16px',
+                  padding: '28px',
+                  border: `1px solid rgba(34, 197, 94, 0.3)`,
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                }}>
+                  <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', color: THEME.text, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <TrendingUp size={20} color="#22c55e" />
+                        Most Visited Places
+                      </h3>
+                      <p style={{ fontSize: '14px', color: THEME.textSecondary }}>Top performing destinations by engagement</p>
+                    </div>
+                    <div style={{
+                      backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                      color: '#16a34a',
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                    }}>
+                      {mostVisited.length} places
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {mostVisited.map((place, index) => (
+                      <div
+                        key={place.id}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '12px 14px',
+                          backgroundColor: '#f0fdf4',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(34, 197, 94, 0.2)',
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#dcfce7';
+                          e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#f0fdf4';
+                          e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.2)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{
+                            width: '28px', height: '28px', borderRadius: '8px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: '700', fontSize: '13px', color: '#ffffff',
+                            backgroundColor: index === 0 ? '#22c55e' : index === 1 ? '#16a34a' : index === 2 ? '#15803d' : '#166534'
+                          }}>
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div style={{ color: THEME.text, fontWeight: '600', fontSize: '14px' }}>{place.name}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                              <span style={{ color: THEME.textSecondary, fontSize: '11px' }}>{place.category}</span>
+                              <span style={{ color: '#94a3b8', fontSize: '11px' }}>•</span>
+                              <span style={{ color: THEME.textSecondary, fontSize: '11px' }}>{place.city}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ color: '#22c55e', fontWeight: '700', fontSize: '14px' }}>
+                            {formatNumber(place.engagement)}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                            <span style={{ color: '#eab308', fontSize: '11px' }}>★ {place.rating.toFixed(1)}</span>
+                            <span style={{ color: THEME.textSecondary, fontSize: '11px' }}>{place.posts} posts</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Hidden Gems (Least Visited) */}
+                <div style={{
+                  backgroundColor: THEME.bgCard,
+                  borderRadius: '16px',
+                  padding: '28px',
+                  border: '1px solid rgba(249, 115, 22, 0.3)',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                }}>
+                  <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', color: THEME.text, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '20px' }}>💎</span>
+                        Hidden Gems
+                      </h3>
+                      <p style={{ fontSize: '14px', color: THEME.textSecondary }}>Undiscovered treasures waiting to explore</p>
+                    </div>
+                    <div style={{
+                      backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                      color: '#ea580c',
+                      padding: '4px 12px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                    }}>
+                      {leastVisited.length} gems
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {leastVisited.map((place) => (
+                      <div
+                        key={place.id}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '12px 14px',
+                          backgroundColor: '#fff7ed',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(249, 115, 22, 0.2)',
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#ffedd5';
+                          e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#fff7ed';
+                          e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{
+                            width: '28px', height: '28px', borderRadius: '8px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '16px', backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                          }}>
+                            💎
+                          </div>
+                          <div>
+                            <div style={{ color: THEME.text, fontWeight: '600', fontSize: '14px' }}>{place.name}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                              <span style={{ color: THEME.textSecondary, fontSize: '11px' }}>{place.category}</span>
+                              <span style={{ color: '#94a3b8', fontSize: '11px' }}>•</span>
+                              <span style={{ color: THEME.textSecondary, fontSize: '11px' }}>{place.city}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ color: '#f97316', fontWeight: '700', fontSize: '14px' }}>
+                            {formatNumber(place.engagement)}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                            <span style={{ color: '#eab308', fontSize: '11px' }}>★ {place.rating.toFixed(1)}</span>
+                            <span style={{ color: THEME.textSecondary, fontSize: '11px' }}>{place.posts} posts</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Hidden Gems Promotion Banner */}
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '14px',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    borderRadius: '12px',
+                    border: '1px dashed rgba(249, 115, 22, 0.3)',
+                  }}>
+                    <p style={{ fontSize: '13px', color: '#ea580c', fontWeight: '500', textAlign: 'center' }}>
+                      ✨ These hidden gems have great ratings but low visibility - perfect for authentic experiences!
+                    </p>
+                  </div>
+                </div>
               </div>
             </section>
           </>
