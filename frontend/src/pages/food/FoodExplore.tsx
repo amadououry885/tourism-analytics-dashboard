@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added for click navigation
+import { useNavigate } from 'react-router-dom'; 
 import { Search, Utensils, Star, DollarSign, Check, ChevronLeft, ChevronRight, MapPin, ArrowRight } from 'lucide-react';
 import api from '../../services/api';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
@@ -21,18 +21,18 @@ interface Restaurant {
   is_halal: boolean;
 }
 
-// --- Theme Constants (Matching Home Page) ---
+// --- Theme Constants ---
 const THEME = {
   bg: '#0f172a',           // Slate 900
   bgCard: '#1e293b',       // Slate 800
   text: '#ffffff',         // White
   textSecondary: '#94a3b8', // Slate 400
-  accent: '#2dd4bf',       // Teal 400 (Primary Brand Color)
-  highlight: '#fbef00',    // Yellow (Buttons/Highlights)
+  accent: '#2dd4bf',       // Teal 400
+  highlight: '#fbef00',    // Yellow
   border: 'rgba(255, 255, 255, 0.1)',
 };
 
-const ITEMS_PER_PAGE = 9; // Adjusted for grid layout
+const ITEMS_PER_PAGE = 9;
 
 export default function FoodExplore() {
   const navigate = useNavigate();
@@ -80,7 +80,6 @@ export default function FoodExplore() {
       } catch (err) {
         console.error('Error fetching restaurants:', err);
         setError('Failed to load restaurants.');
-        // Keep your demo data fallback here if needed
       } finally {
         setLoading(false);
       }
@@ -91,7 +90,6 @@ export default function FoodExplore() {
   // --- Derived Carousel Data (Top 5 Rated) ---
   const carouselSlides = useMemo(() => {
     if (restaurants.length === 0) return [];
-    // Sort by rating and take top 5 for the hero section
     return [...restaurants].sort((a, b) => b.rating - a.rating).slice(0, 5);
   }, [restaurants]);
 
@@ -146,16 +144,31 @@ export default function FoodExplore() {
     <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, color: THEME.text, fontFamily: 'Poppins, sans-serif' }}>
       <SharedHeader />
 
+      {/* --- INLINE STYLES FOR ANIMATIONS & SCROLLBARS --- */}
       <style>{`
-        .glass-panel {
-          background: rgba(15, 23, 42, 0.75);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        /* Hide scrollbar for clean horizontal scrolling */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Smooth transitions for pills */
+        .filter-action-btn {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .hero-text-shadow {
-          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        .filter-action-btn:hover {
+          background-color: rgba(255, 255, 255, 0.1) !important;
+          transform: translateY(-1px);
         }
+        .filter-action-btn:active {
+          transform: translateY(0);
+        }
+        
+        /* Search Input Focus Glow */
+        .search-container:focus-within {
+          border-color: ${THEME.accent} !important;
+          box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.25);
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
       `}</style>
 
       {/* --- HERO CAROUSEL SECTION --- */}
@@ -178,12 +191,12 @@ export default function FoodExplore() {
               />
               <div style={{
                 position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                background: 'linear-gradient(to right, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.4) 50%, rgba(15,23,42,0.1) 100%)'
+                background: 'linear-gradient(to right, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.5) 60%, rgba(15,23,42,0.1) 100%)'
               }} />
             </div>
           ))}
 
-          {/* Hero Content (Left Aligned like reference image) */}
+          {/* Hero Content */}
           <div style={{
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
             width: '100%', maxWidth: '1200px', padding: '0 24px', zIndex: 10,
@@ -220,9 +233,8 @@ export default function FoodExplore() {
               </div>
             </div>
 
-            {/* Circular Feature Image (Like reference image 2) */}
             <div style={{ 
-              display: 'none', // Hidden on mobile, block on desktop
+              display: 'none', 
               '@media (min-width: 768px)': { display: 'block' } 
             }} className="md:block">
               <div style={{
@@ -239,7 +251,6 @@ export default function FoodExplore() {
             </div>
           </div>
 
-          {/* Carousel Arrows */}
           <button onClick={prevSlide} style={{ position: 'absolute', left: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white' }}>
             <ChevronLeft size={28} />
           </button>
@@ -248,46 +259,103 @@ export default function FoodExplore() {
           </button>
         </div>
       ) : (
-        // Fallback Header if Loading
         <div style={{ paddingTop: '150px', paddingBottom: '60px', textAlign: 'center', background: 'linear-gradient(to bottom, #0f172a, #1e293b)' }}>
           <h1 style={{ fontSize: '48px', fontWeight: 'bold' }}>Explore Food</h1>
           <p style={{ color: THEME.textSecondary }}>Loading culinary delights...</p>
         </div>
       )}
 
-      {/* --- FILTERS BAR --- */}
+
+      {/* --- IMPROVED FILTERS BAR (UNIFIED CAPSULE) --- */}
       <div style={{
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: `1px solid ${THEME.border}`,
         position: 'sticky',
         top: '70px',
         zIndex: 40,
-        padding: '20px 0',
+        marginBottom: '30px',
+        padding: '10px 24px',
+        marginTop: '-30px', // Pull up slightly to overlap hero if desired, or keep flat
       }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
-          
-          {/* Search */}
-          <div style={{ position: 'relative', flex: '1 1 300px' }}>
-            <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: THEME.textSecondary, width: '20px' }} />
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          backgroundColor: 'rgba(30, 41, 59, 0.8)', // Slate 800 with opacity
+          backdropFilter: 'blur(16px)',            // Heavy blur for glass effect
+          borderRadius: '50px',                    // Fully rounded capsule
+          border: `1px solid rgba(255, 255, 255, 0.1)`,
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          padding: '8px 12px',
+          gap: '16px',
+          flexWrap: 'wrap' 
+        }}>
+
+          {/* 1. SEARCH SECTION */}
+          <div 
+            className="search-container"
+            style={{ 
+              flex: '1 1 300px', 
+              position: 'relative', 
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: 'rgba(15, 23, 42, 0.6)', 
+              borderRadius: '50px',
+              border: '1px solid transparent', 
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{ paddingLeft: '16px', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+              <Search size={18} color={THEME.textSecondary} />
+            </div>
             <input
               type="text"
-              placeholder="Find a restaurant..."
+              placeholder="Search food, restaurants..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
-                width: '100%', padding: '12px 16px 12px 48px', borderRadius: '50px',
-                border: `1px solid ${THEME.border}`, backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                color: 'white', outline: 'none', fontSize: '15px'
+                width: '100%', 
+                padding: '12px 12px', 
+                backgroundColor: 'transparent',
+                border: 'none', 
+                color: 'white', 
+                outline: 'none', 
+                fontSize: '14px'
               }}
             />
+             {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  style={{ background: 'transparent', border: 'none', color: THEME.textSecondary, paddingRight: '16px', cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
+             )}
           </div>
 
-          {/* Filter Dropdowns */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {/* 2. VERTICAL DIVIDER (Desktop Only) */}
+          <div style={{ 
+            width: '1px', 
+            height: '24px', 
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            display: 'none',
+            '@media (min-width: 768px)': { display: 'block' }
+          }} className="hidden md:block"></div>
+
+          {/* 3. FILTERS ROW */}
+          <div className="no-scrollbar" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px', 
+            overflowX: 'auto',
+            padding: '4px 0',
+            flex: '0 0 auto',
+            maxWidth: '100%' 
+          }}>
+            
             <FilterDropdown
               label="Cuisine"
-              icon={<Utensils size={16} />}
+              icon={<Utensils size={14} />}
               options={cuisines.map(c => ({ value: c, label: c, icon: '🍽️' }))}
               value={selectedCuisine}
               onChange={(val) => setSelectedCuisine(val as string)}
@@ -296,42 +364,50 @@ export default function FoodExplore() {
             
             <FilterDropdown
               label="Price"
-              icon={<DollarSign size={16} />}
+              icon={<DollarSign size={14} />}
               options={[{ value: 'All', label: 'All', icon: '' }, { value: '$', label: '$', icon: '' }, { value: '$$', label: '$$', icon: '' }, { value: '$$$', label: '$$$', icon: '' }]}
               value={selectedPrice}
               onChange={(val) => setSelectedPrice(val as string)}
               accentColor={THEME.accent}
             />
 
+            {/* Styled Halal Button */}
             <button
               onClick={() => setHalalOnly(!halalOnly)}
+              className="filter-action-btn"
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '50px',
-                border: halalOnly ? `1px solid ${THEME.accent}` : `1px solid ${THEME.border}`,
-                backgroundColor: halalOnly ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
+                display: 'flex', alignItems: 'center', gap: '6px', 
+                padding: '8px 16px', borderRadius: '50px',
+                border: halalOnly ? `1px solid ${THEME.accent}` : `1px solid rgba(255,255,255,0.1)`,
+                backgroundColor: halalOnly ? 'rgba(45, 212, 191, 0.15)' : 'rgba(255, 255, 255, 0.05)',
                 color: halalOnly ? THEME.accent : THEME.textSecondary,
-                cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px', fontWeight: '500'
+                cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: '500'
               }}
             >
-              Halal Only {halalOnly && <Check size={16} />}
+              {halalOnly ? <Check size={14} strokeWidth={3} /> : null}
+              Halal Only
             </button>
 
-             <SortDropdown
-                options={[
-                  { value: 'rating', label: 'Rating', icon: '⭐' },
-                  { value: 'reviews', label: 'Popularity', icon: '💬' },
-                  { value: 'name', label: 'Name', icon: '🔤' },
-                ]}
-                value={sortBy}
-                onChange={(val) => setSortBy(val as any)}
-                accentColor={THEME.accent}
-              />
+             {/* Styled Sort Dropdown */}
+             <div style={{ paddingLeft: '8px' }}>
+               <SortDropdown
+                  options={[
+                    { value: 'rating', label: 'Top Rated', icon: '⭐' },
+                    { value: 'reviews', label: 'Popular', icon: '🔥' },
+                    { value: 'name', label: 'Name (A-Z)', icon: 'abc' },
+                  ]}
+                  value={sortBy}
+                  onChange={(val) => setSortBy(val as any)}
+                  accentColor={THEME.highlight}
+                />
+             </div>
           </div>
         </div>
       </div>
 
-      {/* --- GRID CONTENT --- */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}>
+
+      {/* --- MAIN GRID CONTENT --- */}
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 60px 24px' }}>
         {loading ? (
            <div style={{ color: THEME.accent, textAlign: 'center', padding: '60px' }}>Loading...</div>
         ) : filteredRestaurants.length === 0 ? (
@@ -343,7 +419,6 @@ export default function FoodExplore() {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
               {paginatedRestaurants.map((place) => (
-                // --- CARD COMPONENT (Inspired by uploaded image 1) ---
                 <div
                   key={place.id}
                   onClick={() => navigate(`/food/${place.id}`)}
@@ -368,7 +443,7 @@ export default function FoodExplore() {
                     e.currentTarget.style.borderColor = THEME.border;
                   }}
                 >
-                  {/* Image Area */}
+                  {/* Card Image Area */}
                   <div style={{ height: '220px', position: 'relative' }}>
                     <img
                       src={place.image_url || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600'}
@@ -385,7 +460,7 @@ export default function FoodExplore() {
                     )}
                   </div>
 
-                  {/* Content Area */}
+                  {/* Card Content Area */}
                   <div style={{ padding: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
                       <h3 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0, flex: 1 }}>{place.name}</h3>
@@ -396,7 +471,6 @@ export default function FoodExplore() {
                        <MapPin size={14} /> {place.city} • {place.cuisine}
                     </p>
 
-                    {/* Bottom Action Bar (Inspired by uploaded image 1) */}
                     <div style={{ 
                       marginTop: '16px', 
                       paddingTop: '16px', 
@@ -405,7 +479,7 @@ export default function FoodExplore() {
                       justifyContent: 'space-between', 
                       alignItems: 'center' 
                     }}>
-                       <span style={{ fontSize: '14px', color: place.is_open ? '#4ade80' : '#f87171' }}>
+                       <span style={{ fontSize: '14px', color: place.is_open ? '#4ade80' : '#f87171', fontWeight: '500' }}>
                          {place.is_open ? 'Open Now' : 'Closed'}
                        </span>
                        
