@@ -52,7 +52,7 @@ export function MasterDetailLayout({
                   placeholder={searchPlaceholder}
                   value={searchValue}
                   onChange={(e) => onSearchChange?.(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary shadow-sm"
                 />
               </div>
             )}
@@ -65,7 +65,7 @@ export function MasterDetailLayout({
         <div className="flex flex-1 min-h-0">
           {/* Left Panel - Scrollable List */}
           <div 
-            className={`${leftPanelWidth} overflow-y-auto flex-shrink-0`}
+            className={`${leftPanelWidth} overflow-y-auto flex-shrink-0 bg-white`}
             style={{ 
               borderRight: '1px solid #E5E7EB'
             }}
@@ -91,7 +91,7 @@ export function MasterDetailLayout({
   // Legacy layout for backward compatibility
   // Fixed height container with independent scrolling panels
   return (
-    <div className={`flex ${className}`} style={{ height: '600px', overflow: 'hidden' }}>
+    <div className={`flex ${className} bg-white border border-gray-200 rounded-xl overflow-hidden`} style={{ height: '600px' }}>
       {/* Left Panel - Scrollable List - Fixed width */}
       <div 
         style={{ 
@@ -99,8 +99,9 @@ export function MasterDetailLayout({
           flexShrink: 0,
           borderRight: '1px solid #E5E7EB',
           height: '100%',
-          overflowY: 'scroll',
-          WebkitOverflowScrolling: 'touch'
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          backgroundColor: '#FFFFFF'
         }}
       >
         {leftPanel}
@@ -114,10 +115,10 @@ export function MasterDetailLayout({
           flexGrow: 1,
           height: '100%',
           maxHeight: '100%',
-          overflowY: 'scroll',
+          overflowY: 'auto',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
-          backgroundColor: 'white',
+          backgroundColor: '#F9FAFB', // Very light gray for contrast
           position: 'relative',
           scrollBehavior: 'smooth',
           display: 'block'
@@ -128,4 +129,3 @@ export function MasterDetailLayout({
     </div>
   );
 }
-

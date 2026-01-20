@@ -301,7 +301,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+          <Card className="bg-white animate-pulse shadow-soft border-gray-100">
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -312,7 +312,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white animate-pulse" style={{ borderRadius: '14px', border: '1px solid #E4E9F2', boxShadow: '0px 6px 20px rgba(15, 23, 42, 0.06)' }}>
+          <Card className="bg-white animate-pulse shadow-soft border-gray-100">
             <CardContent className="p-6">
               <div>
                 <div className="w-full h-64 bg-gray-200 rounded"></div>
@@ -327,13 +327,13 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   if (error) {
     return (
       <div className="w-full text-center py-8">
-        <div className="text-red-600 font-medium mb-2">Network Error</div>
+        <div className="text-destructive font-medium mb-2">Network Error</div>
         <div className="text-sm text-gray-600 mb-4">
           {error}
         </div>
         <button
           onClick={fetchDestinations}
-          className="px-4 py-2 rounded bg-blue-600 text-white"
+          className="px-4 py-2 rounded bg-primary text-white hover:bg-primary/90 transition-colors"
         >
           Retry
         </button>
@@ -377,9 +377,9 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
   };
 
   return (
-    <div className="flex flex-col h-full animate-fadeIn">
+    <div className="flex flex-col h-full animate-fadeIn gap-4">
       {/* Filters Bar - Modern Dropdown Pattern */}
-      <Card className="bg-white flex-shrink-0" style={{ border: '1px solid #E5E7EB' }}>
+      <Card className="bg-white border-gray-200 shadow-soft">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3 items-center">
             {/* Search */}
@@ -391,7 +391,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   placeholder="Search places..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white shadow-sm"
                 />
               </div>
             </div>
@@ -416,7 +416,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               onChange={(val) => setSelectedCategory(val as string)}
               searchable={categories.length > 5}
               placeholder="Search categories..."
-              accentColor="#2563EB"
+              accentColor="#0ea5e9"
             />
 
             {/* Rating Dropdown */}
@@ -435,7 +435,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   setSortBy('rating');
                 }
               }}
-              accentColor="#2563EB"
+              accentColor="#0ea5e9"
             />
 
             {/* Sort Dropdown */}
@@ -447,7 +447,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               ]}
               value={sortBy}
               onChange={(val) => setSortBy(val as 'popularity' | 'name' | 'rating')}
-              accentColor="#2563EB"
+              accentColor="#0ea5e9"
             />
 
             {/* Free Only Toggle */}
@@ -456,12 +456,12 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               icon={<Ticket className="w-4 h-4" />}
               checked={showFreeOnly}
               onChange={setShowFreeOnly}
-              accentColor="#2563EB"
+              accentColor="#0ea5e9"
             />
 
             {/* Results Count */}
             <div className="text-sm text-gray-600 ml-auto flex items-center gap-2">
-              <span className="font-bold text-blue-600">{filteredDestinations.length}</span>
+              <span className="font-bold text-primary">{filteredDestinations.length}</span>
               <span className="text-gray-500">places</span>
             </div>
           </div>
@@ -469,13 +469,13 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       </Card>
 
       {/* Master-Detail Layout */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 bg-white rounded-xl border border-gray-200 shadow-soft overflow-hidden">
         <MasterDetailLayout
           className="h-full"
           leftPanel={
-          <div className="bg-white">
+          <div className="bg-white h-full">
             {filteredDestinations.length === 0 ? (
-              <div className="p-8 text-center">
+              <div className="p-8 text-center h-full flex flex-col items-center justify-center">
                 <MapPin className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <h3 className="text-lg font-bold text-gray-700 mb-2">No destinations found</h3>
                 <p className="text-sm text-gray-500">Try adjusting your filters</p>
@@ -487,7 +487,7 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   index={index}
                   title={destination.name}
                   subtitle={`${destination.city || ''} ${destination.category ? '• ' + destination.category : ''}`}
-                  accentColor="#2563EB"
+                  accentColor="#0ea5e9"
                   metrics={[
                     { 
                       label: 'Posts', 
@@ -502,12 +502,12 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
                   ]}
                   badge={
                     destination.is_open ? (
-                      <Badge className="bg-green-600 border-green-600 font-bold shadow-sm" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderColor: '#16a34a' }}>
+                      <Badge className="bg-green-600 border-green-600 font-bold shadow-sm text-white">
                         <Clock className="w-3 h-3 mr-1" />
                         OPEN
                       </Badge>
                     ) : (
-                      <Badge className="bg-red-600 border-red-600 font-bold shadow-sm" style={{ backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' }}>
+                      <Badge className="bg-red-600 border-red-600 font-bold shadow-sm text-white">
                         <Clock className="w-3 h-3 mr-1" />
                         CLOSED
                       </Badge>
@@ -527,17 +527,17 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               subtitle={`${selectedDestination.city || 'Kedah'} • ${selectedDestination.category || 'Attraction'}`}
               image={selectedDestination.image_url}
               actions={
-                <div className="flex gap-3">
+                <div className="flex gap-3 mt-4">
                   <button
                     onClick={handleGetDirections}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-sm"
                   >
                     <Navigation className="w-5 h-5" />
                     Get Directions
                   </button>
                   <button
                     onClick={handleShare}
-                    className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-4 py-3 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                   >
                     <Share2 className="w-5 h-5" />
                   </button>
@@ -545,112 +545,104 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
               }
             >
               {/* Metrics Grid */}
-              <div className="grid grid-cols-3 gap-4 w-full">
-                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <MessageCircle className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-                  <div className="text-2xl font-bold text-blue-900">{selectedDestination.posts || 0}</div>
-                  <div className="text-xs text-blue-600 font-medium">Posts</div>
+              <div className="grid grid-cols-3 gap-4 w-full mb-6">
+                <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <MessageCircle className="w-6 h-6 mx-auto mb-2 text-primary" />
+                  <div className="text-2xl font-bold text-gray-900">{selectedDestination.posts || 0}</div>
+                  <div className="text-xs text-gray-600 font-medium uppercase tracking-wide">Posts</div>
                 </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-100">
                   <TrendingUp className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-                  <div className="text-2xl font-bold text-purple-900">{selectedDestination.engagement || 0}</div>
-                  <div className="text-xs text-purple-600 font-medium">Engagement</div>
+                  <div className="text-2xl font-bold text-gray-900">{selectedDestination.engagement || 0}</div>
+                  <div className="text-xs text-gray-600 font-medium uppercase tracking-wide">Engagement</div>
                 </div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <Star className="w-6 h-6 mx-auto mb-2 text-yellow-600" />
-                  <div className="text-2xl font-bold text-yellow-900">{selectedDestination.rating && typeof selectedDestination.rating === 'number' ? selectedDestination.rating.toFixed(1) : 'N/A'}</div>
-                  <div className="text-xs text-yellow-600 font-medium">Rating</div>
+                <div className="text-center p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <Star className="w-6 h-6 mx-auto mb-2 text-amber-500" />
+                  <div className="text-2xl font-bold text-gray-900">{selectedDestination.rating && typeof selectedDestination.rating === 'number' ? selectedDestination.rating.toFixed(1) : 'N/A'}</div>
+                  <div className="text-xs text-gray-600 font-medium uppercase tracking-wide">Rating</div>
                 </div>
               </div>
 
               {/* Place Details */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Place Details</h3>
-
-                {/* About */}
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-xs font-bold">ℹ</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 mb-1">About</h4>
-                    <p className="text-sm text-gray-600">
-                      {selectedDestination.description || "Description not yet published."}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Visiting Information */}
+              <div className="space-y-8">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Visiting Information</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <DollarSign className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-600">Pricing:</span>
-                      <span className="ml-auto text-gray-900">
-                        {selectedDestination.is_free ? (
-                          "Free Entry"
-                        ) : selectedDestination.price ? (
-                          `${selectedDestination.currency || 'RM'} ${selectedDestination.price}`
-                        ) : (
-                          "Not publicly listed"
-                        )}
-                      </span>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">ℹ</span>
+                    About
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed text-sm">
+                    {selectedDestination.description || "Description not yet published."}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Visiting Information */}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 border-b border-gray-100 pb-2">Visiting Information</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-500">
+                           <DollarSign className="w-4 h-4" />
+                           <span>Pricing</span>
+                        </div>
+                        <span className="font-medium text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                          {selectedDestination.is_free ? (
+                            "Free Entry"
+                          ) : selectedDestination.price ? (
+                            `${selectedDestination.currency || 'RM'} ${selectedDestination.price}`
+                          ) : (
+                            "Not listed"
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-500">
+                           <Clock className="w-4 h-4" />
+                           <span>Hours</span>
+                        </div>
+                        <span className="font-medium text-gray-900">
+                          {selectedDestination.opening_hours || "Not listed"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-600">Opening hours:</span>
-                      <span className="ml-auto text-gray-900">
-                        {selectedDestination.opening_hours || "Not public listed"}
-                      </span>
+                  </div>
+
+                  {/* Contact & Location */}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 border-b border-gray-100 pb-2">Contact</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-500">
+                           <Phone className="w-4 h-4" />
+                           <span>Phone</span>
+                        </div>
+                        <span className="font-medium text-gray-900 text-right truncate max-w-[120px]">
+                          {selectedDestination.contact_phone || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                         <div className="flex items-center gap-2 text-gray-500">
+                           <MapPin className="w-4 h-4" />
+                           <span>Address</span>
+                         </div>
+                         <span className="font-medium text-gray-900 text-right truncate max-w-[120px]" title={selectedDestination.address}>
+                           {selectedDestination.address || "N/A"}
+                         </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Contact & Location */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Contact & Location</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-600">Contact details:</span>
-                      <span className="ml-auto text-gray-900">
-                        {selectedDestination.contact_phone || selectedDestination.contact_email || "Not provided"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-600">Address:</span>
-                      <span className="ml-auto text-gray-900">
-                        {selectedDestination.address || "Not provided"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* External Resources */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">External Resources</h4>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Globe className="w-4 h-4 text-gray-600" />
-                    <span className="text-gray-600">Official links:</span>
-                    <span className="ml-auto text-gray-900">
-                      {(selectedDestination.official_website || selectedDestination.wikipedia_url || selectedDestination.tripadvisor_url) ? (
-                        "Not available"
-                      ) : (
-                        "Not available"
-                      )}
-                    </span>
-                  </div>
-                </div>
               </div>
             </DetailPanel>
           ) : (
-            <div className="h-full flex items-center justify-center p-8 text-center">
-              <div>
-                <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Select a destination</h3>
-                <p className="text-gray-500">Choose a destination from the list to view details</p>
+            <div className="h-full flex items-center justify-center p-8 text-center bg-gray-50/50">
+              <div className="max-w-md">
+                <div className="w-20 h-20 bg-white rounded-full shadow-soft flex items-center justify-center mx-auto mb-6">
+                  <MapPin className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Select a destination</h3>
+                <p className="text-gray-500">Choose a destination from the list to view detailed analytics, visitor information, and trends.</p>
               </div>
             </div>
           )
@@ -658,32 +650,33 @@ export function PopularDestinations({ selectedCity, timeRange }: PopularDestinat
       />
       </div>
 
-      {/* Least Visited Destinations */}
+      {/* Least Visited Destinations - Clean cards */}
       {leastVisited.length > 0 && (
-        <Card className="bg-white border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900">Hidden Gems - Least Posted</CardTitle>
-            <CardDescription className="text-gray-900">Destinations with low social engagement</CardDescription>
+        <Card className="bg-white border-gray-200 shadow-soft">
+          <CardHeader className="border-b border-gray-100 bg-gray-50/30">
+            <CardTitle className="text-gray-900 text-lg flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Hidden Gems & Emerging Spots
+            </CardTitle>
+            <CardDescription className="text-gray-500">Destinations with growth potential but lower current engagement</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {leastVisited.map((destination) => (
-                <div key={destination.name} className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-gray-900 font-medium">{destination.name}</h4>
-                    <Badge className="bg-orange-500/20 text-orange-700 border-orange-500/30">
+                <div key={destination.name} className="p-4 bg-white rounded-xl border border-gray-100 hover:border-amber-200 hover:shadow-md transition-all group">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-gray-900 font-semibold group-hover:text-amber-600 transition-colors">{destination.name}</h4>
+                    <Badge className="bg-amber-100 text-amber-700 border-amber-200">
                       ⭐ {destination.rating && typeof destination.rating === 'number' ? destination.rating.toFixed(1) : '0.0'}
                     </Badge>
                   </div>
-                  <div className="space-y-1 text-sm text-gray-900">
-                    <div className="flex items-center justify-between">
-                      <span>Posts:</span>
-                      <span className="font-medium">{destination.posts?.toLocaleString() || '0'}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-orange-700 mt-2">
-                      <TrendingDown className="w-4 h-4" />
-                      <span className="text-xs">Potential for growth</span>
-                    </div>
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <span>Current Posts:</span>
+                    <span className="font-mono font-bold text-gray-900">{destination.posts?.toLocaleString() || '0'}</span>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-50 flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+                    <TrendingDown className="w-3.5 h-3.5" />
+                    <span>Opportunity for promotion</span>
                   </div>
                 </div>
               ))}

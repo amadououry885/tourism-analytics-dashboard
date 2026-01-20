@@ -10,16 +10,13 @@ import { AnalyticsOverview } from '../components/AnalyticsOverview';
 import AccommodationSearch from '../pages/accommodation/AccommodationSearch';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CitySelector } from '../components/CitySelector';
+import { BarChart3, Home, Search, Briefcase, Key } from 'lucide-react';
 
 export default function TourismDashboard() {
-  // NEW FLOW VERIFICATION - Remove after confirming
-  console.log('NEW FLOW ACTIVE - TourismDashboard.tsx');
-  
   const [searchParams] = useSearchParams();
   const [timeRange, setTimeRange] = useState('month');
   const [selectedCity, setSelectedCity] = useState('all');
   const [activeTab, setActiveTab] = useState('destinations');
-  // Force rebuild for color scheme update
 
   // ✨ Read URL parameters and switch tabs automatically
   useEffect(() => {
@@ -36,71 +33,71 @@ export default function TourismDashboard() {
   }, [searchParams]);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#F7F9FC' }}>
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Header - Fixed */}
-      <header className="flex-shrink-0 bg-slate-900 border-b border-slate-800 shadow-lg z-50">
+      <header className="flex-shrink-0 bg-white border-b border-gray-200 shadow-sm z-50">
         {/* Top bar: Logo + Nav + Filters */}
-        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="text-white text-base sm:text-xl md:text-2xl font-bold hover:text-teal-400 transition">Kedah Tourism</Link>
+            <Link to="/" className="text-gray-900 text-xl md:text-2xl font-bold hover:text-primary transition no-underline">Kedah Tourism</Link>
             
             {/* Right side: Nav Links + Filters */}
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+            <div className="flex items-center gap-4">
               {/* Nav Links */}
-              <Link to="/" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 font-medium">🏠 Home</Link>
-              <Link to="/explore" className="text-[10px] sm:text-xs md:text-sm text-teal-400 font-medium">🔍 Explore</Link>
-              <Link to="/register" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 hidden sm:inline">💼 Business</Link>
-              <Link to="/sign-in" className="text-[10px] sm:text-xs md:text-sm text-slate-300 hover:text-teal-400 font-medium">🔑 Sign In</Link>
+              <Link to="/" className="text-sm text-gray-600 hover:text-primary font-medium flex items-center gap-1 no-underline"><Home size={16} /> Home</Link>
+              <Link to="/explore" className="text-sm text-gray-600 hover:text-primary font-medium flex items-center gap-1 no-underline"><Search size={16} /> Explore</Link>
+              <Link to="/register" className="text-sm text-gray-600 hover:text-primary hidden sm:inline-flex items-center gap-1 no-underline"><Briefcase size={16} /> Business</Link>
+              <Link to="/sign-in" className="text-sm text-gray-600 hover:text-primary font-medium flex items-center gap-1 no-underline"><Key size={16} /> Sign In</Link>
               
               {/* Divider */}
-              <span className="hidden sm:inline text-slate-600">|</span>
+              <span className="hidden sm:inline text-gray-300">|</span>
               
               {/* Filters */}
               <CitySelector selectedCity={selectedCity} onCityChange={setSelectedCity} />
               <select 
                 value={timeRange} 
                 onChange={(e) => setTimeRange(e.target.value)}
-                className="border border-slate-600 bg-slate-800 text-slate-200 rounded px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs md:text-sm"
+                className="border border-gray-300 bg-white text-gray-700 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
               >
                 <option value="week">7D</option>
                 <option value="month">30D</option>
                 <option value="quarter">3M</option>
                 <option value="year">1Y</option>
               </select>
-              <span className="bg-teal-500 text-white text-[9px] sm:text-xs px-1.5 py-0.5 rounded font-medium">Live</span>
+              <span className="bg-green-100 text-green-700 border border-green-200 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                Live
+              </span>
             </div>
           </div>
         </div>
         
         {/* Tabs Navigation - Professional */}
-        <div className="w-full bg-white border-t border-slate-200 pb-2">
-          <div className="container mx-auto px-2 sm:px-4 md:px-6 py-2 md:py-3">
-            <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
+        <div className="w-full bg-white border-t border-gray-100 pb-0">
+          <div className="container mx-auto px-4 pt-1">
+            <div className="flex gap-6 overflow-x-auto">
               {[
-                { id: 'destinations', label: '🗺️ Places' },
-                { id: 'restaurants', label: '🍽️ Food' },
-                { id: 'accommodation', label: '🏨 Stay' },
-                { id: 'events', label: '📅 Events' },
-                { id: 'overview', label: '📊 Overview' },
+                { id: 'destinations', label: 'Places', icon: '🗺️' },
+                { id: 'restaurants', label: 'Food', icon: '🍽️' },
+                { id: 'accommodation', label: 'Stay', icon: '🏨' },
+                { id: 'events', label: 'Events', icon: '📅' },
+                { id: 'overview', label: 'Overview', icon: '📊' },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 sm:px-5 md:px-8 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base md:text-lg font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                  className={`relative px-1 py-3 text-base font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
                     activeTab === tab.id
-                      ? 'text-white border-none shadow-sm'
-                      : 'bg-transparent border-none hover:text-slate-900'
+                      ? 'text-primary'
+                      : 'text-gray-500 hover:text-gray-800'
                   }`}
-                  style={activeTab === tab.id ? {
-                    backgroundColor: '#2563EB',
-                    borderRadius: '10px'
-                  } : {
-                    backgroundColor: 'transparent',
-                    color: '#64748B'
-                  }}
                 >
+                  <span className="text-lg">{tab.icon}</span>
                   {tab.label}
+                  {activeTab === tab.id && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></span>
+                  )}
                 </button>
               ))}
             </div>
@@ -109,10 +106,10 @@ export default function TourismDashboard() {
       </header>
 
       {/* Main Content - Scrollable Area */}
-      <main className="flex-1 overflow-hidden">
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-8 h-full">
+      <main className="flex-1 overflow-hidden bg-gray-50/50">
+        <div className="container mx-auto px-4 py-6 h-full">
           {activeTab === 'overview' && (
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
               <AnalyticsOverview selectedCity={selectedCity} timeRange={timeRange} />
             </div>
           )}
@@ -136,11 +133,6 @@ export default function TourismDashboard() {
           )}
         </div>
       </main>
-      
-      {/* ✅ NEW UI ACTIVE MARKER - Remove after confirming */}
-      <div className="fixed bottom-2 right-2 bg-green-600 text-white px-3 py-1 text-xs rounded-full shadow-lg z-[99999]">
-        ✅ NEW UI v2.0 - Jan 16
-      </div>
     </div>
   );
 }
