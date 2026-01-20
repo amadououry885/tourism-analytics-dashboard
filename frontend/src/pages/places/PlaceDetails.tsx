@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, MessageCircle, Clock, Navigation, Share2, Ticket, Calendar, ExternalLink, Bookmark, Flag, Send, X, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, MessageCircle, Clock, Navigation, Share2, Ticket, Calendar, ExternalLink, Bookmark, Flag, Send, X, AlertTriangle, CheckCircle, Phone, Mail, Globe, Sun, Car, Wifi, Accessibility, UtensilsCrossed, Bath } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -22,6 +22,21 @@ interface PlaceDetail {
   entry_fee?: string;
   website?: string;
   phone?: string;
+  // New fields
+  contact_phone?: string;
+  contact_email?: string;
+  best_time_to_visit?: string;
+  official_website?: string;
+  wikipedia_url?: string;
+  tripadvisor_url?: string;
+  google_maps_url?: string;
+  amenities?: {
+    parking?: boolean;
+    wifi?: boolean;
+    wheelchair_accessible?: boolean;
+    restaurant?: boolean;
+    restroom?: boolean;
+  };
 }
 
 export default function PlaceDetails() {
@@ -576,6 +591,7 @@ export default function PlaceDetails() {
           borderRadius: '16px',
           padding: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
+          marginBottom: '24px',
         }}>
           <h2 style={{
             fontSize: '20px',
@@ -606,6 +622,16 @@ export default function PlaceDetails() {
                 </div>
               </div>
             )}
+
+            {place.best_time_to_visit && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Sun size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Best Time to Visit</div>
+                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>{place.best_time_to_visit}</div>
+                </div>
+              </div>
+            )}
             
             {place.entry_fee && (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -616,25 +642,257 @@ export default function PlaceDetails() {
                 </div>
               </div>
             )}
-            
-            {place.website && (
+
+            {(place.contact_phone || place.phone) && (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <ExternalLink size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
+                <Phone size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Website</div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Phone</div>
                   <a 
-                    href={place.website}
+                    href={`tel:${place.contact_phone || place.phone}`}
+                    style={{ fontSize: '15px', color: '#2dd4bf', textDecoration: 'none' }}
+                  >
+                    {place.contact_phone || place.phone}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {place.contact_email && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Mail size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Email</div>
+                  <a 
+                    href={`mailto:${place.contact_email}`}
+                    style={{ fontSize: '15px', color: '#2dd4bf', textDecoration: 'none' }}
+                  >
+                    {place.contact_email}
+                  </a>
+                </div>
+              </div>
+            )}
+            
+            {(place.website || place.official_website) && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Globe size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Official Website</div>
+                  <a 
+                    href={place.official_website || place.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontSize: '15px', color: '#2dd4bf', textDecoration: 'none' }}
                   >
-                    {place.website}
+                    Visit Website
                   </a>
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* External Links */}
+        {(place.wikipedia_url || place.tripadvisor_url || place.google_maps_url) && (
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            marginBottom: '24px',
+          }}>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: '#ffffff',
+              marginBottom: '20px',
+            }}>
+              External Links
+            </h2>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {place.wikipedia_url && (
+                <a
+                  href={place.wikipedia_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '10px',
+                    color: '#e2e8f0',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <ExternalLink size={16} />
+                  Wikipedia
+                </a>
+              )}
+              {place.tripadvisor_url && (
+                <a
+                  href={place.tripadvisor_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    backgroundColor: 'rgba(0, 175, 135, 0.15)',
+                    border: '1px solid rgba(0, 175, 135, 0.3)',
+                    borderRadius: '10px',
+                    color: '#00af87',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <ExternalLink size={16} />
+                  TripAdvisor
+                </a>
+              )}
+              {place.google_maps_url && (
+                <a
+                  href={place.google_maps_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    backgroundColor: 'rgba(66, 133, 244, 0.15)',
+                    border: '1px solid rgba(66, 133, 244, 0.3)',
+                    borderRadius: '10px',
+                    color: '#4285f4',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <MapPin size={16} />
+                  Google Maps
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Amenities */}
+        {place.amenities && Object.values(place.amenities).some(v => v) && (
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: '#ffffff',
+              marginBottom: '20px',
+            }}>
+              Amenities
+            </h2>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {place.amenities.parking && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '10px',
+                  color: '#22c55e',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <Car size={18} />
+                  Parking Available
+                </div>
+              )}
+              {place.amenities.wifi && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '10px',
+                  color: '#3b82f6',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <Wifi size={18} />
+                  Free WiFi
+                </div>
+              )}
+              {place.amenities.wheelchair_accessible && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '10px',
+                  color: '#a855f7',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <Accessibility size={18} />
+                  Wheelchair Accessible
+                </div>
+              )}
+              {place.amenities.restaurant && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(249, 115, 22, 0.15)',
+                  border: '1px solid rgba(249, 115, 22, 0.3)',
+                  borderRadius: '10px',
+                  color: '#f97316',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <UtensilsCrossed size={18} />
+                  Restaurant
+                </div>
+              )}
+              {place.amenities.restroom && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(45, 212, 191, 0.15)',
+                  border: '1px solid rgba(45, 212, 191, 0.3)',
+                  borderRadius: '10px',
+                  color: '#2dd4bf',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <Bath size={18} />
+                  Restroom
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Success Notification */}
