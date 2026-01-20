@@ -1,36 +1,24 @@
+// src/pages/places/PlacesExplore.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Grid, Star, Ticket, MapPin, ArrowRight, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Grid, MapPin, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import api from '../../services/api';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 import Pagination from '../../components/Pagination';
+import { PlaceCard, Place } from './PlaceCard'; // Ensure this path is correct!
 
-// --- Types ---
-interface Place {
-  id: number;
-  name: string;
-  city: string;
-  category: string;
-  image_url: string;
-  rating: number;
-  posts: number;
-  is_open: boolean;
-  is_free: boolean;
-  description: string;
-}
-
-// --- Theme Constants ---
-const THEME = {
-  bg: '#374870ff',
-  bgCard: '#093172ff',
-  text: '#ffffff',
-  textSecondary: '#94a3b8',
-  accent: '#2dd4bf',       // Teal
-  highlight: '#fbef00',    // Yellow
-  border: 'rgba(255, 255, 255, 0.1)',
-};
-
+// --- Types are imported from PlaceCard, but we need local state types ---
 const ITEMS_PER_PAGE = 9;
+
+// --- Theme Constants (Light Mode) ---
+const THEME = {
+  bg: '#f8fafc',           // Slate 50 (Very light gray)
+  text: '#0f172a',         // Slate 900
+  textSecondary: '#64748b',// Slate 500
+  accent: '#1e3a8a',       // Deep Blue
+  highlight: '#f97316',    // Orange
+  border: '#e2e8f0',       // Light Border
+};
 
 export default function PlacesExplore() {
   const navigate = useNavigate();
@@ -82,15 +70,12 @@ export default function PlacesExplore() {
     fetchPlaces();
   }, []);
 
-  // --- Carousel Data Derived from Places ---
-  // We take the top 5 places to use as slides. 
-  // If no places are loaded yet, we show a placeholder.
+  // --- Carousel Logic ---
   const carouselSlides = useMemo(() => {
     if (places.length === 0) return [];
-    return places.slice(0, 5); // Take the first 5 places
+    return places.slice(0, 5); 
   }, [places]);
 
-  // --- Carousel Auto-Play Logic ---
   useEffect(() => {
     if (carouselSlides.length === 0) return;
     const timer = setInterval(() => {
@@ -104,7 +89,7 @@ export default function PlacesExplore() {
 
   // --- Filtering Logic ---
   const categories: string[] = useMemo(() => {
-    const uniqueCats = places.map(p => p.category).filter(c => typeof c === 'string' && c.length > 0);
+    const uniqueCats = places.map(p => p.category).filter(c => typeof c === 'string' && c.length > 0) as string[];
     return ['All', ...Array.from(new Set(uniqueCats)).sort()];
   }, [places]);
 
@@ -138,17 +123,18 @@ export default function PlacesExplore() {
       <SharedHeader />
 
       <style>{`
-        .glass-panel {
-          background: rgba(15, 23, 42, 0.6);
-          backdrop-filter: blur(8px);
+        /* Glass panel for Carousel only */
+        .glass-panel-dark {
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(12px);
           border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
       `}</style>
 
       {/* --- HERO CAROUSEL SECTION --- */}
-      {/* Only show carousel if we have data */}
       {!loading && carouselSlides.length > 0 && (
-        <div style={{ position: 'relative', height: '500px', marginTop: '70px', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: '500px', overflow: 'hidden' }}>
           
           {carouselSlides.map((place, index) => (
             <div
@@ -169,14 +155,15 @@ export default function PlacesExplore() {
                 alt={place.name} 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
+              {/* Gradient Overlay */}
               <div style={{
                 position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                background: 'linear-gradient(to bottom, rgba(15,23,42,0.2), rgba(15,23,42,0.9))'
+                background: 'linear-gradient(to bottom, rgba(30,58,138,0.2), rgba(15,23,42,0.6))'
               }} />
             </div>
           ))}
 
-          {/* Carousel Text Content */}
+          {/* Carousel Text Content - Keeps dark glass for contrast against image */}
           <div style={{
             position: 'absolute',
             top: '50%',
@@ -187,34 +174,36 @@ export default function PlacesExplore() {
             width: '90%',
             maxWidth: '800px'
           }}>
-            <div className="glass-panel" 
+            <div className="glass-panel-dark" 
               onClick={() => navigate(`/places/${carouselSlides[currentSlide].id}`)}
               style={{ padding: '40px', borderRadius: '24px', cursor: 'pointer' }}
             >
               <div style={{ 
                 display: 'inline-block', 
-                backgroundColor: THEME.highlight, 
-                color: 'black',
-                padding: '4px 12px',
+                backgroundColor: THEME.highlight, // Orange
+                color: 'white',
+                padding: '6px 16px',
                 borderRadius: '20px',
                 fontSize: '12px',
                 fontWeight: 'bold',
-                marginBottom: '16px',
-                textTransform: 'uppercase'
+                marginBottom: '20px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
               }}>
                 Featured Destination
               </div>
               <h1 style={{ 
                 fontSize: 'clamp(32px, 5vw, 56px)', 
-                fontWeight: 'bold', 
+                fontWeight: '800', 
                 color: 'white', 
                 marginBottom: '16px',
-                lineHeight: '1.2'
+                lineHeight: '1.1',
+                textShadow: '0 2px 10px rgba(0,0,0,0.3)'
               }}>
                 {carouselSlides[currentSlide].name}
               </h1>
               <p style={{ 
-                fontSize: 'clamp(16px, 3vw, 20px)', 
+                fontSize: 'clamp(16px, 3vw, 18px)', 
                 color: '#e2e8f0', 
                 maxWidth: '600px', 
                 margin: '0 auto',
@@ -225,52 +214,39 @@ export default function PlacesExplore() {
               }}>
                 {carouselSlides[currentSlide].description}
               </p>
-              <div style={{ marginTop: '24px', display: 'flex', gap: '16px', justifyContent: 'center', color: THEME.accent }}>
-                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={18}/> {carouselSlides[currentSlide].city}</span>
-                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Star size={18} fill={THEME.accent}/> {carouselSlides[currentSlide].rating}</span>
-              </div>
             </div>
           </div>
 
           {/* Controls */}
           <button onClick={prevSlide} style={{
             position: 'absolute', left: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20,
-            background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '48px', height: '48px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white'
+            background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '50%', 
+            width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white'
           }}>
             <ChevronLeft size={24} />
           </button>
           <button onClick={nextSlide} style={{
             position: 'absolute', right: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20,
-            background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '48px', height: '48px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white'
+            background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '50%', 
+            width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white'
           }}>
             <ChevronRight size={24} />
           </button>
-
-          {/* Dots */}
-          <div style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '12px', zIndex: 20 }}>
-            {carouselSlides.map((_, idx) => (
-              <button key={idx} onClick={() => setCurrentSlide(idx)}
-                style={{
-                  width: idx === currentSlide ? '32px' : '12px', height: '12px', borderRadius: '12px',
-                  backgroundColor: idx === currentSlide ? THEME.highlight : 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease'
-                }}
-              />
-            ))}
-          </div>
         </div>
       )}
 
-      {/* --- FILTERS BAR --- */}
+      {/* --- FILTERS BAR (Clean White) --- */}
       <div style={{
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        backdropFilter: 'blur(8px)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
         borderBottom: `1px solid ${THEME.border}`,
         position: 'sticky',
         top: '70px',
         zIndex: 40,
         padding: '16px 24px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
           {/* Search Input */}
@@ -284,13 +260,16 @@ export default function PlacesExplore() {
               style={{
                 width: '100%',
                 padding: '12px 16px 12px 44px',
-                borderRadius: '12px',
+                borderRadius: '50px', // Rounder search bar
                 border: `1px solid ${THEME.border}`,
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                color: 'white',
+                backgroundColor: '#f1f5f9',
+                color: THEME.text,
                 fontSize: '14px',
                 outline: 'none',
+                transition: 'border-color 0.2s',
               }}
+              onFocus={(e) => e.target.style.borderColor = THEME.accent}
+              onBlur={(e) => e.target.style.borderColor = THEME.border}
             />
           </div>
 
@@ -300,17 +279,18 @@ export default function PlacesExplore() {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 style={{
-                  padding: '10px 32px 10px 16px',
+                  padding: '10px 36px 10px 16px',
                   borderRadius: '8px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  backgroundColor: 'white',
                   border: `1px solid ${selectedCategory !== 'All' ? THEME.accent : THEME.border}`,
-                  color: selectedCategory !== 'All' ? THEME.accent : 'white',
+                  color: selectedCategory !== 'All' ? THEME.accent : THEME.text,
                   appearance: 'none',
                   cursor: 'pointer',
-                  minWidth: '140px'
+                  minWidth: '140px',
+                  fontWeight: '500'
                 }}
               >
-                {categories.map(c => <option key={c} value={c} style={{color: 'black'}}>{c}</option>)}
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               <Grid size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: THEME.textSecondary }} />
             </div>
@@ -320,14 +300,15 @@ export default function PlacesExplore() {
               style={{
                 padding: '10px 16px',
                 borderRadius: '8px',
-                backgroundColor: showFreeOnly ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
+                backgroundColor: showFreeOnly ? '#eff6ff' : 'white', // Light blue bg when active
                 border: `1px solid ${showFreeOnly ? THEME.accent : THEME.border}`,
                 color: showFreeOnly ? THEME.accent : THEME.textSecondary,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                fontWeight: '500'
+                fontWeight: '600',
+                transition: 'all 0.2s'
               }}
             >
               <Ticket size={16} />
@@ -338,15 +319,15 @@ export default function PlacesExplore() {
       </div>
 
       {/* --- MAIN GRID --- */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-            <div style={{ color: THEME.accent }}>Loading places...</div>
+            <div style={{ color: THEME.accent, fontWeight: 'bold' }}>Loading places...</div>
           </div>
         ) : filteredPlaces.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: THEME.textSecondary }}>
-            <MapPin size={48} style={{ opacity: 0.5, marginBottom: '16px', margin: '0 auto' }} />
-            <h3>No places found</h3>
+            <MapPin size={48} style={{ opacity: 0.3, marginBottom: '16px', margin: '0 auto' }} />
+            <h3 style={{fontSize: '20px', color: THEME.text}}>No places found</h3>
             <p>Try adjusting your search or filters</p>
           </div>
         ) : (
@@ -355,73 +336,10 @@ export default function PlacesExplore() {
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '24px',
+              marginBottom: '40px'
             }}>
               {paginatedPlaces.map((place) => (
-                <div
-                  key={place.id}
-                  onClick={() => navigate(`/places/${place.id}`)}
-                  style={{
-                    backgroundColor: THEME.bgCard,
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    border: `1px solid ${THEME.border}`,
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
-                    e.currentTarget.style.borderColor = THEME.accent;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.borderColor = THEME.border;
-                  }}
-                >
-                  <div style={{ height: '200px', position: 'relative', overflow: 'hidden' }}>
-                    <img
-                      src={place.image_url || 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80'}
-                      alt={place.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                    <div style={{
-                      position: 'absolute', top: '12px', left: '12px',
-                      backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-                      padding: '4px 10px', borderRadius: '8px', fontSize: '12px', color: 'white',
-                      border: '1px solid rgba(255,255,255,0.2)'
-                    }}>
-                      {place.category}
-                    </div>
-                    <div style={{
-                      position: 'absolute', bottom: '12px', right: '12px',
-                      backgroundColor: THEME.highlight, color: 'black',
-                      padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold',
-                      display: 'flex', alignItems: 'center', gap: '4px'
-                    }}>
-                      <Star size={12} fill="black" /> {place.rating}
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '20px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'white', marginBottom: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {place.name}
-                    </h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px', color: THEME.textSecondary, fontSize: '14px' }}>
-                      <MapPin size={14} color={THEME.accent} />
-                      {place.city}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: `1px solid ${THEME.border}`, paddingTop: '16px' }}>
-                      <span style={{ fontSize: '14px', color: place.is_free ? THEME.accent : 'white', fontWeight: '600' }}>
-                        {place.is_free ? 'Free Entry' : 'Ticketed'}
-                      </span>
-                      <button style={{ backgroundColor: 'transparent', border: 'none', color: THEME.highlight, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
-                        Explore <ArrowRight size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <PlaceCard key={place.id} place={place} />
               ))}
             </div>
 

@@ -21,15 +21,17 @@ interface Restaurant {
   is_halal: boolean;
 }
 
-// --- Theme Constants ---
+// --- Theme Constants (Light Mode: Blue & Orange) ---
 const THEME = {
-  bg: '#0f172a',           // Slate 900
-  bgCard: '#1e293b',       // Slate 800
-  text: '#ffffff',         // White
-  textSecondary: '#94a3b8', // Slate 400
-  accent: '#2dd4bf',       // Teal 400
-  highlight: '#fbef00',    // Yellow
-  border: 'rgba(255, 255, 255, 0.1)',
+  bg: '#f8fafc',           // Slate 50
+  bgCard: '#ffffff',       // White
+  textMain: '#0f172a',     // Slate 900
+  textSecondary: '#64748b',// Slate 500
+  primary: '#1e3a8a',      // Deep Blue
+  accent: '#f97316',       // Orange
+  success: '#10b981',      // Green
+  danger: '#ef4444',       // Red
+  border: '#e2e8f0',       // Light Gray Border
 };
 
 const ITEMS_PER_PAGE = 9;
@@ -58,6 +60,7 @@ export default function FoodExplore() {
     const fetchRestaurants = async () => {
       try {
         setLoading(true);
+        // Ensure this endpoint matches your backend
         const response = await api.get('/vendors/?page_size=100');
         const data = response.data.results || response.data || [];
         
@@ -105,7 +108,9 @@ export default function FoodExplore() {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
 
-  // --- Filtering Logic ---
+  // --- Filtering Logic (Memoized) ---
+  
+  
   useEffect(() => setCurrentPage(1), [searchTerm, selectedCuisine, selectedPrice, halalOnly, sortBy]);
 
   const cuisines = useMemo(() => {
@@ -141,31 +146,21 @@ export default function FoodExplore() {
   }, [filteredRestaurants, currentPage]);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, color: THEME.text, fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, color: THEME.textMain, fontFamily: 'Poppins, sans-serif' }}>
       <SharedHeader />
 
       {/* --- INLINE STYLES FOR ANIMATIONS & SCROLLBARS --- */}
       <style>{`
-        /* Hide scrollbar for clean horizontal scrolling */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Smooth transitions for pills */
-        .filter-action-btn {
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .filter-action-btn:hover {
-          background-color: rgba(255, 255, 255, 0.1) !important;
-          transform: translateY(-1px);
-        }
-        .filter-action-btn:active {
-          transform: translateY(0);
-        }
+        .filter-action-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .filter-action-btn:hover { background-color: #f1f5f9 !important; transform: translateY(-1px); }
+        .filter-action-btn:active { transform: translateY(0); }
         
-        /* Search Input Focus Glow */
         .search-container:focus-within {
-          border-color: ${THEME.accent} !important;
-          box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.25);
+          border-color: ${THEME.primary} !important;
+          box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -173,7 +168,7 @@ export default function FoodExplore() {
 
       {/* --- HERO CAROUSEL SECTION --- */}
       {!loading && carouselSlides.length > 0 ? (
-        <div style={{ position: 'relative', height: '600px', marginTop: '70px', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: '550px', marginTop: '70px', overflow: 'hidden' }}>
           {carouselSlides.map((item, index) => (
             <div
               key={item.id}
@@ -189,9 +184,10 @@ export default function FoodExplore() {
                 alt={item.name} 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
+              {/* Gradient Overlay */}
               <div style={{
                 position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                background: 'linear-gradient(to right, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.5) 60%, rgba(15,23,42,0.1) 100%)'
+                background: 'linear-gradient(to right, rgba(15, 23, 42, 0.9) 0%, rgba(30, 58, 138, 0.4) 60%, rgba(30, 58, 138, 0.1) 100%)'
               }} />
             </div>
           ))}
@@ -202,109 +198,89 @@ export default function FoodExplore() {
             width: '100%', maxWidth: '1200px', padding: '0 24px', zIndex: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between'
           }}>
-            <div style={{ maxWidth: '600px' }}>
-              <span style={{ color: THEME.highlight, fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>
+            <div style={{ maxWidth: '600px', color: 'white' }}>
+              <span style={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(4px)',
+                padding: '6px 12px', borderRadius: '4px',
+                fontSize: '12px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px', display: 'inline-block' 
+              }}>
                 Taste of Kedah
               </span>
-              <h1 style={{ fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 'bold', lineHeight: '1.1', marginBottom: '24px', fontFamily: 'Playfair Display, serif' }}>
+              <h1 style={{ fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: '800', lineHeight: '1.1', marginBottom: '24px', textShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
                 {carouselSlides[currentSlide].name}
               </h1>
-              <p style={{ fontSize: '18px', color: '#cbd5e1', marginBottom: '32px', lineHeight: '1.6' }}>
+              <p style={{ fontSize: '18px', color: '#e2e8f0', marginBottom: '32px', lineHeight: '1.6', fontWeight: '500' }}>
                 {carouselSlides[currentSlide].specialty} • Experience the finest {carouselSlides[currentSlide].cuisine} cuisine in {carouselSlides[currentSlide].city}.
               </p>
               
-              <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                 <button 
                   onClick={() => navigate(`/food/${carouselSlides[currentSlide].id}`)}
                   style={{
-                    backgroundColor: THEME.accent, color: '#000', padding: '14px 32px', borderRadius: '50px',
-                    fontSize: '16px', fontWeight: '600', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
+                    backgroundColor: THEME.accent, color: 'white', padding: '14px 32px', borderRadius: '50px',
+                    fontSize: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                    boxShadow: '0 4px 15px rgba(249, 115, 22, 0.4)'
                   }}
                 >
                   View Details <ArrowRight size={18} />
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white' }}>
-                  <div style={{ backgroundColor: THEME.highlight, padding: '8px', borderRadius: '50%' }}>
-                     <Star size={20} color="black" fill="black" />
-                  </div>
-                  <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{carouselSlides[currentSlide].rating}</span>
-                  <span style={{ color: THEME.textSecondary, fontSize: '14px' }}>({carouselSlides[currentSlide].reviews} reviews)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', backgroundColor: 'rgba(0,0,0,0.3)', padding: '8px 16px', borderRadius: '50px', backdropFilter: 'blur(4px)' }}>
+                  <Star size={20} fill="#fbbf24" color="#fbbf24" />
+                  <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{carouselSlides[currentSlide].rating}</span>
+                  <span style={{ color: '#cbd5e1', fontSize: '14px' }}>({carouselSlides[currentSlide].reviews} reviews)</span>
                 </div>
               </div>
             </div>
 
-            <div style={{ 
-              display: 'none', 
-              '@media (min-width: 768px)': { display: 'block' } 
-            }} className="md:block">
+            {/* Rotating Dish Image (Desktop) */}
+            <div style={{ display: 'none', '@media (min-width: 768px)': { display: 'block' } }} className="md:block">
               <div style={{
                 width: '350px', height: '350px', borderRadius: '50%', 
-                border: `4px solid ${THEME.accent}`, padding: '8px',
+                border: `4px solid rgba(255,255,255,0.2)`, padding: '8px',
                 animation: 'spin 60s linear infinite'
               }}>
                  <img 
                   src={carouselSlides[currentSlide].image_url} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
                   alt="Dish"
                  />
               </div>
             </div>
           </div>
 
-          <button onClick={prevSlide} style={{ position: 'absolute', left: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white' }}>
+          <button onClick={prevSlide} style={{ position: 'absolute', left: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white', transition: 'background 0.2s' }}>
             <ChevronLeft size={28} />
           </button>
-          <button onClick={nextSlide} style={{ position: 'absolute', right: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white' }}>
+          <button onClick={nextSlide} style={{ position: 'absolute', right: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white', transition: 'background 0.2s' }}>
             <ChevronRight size={28} />
           </button>
         </div>
       ) : (
-        <div style={{ paddingTop: '150px', paddingBottom: '60px', textAlign: 'center', background: 'linear-gradient(to bottom, #0f172a, #1e293b)' }}>
-          <h1 style={{ fontSize: '48px', fontWeight: 'bold' }}>Explore Food</h1>
+        <div style={{ paddingTop: '150px', paddingBottom: '60px', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '48px', fontWeight: 'bold', color: THEME.textMain }}>Explore Food</h1>
           <p style={{ color: THEME.textSecondary }}>Loading culinary delights...</p>
         </div>
       )}
 
-
-      {/* --- IMPROVED FILTERS BAR (UNIFIED CAPSULE) --- */}
+      {/* --- FILTER BAR (Floating Capsule) --- */}
       <div style={{
-        position: 'sticky',
-        top: '70px',
-        zIndex: 40,
-        marginBottom: '30px',
-        padding: '10px 24px',
-        marginTop: '-30px', // Pull up slightly to overlap hero if desired, or keep flat
+        position: 'sticky', top: '80px', zIndex: 40, marginBottom: '30px', padding: '0 24px', marginTop: '-30px'
       }}>
         <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          backgroundColor: 'rgba(30, 41, 59, 0.8)', // Slate 800 with opacity
-          backdropFilter: 'blur(16px)',            // Heavy blur for glass effect
-          borderRadius: '50px',                    // Fully rounded capsule
-          border: `1px solid rgba(255, 255, 255, 0.1)`,
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: '8px 12px',
-          gap: '16px',
-          flexWrap: 'wrap' 
+          maxWidth: '1200px', margin: '0 auto',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+          backdropFilter: 'blur(12px)',
+          borderRadius: '50px',
+          border: `1px solid ${THEME.border}`,
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+          display: 'flex', alignItems: 'center', padding: '8px 12px', gap: '16px', flexWrap: 'wrap' 
         }}>
 
-          {/* 1. SEARCH SECTION */}
-          <div 
-            className="search-container"
-            style={{ 
-              flex: '1 1 300px', 
-              position: 'relative', 
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: 'rgba(15, 23, 42, 0.6)', 
-              borderRadius: '50px',
-              border: '1px solid transparent', 
-              transition: 'all 0.2s ease'
-            }}
-          >
+          {/* Search */}
+          <div className="search-container" style={{ 
+              flex: '1 1 300px', display: 'flex', alignItems: 'center',
+              backgroundColor: '#f1f5f9', borderRadius: '50px', border: '1px solid transparent', transition: 'all 0.2s ease'
+          }}>
             <div style={{ paddingLeft: '16px', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
               <Search size={18} color={THEME.textSecondary} />
             </div>
@@ -314,44 +290,19 @@ export default function FoodExplore() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
-                width: '100%', 
-                padding: '12px 12px', 
-                backgroundColor: 'transparent',
-                border: 'none', 
-                color: 'white', 
-                outline: 'none', 
-                fontSize: '14px'
+                width: '100%', padding: '12px 12px', backgroundColor: 'transparent',
+                border: 'none', color: THEME.textMain, outline: 'none', fontSize: '14px', fontWeight: '500'
               }}
             />
              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')}
-                  style={{ background: 'transparent', border: 'none', color: THEME.textSecondary, paddingRight: '16px', cursor: 'pointer' }}
-                >
-                  ✕
-                </button>
+                <button onClick={() => setSearchTerm('')} style={{ background: 'transparent', border: 'none', color: THEME.textSecondary, paddingRight: '16px', cursor: 'pointer' }}>✕</button>
              )}
           </div>
 
-          {/* 2. VERTICAL DIVIDER (Desktop Only) */}
-          <div style={{ 
-            width: '1px', 
-            height: '24px', 
-            backgroundColor: 'rgba(255,255,255,0.15)',
-            display: 'none',
-            '@media (min-width: 768px)': { display: 'block' }
-          }} className="hidden md:block"></div>
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#e2e8f0', display: 'none', '@media (min-width: 768px)': { display: 'block' } }} className="hidden md:block"></div>
 
-          {/* 3. FILTERS ROW */}
-          <div className="no-scrollbar" style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '10px', 
-            overflowX: 'auto',
-            padding: '4px 0',
-            flex: '0 0 auto',
-            maxWidth: '100%' 
-          }}>
+          {/* Filters */}
+          <div className="no-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '10px', overflowX: 'auto', padding: '4px 0', flex: '0 0 auto', maxWidth: '100%' }}>
             
             <FilterDropdown
               label="Cuisine"
@@ -359,7 +310,7 @@ export default function FoodExplore() {
               options={cuisines.map(c => ({ value: c, label: c, icon: '🍽️' }))}
               value={selectedCuisine}
               onChange={(val) => setSelectedCuisine(val as string)}
-              accentColor={THEME.accent}
+              accentColor={THEME.primary}
             />
             
             <FilterDropdown
@@ -368,27 +319,24 @@ export default function FoodExplore() {
               options={[{ value: 'All', label: 'All', icon: '' }, { value: '$', label: '$', icon: '' }, { value: '$$', label: '$$', icon: '' }, { value: '$$$', label: '$$$', icon: '' }]}
               value={selectedPrice}
               onChange={(val) => setSelectedPrice(val as string)}
-              accentColor={THEME.accent}
+              accentColor={THEME.primary}
             />
 
-            {/* Styled Halal Button */}
             <button
               onClick={() => setHalalOnly(!halalOnly)}
               className="filter-action-btn"
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px', 
                 padding: '8px 16px', borderRadius: '50px',
-                border: halalOnly ? `1px solid ${THEME.accent}` : `1px solid rgba(255,255,255,0.1)`,
-                backgroundColor: halalOnly ? 'rgba(45, 212, 191, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                color: halalOnly ? THEME.accent : THEME.textSecondary,
-                cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: '500'
+                border: halalOnly ? `1px solid ${THEME.success}` : `1px solid ${THEME.border}`,
+                backgroundColor: halalOnly ? '#ecfdf5' : 'white',
+                color: halalOnly ? THEME.success : THEME.textSecondary,
+                cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '13px', fontWeight: '600'
               }}
             >
-              {halalOnly ? <Check size={14} strokeWidth={3} /> : null}
-              Halal Only
+              {halalOnly && <Check size={14} strokeWidth={3} />} Halal Only
             </button>
 
-             {/* Styled Sort Dropdown */}
              <div style={{ paddingLeft: '8px' }}>
                <SortDropdown
                   options={[
@@ -398,26 +346,28 @@ export default function FoodExplore() {
                   ]}
                   value={sortBy}
                   onChange={(val) => setSortBy(val as any)}
-                  accentColor={THEME.highlight}
+                  accentColor={THEME.accent}
                 />
              </div>
           </div>
         </div>
       </div>
 
-
-      {/* --- MAIN GRID CONTENT --- */}
+      {/* --- RESTAURANT GRID --- */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 60px 24px' }}>
         {loading ? (
-           <div style={{ color: THEME.accent, textAlign: 'center', padding: '60px' }}>Loading...</div>
+           <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
+             <div style={{ width: '40px', height: '40px', border: `3px solid ${THEME.primary}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+           </div>
         ) : filteredRestaurants.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: THEME.textSecondary }}>
-            <Utensils size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
+            <Utensils size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
             <h3>No restaurants found</h3>
+            <p>Try adjusting your filters</p>
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '32px' }}>
               {paginatedRestaurants.map((place) => (
                 <div
                   key={place.id}
@@ -428,75 +378,84 @@ export default function FoodExplore() {
                     overflow: 'hidden',
                     border: `1px solid ${THEME.border}`,
                     cursor: 'pointer',
-                    transition: 'transform 0.3s, box-shadow 0.3s',
+                    transition: 'all 0.3s ease',
                     position: 'relative',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = `0 20px 25px -5px rgba(0, 0, 0, 0.5)`;
-                    e.currentTarget.style.borderColor = THEME.accent;
+                    e.currentTarget.style.transform = 'translateY(-6px)';
+                    e.currentTarget.style.boxShadow = `0 12px 24px -8px rgba(30, 58, 138, 0.15)`;
+                    e.currentTarget.style.borderColor = '#cbd5e1';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
                     e.currentTarget.style.borderColor = THEME.border;
                   }}
                 >
-                  {/* Card Image Area */}
-                  <div style={{ height: '220px', position: 'relative' }}>
+                  {/* Image Area */}
+                  <div style={{ height: '200px', position: 'relative' }}>
                     <img
                       src={place.image_url || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600'}
                       alt={place.name}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                    <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: '6px 12px', borderRadius: '12px', color: THEME.highlight, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <Star size={14} fill={THEME.highlight} /> {place.rating}
+                    <div style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: 'white', padding: '6px 10px', borderRadius: '12px', color: THEME.textMain, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '800', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <Star size={12} fill="#fbbf24" color="#fbbf24" /> {place.rating}
                     </div>
                     {place.is_halal && (
-                      <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: THEME.accent, color: 'black', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+                      <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#065f46', color: 'white', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px' }}>
                         HALAL
                       </div>
                     )}
                   </div>
 
-                  {/* Card Content Area */}
-                  <div style={{ padding: '24px' }}>
+                  {/* Content Area */}
+                  <div style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                      <h3 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0, flex: 1 }}>{place.name}</h3>
-                      <span style={{ color: THEME.accent, fontWeight: '600' }}>{place.price_range}</span>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', color: THEME.textMain, margin: 0, flex: 1, lineHeight: '1.3' }}>{place.name}</h3>
+                      <span style={{ color: THEME.textSecondary, fontWeight: '500', fontSize: '14px' }}>{place.price_range}</span>
                     </div>
                     
-                    <p style={{ color: THEME.textSecondary, fontSize: '14px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <p style={{ color: THEME.textSecondary, fontSize: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                        <MapPin size={14} /> {place.city} • {place.cuisine}
                     </p>
 
                     <div style={{ 
-                      marginTop: '16px', 
                       paddingTop: '16px', 
                       borderTop: `1px solid ${THEME.border}`,
                       display: 'flex', 
                       justifyContent: 'space-between', 
                       alignItems: 'center' 
                     }}>
-                       <span style={{ fontSize: '14px', color: place.is_open ? '#4ade80' : '#f87171', fontWeight: '500' }}>
+                       <span style={{ 
+                         fontSize: '13px', 
+                         color: place.is_open ? THEME.success : THEME.danger, 
+                         fontWeight: '600',
+                         display: 'flex', alignItems: 'center', gap: '4px'
+                       }}>
+                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: place.is_open ? THEME.success : THEME.danger }}></div>
                          {place.is_open ? 'Open Now' : 'Closed'}
                        </span>
                        
                        <button style={{
-                         backgroundColor: THEME.highlight,
-                         color: 'black',
+                         backgroundColor: '#eff6ff', // Light Blue bg
+                         color: THEME.primary,
                          border: 'none',
                          padding: '8px 16px',
                          borderRadius: '8px',
                          fontSize: '13px',
-                         fontWeight: '600',
+                         fontWeight: '700',
                          display: 'flex',
                          alignItems: 'center',
                          gap: '6px',
-                         cursor: 'pointer'
-                       }}>
-                         Reserve <ArrowRight size={14} />
+                         cursor: 'pointer',
+                         transition: 'background 0.2s'
+                       }}
+                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dbeafe'}
+                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
+                       >
+                         View <ArrowRight size={14} />
                        </button>
                     </div>
                   </div>
@@ -504,14 +463,16 @@ export default function FoodExplore() {
               ))}
             </div>
 
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-              totalItems={filteredRestaurants.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              accentColor={THEME.accent}
-            />
+            <div style={{ marginTop: '40px' }}>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                totalItems={filteredRestaurants.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                accentColor={THEME.primary}
+              />
+            </div>
           </>
         )}
       </main>

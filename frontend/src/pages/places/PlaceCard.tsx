@@ -1,16 +1,18 @@
+// src/components/PlaceCard.tsx
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Star, MessageCircle, Clock, Tag } from 'lucide-react';
+import { MapPin, Star, Clock, Tag } from 'lucide-react';
 
-// --- Theme Constants (Consistent with EventCard) ---
+// --- Theme Constants ---
 const THEME = {
-  primary: '#3b82f6',       // Blue 500
-  secondary: '#06b6d4',     // Cyan 500
-  success: '#10b981',       // Emerald
+  primary: '#1e3a8a',       // Deep Blue (Trip.com style)
+  accent: '#f97316',        // Orange (Sofascore accent)
+  success: '#10b981',       // Green
   danger: '#ef4444',        // Red
-  warning: '#f59e0b',       // Amber
-  textMain: '#1e293b',      // Slate 800
+  textMain: '#0f172a',      // Slate 900
   textMuted: '#64748b',     // Slate 500
   bgCard: '#ffffff',
+  bgHover: '#f8fafc',
 };
 
 export interface Place {
@@ -38,28 +40,30 @@ export function PlaceCard({ place }: PlaceCardProps) {
       to={`/places/${place.id}`}
       style={{
         display: 'block',
-        borderRadius: '20px',
+        borderRadius: '16px', // Slightly less rounded for a cleaner look
         overflow: 'hidden',
         backgroundColor: THEME.bgCard,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)', // Very subtle base shadow
+        transition: 'all 0.3s ease-out', // Smooth ease-out
         cursor: 'pointer',
         textDecoration: 'none',
-        border: '1px solid rgba(226, 232, 240, 0.8)',
+        border: '1px solid #e2e8f0',
+        position: 'relative'
       }}
+      // REDUCED HOVER EFFECTS HERE
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-6px)';
-        e.currentTarget.style.boxShadow = `0 20px 25px -5px rgba(59, 130, 246, 0.15), 0 8px 10px -6px rgba(59, 130, 246, 0.1)`;
-        e.currentTarget.style.borderColor = THEME.primary;
+        e.currentTarget.style.transform = 'translateY(-3px)'; // Reduced from -6px
+        e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.1)'; // Soft gray shadow, no blue glow
+        e.currentTarget.style.borderColor = '#cbd5e1';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.06)';
-        e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.8)';
+        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.borderColor = '#e2e8f0';
       }}
     >
       {/* Image Container */}
-      <div style={{ position: 'relative', height: '220px', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
         <img
           src={place.image_url || defaultImage}
           alt={place.name}
@@ -69,27 +73,27 @@ export function PlaceCard({ place }: PlaceCardProps) {
             objectFit: 'cover',
             transition: 'transform 0.5s ease',
           }}
-          onMouseEnter={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1.05)'}
-          onMouseLeave={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1)'}
+          // REDUCED IMAGE ZOOM
+          onMouseEnter={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1.03)'} // Reduced from 1.05
+          onMouseLeave={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1.0)'}
           onError={(e) => {
             (e.target as HTMLImageElement).src = defaultImage;
           }}
         />
         
-        {/* Category Badge - Glassmorphism */}
+        {/* Category Badge */}
         {place.category && (
           <div style={{
             position: 'absolute',
             top: '12px',
             left: '12px',
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            color: '#ffffff',
-            padding: '6px 12px',
-            borderRadius: '20px',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            color: THEME.primary,
+            padding: '4px 10px',
+            borderRadius: '6px',
             fontSize: '11px',
-            fontWeight: '600',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            fontWeight: '700',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
@@ -97,55 +101,54 @@ export function PlaceCard({ place }: PlaceCardProps) {
           </div>
         )}
         
-        {/* Open/Closed Badge */}
+        {/* Open/Closed Status */}
         <div style={{
           position: 'absolute',
           top: '12px',
           right: '12px',
           backgroundColor: place.is_open ? THEME.success : THEME.danger,
-          color: place.is_open ? '#064e3b' : '#ffffff', // Dark text on green, white on red
-          padding: '6px 12px',
-          borderRadius: '20px',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '6px',
           fontSize: '11px',
-          fontWeight: '800',
+          fontWeight: '700',
           display: 'flex',
           alignItems: 'center',
           gap: '4px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
         }}>
           <Clock size={12} strokeWidth={3} />
           {place.is_open ? 'OPEN' : 'CLOSED'}
         </div>
         
-        {/* Free Badge - Replaced Purple with Blue/Cyan */}
+        {/* Free Tag - Using Orange to pop */}
         {place.is_free && (
           <div style={{
             position: 'absolute',
             bottom: '12px',
             right: '12px',
-            backgroundColor: THEME.primary, // Blue
-            color: '#ffffff',
-            padding: '6px 12px',
+            backgroundColor: THEME.accent, // Orange
+            color: 'white',
+            padding: '4px 10px',
             borderRadius: '20px',
             fontSize: '11px',
             fontWeight: '700',
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
-            boxShadow: '0 4px 6px rgba(59, 130, 246, 0.3)'
+            boxShadow: '0 4px 6px rgba(0,0,0,0.15)'
           }}>
             <Tag size={12} fill="white" />
-            FREE ENTRY
+            FREE
           </div>
         )}
       </div>
       
       {/* Content */}
-      <div style={{ padding: '20px' }}>
-        {/* Title */}
+      <div style={{ padding: '16px' }}>
         <h3 style={{
-          fontSize: '18px',
-          fontWeight: '800',
+          fontSize: '17px',
+          fontWeight: '700',
           color: THEME.textMain,
           marginBottom: '8px',
           lineHeight: '1.3',
@@ -160,58 +163,47 @@ export function PlaceCard({ place }: PlaceCardProps) {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px',
           color: THEME.textMuted,
-          fontSize: '14px',
+          fontSize: '13px',
           marginBottom: '16px',
         }}>
-          <MapPin size={16} color={THEME.primary} />
+          <MapPin size={14} color={THEME.primary} />
           <span>{place.city || 'Kedah'}</span>
         </div>
         
+        {/* Divider */}
+        <div style={{ height: '1px', backgroundColor: '#f1f5f9', marginBottom: '12px' }}></div>
+
         {/* Stats Row */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingTop: '16px',
-          borderTop: '1px solid #f1f5f9',
-        }}>
-          {/* Rating */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}>
-            <Star size={16} fill={THEME.warning} color={THEME.warning} />
-            <span style={{ fontWeight: '700', color: THEME.textMain, fontSize: '14px' }}>
-              {place.rating?.toFixed(1) || 'New'}
-            </span>
-             <span style={{ color: '#cbd5e1' }}>•</span>
-             {/* Posts/Reviews */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                color: THEME.textMuted,
-                fontSize: '13px',
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ 
+              backgroundColor: '#fffbeb', // Light yellow bg
+              padding: '2px 6px', 
+              borderRadius: '4px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '4px' 
             }}>
-                <span>{place.posts || 0} reviews</span>
+              <Star size={14} fill="#f59e0b" color="#f59e0b" />
+              <span style={{ fontWeight: '700', color: '#b45309', fontSize: '13px' }}>
+                {place.rating?.toFixed(1) || '4.5'}
+              </span>
             </div>
+            <span style={{ color: '#94a3b8', fontSize: '12px' }}>({place.posts || 12} reviews)</span>
           </div>
           
-           {/* Visual Link Indicator */}
-           <div style={{
-            color: THEME.primary,
-            backgroundColor: '#eff6ff', // Light blue bg
-            padding: '6px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-           }}>
-             <MapPin size={14} />
-           </div>
+          <span style={{ 
+            color: THEME.primary, 
+            fontSize: '13px', 
+            fontWeight: '600',
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '4px' 
+          }}>
+            Details →
+          </span>
         </div>
       </div>
     </Link>

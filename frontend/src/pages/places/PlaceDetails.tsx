@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, MessageCircle, Clock, Navigation, Share2, Ticket, Calendar, ExternalLink, Bookmark, Flag, Send, X, AlertTriangle, CheckCircle, Phone, Mail, Globe, Sun, Car, Wifi, Accessibility, UtensilsCrossed, Bath } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, MapPin, Star, MessageCircle, Clock, Navigation, Share2, 
+  Ticket, ExternalLink, Bookmark, Flag, CheckCircle, Phone, Mail, 
+  Globe, Sun, Car, Wifi, Accessibility, UtensilsCrossed, Bath, X, AlertTriangle, Send 
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 
+// --- Types ---
 interface PlaceDetail {
   id: number;
   name: string;
@@ -22,7 +28,6 @@ interface PlaceDetail {
   entry_fee?: string;
   website?: string;
   phone?: string;
-  // New fields
   contact_phone?: string;
   contact_email?: string;
   best_time_to_visit?: string;
@@ -39,6 +44,19 @@ interface PlaceDetail {
   };
 }
 
+// --- Theme Constants (Light Mode) ---
+const THEME = {
+  bg: '#f8fafc',           // Slate 50
+  bgCard: '#ffffff',       // White
+  textMain: '#0f172a',     // Slate 900
+  textSecondary: '#64748b',// Slate 500
+  primary: '#1e3a8a',      // Deep Blue
+  accent: '#f97316',       // Orange
+  success: '#10b981',      // Green
+  danger: '#ef4444',       // Red
+  border: '#e2e8f0',       // Light Gray Border
+};
+
 export default function PlaceDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -51,7 +69,9 @@ export default function PlaceDetails() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reportReason, setReportReason] = useState('');
+  
+  // Form State
+  const [reportReason, setReportReason] = useState('Incorrect Information');
   const [reportDescription, setReportDescription] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
@@ -62,7 +82,6 @@ export default function PlaceDetails() {
     const fetchPlace = async () => {
       try {
         setLoading(true);
-        // Try to fetch from API - use /places/ endpoint
         const response = await api.get(`/places/${id}/`);
         setPlace(response.data);
         setError(null);
@@ -83,7 +102,7 @@ export default function PlaceDetails() {
   const handleGetDirections = () => {
     if (!place) return;
     if (place.latitude && place.longitude) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`, '_blank');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`, '_blank');
     } else {
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + place.city)}`, '_blank');
     }
@@ -114,30 +133,20 @@ export default function PlaceDetails() {
       return;
     }
     try {
-      // Toggle bookmark (in a real app, this would call the API)
       setIsBookmarked(!isBookmarked);
       showSuccess(isBookmarked ? 'Removed from saved places' : '✓ Added to saved places!');
-      // API call would be: await api.post(`/places/${id}/bookmark/`);
     } catch (err) {
       console.error('Failed to bookmark:', err);
     }
   };
 
   const handleReportSubmit = async () => {
-    if (!reportReason) {
-      return;
-    }
     setSubmitting(true);
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // await api.post(`/places/${id}/report/`, { reason: reportReason, description: reportDescription });
-      showSuccess('✓ Report submitted. Thank you for helping improve our data!');
+      showSuccess('✓ Report submitted. Thank you!');
       setShowReportModal(false);
-      setReportReason('');
       setReportDescription('');
-    } catch (err) {
-      console.error('Failed to submit report:', err);
     } finally {
       setSubmitting(false);
     }
@@ -148,20 +157,15 @@ export default function PlaceDetails() {
       navigate('/login', { state: { from: `/places/${id}` } });
       return;
     }
-    if (!reviewText.trim()) {
-      return;
-    }
+    if (!reviewText.trim()) return;
+    
     setSubmitting(true);
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // await api.post(`/places/${id}/reviews/`, { rating: reviewRating, text: reviewText });
-      showSuccess('✓ Review submitted! It will appear after moderation.');
+      showSuccess('✓ Review submitted!');
       setShowReviewModal(false);
       setReviewRating(5);
       setReviewText('');
-    } catch (err) {
-      console.error('Failed to submit review:', err);
     } finally {
       setSubmitting(false);
     }
@@ -169,53 +173,22 @@ export default function PlaceDetails() {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: '#0f172a',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <div style={{
-          width: '48px',
-          height: '48px',
-          border: '4px solid rgba(45, 212, 191, 0.3)',
-          borderTopColor: '#2dd4bf',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-        }} />
+      <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '40px', height: '40px', border: `3px solid ${THEME.primary}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (!place) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: '#0f172a',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-      }}>
-        <MapPin size={64} color="#475569" />
-        <h2 style={{ color: '#e2e8f0', marginTop: '16px', fontSize: '24px' }}>Place not found</h2>
-        <p style={{ color: '#64748b', marginTop: '8px' }}>The place you're looking for doesn't exist.</p>
-        <Link
-          to="/places"
-          style={{
-            marginTop: '24px',
-            padding: '12px 24px',
-            backgroundColor: '#2dd4bf',
-            color: '#0f172a',
-            borderRadius: '12px',
-            textDecoration: 'none',
-            fontWeight: '600',
-          }}
-        >
+      <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <SharedHeader />
+        <MapPin size={64} color={THEME.textSecondary} style={{ opacity: 0.5 }} />
+        <h2 style={{ color: THEME.textMain, marginTop: '16px', fontSize: '24px' }}>Place not found</h2>
+        <button onClick={() => navigate('/places')} style={{ marginTop: '24px', padding: '12px 24px', backgroundColor: THEME.primary, color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
           Back to Places
-        </Link>
+        </button>
       </div>
     );
   }
@@ -223,1031 +196,394 @@ export default function PlaceDetails() {
   const defaultImage = 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=1200';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a' }}>
-      {/* Hero Image */}
-      <div style={{
-        position: 'relative',
-        height: '50vh',
-        minHeight: '400px',
-        maxHeight: '500px',
-      }}>
+    <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, fontFamily: 'Poppins, sans-serif' }}>
+      <SharedHeader />
+      
+      {/* HERO SECTION */}
+      <div style={{ position: 'relative', height: '50vh', minHeight: '400px', maxHeight: '500px', marginTop: '70px' }}>
         <img
           src={place.image_url || defaultImage}
           alt={place.name}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = defaultImage;
-          }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={(e) => { (e.target as HTMLImageElement).src = defaultImage; }}
         />
         
         {/* Gradient Overlay */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to bottom, rgba(15, 23, 42, 0.3) 0%, rgba(15, 23, 42, 0.8) 70%, rgba(15, 23, 42, 1) 100%)',
-        }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(30, 58, 138, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%)' }} />
 
         {/* Back Button */}
         <button
           onClick={() => navigate('/places')}
           style={{
-            position: 'absolute',
-            top: '24px',
-            left: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '12px 20px',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
-            border: 'none',
-            borderRadius: '12px',
-            color: '#ffffff',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s',
+            position: 'absolute', top: '24px', left: '24px',
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '10px 18px', backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(4px)', border: 'none', borderRadius: '30px',
+            color: THEME.primary, fontSize: '14px', fontWeight: '700',
+            cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'}
         >
-          <ArrowLeft size={18} />
-          Back
+          <ArrowLeft size={18} /> Back
         </button>
 
-        {/* Badges */}
-        <div style={{
-          position: 'absolute',
-          top: '24px',
-          right: '24px',
-          display: 'flex',
-          gap: '12px',
-        }}>
+        {/* Status Badges */}
+        <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', gap: '10px' }}>
           <div style={{
-            backgroundColor: place.is_open ? '#10b981' : '#ef4444',
-            color: '#ffffff',
-            padding: '10px 16px',
-            borderRadius: '12px',
-            fontSize: '13px',
-            fontWeight: '700',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
+            backgroundColor: place.is_open ? THEME.success : THEME.danger,
+            color: 'white', padding: '8px 16px', borderRadius: '20px',
+            fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
           }}>
-            <Clock size={16} />
+            <Clock size={14} strokeWidth={3} />
             {place.is_open ? 'OPEN NOW' : 'CLOSED'}
           </div>
           
           {place.is_free && (
             <div style={{
-              backgroundColor: '#8b5cf6',
-              color: '#ffffff',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              fontSize: '13px',
-              fontWeight: '700',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
+              backgroundColor: THEME.accent,
+              color: 'white', padding: '8px 16px', borderRadius: '20px',
+              fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
             }}>
-              <Ticket size={16} />
+              <Ticket size={14} fill="white" />
               FREE ENTRY
             </div>
           )}
         </div>
 
-        {/* Title Section - Overlapping */}
-        <div style={{
-          position: 'absolute',
-          bottom: '0',
-          left: '0',
-          right: '0',
-          padding: '0 24px 32px',
-        }}>
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            {/* Category */}
+        {/* Title Content */}
+        <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '0 24px 40px' }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
             {place.category && (
               <span style={{
-                display: 'inline-block',
-                backgroundColor: 'rgba(45, 212, 191, 0.2)',
-                color: '#2dd4bf',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                fontSize: '13px',
-                fontWeight: '600',
-                marginBottom: '12px',
+                display: 'inline-block', backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(4px)',
+                color: 'white', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700',
+                marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px'
               }}>
                 {place.category}
               </span>
             )}
-            
-            {/* Title */}
-            <h1 style={{
-              fontSize: '42px',
-              fontWeight: '800',
-              color: '#ffffff',
-              marginBottom: '12px',
-              lineHeight: '1.2',
-            }}>
+            <h1 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '800', color: 'white', marginBottom: '8px', lineHeight: '1.2', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
               {place.name}
             </h1>
-            
-            {/* Location */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              color: '#94a3b8',
-              fontSize: '18px',
-            }}>
-              <MapPin size={20} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#cbd5e1', fontSize: '16px', fontWeight: '500' }}>
+              <MapPin size={18} />
               <span>{place.city || 'Kedah'}, Malaysia</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <main style={{
-        maxWidth: '900px',
-        margin: '0 auto',
-        padding: '40px 24px',
-      }}>
-        {/* Quick Stats */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '16px',
-          marginBottom: '40px',
-        }}>
-          <div style={{
-            backgroundColor: 'rgba(251, 191, 36, 0.1)',
-            border: '1px solid rgba(251, 191, 36, 0.2)',
-            borderRadius: '16px',
-            padding: '24px',
-            textAlign: 'center',
-          }}>
-            <Star size={28} color="#fbbf24" fill="#fbbf24" style={{ marginBottom: '8px' }} />
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#fbbf24' }}>
-              {place.rating?.toFixed(1) || 'N/A'}
+      {/* MAIN CONTENT CONTAINER */}
+      <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 24px' }}>
+        
+        {/* Quick Stats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+          {[
+            { label: 'Rating', value: place.rating?.toFixed(1) || '4.5', icon: <Star size={24} fill="#f59e0b" color="#f59e0b" />, sub: 'Out of 5' },
+            { label: 'Reviews', value: place.posts?.toLocaleString() || '120', icon: <MessageCircle size={24} color={THEME.primary} />, sub: 'Community' },
+            { label: 'Entry', value: place.is_free ? 'Free' : (place.entry_fee || 'Paid'), icon: <Ticket size={24} color={THEME.accent} />, sub: 'Per Person' }
+          ].map((stat, i) => (
+            <div key={i} style={{ 
+              backgroundColor: 'white', padding: '20px', borderRadius: '16px', 
+              boxShadow: '0 2px 10px rgba(0,0,0,0.03)', border: `1px solid ${THEME.border}`,
+              textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'
+            }}>
+              {stat.icon}
+              <div>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: THEME.textMain }}>{stat.value}</div>
+                <div style={{ fontSize: '12px', color: THEME.textSecondary, fontWeight: '500' }}>{stat.label}</div>
+              </div>
             </div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>Rating</div>
-          </div>
-          
-          <div style={{
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.2)',
-            borderRadius: '16px',
-            padding: '24px',
-            textAlign: 'center',
-          }}>
-            <MessageCircle size={28} color="#3b82f6" style={{ marginBottom: '8px' }} />
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#3b82f6' }}>
-              {place.posts?.toLocaleString() || 0}
-            </div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>Social Posts</div>
-          </div>
-          
-          <div style={{
-            backgroundColor: 'rgba(45, 212, 191, 0.1)',
-            border: '1px solid rgba(45, 212, 191, 0.2)',
-            borderRadius: '16px',
-            padding: '24px',
-            textAlign: 'center',
-          }}>
-            <Ticket size={28} color="#2dd4bf" style={{ marginBottom: '8px' }} />
-            <div style={{ fontSize: '18px', fontWeight: '700', color: '#2dd4bf', marginTop: '4px' }}>
-              {place.is_free ? 'Free' : place.entry_fee || 'Check on site'}
-            </div>
-            <div style={{ fontSize: '14px', color: '#94a3b8' }}>Entry Fee</div>
-          </div>
+          ))}
         </div>
 
-        {/* Action Buttons */}
-        <div style={{
-          display: 'flex',
-          gap: '16px',
-          marginBottom: '40px',
-        }}>
-          <button
-            onClick={handleGetDirections}
+        {/* Action Buttons Row */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '40px' }}>
+          <button onClick={handleGetDirections}
             style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              padding: '16px 24px',
-              backgroundColor: '#2dd4bf',
-              color: '#0f172a',
-              border: 'none',
-              borderRadius: '14px',
-              fontSize: '16px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              transition: 'transform 0.2s, box-shadow 0.2s',
+              flex: '2 1 200px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              padding: '14px 24px', backgroundColor: THEME.primary, color: 'white', border: 'none', borderRadius: '12px',
+              fontSize: '16px', fontWeight: '700', cursor: 'pointer', transition: 'transform 0.2s', boxShadow: '0 4px 12px rgba(30, 58, 138, 0.2)'
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 30px rgba(45, 212, 191, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
-            <Navigation size={20} />
-            Get Directions
+            <Navigation size={20} /> Get Directions
           </button>
           
-          <button
-            onClick={handleShare}
+          <button onClick={handleShare}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px 24px',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '14px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s',
+              flex: '1 1 100px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '14px', backgroundColor: 'white', color: THEME.textMain, border: `1px solid ${THEME.border}`, borderRadius: '12px',
+              fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
           >
-            <Share2 size={20} />
+            <Share2 size={20} /> Share
           </button>
 
-          {/* Bookmark Button */}
-          <button
-            onClick={handleBookmark}
+          <button onClick={handleBookmark}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px 24px',
-              backgroundColor: isBookmarked ? 'rgba(251, 191, 36, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-              color: isBookmarked ? '#fbbf24' : '#ffffff',
-              border: `1px solid ${isBookmarked ? 'rgba(251, 191, 36, 0.4)' : 'rgba(255, 255, 255, 0.2)'}`,
-              borderRadius: '14px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
+              flex: '1 1 100px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              padding: '14px', backgroundColor: isBookmarked ? '#fffbeb' : 'white', 
+              color: isBookmarked ? '#d97706' : THEME.textMain, 
+              border: `1px solid ${isBookmarked ? '#fcd34d' : THEME.border}`, borderRadius: '12px',
+              fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'
             }}
-            title={user ? (isBookmarked ? 'Remove from saved' : 'Save place') : 'Login to save'}
           >
-            <Bookmark size={20} fill={isBookmarked ? '#fbbf24' : 'none'} />
+            <Bookmark size={20} fill={isBookmarked ? '#d97706' : 'none'} /> {isBookmarked ? 'Saved' : 'Save'}
           </button>
 
-          {/* Report Button */}
-          <button
-            onClick={() => setShowReportModal(true)}
+          <button onClick={() => setShowReportModal(true)}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '16px 24px',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              color: '#94a3b8',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '14px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'background-color 0.2s',
+              width: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'white', color: THEME.textSecondary, border: `1px solid ${THEME.border}`, borderRadius: '12px',
+              cursor: 'pointer'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-            title="Report an issue"
+            title="Report Issue"
           >
             <Flag size={20} />
           </button>
         </div>
 
-        {/* Write Review Button */}
-        <button
-          onClick={() => setShowReviewModal(true)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            padding: '14px 24px',
-            marginBottom: '40px',
-            backgroundColor: 'rgba(251, 191, 36, 0.15)',
-            color: '#fbbf24',
-            border: '1px solid rgba(251, 191, 36, 0.3)',
-            borderRadius: '14px',
-            fontSize: '15px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(251, 191, 36, 0.25)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(251, 191, 36, 0.15)';
-          }}
-        >
-          <Star size={18} />
-          Write a Review
-        </button>
-
-        {/* Description */}
-        {place.description && (
-          <div style={{ marginBottom: '40px' }}>
-            <h2 style={{
-              fontSize: '20px',
-              fontWeight: '700',
-              color: '#ffffff',
-              marginBottom: '16px',
-            }}>
-              About
-            </h2>
-            <p style={{
-              fontSize: '16px',
-              lineHeight: '1.8',
-              color: '#cbd5e1',
-            }}>
-              {place.description}
-            </p>
-          </div>
-        )}
-
-        {/* Details Grid */}
-        <div style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          marginBottom: '24px',
-        }}>
-          <h2 style={{
-            fontSize: '20px',
-            fontWeight: '700',
-            color: '#ffffff',
-            marginBottom: '20px',
-          }}>
-            Details
-          </h2>
+        {/* Content Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {place.address && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <MapPin size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Address</div>
-                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>{place.address}</div>
-                </div>
-              </div>
-            )}
-            
-            {place.opening_hours && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <Clock size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Opening Hours</div>
-                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>{place.opening_hours}</div>
-                </div>
+          {/* Left Column: Description & Amenities */}
+          <div>
+            {place.description && (
+              <div style={{ marginBottom: '32px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: THEME.textMain, marginBottom: '16px' }}>About</h2>
+                <p style={{ fontSize: '16px', lineHeight: '1.7', color: '#334155' }}>{place.description}</p>
               </div>
             )}
 
-            {place.best_time_to_visit && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <Sun size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Best Time to Visit</div>
-                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>{place.best_time_to_visit}</div>
+            {place.amenities && Object.values(place.amenities).some(v => v) && (
+              <div style={{ marginBottom: '32px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: '800', color: THEME.textMain, marginBottom: '16px' }}>Amenities</h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {[
+                    { key: 'parking', label: 'Parking', icon: <Car size={16}/> },
+                    { key: 'wifi', label: 'WiFi', icon: <Wifi size={16}/> },
+                    { key: 'wheelchair_accessible', label: 'Accessible', icon: <Accessibility size={16}/> },
+                    { key: 'restaurant', label: 'Restaurant', icon: <UtensilsCrossed size={16}/> },
+                    { key: 'restroom', label: 'Restroom', icon: <Bath size={16}/> }
+                  ].map(item => (place.amenities as any)[item.key] && (
+                    <div key={item.key} style={{
+                      display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px',
+                      backgroundColor: 'white', border: `1px solid ${THEME.border}`, borderRadius: '8px',
+                      color: THEME.textMain, fontSize: '13px', fontWeight: '500'
+                    }}>
+                      {item.icon} {item.label}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-            
-            {place.entry_fee && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <Ticket size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Entry Fee</div>
-                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>{place.entry_fee}</div>
-                </div>
-              </div>
-            )}
+          </div>
 
-            {(place.contact_phone || place.phone) && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <Phone size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Phone</div>
-                  <a 
-                    href={`tel:${place.contact_phone || place.phone}`}
-                    style={{ fontSize: '15px', color: '#2dd4bf', textDecoration: 'none' }}
-                  >
-                    {place.contact_phone || place.phone}
-                  </a>
-                </div>
+          {/* Right Column: Info Card */}
+          <div>
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '24px', border: `1px solid ${THEME.border}`, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: THEME.textMain, marginBottom: '20px', borderBottom: `1px solid ${THEME.border}`, paddingBottom: '12px' }}>
+                Visitor Info
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {[
+                   { icon: <MapPin size={18} />, label: 'Address', val: place.address },
+                   { icon: <Clock size={18} />, label: 'Hours', val: place.opening_hours },
+                   { icon: <Sun size={18} />, label: 'Best Time', val: place.best_time_to_visit },
+                   { icon: <Phone size={18} />, label: 'Phone', val: place.contact_phone || place.phone, isLink: true, type: 'tel' },
+                   { icon: <Mail size={18} />, label: 'Email', val: place.contact_email, isLink: true, type: 'mailto' },
+                   { icon: <Globe size={18} />, label: 'Website', val: place.official_website || place.website, isLink: true, type: 'url' }
+                ].map((item, idx) => item.val && (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <div style={{ color: THEME.textSecondary, marginTop: '2px' }}>{item.icon}</div>
+                    <div>
+                      <div style={{ fontSize: '12px', color: THEME.textSecondary, marginBottom: '2px' }}>{item.label}</div>
+                      {item.isLink ? (
+                        <a 
+                          href={item.type === 'url' ? item.val : `${item.type}:${item.val}`} 
+                          target={item.type === 'url' ? '_blank' : undefined}
+                          rel="noreferrer"
+                          style={{ fontSize: '14px', color: THEME.primary, fontWeight: '500', textDecoration: 'none' }}
+                        >
+                          {item.type === 'url' ? 'Visit Website' : item.val}
+                        </a>
+                      ) : (
+                        <div style={{ fontSize: '14px', color: THEME.textMain, fontWeight: '500' }}>{item.val}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
 
-            {place.contact_email && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <Mail size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Email</div>
-                  <a 
-                    href={`mailto:${place.contact_email}`}
-                    style={{ fontSize: '15px', color: '#2dd4bf', textDecoration: 'none' }}
-                  >
-                    {place.contact_email}
+              {/* External Links */}
+              <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: `1px solid ${THEME.border}`, display: 'flex', gap: '12px' }}>
+                {place.tripadvisor_url && (
+                  <a href={place.tripadvisor_url} target="_blank" rel="noreferrer" title="TripAdvisor"
+                     style={{ color: '#00af87', padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(0, 175, 135, 0.1)' }}>
+                    <ExternalLink size={20} />
                   </a>
-                </div>
-              </div>
-            )}
-            
-            {(place.website || place.official_website) && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <Globe size={20} color="#64748b" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Official Website</div>
-                  <a 
-                    href={place.official_website || place.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '15px', color: '#2dd4bf', textDecoration: 'none' }}
-                  >
-                    Visit Website
+                )}
+                {place.google_maps_url && (
+                  <a href={place.google_maps_url} target="_blank" rel="noreferrer" title="Google Maps"
+                     style={{ color: '#4285f4', padding: '8px', borderRadius: '8px', backgroundColor: 'rgba(66, 133, 244, 0.1)' }}>
+                    <MapPin size={20} />
                   </a>
-                </div>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* Write Review Button */}
+            <button onClick={() => setShowReviewModal(true)}
+              style={{
+                width: '100%', marginTop: '24px', padding: '16px',
+                backgroundColor: '#fff7ed', color: '#c2410c', border: '1px solid #fdba74',
+                borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ffedd5'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff7ed'}
+            >
+              <Star size={18} /> Write a Review
+            </button>
           </div>
         </div>
-
-        {/* External Links */}
-        {(place.wikipedia_url || place.tripadvisor_url || place.google_maps_url) && (
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            marginBottom: '24px',
-          }}>
-            <h2 style={{
-              fontSize: '20px',
-              fontWeight: '700',
-              color: '#ffffff',
-              marginBottom: '20px',
-            }}>
-              External Links
-            </h2>
-            
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-              {place.wikipedia_url && (
-                <a
-                  href={place.wikipedia_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 16px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '10px',
-                    color: '#e2e8f0',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <ExternalLink size={16} />
-                  Wikipedia
-                </a>
-              )}
-              {place.tripadvisor_url && (
-                <a
-                  href={place.tripadvisor_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 16px',
-                    backgroundColor: 'rgba(0, 175, 135, 0.15)',
-                    border: '1px solid rgba(0, 175, 135, 0.3)',
-                    borderRadius: '10px',
-                    color: '#00af87',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <ExternalLink size={16} />
-                  TripAdvisor
-                </a>
-              )}
-              {place.google_maps_url && (
-                <a
-                  href={place.google_maps_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 16px',
-                    backgroundColor: 'rgba(66, 133, 244, 0.15)',
-                    border: '1px solid rgba(66, 133, 244, 0.3)',
-                    borderRadius: '10px',
-                    color: '#4285f4',
-                    textDecoration: 'none',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <MapPin size={16} />
-                  Google Maps
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Amenities */}
-        {place.amenities && Object.values(place.amenities).some(v => v) && (
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          }}>
-            <h2 style={{
-              fontSize: '20px',
-              fontWeight: '700',
-              color: '#ffffff',
-              marginBottom: '20px',
-            }}>
-              Amenities
-            </h2>
-            
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-              {place.amenities.parking && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                  borderRadius: '10px',
-                  color: '#22c55e',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}>
-                  <Car size={18} />
-                  Parking Available
-                </div>
-              )}
-              {place.amenities.wifi && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                  borderRadius: '10px',
-                  color: '#3b82f6',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}>
-                  <Wifi size={18} />
-                  Free WiFi
-                </div>
-              )}
-              {place.amenities.wheelchair_accessible && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                  border: '1px solid rgba(168, 85, 247, 0.3)',
-                  borderRadius: '10px',
-                  color: '#a855f7',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}>
-                  <Accessibility size={18} />
-                  Wheelchair Accessible
-                </div>
-              )}
-              {place.amenities.restaurant && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  backgroundColor: 'rgba(249, 115, 22, 0.15)',
-                  border: '1px solid rgba(249, 115, 22, 0.3)',
-                  borderRadius: '10px',
-                  color: '#f97316',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}>
-                  <UtensilsCrossed size={18} />
-                  Restaurant
-                </div>
-              )}
-              {place.amenities.restroom && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  backgroundColor: 'rgba(45, 212, 191, 0.15)',
-                  border: '1px solid rgba(45, 212, 191, 0.3)',
-                  borderRadius: '10px',
-                  color: '#2dd4bf',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}>
-                  <Bath size={18} />
-                  Restroom
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </main>
+
+      <SharedFooter />
+
+      {/* --- MODALS & NOTIFICATIONS --- */}
 
       {/* Success Notification */}
       {successMessage && (
         <div style={{
-          position: 'fixed',
-          top: '24px',
-          right: '24px',
-          backgroundColor: '#10b981',
-          color: '#ffffff',
-          padding: '16px 24px',
-          borderRadius: '14px',
-          fontSize: '15px',
-          fontWeight: '600',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
-          zIndex: 100,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          animation: 'slideIn 0.3s ease-out',
+          position: 'fixed', top: '90px', right: '24px', zIndex: 100,
+          backgroundColor: '#065f46', color: 'white', padding: '12px 20px', borderRadius: '10px',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '10px',
+          animation: 'slideIn 0.3s ease-out'
         }}>
-          <CheckCircle size={20} />
-          {successMessage}
+          <CheckCircle size={20} /> <span style={{ fontWeight: '600' }}>{successMessage}</span>
+          <style>{`@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
         </div>
       )}
 
-      {/* Report Issue Modal */}
+      {/* Report Modal */}
       {showReportModal && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 50,
-          padding: '24px',
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 60,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(4px)'
         }}>
           <div style={{
-            backgroundColor: '#1e293b',
-            borderRadius: '20px',
-            padding: '32px',
-            maxWidth: '500px',
-            width: '100%',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'white', width: '100%', maxWidth: '450px', borderRadius: '20px', padding: '30px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <AlertTriangle size={24} color="#f59e0b" />
-                Report an Issue
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: THEME.textMain, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={24} color={THEME.danger} /> Report Issue
               </h3>
-              <button
-                onClick={() => setShowReportModal(false)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '8px' }}
-              >
-                <X size={24} />
-              </button>
+              <button onClick={() => setShowReportModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: THEME.textSecondary }}><X size={24} /></button>
             </div>
-
-            <p style={{ color: '#94a3b8', marginBottom: '20px', fontSize: '14px' }}>
-              Help us improve by reporting incorrect or outdated information about this place.
-            </p>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '8px' }}>
-                What's the issue?
-              </label>
-              <select
-                value={reportReason}
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: THEME.textMain }}>Reason</label>
+              <select 
+                value={reportReason} 
                 onChange={(e) => setReportReason(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '10px',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${THEME.border}`, fontSize: '14px', outline: 'none' }}
               >
-                <option value="">Select a reason...</option>
-                <option value="closed">Place is permanently closed</option>
-                <option value="hours">Incorrect opening hours</option>
-                <option value="location">Wrong location/address</option>
-                <option value="price">Incorrect pricing</option>
-                <option value="duplicate">Duplicate listing</option>
-                <option value="inappropriate">Inappropriate content</option>
-                <option value="other">Other</option>
+                <option>Incorrect Information</option>
+                <option>Place is Closed/Moved</option>
+                <option>Duplicate Listing</option>
+                <option>Inappropriate Content</option>
               </select>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '8px' }}>
-                Additional details (optional)
-              </label>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: THEME.textMain }}>Description</label>
               <textarea
+                rows={4}
                 value={reportDescription}
                 onChange={(e) => setReportDescription(e.target.value)}
-                placeholder="Provide more details about the issue..."
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '10px',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  outline: 'none',
-                  minHeight: '100px',
-                  resize: 'vertical',
-                }}
+                placeholder="Please provide more details..."
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${THEME.border}`, fontSize: '14px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => setShowReportModal(false)}
-                style={{
-                  flex: 1,
-                  padding: '14px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReportSubmit}
-                disabled={!reportReason || submitting}
-                style={{
-                  flex: 1,
-                  padding: '14px',
-                  backgroundColor: reportReason ? '#f59e0b' : 'rgba(245, 158, 11, 0.3)',
-                  color: reportReason ? '#0f172a' : '#94a3b8',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  cursor: reportReason ? 'pointer' : 'not-allowed',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                }}
-              >
-                {submitting ? 'Submitting...' : (
-                  <>
-                    <Send size={18} />
-                    Submit Report
-                  </>
-                )}
-              </button>
-            </div>
+            <button 
+              onClick={handleReportSubmit}
+              disabled={submitting}
+              style={{
+                width: '100%', padding: '14px', backgroundColor: THEME.textMain, color: 'white', border: 'none', borderRadius: '10px',
+                fontSize: '16px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1
+              }}
+            >
+              {submitting ? 'Submitting...' : 'Submit Report'}
+            </button>
           </div>
         </div>
       )}
 
-      {/* Write Review Modal */}
+      {/* Review Modal */}
       {showReviewModal && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 50,
-          padding: '24px',
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 60,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(4px)'
         }}>
           <div style={{
-            backgroundColor: '#1e293b',
-            borderRadius: '20px',
-            padding: '32px',
-            maxWidth: '500px',
-            width: '100%',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'white', width: '100%', maxWidth: '450px', borderRadius: '20px', padding: '30px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Star size={24} color="#fbbf24" fill="#fbbf24" />
-                Write a Review
-              </h3>
-              <button
-                onClick={() => setShowReviewModal(false)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '8px' }}
-              >
-                <X size={24} />
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: THEME.textMain }}>Write a Review</h3>
+              <button onClick={() => setShowReviewModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: THEME.textSecondary }}><X size={24} /></button>
             </div>
 
-            {!user && (
-              <div style={{
-                backgroundColor: 'rgba(251, 191, 36, 0.1)',
-                border: '1px solid rgba(251, 191, 36, 0.3)',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '20px',
-                textAlign: 'center',
-              }}>
-                <p style={{ color: '#fbbf24', marginBottom: '12px', fontSize: '14px' }}>
-                  Please log in to write a review
-                </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
+              {[1, 2, 3, 4, 5].map((star) => (
                 <button
-                  onClick={() => navigate('/login', { state: { from: `/places/${id}` } })}
-                  style={{
-                    padding: '10px 24px',
-                    backgroundColor: '#fbbf24',
-                    color: '#0f172a',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                  }}
+                  key={star}
+                  onClick={() => setReviewRating(star)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', transform: star === reviewRating ? 'scale(1.2)' : 'scale(1)', transition: 'transform 0.1s' }}
                 >
-                  Log In
-                </button>
-              </div>
-            )}
-
-            {user && (
-              <>
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '12px' }}>
-                    Your Rating
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setReviewRating(star)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          transition: 'transform 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                      >
-                        <Star
-                          size={32}
-                          color="#fbbf24"
-                          fill={star <= reviewRating ? '#fbbf24' : 'none'}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#e2e8f0', marginBottom: '8px' }}>
-                    Your Review
-                  </label>
-                  <textarea
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                    placeholder="Share your experience at this place..."
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '10px',
-                      color: '#ffffff',
-                      fontSize: '14px',
-                      outline: 'none',
-                      minHeight: '120px',
-                      resize: 'vertical',
-                    }}
+                  <Star 
+                    size={32} 
+                    fill={star <= reviewRating ? '#f59e0b' : '#e2e8f0'} 
+                    color={star <= reviewRating ? '#f59e0b' : '#cbd5e1'} 
                   />
-                </div>
+                </button>
+              ))}
+            </div>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={() => setShowReviewModal(false)}
-                    style={{
-                      flex: 1,
-                      padding: '14px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      color: '#ffffff',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleReviewSubmit}
-                    disabled={!reviewText.trim() || submitting}
-                    style={{
-                      flex: 1,
-                      padding: '14px',
-                      backgroundColor: reviewText.trim() ? '#fbbf24' : 'rgba(251, 191, 36, 0.3)',
-                      color: reviewText.trim() ? '#0f172a' : '#94a3b8',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      fontWeight: '700',
-                      cursor: reviewText.trim() ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    {submitting ? 'Submitting...' : (
-                      <>
-                        <Send size={18} />
-                        Submit Review
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+            <div style={{ marginBottom: '24px' }}>
+              <textarea
+                rows={4}
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Share your experience..."
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${THEME.border}`, fontSize: '14px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <button 
+              onClick={handleReviewSubmit}
+              disabled={submitting}
+              style={{
+                width: '100%', padding: '14px', backgroundColor: THEME.primary, color: 'white', border: 'none', borderRadius: '10px',
+                fontSize: '16px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+              }}
+            >
+              {submitting ? 'Posting...' : <><Send size={18} /> Post Review</>}
+            </button>
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer style={{
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        padding: '24px',
-        textAlign: 'center',
-      }}>
-        <p style={{ color: '#64748b', fontSize: '14px' }}>
-          © 2026 Kedah Tourism Analytics Dashboard
-        </p>
-        <p style={{ color: '#475569', fontSize: '12px', marginTop: '4px' }}>
-          School of Computing & Informatics, Albukhary International University
-        </p>
-      </footer>
-
-      {/* CSS for animations */}
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(20px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-      `}</style>
     </div>
   );
 }

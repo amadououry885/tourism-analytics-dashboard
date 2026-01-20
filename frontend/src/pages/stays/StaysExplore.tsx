@@ -1,13 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Hotel, Star, MapPin, Wifi, Coffee, Car, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapPin, Star, Wifi, Coffee, Car, ArrowRight, Search, Grid, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import api from '../../services/api';
-import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 import Pagination from '../../components/Pagination';
 
-// --- Types ---
-interface Stay {
+export interface Stay {
   id: number;
   name: string;
   district: string;
@@ -21,92 +19,186 @@ interface Stay {
   landmark?: string;
 }
 
-// --- Theme Constants ---
-const THEME = {
-  bg: '#0f172a',           // Slate 900
-  bgCard: '#1e293b',       // Slate 800
-  text: '#ffffff',
-  textSecondary: '#94a3b8',
-  accent: '#2dd4bf',       // Teal
-  highlight: '#fbef00',    // Yellow
-  border: 'rgba(255, 255, 255, 0.1)',
-};
-
 const ITEMS_PER_PAGE = 9;
 
-// --- Filter Options ---
-const STAY_TYPES = [
-  { value: 'All', label: 'All Types', icon: '🏨' },
-  { value: 'Hotel', label: 'Hotel', icon: '🏨' },
-  { value: 'Resort', label: 'Resort', icon: '🏖️' },
-  { value: 'Apartment', label: 'Apartment', icon: '🏢' },
-  { value: 'Homestay', label: 'Homestay', icon: '🏠' },
-];
+// --- Theme Constants (Light Mode) ---
+const THEME = {
+  bg: '#f8fafc',
+  text: '#0f172a',
+  textSecondary: '#64748b',
+  accent: '#1e3a8a',
+  highlight: '#f97316',
+  border: '#e2e8f0',
+};
 
-const DISTRICTS = [
-  { value: 'All', label: 'All Districts', icon: '📍' },
-  { value: 'Langkawi', label: 'Langkawi', icon: '🏝️' },
-  { value: 'Alor Setar', label: 'Alor Setar', icon: '🏙️' },
-  { value: 'Sungai Petani', label: 'Sungai Petani', icon: '🌆' },
+interface StayCardProps {
+  stay: Stay;
+}
+
+export function StayCard({ stay }: StayCardProps) {
+  const defaultImage = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
+
+  return (
+    <Link 
+      to={`/stays/${stay.id}`}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#ffffff',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        border: '1px solid #e2e8f0', // Light border
+        textDecoration: 'none',
+        transition: 'all 0.3s ease',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+        cursor: 'pointer'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-6px)';
+        e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
+      }}
+    >
+      {/* Image Section */}
+      <div style={{ position: 'relative', height: '240px', overflow: 'hidden' }}>
+        <img
+          src={stay.image_url || defaultImage}
+          alt={stay.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+          onMouseEnter={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => (e.target as HTMLImageElement).style.transform = 'scale(1.0)'}
+        />
+        
+        {/* Top Badges */}
+        <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px' }}>
+          <span style={{ 
+            backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+            backdropFilter: 'blur(4px)',
+            color: '#1e3a8a', // Primary Blue
+            padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px'
+          }}>
+            {stay.type}
+          </span>
+        </div>
+
+        {/* Rating Badge */}
+        <div style={{ 
+          position: 'absolute', top: '12px', right: '12px',
+          backgroundColor: '#ffffff', color: '#0f172a',
+          padding: '4px 8px', borderRadius: '8px', 
+          fontSize: '12px', fontWeight: '800', 
+          display: 'flex', alignItems: 'center', gap: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <Star size={12} fill="#f97316" color="#f97316" /> {stay.rating}
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        {/* Location */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: '500' }}>
+          <MapPin size={14} color="#f97316" />
+          {stay.district}
+        </div>
+
+        {/* Title */}
+        <h3 style={{ 
+          fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '12px', lineHeight: '1.4',
+          overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'
+        }}>
+          {stay.name}
+        </h3>
+
+        {/* Amenities Preview */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', color: '#94a3b8' }}>
+          <Wifi size={16} />
+          <Coffee size={16} />
+          <Car size={16} />
+          <span style={{ fontSize: '12px', alignSelf: 'center' }}>+ more</span>
+        </div>
+
+        {/* Footer: Price & Action */}
+        <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: '12px', color: '#64748b', display: 'block' }}>Start from</span>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#f97316' }}>
+              RM {stay.price_per_night}
+            </div>
+          </div>
+          
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '50%',
+            backgroundColor: '#eff6ff', // Light blue bg
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#1e3a8a',
+            transition: 'background 0.2s'
+          }}>
+            <ArrowRight size={18} />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// Demo data for fallback
+const demoStays: Stay[] = [
+  { id: 1, name: 'The Westin Langkawi Resort & Spa', district: 'Langkawi', type: 'Resort', image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800', rating: 4.8, reviews: 256, price_per_night: 450, amenities: ['Pool', 'Spa', 'WiFi', 'Restaurant'], is_available: true },
+  { id: 2, name: 'Four Seasons Resort Langkawi', district: 'Langkawi', type: 'Resort', image_url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800', rating: 4.9, reviews: 189, price_per_night: 680, amenities: ['Beach', 'Pool', 'Spa', 'Fine Dining'], is_available: true },
+  { id: 3, name: 'Aloft Langkawi Pantai Tengah', district: 'Langkawi', type: 'Hotel', image_url: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800', rating: 4.5, reviews: 312, price_per_night: 280, amenities: ['Pool', 'WiFi', 'Bar', 'Gym'], is_available: true },
+  { id: 4, name: 'Kampung House Homestay', district: 'Alor Setar', type: 'Homestay', image_url: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800', rating: 4.6, reviews: 78, price_per_night: 120, amenities: ['WiFi', 'Parking', 'Kitchen'], is_available: true },
+  { id: 5, name: 'Meritus Pelangi Beach Resort', district: 'Langkawi', type: 'Resort', image_url: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800', rating: 4.7, reviews: 423, price_per_night: 350, amenities: ['Beach', 'Pool', 'Tennis', 'Kids Club'], is_available: true },
+  { id: 6, name: 'Hotel Grand Continental', district: 'Alor Setar', type: 'Hotel', image_url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800', rating: 4.2, reviews: 156, price_per_night: 180, amenities: ['WiFi', 'Restaurant', 'Meeting Rooms'], is_available: true },
 ];
 
 export default function StaysExplore() {
   const navigate = useNavigate();
-  const [stays, setStays] = useState<Stay[]>([]);
+  const [stays, setStays] = useState<Stay[]>(demoStays);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Carousel State
   const [currentSlide, setCurrentSlide] = useState(0);
-  
-  // Filters
+
+  // Filters State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
-  const [selectedDistrict, setSelectedDistrict] = useState('All');
-  const [sortBy, setSortBy] = useState<'rating' | 'price' | 'name'>('rating');
+  const [sortBy, setSortBy] = useState<'popularity' | 'rating' | 'price'>('popularity');
   
-  // Pagination
+  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
 
-  // --- Fetch Data ---
+  // --- Fetch Data Logic ---
   useEffect(() => {
     const fetchStays = async () => {
       try {
         setLoading(true);
-        // Try hybrid search first, fall back to standard list
-        let data: any[] = [];
-        try {
-          const response = await api.get('/stays/hybrid_search/');
-          data = response.data.results || response.data || [];
-        } catch {
-          const response = await api.get('/stays/');
-          data = response.data.results || response.data || [];
-        }
+        const response = await api.get('/stays/?page_size=100');
+        const data = response.data.results || response.data || [];
         
         if (data.length > 0) {
-          const transformedStays: Stay[] = data.map((stay: any) => ({
-            id: stay.id,
-            name: stay.name,
-            district: stay.district || stay.city || 'Kedah',
+          const transformedStays: Stay[] = data.map((stay: any, index: number) => ({
+            id: stay.id || index + 1,
+            name: stay.name || `Stay ${index + 1}`,
+            district: stay.district || stay.location || 'Kedah',
             type: stay.type || stay.stay_type || 'Hotel',
-            image_url: stay.image_url || stay.main_image || stay.main_image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945',
-            rating: stay.rating || stay.average_rating || 4.5,
+            image_url: stay.image_url || stay.image,
+            rating: stay.rating || stay.avg_rating || 4.0,
             reviews: stay.reviews || stay.review_count || 0,
-            price_per_night: stay.priceNight || stay.price_per_night || stay.price || 250,
+            price_per_night: stay.price_per_night || stay.price || 200,
             amenities: stay.amenities || ['WiFi', 'Parking'],
             is_available: stay.is_available !== undefined ? stay.is_available : true,
             landmark: stay.landmark,
           }));
           setStays(transformedStays);
-        } else {
-            // Fallback for demo if API returns empty
-           setStays([
-            { id: 1, name: 'The Danna Langkawi', district: 'Langkawi', type: 'Resort', rating: 4.9, reviews: 520, price_per_night: 850, amenities: ['Pool', 'Spa', 'Gym'], is_available: true, image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600' },
-            { id: 2, name: 'Four Seasons Resort', district: 'Langkawi', type: 'Resort', rating: 4.8, reviews: 380, price_per_night: 1200, amenities: ['Beach', 'Dining'], is_available: true, image_url: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1600' },
-            { id: 3, name: 'Grand Alora Hotel', district: 'Alor Setar', type: 'Hotel', rating: 4.3, reviews: 240, price_per_night: 180, amenities: ['WiFi', 'City View'], is_available: true, image_url: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=1600' },
-           ]);
         }
       } catch (err) {
         console.error('Error fetching stays:', err);
+        // Keep demo data on error
       } finally {
         setLoading(false);
       }
@@ -114,18 +206,17 @@ export default function StaysExplore() {
     fetchStays();
   }, []);
 
-  // --- Carousel Logic (Top 5 Premium Stays) ---
+  // --- Carousel Logic ---
   const carouselSlides = useMemo(() => {
     if (stays.length === 0) return [];
-    // Sort by price descending to show "Luxury" options in hero
-    return [...stays].sort((a, b) => b.price_per_night - a.price_per_night).slice(0, 5);
+    return stays.slice(0, 5); 
   }, [stays]);
 
   useEffect(() => {
     if (carouselSlides.length === 0) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-    }, 6000);
+    }, 5000);
     return () => clearInterval(timer);
   }, [carouselSlides.length]);
 
@@ -133,25 +224,29 @@ export default function StaysExplore() {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
 
   // --- Filtering Logic ---
+  const stayTypes: string[] = useMemo(() => {
+    const uniqueTypes = stays.map(s => s.type).filter(t => typeof t === 'string' && t.length > 0) as string[];
+    return ['All', ...Array.from(new Set(uniqueTypes)).sort()];
+  }, [stays]);
+
   const filteredStays = useMemo(() => {
     return stays
       .filter(stay => {
         if (searchTerm && !stay.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
         if (selectedType !== 'All' && stay.type !== selectedType) return false;
-        if (selectedDistrict !== 'All' && stay.district !== selectedDistrict) return false;
         return true;
       })
       .sort((a, b) => {
         switch (sortBy) {
-          case 'name': return a.name.localeCompare(b.name);
           case 'price': return a.price_per_night - b.price_per_night;
-          case 'rating': default: return b.rating - a.rating;
+          case 'rating': return (b.rating || 0) - (a.rating || 0);
+          case 'popularity': default: return (b.reviews || 0) - (a.reviews || 0);
         }
       });
-  }, [stays, searchTerm, selectedType, selectedDistrict, sortBy]);
+  }, [stays, searchTerm, selectedType, sortBy]);
 
   // Pagination Logic
-  useEffect(() => setCurrentPage(1), [searchTerm, selectedType, selectedDistrict, sortBy]);
+  useEffect(() => setCurrentPage(1), [searchTerm, selectedType, sortBy]);
   const totalPages = Math.ceil(filteredStays.length / ITEMS_PER_PAGE);
   const paginatedStays = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -161,257 +256,187 @@ export default function StaysExplore() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, color: THEME.text, fontFamily: 'Poppins, sans-serif' }}>
       <SharedHeader />
-      
+
       <style>{`
-        .glass-panel {
-          background: rgba(30, 41, 59, 0.7);
+        .glass-panel-dark {
+          background: rgba(15, 23, 42, 0.75);
           backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
-        .text-shadow { text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
       `}</style>
 
       {/* --- HERO CAROUSEL SECTION --- */}
-      {!loading && carouselSlides.length > 0 ? (
-        <div style={{ position: 'relative', height: '650px', marginTop: '70px', overflow: 'hidden' }}>
-          {carouselSlides.map((slide, index) => (
+      {!loading && carouselSlides.length > 0 && (
+        <div style={{ position: 'relative', height: '500px', overflow: 'hidden' }}>
+          {carouselSlides.map((stay, index) => (
             <div
-              key={slide.id}
+              key={stay.id}
               style={{
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                position: 'absolute',
+                top: 0, left: 0, width: '100%', height: '100%',
                 opacity: index === currentSlide ? 1 : 0,
-                transition: 'opacity 1s ease-in-out',
+                transition: 'opacity 0.8s ease-in-out',
                 zIndex: index === currentSlide ? 1 : 0,
               }}
             >
-              {/* Image */}
               <img 
-                src={slide.image_url} 
-                alt={slide.name} 
+                src={stay.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=80'} 
+                alt={stay.name} 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
-              {/* Overlay Gradient */}
               <div style={{
                 position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                background: 'linear-gradient(to top, #0f172a 0%, rgba(15,23,42,0.4) 50%, rgba(15,23,42,0.1) 100%)'
+                background: 'linear-gradient(to bottom, rgba(30,58,138,0.2), rgba(15,23,42,0.6))'
               }} />
             </div>
           ))}
 
-          {/* Hero Content - Centered Style like Reference Image 3 */}
+          {/* Carousel Text Content */}
           <div style={{
-            position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)',
-            textAlign: 'center', zIndex: 10, width: '100%', padding: '0 24px'
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center', zIndex: 10, width: '90%', maxWidth: '800px'
           }}>
-            <span style={{ 
-              backgroundColor: THEME.accent, color: '#000', padding: '6px 16px', borderRadius: '20px', 
-              fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px', display: 'inline-block' 
-            }}>
-              Featured Stay
-            </span>
-            <h1 className="text-shadow" style={{ 
-              fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: '300', color: 'white', marginBottom: '16px', fontFamily: 'Playfair Display, serif' 
-            }}>
-              {carouselSlides[currentSlide].name}
-            </h1>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', alignItems: 'center', marginBottom: '32px', color: '#e2e8f0' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={18} color={THEME.highlight} /> {carouselSlides[currentSlide].district}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Star size={18} fill={THEME.highlight} color={THEME.highlight} /> {carouselSlides[currentSlide].rating}</span>
-              <span style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>RM {carouselSlides[currentSlide].price_per_night} <span style={{ fontSize: '14px', fontWeight: 'normal' }}>/ night</span></span>
-            </div>
-            
-            <button 
+            <div className="glass-panel-dark" 
               onClick={() => navigate(`/stays/${carouselSlides[currentSlide].id}`)}
-              style={{
-                backgroundColor: 'white', color: 'black', padding: '14px 40px', borderRadius: '50px',
-                fontSize: '16px', fontWeight: '600', border: 'none', cursor: 'pointer', transition: 'transform 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              style={{ padding: '40px', borderRadius: '24px', cursor: 'pointer' }}
             >
-              Book Now
-            </button>
+              <div style={{ 
+                display: 'inline-block', backgroundColor: THEME.highlight, color: 'white',
+                padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold',
+                marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '1px'
+              }}>
+                Featured Accommodation
+              </div>
+              <h1 style={{ 
+                fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: '800', color: 'white', 
+                marginBottom: '16px', lineHeight: '1.1', textShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              }}>
+                {carouselSlides[currentSlide].name}
+              </h1>
+              <p style={{ fontSize: 'clamp(16px, 3vw, 18px)', color: '#e2e8f0', maxWidth: '600px', margin: '0 auto' }}>
+                {carouselSlides[currentSlide].type} in {carouselSlides[currentSlide].district} · From RM {carouselSlides[currentSlide].price_per_night}/night
+              </p>
+            </div>
           </div>
 
           {/* Controls */}
-          <button onClick={prevSlide} style={{ position: 'absolute', left: '30px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white' }}>
+          <button onClick={prevSlide} style={{
+            position: 'absolute', left: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20,
+            background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '50%', 
+            width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white'
+          }}>
             <ChevronLeft size={24} />
           </button>
-          <button onClick={nextSlide} style={{ position: 'absolute', right: '30px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white' }}>
+          <button onClick={nextSlide} style={{
+            position: 'absolute', right: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20,
+            background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '50%', 
+            width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white'
+          }}>
             <ChevronRight size={24} />
           </button>
         </div>
-      ) : (
-        <div style={{ height: '300px', marginTop: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-           <div style={{ color: THEME.accent }}>Loading Stays...</div>
-        </div>
       )}
 
-      {/* --- FILTER BAR --- */}
+      {/* --- FILTERS BAR --- */}
       <div style={{
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${THEME.border}`,
-        position: 'sticky',
-        top: '70px',
-        zIndex: 40,
-        padding: '20px 0',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${THEME.border}`, position: 'sticky', top: '70px', zIndex: 40,
+        padding: '16px 24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
       }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-          {/* Search */}
-          <div style={{ flex: '1 1 250px', position: 'relative' }}>
-            <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: THEME.textSecondary, width: '18px' }} />
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+          {/* Search Input */}
+          <div style={{ flex: '1 1 300px', position: 'relative' }}>
+            <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: THEME.textSecondary, width: '18px', height: '18px' }} />
             <input
               type="text"
-              placeholder="Search hotels, resorts..."
+              placeholder="Search accommodations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
-                width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px',
-                border: `1px solid ${THEME.border}`, backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                color: 'white', outline: 'none'
+                width: '100%', padding: '12px 16px 12px 44px', borderRadius: '50px',
+                border: `1px solid ${THEME.border}`, backgroundColor: '#f1f5f9',
+                color: THEME.text, fontSize: '14px', outline: 'none', transition: 'border-color 0.2s',
               }}
+              onFocus={(e) => e.target.style.borderColor = THEME.accent}
+              onBlur={(e) => e.target.style.borderColor = THEME.border}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <FilterDropdown
-              label="District"
-              icon={<MapPin size={16} />}
-              options={DISTRICTS}
-              value={selectedDistrict}
-              onChange={(val) => setSelectedDistrict(val as string)}
-              accentColor={THEME.accent}
-            />
-            <FilterDropdown
-              label="Type"
-              icon={<Hotel size={16} />}
-              options={STAY_TYPES}
-              value={selectedType}
-              onChange={(val) => setSelectedType(val as string)}
-              accentColor={THEME.accent}
-            />
-            <SortDropdown
-              options={[
-                { value: 'rating', label: 'Top Rated', icon: '⭐' },
-                { value: 'price', label: 'Price (Low to High)', icon: '💰' },
-              ]}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative' }}>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                style={{
+                  padding: '10px 36px 10px 16px', borderRadius: '8px', backgroundColor: 'white',
+                  border: `1px solid ${selectedType !== 'All' ? THEME.accent : THEME.border}`,
+                  color: selectedType !== 'All' ? THEME.accent : THEME.text,
+                  appearance: 'none', cursor: 'pointer', minWidth: '140px', fontWeight: '500'
+                }}
+              >
+                {stayTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <Home size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: THEME.textSecondary }} />
+            </div>
+
+            <select
               value={sortBy}
-              onChange={(val) => setSortBy(val as any)}
-              accentColor={THEME.accent}
-            />
+              onChange={(e) => setSortBy(e.target.value as 'popularity' | 'rating' | 'price')}
+              style={{
+                padding: '10px 16px', borderRadius: '8px', backgroundColor: 'white',
+                border: `1px solid ${THEME.border}`, color: THEME.text,
+                appearance: 'none', cursor: 'pointer', fontWeight: '500'
+              }}
+            >
+              <option value="popularity">Most Popular</option>
+              <option value="rating">Highest Rated</option>
+              <option value="price">Lowest Price</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* --- MAIN CONTENT GRID --- */}
+      {/* --- MAIN CONTENT --- */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}>
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '700', color: THEME.text }}>
+            {filteredStays.length} Accommodations Found
+          </h2>
+        </div>
+
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
-        ) : filteredStays.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: THEME.textSecondary }}>
-            <Hotel size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
-            <h3>No stays found</h3>
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <div style={{ fontSize: '18px', color: THEME.textSecondary }}>Loading stays...</div>
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '32px' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+              gap: '24px'
+            }}>
               {paginatedStays.map((stay) => (
-                <div
-                  key={stay.id}
-                  onClick={() => navigate(`/stays/${stay.id}`)}
-                  style={{
-                    backgroundColor: THEME.bgCard,
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    border: `1px solid ${THEME.border}`,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0,0,0,0.5)';
-                    e.currentTarget.style.borderColor = THEME.accent;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.borderColor = THEME.border;
-                  }}
-                >
-                  {/* Card Image Area */}
-                  <div style={{ height: '240px', position: 'relative', overflow: 'hidden' }}>
-                    <img
-                      src={stay.image_url}
-                      alt={stay.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    />
-                    <div style={{
-                      position: 'absolute', top: '16px', right: '16px',
-                      backgroundColor: 'white', color: 'black',
-                      padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold',
-                      display: 'flex', alignItems: 'center', gap: '4px'
-                    }}>
-                      <Star size={12} fill="black" /> {stay.rating}
-                    </div>
-                  </div>
-
-                  {/* Card Content Area */}
-                  <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ marginBottom: '8px', color: THEME.accent, fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>
-                      {stay.type} • {stay.district}
-                    </div>
-                    
-                    <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'white', marginBottom: '12px', lineHeight: '1.4' }}>
-                      {stay.name}
-                    </h3>
-                    
-                    {/* Amenities Icons (Mini) */}
-                    <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', color: THEME.textSecondary }}>
-                      <Wifi size={16} />
-                      <Coffee size={16} />
-                      <Car size={16} />
-                      <span style={{ fontSize: '12px' }}>+ more</span>
-                    </div>
-
-                    <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: `1px solid ${THEME.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                       <div>
-                         <span style={{ fontSize: '12px', color: THEME.textSecondary }}>Start from</span>
-                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: THEME.highlight }}>RM {stay.price_per_night}</div>
-                       </div>
-                       
-                       <button style={{
-                         width: '36px', height: '36px', borderRadius: '50%',
-                         backgroundColor: 'rgba(255,255,255,0.1)', border: 'none',
-                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                         color: 'white'
-                       }}>
-                         <ArrowRight size={18} />
-                       </button>
-                    </div>
-                  </div>
-                </div>
+                <StayCard key={stay.id} stay={stay} />
               ))}
             </div>
 
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-              totalItems={filteredStays.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              accentColor={THEME.accent}
-            />
+            {totalPages > 1 && (
+              <div style={{ marginTop: '40px' }}>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </>
         )}
       </main>
-      
+
       <SharedFooter />
     </div>
   );
