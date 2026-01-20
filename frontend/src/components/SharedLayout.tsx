@@ -22,8 +22,8 @@ export function SharedHeader() {
   // Base style for desktop links
   const linkStyle = (path: string) => ({
     color: isActive(path) ? '#2dd4bf' : '#cbd5e1', // Teal if active, Slate-300 if not
-    fontSize: '14px',
-    fontWeight: '500' as const,
+    fontSize: '17px',
+    fontWeight: '600' as const,
     textDecoration: 'none',
     transition: 'color 0.2s',
   });
@@ -93,17 +93,17 @@ export function SharedHeader() {
               <Link to="/food" style={linkStyle('/food')}>Food</Link>
               <Link to="/stays" style={linkStyle('/stays')}>Stay</Link>
               <Link to="/events" style={linkStyle('/events')}>Events</Link>
-              <Link to="/analytics" style={{ ...linkStyle('/analytics'), display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <BarChart3 size={14} />
+              <Link to="/analytics" style={{ ...linkStyle('/analytics'), display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <BarChart3 size={18} />
                 Analytics
               </Link>
               <Link to="/sign-in" style={{ 
                 backgroundColor: '#fbef00', // Yellow from Home Page
                 color: 'black', 
-                padding: '8px 16px', 
+                padding: '10px 20px', 
                 borderRadius: '8px', 
-                fontSize: '14px', 
-                fontWeight: '500', 
+                fontSize: '16px', 
+                fontWeight: '600', 
                 textDecoration: 'none' 
               }}>
                 Sign In

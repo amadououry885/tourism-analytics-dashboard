@@ -83,16 +83,16 @@ export default function HomePage() {
 
             {/* Desktop Navigation */}
             <nav className="nav-desktop">
-              <Link to="/" style={{ color: '#2dd4bf', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Home</Link>
-              <Link to="/places" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Places</Link>
-              <Link to="/food" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Food</Link>
-              <Link to="/stays" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Stay</Link>
-              <Link to="/events" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>Events</Link>
-              <Link to="/analytics" style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <BarChart3 size={14} />
+              <Link to="/" style={{ color: '#2dd4bf', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Home</Link>
+              <Link to="/places" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Places</Link>
+              <Link to="/food" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Food</Link>
+              <Link to="/stays" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Stay</Link>
+              <Link to="/events" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Events</Link>
+              <Link to="/analytics" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <BarChart3 size={18} />
                 Analytics
               </Link>
-              <Link to="/sign-in" style={{ backgroundColor: '#fbef00', color: 'black', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '500', textDecoration: 'none' }}>
+              <Link to="/sign-in" style={{ backgroundColor: '#fbef00', color: 'black', padding: '10px 20px', borderRadius: '8px', fontSize: '16px', fontWeight: '600', textDecoration: 'none' }}>
                 Sign In
               </Link>
             </nav>
