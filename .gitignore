@@ -82,3 +82,4 @@ backend/venv/
 env/
 *.zip
 eb-logs.txt
+frontend/dist/
