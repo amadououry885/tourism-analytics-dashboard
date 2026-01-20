@@ -243,19 +243,24 @@ def reject_user(request, user_id):
         # Get optional rejection reason from request body
         reason = request.data.get('reason', None) if request.data else None
         
-        user.is_active = False
-        user.is_approved = False
-        user.save(update_fields=['is_active', 'is_approved'])
+        # Store user info before deletion for email and response
+        username = user.username
+        user_email = user.email
         
-        # Send rejection email notification with reason
+        # Send rejection email notification with reason BEFORE deleting
         email_sent = send_rejection_email(user, reason=reason)
         if email_sent:
-            logger.info(f"Rejection email sent to {user.email}")
+            logger.info(f"Rejection email sent to {user_email}")
         else:
-            logger.warning(f"Failed to send rejection email to {user.email}, but user was rejected")
+            logger.warning(f"Failed to send rejection email to {user_email}")
+        
+        # Delete the user so they can re-register if needed
+        # This also removes them from the pending list
+        user.delete()
+        logger.info(f"User {username} ({user_email}) deleted after rejection")
         
         return Response({
-            'message': f'User {user.username} rejected/deactivated successfully',
+            'message': f'User {username} rejected and removed successfully',
             'email_sent': email_sent
         }, status=status.HTTP_200_OK)
     except User.DoesNotExist:
