@@ -3,7 +3,10 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.core.exceptions import ValidationError
 from django.contrib.auth.validators import UnicodeUsernameValidator
 import re
+import logging
 from .models import User
+
+logger = logging.getLogger(__name__)
 
 
 def simple_password_validator(password):
@@ -13,7 +16,38 @@ def simple_password_validator(password):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Custom JWT serializer to include user data in the token"""
+    """Custom JWT serializer that supports login with email OR username"""
+    
+    def validate(self, attrs):
+        # Get the username/email field value
+        username_field = attrs.get('username', '')
+        logger.info(f"Login attempt with: {username_field}")
+        
+        # Check if user is trying to login with email
+        if '@' in username_field:
+            try:
+                user = User.objects.get(email__iexact=username_field)
+                logger.info(f"Found user by email: {user.username}, is_active={user.is_active}")
+                # Replace email with actual username for authentication
+                attrs['username'] = user.username
+            except User.DoesNotExist:
+                logger.warning(f"No user found with email: {username_field}")
+        else:
+            # Also try case-insensitive username lookup
+            try:
+                user = User.objects.get(username__iexact=username_field)
+                logger.info(f"Found user by username: {user.username}, is_active={user.is_active}")
+                attrs['username'] = user.username
+            except User.DoesNotExist:
+                logger.warning(f"No user found with username: {username_field}")
+        
+        try:
+            result = super().validate(attrs)
+            logger.info(f"Login successful for: {username_field}")
+            return result
+        except Exception as e:
+            logger.error(f"Login failed for {username_field}: {str(e)}")
+            raise
     
     @classmethod
     def get_token(cls, user):
@@ -119,7 +153,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         validated_data.pop('password2')
-        user = User.objects.create_user(**validated_data)
+        password = validated_data.pop('password')
+        
+        # Create user with explicit is_active=True
+        user = User(
+            is_active=True,  # Explicitly set to True
+            **validated_data
+        )
+        user.set_password(password)  # Hash the password properly
+        user.save()
+        
         return user
 
 
