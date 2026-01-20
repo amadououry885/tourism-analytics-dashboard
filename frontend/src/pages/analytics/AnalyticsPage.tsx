@@ -133,14 +133,18 @@ export default function AnalyticsPage() {
 
         if (metricsRes.data) {
           const data = metricsRes.data;
+          
+          // Helper to check if array has data
+          const hasData = (arr: any) => Array.isArray(arr) && arr.length > 0;
+          
           setMetrics({
             totalPosts: data.total_posts || defaultMetrics.totalPosts,
             totalLikes: data.total_likes || defaultMetrics.totalLikes,
             totalComments: data.total_comments || defaultMetrics.totalComments,
             totalShares: data.shares || defaultMetrics.totalShares,
             pageViews: data.page_views || defaultMetrics.pageViews,
-            trendingPct: data.trending_pct || defaultMetrics.trendingPct,
-            sentiment: sentimentRes.data ? {
+            trendingPct: data.trending_pct ?? defaultMetrics.trendingPct,
+            sentiment: sentimentRes.data && (sentimentRes.data.positive || sentimentRes.data.neutral || sentimentRes.data.negative) ? {
               positive: sentimentRes.data.positive || 0,
               neutral: sentimentRes.data.neutral || 0,
               negative: sentimentRes.data.negative || 0,
@@ -148,8 +152,8 @@ export default function AnalyticsPage() {
               neutralPct: sentimentRes.data.neutral_pct || 30,
               negativePct: sentimentRes.data.negative_pct || 10
             } : defaultMetrics.sentiment,
-            platforms: data.platforms || defaultMetrics.platforms,
-            dailyTrends: data.daily_trends || defaultMetrics.dailyTrends
+            platforms: hasData(data.platforms) ? data.platforms : defaultMetrics.platforms,
+            dailyTrends: hasData(data.daily_trends) ? data.daily_trends : defaultMetrics.dailyTrends
           });
         }
 
