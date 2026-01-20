@@ -883,9 +883,10 @@ class PlaceSentimentDetailView(APIView):
 
 class PlacesByVisitLevelView(APIView):
     """
-    GET /api/analytics/places/by-visit-level/?level=most|least|medium
+    GET /api/analytics/places/by-visit-level/?level=most|least|medium&city=<city>
     Categorizes places by visit frequency with sentiment analysis.
     Uses engagement percentiles to define most/medium/least visited tiers.
+    Supports optional city filtering.
     """
     permission_classes = [AllowAny]
     
@@ -894,6 +895,7 @@ class PlacesByVisitLevelView(APIView):
         import numpy as np
         
         level = request.GET.get('level', 'most')  # most, least, medium
+        city_filter = request.GET.get('city', None)  # optional city filter
         
         if level not in ['most', 'least', 'medium']:
             return Response(
@@ -910,6 +912,10 @@ class PlacesByVisitLevelView(APIView):
             neutral_count=Count('posts', filter=Q(posts__sentiment='neutral')),
             negative_count=Count('posts', filter=Q(posts__sentiment='negative'))
         ).filter(posts_count__gt=0)
+        
+        # Apply city filter if provided
+        if city_filter and city_filter != 'all':
+            places = places.filter(city__icontains=city_filter)
         
         if not places.exists():
             # Return demo data for presentation purposes

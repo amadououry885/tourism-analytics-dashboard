@@ -144,13 +144,15 @@ export default function AnalyticsPage() {
         const params = new URLSearchParams();
         if (selectedCity && selectedCity !== 'all') params.append('city', selectedCity);
         params.append('period', timeRange);
+        
+        const queryString = params.toString();
 
         const [metricsRes, placesRes, sentimentRes, mostVisitedRes, leastVisitedRes] = await Promise.all([
-          api.get(`/analytics/overview-metrics/?${params.toString()}`).catch(() => ({ data: null })),
-          api.get(`/analytics/places/popular/?${params.toString()}`).catch(() => ({ data: [] })),
-          api.get(`/analytics/sentiment/summary/?${params.toString()}`).catch(() => ({ data: null })),
-          api.get(`/analytics/places/by-visit-level/?level=most`).catch(() => ({ data: [] })),
-          api.get(`/analytics/places/by-visit-level/?level=least`).catch(() => ({ data: [] })),
+          api.get(`/analytics/overview-metrics/?${queryString}`).catch(() => ({ data: null })),
+          api.get(`/analytics/places/popular/?${queryString}`).catch(() => ({ data: [] })),
+          api.get(`/analytics/sentiment/summary/?${queryString}`).catch(() => ({ data: null })),
+          api.get(`/analytics/places/by-visit-level/?level=most&${queryString}`).catch(() => ({ data: [] })),
+          api.get(`/analytics/places/by-visit-level/?level=least&${queryString}`).catch(() => ({ data: [] })),
         ]);
 
         // Helper to check if array has data
@@ -179,41 +181,84 @@ export default function AnalyticsPage() {
           });
         }
 
+        // Set top places - filter by city if API doesn't do it
         if (placesRes.data && Array.isArray(placesRes.data) && placesRes.data.length > 0) {
-          setTopPlaces(placesRes.data.slice(0, 5).map((p: any) => ({
+          let filteredPlaces = placesRes.data;
+          // Client-side filter if needed (backup)
+          if (selectedCity && selectedCity !== 'all') {
+            filteredPlaces = placesRes.data.filter((p: any) => 
+              p.city?.toLowerCase().includes(selectedCity.toLowerCase().replace('-', ' '))
+            );
+          }
+          setTopPlaces((filteredPlaces.length > 0 ? filteredPlaces : placesRes.data).slice(0, 5).map((p: any) => ({
             name: p.name || p.place_name,
             visitors: p.total_engagement || p.visitors || p.posts || 0,
             rating: p.rating || p.avg_rating || 4.0,
             trend: Math.floor(Math.random() * 20) - 5
           })));
+        } else {
+          // Reset to default when no data for selected city
+          setTopPlaces(defaultPlaces);
         }
 
         // Set most visited places
         if (hasData(mostVisitedRes.data)) {
-          setMostVisited(mostVisitedRes.data.slice(0, 5).map((p: any) => ({
-            id: p.id,
-            name: p.name || p.place_name,
-            category: p.category || 'Attraction',
-            city: p.city || 'Kedah',
-            engagement: p.total_engagement || p.engagement || 0,
-            posts: p.posts_count || p.posts || 0,
-            sentiment: p.sentiment?.positive_percentage || 75,
-            rating: p.sentiment?.rating || p.rating || 4.0
-          })));
+          let filteredMost = mostVisitedRes.data;
+          if (selectedCity && selectedCity !== 'all') {
+            filteredMost = mostVisitedRes.data.filter((p: any) => 
+              p.city?.toLowerCase().includes(selectedCity.toLowerCase().replace('-', ' '))
+            );
+          }
+          if (filteredMost.length > 0) {
+            setMostVisited(filteredMost.slice(0, 5).map((p: any) => ({
+              id: p.id,
+              name: p.name || p.place_name,
+              category: p.category || 'Attraction',
+              city: p.city || 'Kedah',
+              engagement: p.total_engagement || p.engagement || 0,
+              posts: p.posts_count || p.posts || 0,
+              sentiment: p.sentiment?.positive_percentage || 75,
+              rating: p.sentiment?.rating || p.rating || 4.0
+            })));
+          } else {
+            setMostVisited(defaultMostVisited.filter(p => 
+              selectedCity === 'all' || p.city.toLowerCase().includes(selectedCity.toLowerCase().replace('-', ' '))
+            ));
+          }
+        } else {
+          setMostVisited(defaultMostVisited.filter(p => 
+            selectedCity === 'all' || p.city.toLowerCase().includes(selectedCity.toLowerCase().replace('-', ' '))
+          ));
         }
 
         // Set least visited places (hidden gems)
         if (hasData(leastVisitedRes.data)) {
-          setLeastVisited(leastVisitedRes.data.slice(0, 5).map((p: any) => ({
-            id: p.id,
-            name: p.name || p.place_name,
-            category: p.category || 'Attraction',
-            city: p.city || 'Kedah',
-            engagement: p.total_engagement || p.engagement || 0,
-            posts: p.posts_count || p.posts || 0,
-            sentiment: p.sentiment?.positive_percentage || 70,
-            rating: p.sentiment?.rating || p.rating || 4.0
-          })));
+          let filteredLeast = leastVisitedRes.data;
+          if (selectedCity && selectedCity !== 'all') {
+            filteredLeast = leastVisitedRes.data.filter((p: any) => 
+              p.city?.toLowerCase().includes(selectedCity.toLowerCase().replace('-', ' '))
+            );
+          }
+          if (filteredLeast.length > 0) {
+            setLeastVisited(filteredLeast.slice(0, 5).map((p: any) => ({
+              id: p.id,
+              name: p.name || p.place_name,
+              category: p.category || 'Attraction',
+              city: p.city || 'Kedah',
+              engagement: p.total_engagement || p.engagement || 0,
+              posts: p.posts_count || p.posts || 0,
+              sentiment: p.sentiment?.positive_percentage || 70,
+              rating: p.sentiment?.rating || p.rating || 4.0
+            })));
+          } else {
+            setLeastVisited(defaultLeastVisited.filter(p => 
+              selectedCity === 'all' || p.city.toLowerCase().includes(selectedCity.toLowerCase().replace('-', ' '))
+            ));
+          }
+        } else {
+          setLeastVisited(defaultLeastVisited.filter(p => 
+            selectedCity === 'all' || p.city.toLowerCase().includes(selectedCity.toLowerCase().replace('-', ' '))
+          ));
         }
       } catch (err) {
         console.error('Error fetching analytics:', err);
