@@ -54,6 +54,10 @@ class EventViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        
+        # Only show published events to non-admin users
+        if not self.request.user.is_staff:
+            qs = qs.filter(is_published=True)
 
         city = self.request.query_params.get("city")
         q = self.request.query_params.get("q")
@@ -89,19 +93,21 @@ class EventViewSet(viewsets.ModelViewSet):
         if end_before:
             qs = qs.filter(end_date__lte=end_before)
         
-        # ✨ UPDATED: By default, show all non-recurring events AND recurring instances
+        # ✨ UPDATED: Handle recurring events visibility
         if hide_instances == "1":
             # Admin view: show only parent events (templates), hide instances
             qs = qs.filter(is_recurring_instance=False)
         else:
-            # Default user view: show instances OR non-recurring events
+            # Default user view: show ALL events
+            # - One-time events (recurrence_type='none')
+            # - Recurring instances (is_recurring_instance=True)  
+            # - Parent recurring events (for visibility, they should show too)
             # Also auto-generate upcoming instances for recurring events
             self._ensure_recurring_instances(qs)
             
-            qs = qs.filter(
-                Q(is_recurring_instance=True) |  # Show recurring instances
-                Q(recurrence_type='none')         # Show one-time events
-            )
+            # Show all events - don't filter out parent recurring events
+            # The frontend will display them appropriately
+            pass  # No additional filtering needed - show all published events
 
         return qs
     

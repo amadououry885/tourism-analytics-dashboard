@@ -15,6 +15,7 @@ interface EventDetail {
   image_url?: string;
   tags?: string[];
   expected_attendance?: number;
+  actual_attendance?: number;
   attendee_count?: number;
   max_capacity?: number;
   spots_remaining?: number;
@@ -24,6 +25,20 @@ interface EventDetail {
   lat?: number;
   lon?: number;
   requires_approval?: boolean;
+  // Recurring event fields
+  recurrence_type?: string;
+  recurrence_end_date?: string;
+  parent_event?: number;
+  is_recurring_instance?: boolean;
+  // Live event fields
+  days_into_event?: number;
+  total_days?: number;
+  days_remaining?: number;
+  // Registration fields
+  user_registered?: boolean;
+  user_has_reminder?: boolean;
+  has_custom_form?: boolean;
+  approval_message?: string;
 }
 
 interface NearbyPlace {
@@ -999,6 +1014,23 @@ export default function EventDetails() {
               </div>
             </div>
             
+            {event.total_days && event.total_days > 1 && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Calendar size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Duration</div>
+                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>
+                    {event.total_days} days
+                    {event.is_happening_now && event.days_into_event && (
+                      <span style={{ color: '#a855f7', marginLeft: '8px' }}>
+                        (Day {event.days_into_event} of {event.total_days})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
               <MapPin size={20} color="#64748b" />
               <div>
@@ -1009,6 +1041,48 @@ export default function EventDetails() {
                 </div>
               </div>
             </div>
+            
+            {event.max_capacity && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Users size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Capacity</div>
+                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>
+                    {event.attendee_count?.toLocaleString() || 0} / {event.max_capacity.toLocaleString()} registered
+                    {event.spots_remaining !== null && event.spots_remaining !== undefined && (
+                      <span style={{ color: '#94a3b8', marginLeft: '8px' }}>
+                        ({event.spots_remaining.toLocaleString()} spots left)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {event.recurrence_type && event.recurrence_type !== 'none' && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Calendar size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Recurring Event</div>
+                  <div style={{ fontSize: '15px', color: '#e2e8f0', textTransform: 'capitalize' }}>
+                    {event.recurrence_type}
+                    {event.recurrence_end_date && ` until ${new Date(event.recurrence_end_date).toLocaleDateString()}`}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {event.requires_approval && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <AlertCircle size={20} color="#f59e0b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Registration</div>
+                  <div style={{ fontSize: '15px', color: '#f59e0b' }}>
+                    Requires Approval
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

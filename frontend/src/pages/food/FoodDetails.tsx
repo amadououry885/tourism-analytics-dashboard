@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, Clock, Navigation, Share2, Phone, Mail, Globe, DollarSign, Utensils, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Clock, Navigation, Share2, Phone, Mail, Globe, DollarSign, Utensils, Users, Calendar, Car, Wifi, Accessibility, Truck, ShoppingBag, CalendarCheck, Shirt, ExternalLink, Instagram, Facebook } from 'lucide-react';
 import api from '../../services/api';
 import { ReservationModal } from '../../components/ReservationModal';
 
@@ -43,6 +43,29 @@ interface RestaurantDetail {
   email?: string;
   website?: string;
   is_halal?: boolean;
+  // New fields from backend
+  contact_phone?: string;
+  contact_email?: string;
+  official_website?: string;
+  facebook_url?: string;
+  instagram_url?: string;
+  tripadvisor_url?: string;
+  google_maps_url?: string;
+  logo_url?: string;
+  cover_image_url?: string;
+  gallery_images?: string[];
+  amenities?: {
+    parking?: boolean;
+    wifi?: boolean;
+    wheelchair_accessible?: boolean;
+    outdoor_seating?: boolean;
+    air_conditioning?: boolean;
+  };
+  delivery_available?: boolean;
+  takeaway_available?: boolean;
+  reservation_required?: boolean;
+  dress_code?: string;
+  established_year?: number;
 }
 
 // Helper function to compute real-time open/closed status
@@ -140,10 +163,27 @@ export default function FoodDetails() {
           address: vendor.address,
           opening_hours: vendor.opening_hours,
           opening_hours_data: openingHoursData,
-          phone: vendor.phone,
-          email: vendor.email,
-          website: vendor.website,
+          phone: vendor.contact_phone || vendor.phone,
+          email: vendor.contact_email || vendor.email,
+          website: vendor.official_website || vendor.website,
           is_halal: vendor.is_halal,
+          // New fields
+          contact_phone: vendor.contact_phone,
+          contact_email: vendor.contact_email,
+          official_website: vendor.official_website,
+          facebook_url: vendor.facebook_url,
+          instagram_url: vendor.instagram_url,
+          tripadvisor_url: vendor.tripadvisor_url,
+          google_maps_url: vendor.google_maps_url,
+          logo_url: vendor.logo_url,
+          cover_image_url: vendor.cover_image_url,
+          gallery_images: vendor.gallery_images,
+          amenities: vendor.amenities,
+          delivery_available: vendor.delivery_available,
+          takeaway_available: vendor.takeaway_available,
+          reservation_required: vendor.reservation_required,
+          dress_code: vendor.dress_code,
+          established_year: vendor.established_year,
         });
 
         // Compute real-time open/closed status from opening hours
@@ -664,6 +704,7 @@ export default function FoodDetails() {
           borderRadius: '16px',
           padding: '24px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
+          marginBottom: '24px',
         }}>
           <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', marginBottom: '20px' }}>
             Details
@@ -690,19 +731,248 @@ export default function FoodDetails() {
               </div>
             )}
             
-            {restaurant.phone && (
+            {(restaurant.phone || restaurant.contact_phone) && (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                 <Phone size={20} color="#64748b" />
                 <div>
                   <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Phone</div>
-                  <a href={`tel:${restaurant.phone}`} style={{ fontSize: '15px', color: '#f97316', textDecoration: 'none' }}>
-                    {restaurant.phone}
+                  <a href={`tel:${restaurant.contact_phone || restaurant.phone}`} style={{ fontSize: '15px', color: '#f97316', textDecoration: 'none' }}>
+                    {restaurant.contact_phone || restaurant.phone}
                   </a>
+                </div>
+              </div>
+            )}
+
+            {(restaurant.email || restaurant.contact_email) && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Mail size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Email</div>
+                  <a href={`mailto:${restaurant.contact_email || restaurant.email}`} style={{ fontSize: '15px', color: '#f97316', textDecoration: 'none' }}>
+                    {restaurant.contact_email || restaurant.email}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {(restaurant.website || restaurant.official_website) && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Globe size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Website</div>
+                  <a href={restaurant.official_website || restaurant.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: '15px', color: '#f97316', textDecoration: 'none' }}>
+                    Visit Website
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {restaurant.dress_code && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Shirt size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Dress Code</div>
+                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>{restaurant.dress_code}</div>
+                </div>
+              </div>
+            )}
+
+            {restaurant.established_year && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                <Calendar size={20} color="#64748b" />
+                <div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px' }}>Established</div>
+                  <div style={{ fontSize: '15px', color: '#e2e8f0' }}>{restaurant.established_year}</div>
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* Services Section */}
+        {(restaurant.delivery_available || restaurant.takeaway_available || restaurant.reservation_required !== undefined) && (
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            marginBottom: '24px',
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', marginBottom: '20px' }}>
+              Services
+            </h2>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {restaurant.delivery_available && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '10px',
+                  color: '#22c55e',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <Truck size={18} />
+                  Delivery Available
+                </div>
+              )}
+              {restaurant.takeaway_available && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '10px',
+                  color: '#3b82f6',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <ShoppingBag size={18} />
+                  Takeaway Available
+                </div>
+              )}
+              {restaurant.reservation_required && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '10px',
+                  color: '#a855f7',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                }}>
+                  <CalendarCheck size={18} />
+                  Reservation Required
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Amenities Section */}
+        {restaurant.amenities && Object.values(restaurant.amenities).some(v => v) && (
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            marginBottom: '24px',
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', marginBottom: '20px' }}>
+              Amenities
+            </h2>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {restaurant.amenities.parking && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)',
+                  borderRadius: '10px', color: '#22c55e', fontSize: '14px', fontWeight: '500',
+                }}>
+                  <Car size={18} /> Parking
+                </div>
+              )}
+              {restaurant.amenities.wifi && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '10px', color: '#3b82f6', fontSize: '14px', fontWeight: '500',
+                }}>
+                  <Wifi size={18} /> Free WiFi
+                </div>
+              )}
+              {restaurant.amenities.wheelchair_accessible && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '10px', color: '#a855f7', fontSize: '14px', fontWeight: '500',
+                }}>
+                  <Accessibility size={18} /> Wheelchair Accessible
+                </div>
+              )}
+              {restaurant.amenities.outdoor_seating && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(249, 115, 22, 0.15)', border: '1px solid rgba(249, 115, 22, 0.3)',
+                  borderRadius: '10px', color: '#f97316', fontSize: '14px', fontWeight: '500',
+                }}>
+                  ☀️ Outdoor Seating
+                </div>
+              )}
+              {restaurant.amenities.air_conditioning && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(45, 212, 191, 0.15)', border: '1px solid rgba(45, 212, 191, 0.3)',
+                  borderRadius: '10px', color: '#2dd4bf', fontSize: '14px', fontWeight: '500',
+                }}>
+                  ❄️ Air Conditioning
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* External Links */}
+        {(restaurant.facebook_url || restaurant.instagram_url || restaurant.tripadvisor_url || restaurant.google_maps_url) && (
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '16px',
+            padding: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff', marginBottom: '20px' }}>
+              Find Us Online
+            </h2>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+              {restaurant.facebook_url && (
+                <a href={restaurant.facebook_url} target="_blank" rel="noopener noreferrer" style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(59, 89, 152, 0.15)', border: '1px solid rgba(59, 89, 152, 0.3)',
+                  borderRadius: '10px', color: '#3b5998', textDecoration: 'none', fontSize: '14px', fontWeight: '500',
+                }}>
+                  <Facebook size={18} /> Facebook
+                </a>
+              )}
+              {restaurant.instagram_url && (
+                <a href={restaurant.instagram_url} target="_blank" rel="noopener noreferrer" style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(225, 48, 108, 0.15)', border: '1px solid rgba(225, 48, 108, 0.3)',
+                  borderRadius: '10px', color: '#e1306c', textDecoration: 'none', fontSize: '14px', fontWeight: '500',
+                }}>
+                  <Instagram size={18} /> Instagram
+                </a>
+              )}
+              {restaurant.tripadvisor_url && (
+                <a href={restaurant.tripadvisor_url} target="_blank" rel="noopener noreferrer" style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(0, 175, 135, 0.15)', border: '1px solid rgba(0, 175, 135, 0.3)',
+                  borderRadius: '10px', color: '#00af87', textDecoration: 'none', fontSize: '14px', fontWeight: '500',
+                }}>
+                  <ExternalLink size={18} /> TripAdvisor
+                </a>
+              )}
+              {restaurant.google_maps_url && (
+                <a href={restaurant.google_maps_url} target="_blank" rel="noopener noreferrer" style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px',
+                  backgroundColor: 'rgba(66, 133, 244, 0.15)', border: '1px solid rgba(66, 133, 244, 0.3)',
+                  borderRadius: '10px', color: '#4285f4', textDecoration: 'none', fontSize: '14px', fontWeight: '500',
+                }}>
+                  <MapPin size={18} /> Google Maps
+                </a>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
