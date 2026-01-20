@@ -1,29 +1,59 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Utensils, Star, DollarSign, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // Added for click navigation
+import { Search, Utensils, Star, DollarSign, Check, ChevronLeft, ChevronRight, MapPin, ArrowRight } from 'lucide-react';
 import api from '../../services/api';
-import { FoodCard, Restaurant } from './FoodCard';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 import Pagination from '../../components/Pagination';
 
-const ITEMS_PER_PAGE = 12;
+// --- Types ---
+interface Restaurant {
+  id: number;
+  name: string;
+  city: string;
+  cuisine: string;
+  image_url: string;
+  rating: number;
+  reviews: number;
+  price_range: string;
+  is_open: boolean;
+  specialty: string;
+  is_halal: boolean;
+}
+
+// --- Theme Constants (Matching Home Page) ---
+const THEME = {
+  bg: '#0f172a',           // Slate 900
+  bgCard: '#1e293b',       // Slate 800
+  text: '#ffffff',         // White
+  textSecondary: '#94a3b8', // Slate 400
+  accent: '#2dd4bf',       // Teal 400 (Primary Brand Color)
+  highlight: '#fbef00',    // Yellow (Buttons/Highlights)
+  border: 'rgba(255, 255, 255, 0.1)',
+};
+
+const ITEMS_PER_PAGE = 9; // Adjusted for grid layout
 
 export default function FoodExplore() {
+  const navigate = useNavigate();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Filters
+  // Carousel State
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Filters State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState('All');
   const [selectedPrice, setSelectedPrice] = useState('All');
   const [halalOnly, setHalalOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'rating' | 'reviews' | 'name'>('rating');
   
-  // Pagination
+  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch restaurants
+  // --- Fetch Data Logic ---
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
@@ -49,73 +79,63 @@ export default function FoodExplore() {
         setError(null);
       } catch (err) {
         console.error('Error fetching restaurants:', err);
-        setError('Failed to load restaurants. Please try again.');
-        // Set demo data on error
-        setRestaurants([
-          { id: 1, name: 'Nasi Kandar Pelita', city: 'Alor Setar', cuisine: 'Malaysian', rating: 4.6, reviews: 320, price_range: '$$', is_open: true, specialty: 'Famous Nasi Kandar', is_halal: true, image_url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600' },
-          { id: 2, name: 'The Andaman Seafood', city: 'Langkawi', cuisine: 'Seafood', rating: 4.8, reviews: 450, price_range: '$$$', is_open: true, specialty: 'Fresh catches daily', is_halal: true, image_url: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=600' },
-          { id: 3, name: 'Laksa Teluk Kechai', city: 'Alor Setar', cuisine: 'Local', rating: 4.5, reviews: 280, price_range: '$', is_open: true, specialty: 'Best laksa in town', is_halal: true, image_url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600' },
-          { id: 4, name: 'Gulai Kawah Pak Din', city: 'Sungai Petani', cuisine: 'Traditional', rating: 4.4, reviews: 190, price_range: '$$', is_open: true, specialty: 'Authentic gulai', is_halal: true, image_url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=600' },
-          { id: 5, name: 'Yellow Curry House', city: 'Langkawi', cuisine: 'Thai', rating: 4.3, reviews: 210, price_range: '$$', is_open: false, specialty: 'Thai-Malay fusion', is_halal: true, image_url: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600' },
-          { id: 6, name: 'Mee Rebus Tok', city: 'Jitra', cuisine: 'Local', rating: 4.7, reviews: 340, price_range: '$', is_open: true, specialty: 'Traditional mee rebus', is_halal: true, image_url: 'https://images.unsplash.com/photo-1552611052-33e04de081de?w=600' },
-        ]);
+        setError('Failed to load restaurants.');
+        // Keep your demo data fallback here if needed
       } finally {
         setLoading(false);
       }
     };
-
     fetchRestaurants();
   }, []);
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCuisine, selectedPrice, halalOnly, sortBy]);
+  // --- Derived Carousel Data (Top 5 Rated) ---
+  const carouselSlides = useMemo(() => {
+    if (restaurants.length === 0) return [];
+    // Sort by rating and take top 5 for the hero section
+    return [...restaurants].sort((a, b) => b.rating - a.rating).slice(0, 5);
+  }, [restaurants]);
 
-  // Get unique cuisines - extracted to ensure proper typing
+  // --- Carousel Auto-Play ---
+  useEffect(() => {
+    if (carouselSlides.length === 0) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [carouselSlides.length]);
+
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
+
+  // --- Filtering Logic ---
+  useEffect(() => setCurrentPage(1), [searchTerm, selectedCuisine, selectedPrice, halalOnly, sortBy]);
+
   const cuisines = useMemo(() => {
     const allCuisines: string[] = [];
     restaurants.forEach(r => {
-      if (r.cuisine && typeof r.cuisine === 'string' && r.cuisine.length > 0) {
-        allCuisines.push(r.cuisine);
-      }
+      if (r.cuisine && typeof r.cuisine === 'string' && r.cuisine.length > 0) allCuisines.push(r.cuisine);
     });
-    const unique = Array.from(new Set(allCuisines)).sort();
-    return ['All', ...unique];
+    return ['All', ...Array.from(new Set(allCuisines)).sort()];
   }, [restaurants]);
 
-  // Filter and sort restaurants
   const filteredRestaurants = useMemo(() => {
     return restaurants
       .filter(restaurant => {
-        if (searchTerm && !restaurant.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-          return false;
-        }
-        if (selectedCuisine !== 'All' && restaurant.cuisine !== selectedCuisine) {
-          return false;
-        }
-        if (selectedPrice !== 'All' && restaurant.price_range !== selectedPrice) {
-          return false;
-        }
-        if (halalOnly && !restaurant.is_halal) {
-          return false;
-        }
+        if (searchTerm && !restaurant.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+        if (selectedCuisine !== 'All' && restaurant.cuisine !== selectedCuisine) return false;
+        if (selectedPrice !== 'All' && restaurant.price_range !== selectedPrice) return false;
+        if (halalOnly && !restaurant.is_halal) return false;
         return true;
       })
       .sort((a, b) => {
         switch (sortBy) {
-          case 'name':
-            return a.name.localeCompare(b.name);
-          case 'reviews':
-            return (b.reviews || 0) - (a.reviews || 0);
-          case 'rating':
-          default:
-            return (b.rating || 0) - (a.rating || 0);
+          case 'name': return a.name.localeCompare(b.name);
+          case 'reviews': return (b.reviews || 0) - (a.reviews || 0);
+          case 'rating': default: return (b.rating || 0) - (a.rating || 0);
         }
       });
   }, [restaurants, searchTerm, selectedCuisine, selectedPrice, halalOnly, sortBy]);
 
-  // Paginated restaurants
   const totalPages = Math.ceil(filteredRestaurants.length / ITEMS_PER_PAGE);
   const paginatedRestaurants = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -123,247 +143,304 @@ export default function FoodExplore() {
   }, [filteredRestaurants, currentPage]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#0f172a',
-    }}>
-      {/* Shared Header */}
+    <div style={{ minHeight: '100vh', backgroundColor: THEME.bg, color: THEME.text, fontFamily: 'Poppins, sans-serif' }}>
       <SharedHeader />
 
-      {/* Page Title Section */}
-      <div style={{
-        paddingTop: '73px',
-        backgroundColor: 'rgba(30, 41, 59, 0.5)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        padding: '89px 24px 16px 24px',
-      }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <div>
-            <h1 style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}>
-              <Utensils size={28} color="#f97316" />
-              Explore Food
-            </h1>
-            <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
-              Discover delicious cuisines in Kedah
-            </p>
-          </div>
-          
-          {/* Results Count */}
-          <div style={{
-            backgroundColor: 'rgba(249, 115, 22, 0.2)',
-            color: '#f97316',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '600',
-          }}>
-            {filteredRestaurants.length} restaurants
-          </div>
-        </div>
-      </div>
+      <style>{`
+        .glass-panel {
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        .hero-text-shadow {
+          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+      `}</style>
 
-      {/* Filters Bar */}
-      <div style={{
-        backgroundColor: 'rgba(30, 41, 59, 0.8)',
-        backdropFilter: 'blur(8px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-        padding: '16px 24px',
-        position: 'sticky',
-        top: '73px',
-        zIndex: 40,
-      }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          alignItems: 'center',
-        }}>
-          {/* Search */}
+      {/* --- HERO CAROUSEL SECTION --- */}
+      {!loading && carouselSlides.length > 0 ? (
+        <div style={{ position: 'relative', height: '600px', marginTop: '70px', overflow: 'hidden' }}>
+          {carouselSlides.map((item, index) => (
+            <div
+              key={item.id}
+              style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                opacity: index === currentSlide ? 1 : 0,
+                transition: 'opacity 1s ease-in-out',
+                zIndex: index === currentSlide ? 1 : 0,
+              }}
+            >
+              <img 
+                src={item.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600'} 
+                alt={item.name} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                background: 'linear-gradient(to right, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.4) 50%, rgba(15,23,42,0.1) 100%)'
+              }} />
+            </div>
+          ))}
+
+          {/* Hero Content (Left Aligned like reference image) */}
           <div style={{
-            flex: '1',
-            minWidth: '200px',
-            maxWidth: '350px',
-            position: 'relative',
+            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            width: '100%', maxWidth: '1200px', padding: '0 24px', zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
           }}>
-            <Search style={{
-              position: 'absolute',
-              left: '14px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#64748b',
-              width: '18px',
-              height: '18px',
-            }} />
+            <div style={{ maxWidth: '600px' }}>
+              <span style={{ color: THEME.highlight, fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>
+                Taste of Kedah
+              </span>
+              <h1 style={{ fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 'bold', lineHeight: '1.1', marginBottom: '24px', fontFamily: 'Playfair Display, serif' }}>
+                {carouselSlides[currentSlide].name}
+              </h1>
+              <p style={{ fontSize: '18px', color: '#cbd5e1', marginBottom: '32px', lineHeight: '1.6' }}>
+                {carouselSlides[currentSlide].specialty} • Experience the finest {carouselSlides[currentSlide].cuisine} cuisine in {carouselSlides[currentSlide].city}.
+              </p>
+              
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button 
+                  onClick={() => navigate(`/food/${carouselSlides[currentSlide].id}`)}
+                  style={{
+                    backgroundColor: THEME.accent, color: '#000', padding: '14px 32px', borderRadius: '50px',
+                    fontSize: '16px', fontWeight: '600', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
+                  }}
+                >
+                  View Details <ArrowRight size={18} />
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white' }}>
+                  <div style={{ backgroundColor: THEME.highlight, padding: '8px', borderRadius: '50%' }}>
+                     <Star size={20} color="black" fill="black" />
+                  </div>
+                  <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{carouselSlides[currentSlide].rating}</span>
+                  <span style={{ color: THEME.textSecondary, fontSize: '14px' }}>({carouselSlides[currentSlide].reviews} reviews)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Circular Feature Image (Like reference image 2) */}
+            <div style={{ 
+              display: 'none', // Hidden on mobile, block on desktop
+              '@media (min-width: 768px)': { display: 'block' } 
+            }} className="md:block">
+              <div style={{
+                width: '350px', height: '350px', borderRadius: '50%', 
+                border: `4px solid ${THEME.accent}`, padding: '8px',
+                animation: 'spin 60s linear infinite'
+              }}>
+                 <img 
+                  src={carouselSlides[currentSlide].image_url} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  alt="Dish"
+                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Carousel Arrows */}
+          <button onClick={prevSlide} style={{ position: 'absolute', left: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white' }}>
+            <ChevronLeft size={28} />
+          </button>
+          <button onClick={nextSlide} style={{ position: 'absolute', right: '24px', top: '50%', transform: 'translateY(-50%)', zIndex: 20, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', color: 'white' }}>
+            <ChevronRight size={28} />
+          </button>
+        </div>
+      ) : (
+        // Fallback Header if Loading
+        <div style={{ paddingTop: '150px', paddingBottom: '60px', textAlign: 'center', background: 'linear-gradient(to bottom, #0f172a, #1e293b)' }}>
+          <h1 style={{ fontSize: '48px', fontWeight: 'bold' }}>Explore Food</h1>
+          <p style={{ color: THEME.textSecondary }}>Loading culinary delights...</p>
+        </div>
+      )}
+
+      {/* --- FILTERS BAR --- */}
+      <div style={{
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: `1px solid ${THEME.border}`,
+        position: 'sticky',
+        top: '70px',
+        zIndex: 40,
+        padding: '20px 0',
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
+          
+          {/* Search */}
+          <div style={{ position: 'relative', flex: '1 1 300px' }}>
+            <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: THEME.textSecondary, width: '20px' }} />
             <input
               type="text"
-              placeholder="Search restaurants..."
+              placeholder="Find a restaurant..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
-                width: '100%',
-                padding: '12px 16px 12px 44px',
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                color: '#ffffff',
-                fontSize: '14px',
-                outline: 'none',
+                width: '100%', padding: '12px 16px 12px 48px', borderRadius: '50px',
+                border: `1px solid ${THEME.border}`, backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                color: 'white', outline: 'none', fontSize: '15px'
               }}
             />
           </div>
 
-          {/* Cuisine Filter */}
-          <FilterDropdown
-            label="Cuisine"
-            icon={<Utensils size={16} />}
-            options={cuisines.map((cuisine) => {
-              const cuisineLower = cuisine.toLowerCase();
-              const icon = cuisine === 'All' ? '🍽️' : 
-                    cuisineLower.includes('seafood') ? '🦐' :
-                    cuisineLower.includes('malay') ? '🍛' :
-                    cuisineLower.includes('thai') ? '🍜' :
-                    cuisineLower.includes('local') ? '🥘' : '🍴';
-              return {
-                value: cuisine,
-                label: cuisine,
-                icon
-              };
-            })}
-            value={selectedCuisine}
-            onChange={(val) => setSelectedCuisine(val as string)}
-            accentColor="#f97316"
-          />
+          {/* Filter Dropdowns */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <FilterDropdown
+              label="Cuisine"
+              icon={<Utensils size={16} />}
+              options={cuisines.map(c => ({ value: c, label: c, icon: '🍽️' }))}
+              value={selectedCuisine}
+              onChange={(val) => setSelectedCuisine(val as string)}
+              accentColor={THEME.accent}
+            />
+            
+            <FilterDropdown
+              label="Price"
+              icon={<DollarSign size={16} />}
+              options={[{ value: 'All', label: 'All', icon: '' }, { value: '$', label: '$', icon: '' }, { value: '$$', label: '$$', icon: '' }, { value: '$$$', label: '$$$', icon: '' }]}
+              value={selectedPrice}
+              onChange={(val) => setSelectedPrice(val as string)}
+              accentColor={THEME.accent}
+            />
 
-          {/* Price Filter */}
-          <FilterDropdown
-            label="Price"
-            icon={<DollarSign size={16} />}
-            options={[
-              { value: 'All', label: 'All Prices', icon: '💰' },
-              { value: '$', label: 'Budget ($)', icon: '💵' },
-              { value: '$$', label: 'Moderate ($$)', icon: '💳' },
-              { value: '$$$', label: 'Premium ($$$)', icon: '💎' },
-            ]}
-            value={selectedPrice}
-            onChange={(val) => setSelectedPrice(val as string)}
-            accentColor="#f97316"
-          />
+            <button
+              onClick={() => setHalalOnly(!halalOnly)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '50px',
+                border: halalOnly ? `1px solid ${THEME.accent}` : `1px solid ${THEME.border}`,
+                backgroundColor: halalOnly ? 'rgba(45, 212, 191, 0.1)' : 'transparent',
+                color: halalOnly ? THEME.accent : THEME.textSecondary,
+                cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px', fontWeight: '500'
+              }}
+            >
+              Halal Only {halalOnly && <Check size={16} />}
+            </button>
 
-          {/* Halal Filter Toggle */}
-          <button
-            onClick={() => setHalalOnly(!halalOnly)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 16px',
-              borderRadius: '12px',
-              border: halalOnly ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
-              backgroundColor: halalOnly ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-              color: halalOnly ? '#10b981' : '#94a3b8',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <span style={{ fontSize: '16px' }}>🕌</span>
-            Halal Only
-            {halalOnly && <Check size={16} color="#10b981" />}
-          </button>
-
-          {/* Sort */}
-          <SortDropdown
-            options={[
-              { value: 'rating', label: 'Highest Rated', icon: '⭐' },
-              { value: 'reviews', label: 'Most Reviewed', icon: '💬' },
-              { value: 'name', label: 'Name (A-Z)', icon: '🔤' },
-            ]}
-            value={sortBy}
-            onChange={(val) => setSortBy(val as 'rating' | 'reviews' | 'name')}
-            accentColor="#f97316"
-          />
+             <SortDropdown
+                options={[
+                  { value: 'rating', label: 'Rating', icon: '⭐' },
+                  { value: 'reviews', label: 'Popularity', icon: '💬' },
+                  { value: 'name', label: 'Name', icon: '🔤' },
+                ]}
+                value={sortBy}
+                onChange={(val) => setSortBy(val as any)}
+                accentColor={THEME.accent}
+              />
+          </div>
         </div>
       </div>
 
-      {/* Main Content - Card Grid */}
-      <main style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
-        padding: '32px 24px',
-      }}>
+      {/* --- GRID CONTENT --- */}
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}>
         {loading ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '24px',
-          }}>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                style={{
-                  height: '340px',
-                  borderRadius: '16px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  animation: 'pulse 2s infinite',
-                }}
-              />
-            ))}
-          </div>
+           <div style={{ color: THEME.accent, textAlign: 'center', padding: '60px' }}>Loading...</div>
         ) : filteredRestaurants.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '80px 20px',
-          }}>
-            <Utensils size={64} color="#475569" style={{ margin: '0 auto 16px' }} />
-            <h3 style={{ fontSize: '20px', fontWeight: '600', color: '#e2e8f0', marginBottom: '8px' }}>
-              No restaurants found
-            </h3>
-            <p style={{ color: '#64748b' }}>
-              Try adjusting your search or filters
-            </p>
+          <div style={{ textAlign: 'center', padding: '80px 0', color: THEME.textSecondary }}>
+            <Utensils size={48} style={{ opacity: 0.5, marginBottom: '16px' }} />
+            <h3>No restaurants found</h3>
           </div>
         ) : (
           <>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '24px',
-            }}>
-              {paginatedRestaurants.map((restaurant) => (
-                <FoodCard key={restaurant.id} restaurant={restaurant} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
+              {paginatedRestaurants.map((place) => (
+                // --- CARD COMPONENT (Inspired by uploaded image 1) ---
+                <div
+                  key={place.id}
+                  onClick={() => navigate(`/food/${place.id}`)}
+                  style={{
+                    backgroundColor: THEME.bgCard,
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    border: `1px solid ${THEME.border}`,
+                    cursor: 'pointer',
+                    transition: 'transform 0.3s, box-shadow 0.3s',
+                    position: 'relative',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = `0 20px 25px -5px rgba(0, 0, 0, 0.5)`;
+                    e.currentTarget.style.borderColor = THEME.accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.borderColor = THEME.border;
+                  }}
+                >
+                  {/* Image Area */}
+                  <div style={{ height: '220px', position: 'relative' }}>
+                    <img
+                      src={place.image_url || 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600'}
+                      alt={place.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: '6px 12px', borderRadius: '12px', color: THEME.highlight, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Star size={14} fill={THEME.highlight} /> {place.rating}
+                    </div>
+                    {place.is_halal && (
+                      <div style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: THEME.accent, color: 'black', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+                        HALAL
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content Area */}
+                  <div style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
+                      <h3 style={{ fontSize: '20px', fontWeight: '700', color: 'white', margin: 0, flex: 1 }}>{place.name}</h3>
+                      <span style={{ color: THEME.accent, fontWeight: '600' }}>{place.price_range}</span>
+                    </div>
+                    
+                    <p style={{ color: THEME.textSecondary, fontSize: '14px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                       <MapPin size={14} /> {place.city} • {place.cuisine}
+                    </p>
+
+                    {/* Bottom Action Bar (Inspired by uploaded image 1) */}
+                    <div style={{ 
+                      marginTop: '16px', 
+                      paddingTop: '16px', 
+                      borderTop: `1px solid ${THEME.border}`,
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center' 
+                    }}>
+                       <span style={{ fontSize: '14px', color: place.is_open ? '#4ade80' : '#f87171' }}>
+                         {place.is_open ? 'Open Now' : 'Closed'}
+                       </span>
+                       
+                       <button style={{
+                         backgroundColor: THEME.highlight,
+                         color: 'black',
+                         border: 'none',
+                         padding: '8px 16px',
+                         borderRadius: '8px',
+                         fontSize: '13px',
+                         fontWeight: '600',
+                         display: 'flex',
+                         alignItems: 'center',
+                         gap: '6px',
+                         cursor: 'pointer'
+                       }}>
+                         Reserve <ArrowRight size={14} />
+                       </button>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
-            
-            {/* Pagination */}
+
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               totalItems={filteredRestaurants.length}
               itemsPerPage={ITEMS_PER_PAGE}
-              accentColor="#f97316"
+              accentColor={THEME.accent}
             />
           </>
         )}
       </main>
-
-      {/* Shared Footer */}
       <SharedFooter />
     </div>
   );
