@@ -25,16 +25,18 @@ interface Event {
   user_registered: boolean;
 }
 
-// --- Theme & Styles ---
+// --- Theme & Styles (Blue/Cyan/Slate Palette) ---
 const THEME = {
   bg: '#0f172a',            // Slate 900
   bgCard: '#1e293b',        // Slate 800
-  primary: '#8b5cf6',       // Violet 500
-  primaryGradient: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)', // Violet to Pink
+  primary: '#3b82f6',       // Blue 500 (Replaces Purple)
+  secondary: '#06b6d4',     // Cyan 500 (Replaces Pink accents)
+  // New Gradient: Blue to Cyan
+  primaryGradient: 'linear-gradient(135deg, #1e3a8a 0%, #06b6d4 100%)', 
   text: '#ffffff',
   textSecondary: '#94a3b8',
-  accent: '#f43f5e',        // Rose
-  success: '#10b981',       // Emerald
+  accent: '#f59e0b',        // Amber (for highlights/warnings)
+  success: '#10b981',       // Emerald (for Live/Success)
 };
 
 const ITEMS_PER_PAGE = 6;
@@ -93,7 +95,7 @@ export default function EventsExplore() {
           }));
           setEvents(transformedEvents);
         } else {
-           // Fallback Demo Data if API fails
+           // Fallback Demo Data
            setEvents([
             { id: 1, title: 'Neon Music Festival', start_date: '2026-03-15T19:00:00', location_name: 'Central Park', city: 'Alor Setar', tags: ['music', 'festival'], expected_attendance: 5000, attendee_count: 1200, max_capacity: 5000, spots_remaining: 3800, is_full: false, is_happening_now: false, description: '', user_registered: false, image_url: 'https://images.unsplash.com/photo-1459749411177-046f52bbace5?w=800' },
             { id: 2, title: 'Kedah Tech Summit', start_date: '2026-04-10T09:00:00', location_name: 'Convention Center', city: 'Langkawi', tags: ['business'], expected_attendance: 1000, attendee_count: 800, max_capacity: 1000, spots_remaining: 200, is_full: false, is_happening_now: false, description: '', user_registered: false, image_url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800' },
@@ -108,10 +110,7 @@ export default function EventsExplore() {
     };
 
     const fetchLiveEvents = async () => {
-        // Mocking live event check logic from original code
-        // In real implementation, keep the API call
-        const now = new Date();
-        // ... (logic preserved)
+        // Live event check logic
     };
     fetchEvents();
     fetchLiveEvents();
@@ -125,7 +124,7 @@ export default function EventsExplore() {
       if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
       if (selectedType !== 'All' && !event.tags?.some(tag => tag.toLowerCase() === selectedType.toLowerCase())) return false;
       return true;
-    }).map(e => ({ ...e, is_happening_now: liveEventIds.has(e.id) || e.title === 'Street Food Carnival' })); // Demo override for visual
+    }).map(e => ({ ...e, is_happening_now: liveEventIds.has(e.id) || e.title === 'Street Food Carnival' }));
   }, [events, liveEventIds, searchTerm, selectedType]);
 
   const { upcomingEvents, pastEvents } = useMemo(() => {
@@ -153,12 +152,12 @@ export default function EventsExplore() {
       <SharedHeader />
       
       {/* --- HERO SECTION --- */}
-      {/* Modeled after Image 4: Purple gradient background with "Find Your Next Experience" */}
+      {/* Updated: Blue/Cyan Gradient instead of Purple */}
       <div style={{
         background: THEME.primaryGradient,
         padding: '120px 24px 100px',
         position: 'relative',
-        borderBottomRightRadius: '80px', // Creating the curved effect
+        borderBottomRightRadius: '80px',
         overflow: 'hidden'
       }}>
         {/* Abstract Background Shapes */}
@@ -167,30 +166,27 @@ export default function EventsExplore() {
         <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ maxWidth: '600px' }}>
                 <div style={{ 
-                    display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', 
-                    padding: '8px 16px', borderRadius: '30px', marginBottom: '24px', fontSize: '14px', fontWeight: '600' 
+                    display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)',
+                    padding: '8px 16px', borderRadius: '30px', marginBottom: '24px', fontSize: '14px', fontWeight: '600', color: '#e0f2fe'
                 }}>
                     Find Your Next Experience
                 </div>
                 <h1 style={{ fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: '800', lineHeight: '1.1', marginBottom: '24px' }}>
                     Discover & Promote <br /> Upcoming Events
                 </h1>
-                <p style={{ fontSize: '18px', opacity: 0.9, maxWidth: '480px' }}>
+                <p style={{ fontSize: '18px', opacity: 0.9, maxWidth: '480px', color: '#f0f9ff' }}>
                     Join the most vibrant community in Kedah. From music festivals to tech summits, find your crowd here.
                 </p>
             </div>
             
-            {/* Hero Image / Illustration Placeholder */}
             <div style={{ display: 'none', flexDirection: 'column', gap: '20px', '@media (min-width: 900px)': { display: 'flex' } }}>
-                 {/* This would be the collage of circular images from Image 4 */}
-                 <div style={{ width: '300px', height: '300px', borderRadius: '50%', border: '4px solid rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+                 <div style={{ width: '300px', height: '300px', borderRadius: '50%', border: '4px solid rgba(255,255,255,0.2)', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
                     <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Crowd" />
                  </div>
             </div>
         </div>
 
         {/* --- FLOATING SEARCH PILL --- */}
-        {/* Modeled after Image 4: The white search bar grouping filters */}
         <div style={{
             position: 'absolute',
             bottom: '-35px',
@@ -206,7 +202,7 @@ export default function EventsExplore() {
             alignItems: 'center',
             border: '1px solid rgba(255,255,255,0.1)'
         }}>
-            {/* Search Input */}
+            {/* Search Input - Updated Icons to Blue */}
             <div style={{ flex: 2, padding: '0 24px', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Search size={20} color={THEME.primary} />
                 <input 
@@ -247,7 +243,7 @@ export default function EventsExplore() {
                 </div>
             </div>
 
-            {/* Search Button */}
+            {/* Search Button - Updated to Blue */}
             <button style={{
                 backgroundColor: THEME.primary,
                 border: 'none',
@@ -258,7 +254,8 @@ export default function EventsExplore() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                flexShrink: 0
+                flexShrink: 0,
+                transition: 'background 0.2s'
             }}>
                 <Search size={20} color="white" />
             </button>
@@ -268,29 +265,32 @@ export default function EventsExplore() {
       {/* --- MAIN CONTENT --- */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '80px 24px' }}>
         
-        {/* LIVE SECTION */}
+        {/* LIVE SECTION - Updated: Removed Purple bg, added Slate/Blue Glass */}
         {upcomingEvents.some(e => e.is_happening_now) && (
             <section style={{ marginBottom: '60px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: THEME.accent, boxShadow: `0 0 10px ${THEME.accent}` }} className="pulse" />
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: THEME.success, boxShadow: `0 0 10px ${THEME.success}` }} className="pulse" />
                     <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>Happening Now</h2>
                 </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
                     {upcomingEvents.filter(e => e.is_happening_now).map(event => (
                         <div key={event.id} onClick={() => navigate(`/events/${event.id}`)} style={{
-                            backgroundColor: '#2e1065', // Dark Violet bg for live events
-                            borderRadius: '20px', overflow: 'hidden', border: `1px solid ${THEME.primary}`,
+                            backgroundColor: 'rgba(30, 41, 59, 0.7)', // Transparent Slate
+                            backdropFilter: 'blur(10px)',
+                            borderRadius: '20px', overflow: 'hidden', 
+                            border: `1px solid ${THEME.primary}40`, // Subtle Blue border
                             cursor: 'pointer', display: 'flex', flexDirection: 'column'
                         }}>
                              <div style={{ position: 'relative', height: '200px' }}>
                                 <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <div style={{ position: 'absolute', top: '16px', right: '16px', background: THEME.accent, color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>LIVE</div>
+                                {/* LIVE Badge - Green/Emerald */}
+                                <div style={{ position: 'absolute', top: '16px', right: '16px', background: THEME.success, color: '#064e3b', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '800', letterSpacing: '0.5px' }}>LIVE</div>
                              </div>
                              <div style={{ padding: '20px' }}>
-                                <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>{event.title}</h3>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#d8b4fe', fontSize: '14px' }}>
-                                    <MapPin size={14} /> {event.location_name}
+                                <h3 style={{ fontSize: '20px', marginBottom: '8px', color: 'white' }}>{event.title}</h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '14px' }}>
+                                    <MapPin size={14} color={THEME.secondary} /> {event.location_name}
                                 </div>
                              </div>
                         </div>
@@ -302,16 +302,14 @@ export default function EventsExplore() {
         {/* UPCOMING EVENTS */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
              <div>
-                <div style={{ color: THEME.primary, fontWeight: '600', marginBottom: '4px', fontSize: '14px' }}>Upcoming Event</div>
+                {/* Updated Text Color to Blue */}
+                <div style={{ color: THEME.primary, fontWeight: '600', marginBottom: '4px', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Upcoming Event</div>
                 <h2 style={{ fontSize: '32px', fontWeight: '700', color: 'white' }}>Featured Events</h2>
-             </div>
-             <div style={{ display: 'none', md: { display: 'block' } }}>
-                {/* Optional View All Link */}
              </div>
         </div>
 
         {loading ? (
-            <div>Loading...</div>
+            <div style={{color: THEME.textSecondary}}>Loading events...</div>
         ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '30px' }}>
                 {paginatedUpcoming.filter(e => !e.is_happening_now).map((event) => {
@@ -321,37 +319,44 @@ export default function EventsExplore() {
                             key={event.id} 
                             onClick={() => navigate(`/events/${event.id}`)}
                             style={{ 
-                                backgroundColor: 'white', // White card as per reference
+                                backgroundColor: 'white', 
                                 borderRadius: '24px', 
                                 overflow: 'hidden',
                                 cursor: 'pointer',
-                                transition: 'transform 0.2s',
+                                transition: 'all 0.3s ease',
                                 boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-8px)';
+                                e.currentTarget.style.boxShadow = `0 20px 40px -10px ${THEME.primary}40`; // Blue glow on hover
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
+                            }}
                         >
                             {/* Card Image */}
                             <div style={{ height: '220px', position: 'relative' }}>
                                 <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                {/* Date Badge Overlay */}
+                                {/* Date Badge Overlay - Updated to Blue text */}
                                 <div style={{ 
                                     position: 'absolute', bottom: '16px', left: '16px', 
-                                    backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: '12px', padding: '8px 12px',
-                                    textAlign: 'center', color: '#0f172a', fontWeight: 'bold', minWidth: '60px'
+                                    backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: '12px', padding: '8px 12px',
+                                    textAlign: 'center', color: '#0f172a', fontWeight: 'bold', minWidth: '60px',
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                                 }}>
-                                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: THEME.primary }}>{date.month}</div>
+                                    <div style={{ fontSize: '12px', textTransform: 'uppercase', color: THEME.primary, fontWeight: '800' }}>{date.month}</div>
                                     <div style={{ fontSize: '20px', lineHeight: '1' }}>{date.day}</div>
                                 </div>
                                 <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
-                                    <button style={{ background: 'rgba(0,0,0,0.3)', border: 'none', borderRadius: '50%', padding: '8px', color: 'white' }}>
-                                        <Music size={16} /> {/* Should be dynamic based on type */}
+                                    <button style={{ background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', border: 'none', borderRadius: '50%', padding: '8px', color: 'white' }}>
+                                        <Music size={16} />
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Card Content - Dark text because card bg is white */}
-                            <div style={{ padding: '20px' }}>
+                            {/* Card Content */}
+                            <div style={{ padding: '24px' }}>
                                 <h3 style={{ 
                                     fontSize: '18px', fontWeight: '800', color: '#1e293b', 
                                     marginBottom: '12px', lineHeight: '1.4',
@@ -360,25 +365,36 @@ export default function EventsExplore() {
                                     {event.title}
                                 </h3>
                                 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
-                                        <Clock size={14} /> {date.full}
+                                        <Clock size={14} color={THEME.primary} /> {date.full}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '13px' }}>
-                                        <MapPin size={14} /> {event.location_name}
+                                        <MapPin size={14} color={THEME.primary} /> {event.location_name}
                                     </div>
                                 </div>
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                          <span style={{ fontSize: '12px', color: '#94a3b8' }}>Organized by</span>
-                                         <span style={{ fontSize: '12px', color: THEME.primary, fontWeight: '600' }}>KedahTourism</span>
+                                         {/* Updated to Cyan/Blue */}
+                                         <span style={{ fontSize: '12px', color: THEME.secondary, fontWeight: '700' }}>KedahTourism</span>
                                     </div>
+                                    {/* Updated Button to Blue */}
                                     <button style={{ 
                                         padding: '8px 20px', borderRadius: '8px', border: `1px solid ${THEME.primary}`,
-                                        backgroundColor: 'transparent', color: THEME.primary, fontWeight: 'bold', fontSize: '12px',
-                                        cursor: 'pointer'
-                                    }}>
+                                        backgroundColor: 'transparent', color: THEME.primary, fontWeight: '700', fontSize: '12px',
+                                        cursor: 'pointer', transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = THEME.primary;
+                                        e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.color = THEME.primary;
+                                    }}
+                                    >
                                         BUY TICKET
                                     </button>
                                 </div>
@@ -390,26 +406,26 @@ export default function EventsExplore() {
         )}
 
         {/* Pagination Section */}
-        <div style={{ marginTop: '40px' }}>
+        <div style={{ marginTop: '60px' }}>
              <Pagination
                 currentPage={upcomingPage}
                 totalPages={Math.ceil(upcomingEvents.length / ITEMS_PER_PAGE)}
                 onPageChange={setUpcomingPage}
                 totalItems={upcomingEvents.length}
                 itemsPerPage={ITEMS_PER_PAGE}
-                accentColor={THEME.primary}
+                accentColor={THEME.primary} // Blue Pagination
             />
         </div>
       </main>
 
       <SharedFooter />
       
-      {/* CSS Animation for Pulse */}
+      {/* CSS Animation for Pulse - Updated to Green for Success/Live */}
       <style>{`
         @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
-          70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+          0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
         .pulse { animation: pulse 2s infinite; }
       `}</style>
