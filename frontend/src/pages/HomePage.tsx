@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, MapPin, Utensils, Hotel, Calendar, BarChart3, Menu, X } from 'lucide-react';
+import { Card } from '../components/ui/card';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ export default function HomePage() {
   const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', fontFamily: 'Poppins, sans-serif' }}>
+    <div className="min-h-screen bg-background font-sans text-foreground">
       
       {/* INTERNAL CSS FOR RESPONSIVENESS 
         This handles the media queries that inline styles cannot do.
@@ -33,7 +34,7 @@ export default function HomePage() {
         /* Mobile Styles (Max Width 768px) */
         @media (max-width: 768px) {
           .nav-desktop { display: none; }
-          .nav-mobile-btn { display: block; cursor: pointer; color: white; }
+          .nav-mobile-btn { display: block; cursor: pointer; color: #1F2937; }
           
           /* Show mobile menu when open */
           .mobile-menu-dropdown.open {
@@ -43,12 +44,12 @@ export default function HomePage() {
             top: 70px;
             left: 0;
             right: 0;
-            background-color: #0f172a;
-            border-bottom: 1px solid #334155;
+            background-color: white;
+            border-bottom: 1px solid #E5E7EB;
             padding: 20px;
             gap: 20px;
             z-index: 49;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
           }
 
           .hero-title { font-size: 40px; }
@@ -61,38 +62,26 @@ export default function HomePage() {
       `}</style>
 
       {/* Header - Fixed at top */}
-      <header style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        borderBottom: '1px solid rgba(51, 65, 85, 0.5)',
-        backdropFilter: 'blur(8px)',
-        height: '70px',
-        display: 'flex',
-        alignItems: 'center'
-      }}>
-        <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 border-b border-gray-200 backdrop-blur-md h-[70px] flex items-center shadow-sm">
+        <div className="w-full max-w-[1200px] mx-auto px-6">
+          <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link to="/" style={{ fontSize: '24px', fontWeight: 'bold', color: 'white', textDecoration: 'none' }}>
+            <Link to="/" className="text-2xl font-bold text-gray-900 hover:text-primary transition-colors no-underline">
               Kedah Tourism
             </Link>
 
             {/* Desktop Navigation */}
             <nav className="nav-desktop">
-              <Link to="/" style={{ color: '#2dd4bf', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Home</Link>
-              <Link to="/places" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Places</Link>
-              <Link to="/food" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Food</Link>
-              <Link to="/stays" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Stay</Link>
-              <Link to="/events" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none' }}>Events</Link>
-              <Link to="/analytics" style={{ color: '#cbd5e1', fontSize: '17px', fontWeight: '600', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Link to="/" className="text-primary text-[17px] font-semibold no-underline">Home</Link>
+              <Link to="/places" className="text-gray-600 hover:text-primary text-[17px] font-semibold no-underline transition-colors">Places</Link>
+              <Link to="/food" className="text-gray-600 hover:text-primary text-[17px] font-semibold no-underline transition-colors">Food</Link>
+              <Link to="/stays" className="text-gray-600 hover:text-primary text-[17px] font-semibold no-underline transition-colors">Stay</Link>
+              <Link to="/events" className="text-gray-600 hover:text-primary text-[17px] font-semibold no-underline transition-colors">Events</Link>
+              <Link to="/analytics" className="text-gray-600 hover:text-primary text-[17px] font-semibold no-underline transition-colors flex items-center gap-1.5">
                 <BarChart3 size={18} />
                 Analytics
               </Link>
-              <Link to="/sign-in" style={{ backgroundColor: '#fbef00', color: 'black', padding: '10px 20px', borderRadius: '8px', fontSize: '16px', fontWeight: '600', textDecoration: 'none' }}>
+              <Link to="/sign-in" className="bg-accent text-white hover:bg-accent/90 px-5 py-2.5 rounded-lg text-base font-semibold no-underline shadow-sm transition-all">
                 Sign In
               </Link>
             </nav>
@@ -107,44 +96,36 @@ export default function HomePage() {
 
       {/* Mobile Menu Dropdown Panel */}
       <div className={`mobile-menu-dropdown ${isMobileMenuOpen ? 'open' : ''}`}>
-        <Link to="/" onClick={toggleMenu} style={{ color: '#2dd4bf', fontSize: '18px', fontWeight: '500', textDecoration: 'none' }}>Home</Link>
-        <Link to="/places" onClick={toggleMenu} style={{ color: '#cbd5e1', fontSize: '18px', fontWeight: '500', textDecoration: 'none' }}>Places</Link>
-        <Link to="/food" onClick={toggleMenu} style={{ color: '#cbd5e1', fontSize: '18px', fontWeight: '500', textDecoration: 'none' }}>Food</Link>
-        <Link to="/stays" onClick={toggleMenu} style={{ color: '#cbd5e1', fontSize: '18px', fontWeight: '500', textDecoration: 'none' }}>Stay</Link>
-        <Link to="/events" onClick={toggleMenu} style={{ color: '#cbd5e1', fontSize: '18px', fontWeight: '500', textDecoration: 'none' }}>Events</Link>
-        <Link to="/analytics" onClick={toggleMenu} style={{ color: '#cbd5e1', fontSize: '18px', fontWeight: '500', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/" onClick={toggleMenu} className="text-primary text-lg font-medium no-underline">Home</Link>
+        <Link to="/places" onClick={toggleMenu} className="text-gray-600 text-lg font-medium no-underline">Places</Link>
+        <Link to="/food" onClick={toggleMenu} className="text-gray-600 text-lg font-medium no-underline">Food</Link>
+        <Link to="/stays" onClick={toggleMenu} className="text-gray-600 text-lg font-medium no-underline">Stay</Link>
+        <Link to="/events" onClick={toggleMenu} className="text-gray-600 text-lg font-medium no-underline">Events</Link>
+        <Link to="/analytics" onClick={toggleMenu} className="text-gray-600 text-lg font-medium no-underline flex items-center gap-2">
           <BarChart3 size={18} /> Analytics
         </Link>
-        <Link to="/sign-in" onClick={toggleMenu} style={{ backgroundColor: '#fbef00', color: 'black', padding: '12px', borderRadius: '8px', fontSize: '16px', fontWeight: '600', textDecoration: 'none', textAlign: 'center' }}>
+        <Link to="/sign-in" onClick={toggleMenu} className="bg-accent text-white px-3 py-3 rounded-lg text-base font-semibold no-underline text-center">
           Sign In
         </Link>
       </div>
 
       {/* HERO SECTION */}
-      <section style={{
-        position: 'relative',
-        height: '100vh',
-        minHeight: '600px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden'
-      }}>
+      <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <img
           src="/images/alor-setar-tower.png"
           alt="Alor Setar Tower"
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          className="absolute top-0 left-0 w-full h-full object-cover"
         />
-        {/* Dark Overlay */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(71, 223, 162, 0.6)' }} />
+        {/* Light/Gradient Overlay - Clean & Bright */}
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/20 to-black/60" />
         
         {/* Hero Content */}
-        <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '0 24px', maxWidth: '800px' }}>
-          <h1 className="hero-title" style={{ fontWeight: 'bold', color: 'white', marginBottom: '24px', lineHeight: '1.2' }}>
+        <div className="relative z-10 text-center px-6 max-w-[800px]">
+          <h1 className="hero-title font-bold text-white mb-6 leading-tight drop-shadow-md">
             Kedah Tourism
           </h1>
-          <p className="hero-subtitle" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '40px', lineHeight: '1.6' }}>
+          <p className="hero-subtitle text-white/90 mb-10 leading-relaxed drop-shadow-sm font-medium">
             Discover the beauty of Malaysia's Rice Bowl — from iconic landmarks to hidden gems.
           </p>
           <button
@@ -152,20 +133,7 @@ export default function HomePage() {
               const grid = document.getElementById('discovery-grid');
               if (grid) grid.scrollIntoView({ behavior: 'smooth' });
             }}
-            style={{
-              backgroundColor: '#fbef00',
-              color: 'black',
-              padding: '16px 40px',
-              borderRadius: '12px',
-              fontSize: '18px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '12px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-            }}
+            className="bg-accent text-white hover:bg-accent/90 px-10 py-4 rounded-xl text-lg font-semibold border-none cursor-pointer inline-flex items-center gap-3 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
           >
             Explore Kedah <ArrowRight size={20} />
           </button>
@@ -175,100 +143,96 @@ export default function HomePage() {
       {/* DISCOVERY GRID */}
       <section 
         id="discovery-grid" 
-        style={{ padding: '80px 24px', backgroundColor: '#0f172a' }}
+        className="py-20 px-6 bg-background"
       >
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', textAlign: 'center', marginBottom: '48px' }}>
+        <div className="max-w-[1000px] mx-auto">
+          <h2 className="text-[32px] font-bold text-gray-900 text-center mb-12">
             What would you like to explore?
           </h2>
           
           {/* Responsive Grid Container (Class handled in <style> tag) */}
           <div className="discovery-grid">
             
-            {/* Places Card */}
-            <div onClick={() => navigate('/places')} style={{ position: 'relative', height: '280px', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
-              <img src="https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80" alt="Places" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }} />
-              <div style={{ position: 'absolute', bottom: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <MapPin size={24} color="#fbef00" />
-                <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Places</span>
+            {/* Places Card - Using the new Card component conceptually, but maintaining custom layout for the image */}
+            <div
+              onClick={() => navigate('/places')}
+              className="group relative h-[280px] rounded-2xl overflow-hidden cursor-pointer shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-100"
+            >
+              <img src="https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80" alt="Places" className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-6 left-6 flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                   <MapPin size={24} className="text-accent" />
+                </div>
+                <span className="text-[28px] font-bold text-white drop-shadow-sm">Places</span>
               </div>
             </div>
 
             {/* Food Card */}
-            <div onClick={() => navigate('/food')} style={{ position: 'relative', height: '280px', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
-              <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80" alt="Food" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }} />
-              <div style={{ position: 'absolute', bottom: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px', }}>
-                <Utensils size={24} color="#fbef00" />
-                <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Food</span>
+            <div
+              onClick={() => navigate('/food')}
+              className="group relative h-[280px] rounded-2xl overflow-hidden cursor-pointer shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-100"
+            >
+              <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80" alt="Food" className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-6 left-6 flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                  <Utensils size={24} className="text-accent" />
+                </div>
+                <span className="text-[28px] font-bold text-white drop-shadow-sm">Food</span>
               </div>
             </div>
 
             {/* Stay Card */}
-            <div onClick={() => navigate('/stays')} style={{ position: 'relative', height: '280px', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 10px 40px rgba(0,0,0,0.3)', transition: 'transform 0.3s ease-in-out'}}>
-              <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80" alt="Stay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }} />
-              <div style={{ position: 'absolute', bottom: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Hotel size={24} color="#fbef00" />
-                <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Stay</span>
+            <div
+              onClick={() => navigate('/stays')}
+              className="group relative h-[280px] rounded-2xl overflow-hidden cursor-pointer shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-100"
+            >
+              <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80" alt="Stay" className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-6 left-6 flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                  <Hotel size={24} className="text-accent" />
+                </div>
+                <span className="text-[28px] font-bold text-white drop-shadow-sm">Stay</span>
               </div>
             </div>
 
             {/* Events Card */}
-            <div onClick={() => navigate('/events')} style={{ position: 'relative', height: '280px', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
-              <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80" alt="Events" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }} />
-              <div style={{ position: 'absolute', bottom: '24px', left: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Calendar size={24} color="#fbef00" />
-                <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Events</span>
+            <div
+              onClick={() => navigate('/events')}
+              className="group relative h-[280px] rounded-2xl overflow-hidden cursor-pointer shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-100"
+            >
+              <img src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80" alt="Events" className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-6 left-6 flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                  <Calendar size={24} className="text-accent" />
+                </div>
+                <span className="text-[28px] font-bold text-white drop-shadow-sm">Events</span>
               </div>
             </div>
           </div>
 
-          {/* Analytics Banner - Full Width */}
+          {/* Analytics Banner - Full Width - Bright & Modern */}
           <div
             onClick={() => navigate('/analytics')}
+            className="mt-6 relative h-[160px] rounded-2xl overflow-hidden cursor-pointer shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1 group"
             style={{
-              marginTop: '24px',
-              position: 'relative',
-              height: '160px',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-              background: 'linear-gradient(135deg, #34dbf9 0%, #3bcbff 50%, #000000 100%)'
+              background: 'linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%)'
             }}
           >
-            <div style={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              width: '100%', 
-              height: '100%',
-              background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-              opacity: 0.5
-            }} />
-            <div style={{ 
-              position: 'absolute', 
-              top: '50%', 
-              left: '50%', 
-              transform: 'translate(-50%, -50%)',
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '16px',
-              textAlign: 'center',
-              width: '100%',
-              justifyContent: 'center',
-              padding: '0 10px'
-            }}>
-              <BarChart3 size={40} color="black" style={{ flexShrink: 0 }} />
-              <div style={{ textAlign: 'left' }}>
-                <span style={{ fontSize: 'clamp(20px, 4vw, 32px)', fontWeight: 'bold', color: 'white', display: 'block' }}>
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4=')] bg-repeat" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-4 text-center w-full justify-center px-4">
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl group-hover:bg-white/30 transition-colors">
+                 <BarChart3 size={40} className="text-white" style={{ flexShrink: 0 }} />
+              </div>
+              <div className="text-left">
+                <span className="text-[clamp(20px,4vw,32px)] font-bold text-white block">
                   Tourism Analytics
                 </span>
-                <span style={{ fontSize: 'clamp(12px, 3vw, 14px)', color: 'rgba(255,255,255,0.8)', display: 'block', marginTop: '4px' }}>
-                  Real-time insights • Visitor sentiment
+                <span className="text-[clamp(12px,3vw,14px)] text-white/90 block mt-1 font-medium">
+                  Real-time insights • Visitor sentiment • Trends
                 </span>
               </div>
             </div>
@@ -276,16 +240,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{
-        backgroundColor: '#020617',
-        borderTop: '1px solid #1e293b',
-        padding: '32px 24px',
-        textAlign: 'center'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', color: '#94a3b8', fontSize: '14px', lineHeight: '1.8' }}>
-          <p style={{ margin: 0 }}>© 2026 Kedah Tourism Analytics Dashboard</p>
-          <p style={{ margin: '4px 0 0 0' }}>School of Computing & Informatics, Albukhary International University</p>
+      {/* Footer - Clean & Professional */}
+      <footer className="bg-white border-t border-gray-200 py-8 px-6 text-center">
+        <div className="max-w-[1200px] mx-auto text-gray-500 text-sm leading-relaxed">
+          <p className="m-0 font-medium text-gray-900">© 2026 Kedah Tourism Analytics Dashboard</p>
+          <p className="mt-1">School of Computing & Informatics, Albukhary International University</p>
         </div>
       </footer>
     </div>
