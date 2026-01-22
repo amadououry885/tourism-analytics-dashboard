@@ -1,0 +1,119 @@
+@startuml Vendor Registration & Approval Sequence
+
+title Figure 3.8: Vendor Registration & Approval Sequence
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequenceParticipant underline
+
+actor "Vendor" as V #LightBlue
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django REST)" as BE #E8F5E9
+database "Database\n(PostgreSQL)" as DB #FFF3E0
+participant "Email Service\n(SMTP)" as EMAIL #FCE4EC
+actor "Admin" as A #FFE0B2
+
+== Vendor Registration ==
+
+V -> FE: Access registration page
+FE --> V: Display registration form
+
+V -> FE: Submit registration form\n(name, email, password, business details)
+FE -> FE: Client-side validation
+
+alt Validation Failed
+    FE --> V: Show validation errors
+else Validation Passed
+    FE -> BE: POST /api/auth/register/\n{username, email, password, role: "vendor",\nclaimed_vendor_id, phone_number}
+    
+    BE -> BE: Validate input data
+    BE -> DB: Check if email/username exists
+    DB --> BE: Uniqueness result
+    
+    alt User Already Exists
+        BE --> FE: 400 Bad Request\n{error: "User already exists"}
+        FE --> V: Show error message
+    else User Does Not Exist
+        BE -> DB: INSERT INTO users\n(role='vendor', is_approved=False)
+        DB --> BE: User created (ID)
+        
+        BE -> DB: Store business claim details
+        DB --> BE: Claim recorded
+        
+        BE -> EMAIL: Send admin notification
+        EMAIL --> A: "New Vendor Registration\nPending Approval"
+        
+        BE --> FE: 201 Created\n{message: "Registration pending approval"}
+        FE --> V: "Registration submitted!\nAwaiting admin approval"
+    end
+end
+
+== Admin Approval Process ==
+
+A -> FE: Login to Admin Portal
+FE -> BE: POST /api/auth/login/
+BE --> FE: JWT tokens + admin role
+FE --> A: Display Admin Dashboard
+
+A -> FE: Navigate to Pending Users
+FE -> BE: GET /api/auth/admin/users/pending/
+BE -> DB: SELECT * FROM users\nWHERE is_approved=False AND role='vendor'
+DB --> BE: Pending vendors list
+BE --> FE: [{id, username, email, claimed_vendor_id, ...}]
+FE --> A: Display pending vendors
+
+A -> FE: Review vendor details
+FE -> BE: GET /api/vendors/{claimed_vendor_id}/
+BE -> DB: Fetch vendor/business details
+DB --> BE: Vendor data
+BE --> FE: Vendor information
+FE --> A: Show business verification info
+
+alt Admin Approves
+    A -> FE: Click "Approve" button
+    FE -> BE: POST /api/auth/admin/users/{id}/approve/
+    
+    BE -> DB: UPDATE users SET is_approved=True\nWHERE id={user_id}
+    DB --> BE: User approved
+    
+    BE -> DB: UPDATE vendors SET owner={user_id}\nWHERE id={claimed_vendor_id}
+    DB --> BE: Ownership assigned
+    
+    BE -> EMAIL: Send approval email
+    EMAIL --> V: "Your vendor account\nhas been approved!"
+    
+    BE --> FE: 200 OK {message: "User approved"}
+    FE --> A: "Vendor approved successfully"
+    
+else Admin Rejects
+    A -> FE: Click "Reject" button\n+ Enter rejection reason
+    FE -> BE: POST /api/auth/admin/users/{id}/reject/\n{reason: "..."}
+    
+    BE -> DB: UPDATE users SET is_approved=False,\nadmin_notes={reason}
+    DB --> BE: Updated
+    
+    BE -> EMAIL: Send rejection email
+    EMAIL --> V: "Registration rejected:\n{reason}"
+    
+    BE --> FE: 200 OK {message: "User rejected"}
+    FE --> A: "Vendor rejected"
+end
+
+== Vendor Access After Approval ==
+
+V -> FE: Login to platform
+FE -> BE: POST /api/auth/login/
+BE -> DB: Validate credentials\nCheck is_approved=True
+DB --> BE: User authenticated
+
+alt Not Approved
+    BE --> FE: 200 OK {is_approved: false}
+    FE --> V: "Account pending approval"
+else Approved
+    BE --> FE: 200 OK {access_token, refresh_token,\nuser: {role: "vendor", is_approved: true}}
+    FE --> V: Redirect to Vendor Dashboard
+    V -> FE: Access vendor management features
+end
+
+@enduml

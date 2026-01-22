@@ -1,0 +1,117 @@
+@startuml Tourist Accommodation Booking Flow Sequence
+
+title Figure 3.12: Tourist Accommodation Booking Sequence
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+actor "Tourist" as T #LightBlue
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django REST)" as BE #E8F5E9
+database "Database\n(PostgreSQL)" as DB #FFF3E0
+participant "External Platform\n(Booking.com/Agoda)" as EXT #E1BEE7
+actor "Stay Owner" as S #FFE0B2
+
+== Search Accommodations ==
+
+T -> FE: Navigate to "Stays" page
+FE --> T: Display accommodation search
+
+T -> FE: Enter search criteria:\n- Destination: "Langkawi"\n- Check-in: 2026-02-01\n- Check-out: 2026-02-05\n- Guests: 2
+
+FE -> BE: GET /api/stays/?district=Langkawi\n&min_price=0&max_price=500
+BE -> DB: SELECT * FROM stays\nWHERE district='Langkawi'\nAND is_active=True AND is_open=True
+DB --> BE: Available stays
+BE --> FE: [{id, name, type, priceNight, rating,\nimages, amenities, is_internal, ...}]
+FE --> T: Display accommodation list
+
+== Apply Filters ==
+
+T -> FE: Apply filters:\n- Type: "Hotel"\n- Price: RM100-300\n- Amenities: WiFi, Pool
+
+FE -> BE: GET /api/stays/?district=Langkawi\n&type=Hotel&min_price=100&max_price=300\n&amenities=WiFi,Pool
+BE -> DB: Filter stays with criteria
+DB --> BE: Filtered stays
+BE --> FE: Filtered accommodations list
+FE --> T: Display filtered results
+
+== View Stay Details ==
+
+T -> FE: Click on accommodation card
+FE -> BE: GET /api/stays/{stay_id}/
+BE -> DB: SELECT * FROM stays WHERE id={id}
+DB --> BE: Stay details
+BE --> FE: {name, type, district, rating, priceNight,\namenities, images, description,\nis_internal, contact_email, contact_phone,\nbooking_com_url, agoda_url, ...}
+FE --> T: Display full stay profile
+
+FE --> T: Show booking options based on stay type
+
+== Booking Path Decision ==
+
+alt Internal Stay (Platform-Managed)
+    note over FE: is_internal = True\nDirect contact with owner
+    
+    FE --> T: Display "Contact Owner" options:\n- Email\n- Phone\n- WhatsApp
+    
+    T -> FE: Click "Contact via WhatsApp"
+    FE -> FE: Open WhatsApp link:\nwa.me/{contact_whatsapp}?\ntext=Hi, I'm interested in {stay_name}...
+    FE --> T: WhatsApp opens with pre-filled message
+    
+    T -> S: Send inquiry via WhatsApp\n"Hi, I'd like to book for\nFeb 1-5, 2 guests"
+    S --> T: Direct communication\n"Available! RM250/night.\nTotal: RM1000"
+    
+    note over T, S: Booking completed\noff-platform via direct contact
+    
+else External Stay (Affiliate)
+    note over FE: is_internal = False\nRedirect to booking platform
+    
+    FE --> T: Display external booking buttons:\n- "Book on Booking.com"\n- "Book on Agoda"
+    
+    T -> FE: Click "Book on Booking.com"
+    
+    FE -> FE: Track click for analytics
+    FE -> BE: POST /api/analytics/track-click/\n{stay_id, platform: "booking.com"}
+    BE -> DB: Log affiliate click
+    DB --> BE: Click logged
+    
+    FE -> FE: Open external URL:\nbooking_com_url in new tab
+    FE --> T: Redirect to Booking.com
+    
+    T -> EXT: Complete booking on\nBooking.com platform
+    EXT --> T: Booking confirmed by\nexternal platform
+end
+
+== Hybrid Search Results ==
+
+note over FE, BE: System shows both internal\nand external stays together
+
+T -> FE: View mixed results
+FE --> T: Display stays with badges:\n🏠 "Direct Booking" (internal)\n🔗 "Via Booking.com" (external)
+
+T -> FE: Filter by booking type
+FE -> BE: GET /api/stays/?is_internal=true
+BE -> DB: SELECT * FROM stays\nWHERE is_internal=True
+DB --> BE: Internal stays only
+BE --> FE: Platform-managed stays
+FE --> T: Show only direct-bookable stays
+
+== Save to Favorites ==
+
+T -> FE: Click "Save" on accommodation
+FE -> FE: Store in localStorage\n(no auth required for tourists)
+FE --> T: "Saved to favorites ♥"
+
+T -> FE: View saved stays
+FE -> FE: Retrieve from localStorage
+FE --> T: Display saved accommodations
+
+== Compare Accommodations ==
+
+T -> FE: Select multiple stays to compare
+FE --> T: Display comparison table:\n| Feature | Stay A | Stay B | Stay C |\n| Price   | RM200  | RM250  | RM180  |\n| Rating  | 8.5    | 9.0    | 7.8    |\n| WiFi    | ✓      | ✓      | ✓      |\n| Pool    | ✗      | ✓      | ✗      |
+
+T -> FE: Make final selection
+FE --> T: Proceed to booking\n(internal or external path)
+
+@enduml

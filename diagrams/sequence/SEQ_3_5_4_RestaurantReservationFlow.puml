@@ -1,0 +1,162 @@
+@startuml Restaurant Reservation Flow Sequence
+
+title Figure 3.11: Restaurant Reservation Flow Sequence
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+actor "Tourist" as T #LightBlue
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django REST)" as BE #E8F5E9
+database "Database\n(PostgreSQL)" as DB #FFF3E0
+participant "Email Service\n(SMTP)" as EMAIL #FCE4EC
+actor "Vendor\n(Restaurant Owner)" as V #FFE0B2
+
+== Browse Restaurants ==
+
+T -> FE: Navigate to "Restaurants" page
+FE -> BE: GET /api/vendors/
+BE -> DB: SELECT * FROM vendors\nWHERE is_active=True AND is_open=True
+DB --> BE: Active restaurants list
+BE --> FE: [{id, name, city, cuisines, price_range,\nrating, image_url, ...}]
+FE --> T: Display restaurant cards
+
+== Apply Filters ==
+
+T -> FE: Apply filters:\n- City: "Alor Setar"\n- Cuisine: "Malaysian"\n- Price Range: "$$"
+
+FE -> BE: GET /api/vendors/?city=Alor+Setar\n&cuisines=Malaysian&price_range=$$
+BE -> DB: SELECT * FROM vendors\nWHERE city='Alor Setar'\nAND cuisines @> '["Malaysian"]'\nAND price_range='$$'
+DB --> BE: Filtered restaurants
+BE --> FE: Filtered restaurant list
+FE --> T: Display filtered results
+
+== View Restaurant Details ==
+
+T -> FE: Click on restaurant card
+FE -> BE: GET /api/vendors/{vendor_id}/
+BE -> DB: SELECT * FROM vendors WHERE id={id}
+DB --> BE: Restaurant details
+BE --> FE: {name, description, address, contact,\namenities, gallery_images, ...}
+
+FE -> BE: GET /api/menu-items/?vendor={vendor_id}
+BE -> DB: SELECT * FROM menu_items\nWHERE vendor_id={id}
+DB --> BE: Menu items
+BE --> FE: Menu items list
+
+FE -> BE: GET /api/opening-hours/?vendor={vendor_id}
+BE -> DB: SELECT * FROM opening_hours\nWHERE vendor_id={id}
+DB --> BE: Opening hours
+BE --> FE: Opening hours by day
+
+FE -> BE: GET /api/reviews/?vendor={vendor_id}
+BE -> DB: SELECT * FROM reviews\nWHERE vendor_id={id}\nORDER BY created_at DESC
+DB --> BE: Customer reviews
+BE --> FE: Reviews list
+
+FE --> T: Display full restaurant profile\nwith menu, hours, and reviews
+
+== Make Reservation ==
+
+T -> FE: Click "Make Reservation"
+FE --> T: Display reservation form
+
+T -> FE: Fill reservation details:\n- Date: 2026-01-25\n- Time: 19:00\n- Party Size: 4\n- Name, Phone, Email\n- Special Requests
+
+FE -> FE: Validate form inputs\n(date not in past, valid phone, etc.)
+
+FE -> BE: POST /api/reservations/\n{vendor_id, date, time, party_size,\nname, phone, email, special_requests}
+
+BE -> BE: Validate reservation data
+
+BE -> DB: Check restaurant availability\nSELECT COUNT(*) FROM reservations\nWHERE vendor_id={id} AND date={date}\nAND time={time}
+DB --> BE: Current bookings count
+
+alt Restaurant Fully Booked
+    BE --> FE: 400 Bad Request\n{error: "No availability for selected time"}
+    FE --> T: "Sorry, this time slot is fully booked.\nPlease select another time."
+    
+else Availability Exists
+    BE -> DB: INSERT INTO reservations\n(vendor_id, status='pending', ...)
+    DB --> BE: Reservation created (ID)
+    
+    BE -> DB: Get vendor owner email
+    DB --> BE: Vendor owner details
+    
+    BE -> EMAIL: Notify restaurant owner
+    EMAIL --> V: "New Reservation Request\nDate: {date}, Time: {time}\nParty: {party_size}, Name: {name}"
+    
+    BE -> EMAIL: Send confirmation to tourist
+    EMAIL --> T: "Reservation Submitted!\nAwaiting restaurant confirmation.\nBooking Ref: #{reservation_id}"
+    
+    BE --> FE: 201 Created\n{id, status: "pending", reference: "..."}
+    FE --> T: "Reservation submitted!\nYou'll receive confirmation shortly."
+end
+
+== Restaurant Confirms/Rejects Reservation ==
+
+V -> FE: Login to Vendor Portal
+FE -> BE: POST /api/auth/login/
+BE --> FE: JWT tokens (vendor role)
+FE --> V: Vendor Dashboard
+
+V -> FE: View pending reservations
+FE -> BE: GET /api/reservations/?vendor={my_vendor_id}&status=pending
+BE -> DB: SELECT * FROM reservations\nWHERE vendor_id={id} AND status='pending'
+DB --> BE: Pending reservations
+BE --> FE: Reservations list
+FE --> V: Display pending reservations
+
+alt Vendor Confirms Reservation
+    V -> FE: Click "Confirm" on reservation
+    FE -> BE: PATCH /api/reservations/{id}/\n{status: "confirmed"}
+    
+    BE -> DB: UPDATE reservations\nSET status='confirmed'\nWHERE id={id}
+    DB --> BE: Reservation confirmed
+    
+    BE -> EMAIL: Send confirmation to tourist
+    EMAIL --> T: "Reservation Confirmed! ✓\nRestaurant: {vendor_name}\nDate: {date}, Time: {time}\nParty: {party_size}\nSee you there!"
+    
+    BE --> FE: 200 OK {status: "confirmed"}
+    FE --> V: "Reservation confirmed"
+    
+else Vendor Rejects Reservation
+    V -> FE: Click "Reject" + Select reason
+    FE -> BE: PATCH /api/reservations/{id}/\n{status: "rejected", rejection_reason: "..."}
+    
+    BE -> DB: UPDATE reservations\nSET status='rejected',\nrejection_reason={reason}
+    DB --> BE: Reservation rejected
+    
+    BE -> EMAIL: Send rejection to tourist
+    EMAIL --> T: "Reservation Could Not Be Confirmed\nReason: {reason}\nPlease try another time or restaurant."
+    
+    BE --> FE: 200 OK {status: "rejected"}
+    FE --> V: "Reservation rejected"
+end
+
+== Tourist Cancels Reservation ==
+
+T -> FE: View "My Reservations"
+FE -> BE: GET /api/reservations/?email={tourist_email}
+BE -> DB: Fetch tourist's reservations
+DB --> BE: Reservations list
+BE --> FE: Tourist's reservations
+FE --> T: Display reservations
+
+T -> FE: Click "Cancel" on confirmed reservation
+FE --> T: Confirm cancellation dialog
+T -> FE: Confirm cancellation
+
+FE -> BE: PATCH /api/reservations/{id}/\n{status: "cancelled"}
+
+BE -> DB: UPDATE reservations\nSET status='cancelled'
+DB --> BE: Reservation cancelled
+
+BE -> EMAIL: Notify restaurant
+EMAIL --> V: "Reservation Cancelled\nBooking #{id} has been cancelled by the guest."
+
+BE --> FE: 200 OK {status: "cancelled"}
+FE --> T: "Reservation cancelled successfully"
+
+@enduml

@@ -1,0 +1,183 @@
+@startuml Event Registration Workflow Sequence
+
+title Figure 3.14: Event Registration Workflow Sequence
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+
+actor "Tourist" as T #LightBlue
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django REST)" as BE #E8F5E9
+database "Database\n(PostgreSQL)" as DB #FFF3E0
+participant "Email Service\n(SMTP)" as EMAIL #FCE4EC
+actor "Admin" as A #FFE0B2
+
+== Browse Events ==
+
+T -> FE: Navigate to "Events" page
+FE -> BE: GET /api/events/
+BE -> DB: SELECT * FROM events\nWHERE is_published=True\nAND start_date > NOW()\nORDER BY start_date ASC
+DB --> BE: Upcoming events list
+BE --> FE: [{id, title, start_date, end_date,\nlocation_name, city, max_capacity,\nattendee_count, image_url, ...}]
+FE --> T: Display event cards with\ncapacity indicators
+
+== View Event Details ==
+
+T -> FE: Click on event card
+FE -> BE: GET /api/events/{event_id}/
+BE -> DB: SELECT * FROM events WHERE id={id}
+DB --> BE: Event details including\nregistration_form_config
+BE --> FE: {title, description, start_date, end_date,\nlocation_name, city, lat, lon,\nmax_capacity, attendee_count, spots_remaining,\nrequires_approval, registration_form_config, ...}
+FE --> T: Display event details page
+
+FE -> FE: Calculate availability:\nspots_remaining = max_capacity - attendee_count
+
+FE --> T: Show capacity status:\n"45 spots remaining" or\n"Event is full"
+
+== Check Capacity Before Registration ==
+
+T -> FE: Click "Register for Event"
+
+FE -> BE: GET /api/events/{event_id}/availability/
+BE -> DB: SELECT max_capacity,\n(SELECT COUNT(*) FROM event_registrations\nWHERE event_id={id} AND status='confirmed')\nas attendee_count FROM events WHERE id={id}
+DB --> BE: Capacity info
+BE --> FE: {max_capacity: 100, attendee_count: 55,\nspots_remaining: 45, is_full: false}
+
+alt Event is Full
+    FE --> T: "Sorry, this event is full.\nJoin the waitlist?"
+    
+    T -> FE: Click "Join Waitlist"
+    FE -> BE: POST /api/events/{event_id}/waitlist/\n{name, email}
+    BE -> DB: INSERT INTO event_waitlist
+    DB --> BE: Added to waitlist
+    BE --> FE: 201 Created
+    FE --> T: "Added to waitlist!\nWe'll notify you if spots open."
+    
+else Spots Available
+    FE --> T: Display registration form\n(standard + custom fields)
+end
+
+== Fill Registration Form ==
+
+note over FE: registration_form_config defines\ncustom fields for this event
+
+FE --> T: Standard fields:\n- Full Name\n- Email\n- Phone Number
+
+FE --> T: Custom fields (from config):\n- T-Shirt Size (dropdown)\n- Dietary Requirements (checkbox)\n- Emergency Contact (text)
+
+T -> FE: Fill all required fields
+FE -> FE: Client-side validation
+
+== Submit Registration ==
+
+FE -> BE: POST /api/events/{event_id}/register/\n{name: "John Doe",\nemail: "john@example.com",\nphone: "+60123456789",\nform_data: {\n  tshirt_size: "M",\n  dietary: ["vegetarian"],\n  emergency_contact: "Jane: +60198765432"\n}}
+
+BE -> BE: Validate registration data
+
+BE -> DB: Re-check capacity\n(prevent race condition)
+DB --> BE: Current attendee count
+
+alt Capacity Exceeded (Race Condition)
+    BE --> FE: 400 Bad Request\n{error: "Event reached capacity"}
+    FE --> T: "Sorry, event just filled up!"
+    
+else Still Available
+    BE -> DB: Check for duplicate registration\nSELECT * FROM event_registrations\nWHERE event_id={id} AND email={email}
+    DB --> BE: Existing registration or null
+    
+    alt Already Registered
+        BE --> FE: 400 Bad Request\n{error: "Already registered for this event"}
+        FE --> T: "You're already registered!"
+        
+    else New Registration
+        BE -> DB: Get event approval settings
+        DB --> BE: {requires_approval: true/false}
+        
+        alt Requires Approval
+            BE -> DB: INSERT INTO event_registrations\n(event_id, status='pending', ...)
+            DB --> BE: Registration created (pending)
+            
+            BE -> EMAIL: Send pending notification
+            EMAIL --> T: "Registration Received!\nYour registration is pending approval.\nWe'll notify you once reviewed."
+            
+            BE -> EMAIL: Notify admin
+            EMAIL --> A: "New Registration Pending\nEvent: {title}\nRegistrant: {name}"
+            
+            BE --> FE: 201 Created\n{status: "pending",\nmessage: "Awaiting admin approval"}
+            FE --> T: "Registration submitted!\nPending approval - check your email."
+            
+        else Auto-Confirm
+            BE -> DB: INSERT INTO event_registrations\n(event_id, status='confirmed', ...)
+            DB --> BE: Registration confirmed
+            
+            BE -> EMAIL: Send confirmation email
+            EMAIL --> T: "Registration Confirmed! ✓\nEvent: {title}\nDate: {start_date}\nLocation: {location_name}\n\nAdd to Calendar: [link]"
+            
+            BE --> FE: 201 Created\n{status: "confirmed",\nconfirmation_code: "EVT-2026-XXXX"}
+            FE --> T: "You're registered! ✓\nConfirmation sent to your email."
+        end
+    end
+end
+
+== Admin Approval (if required) ==
+
+A -> FE: Login to Admin Portal
+FE -> BE: GET /api/events/{event_id}/registrations/?status=pending
+BE -> DB: SELECT * FROM event_registrations\nWHERE event_id={id} AND status='pending'
+DB --> BE: Pending registrations
+BE --> FE: Registrations list with form_data
+FE --> A: Display pending registrations\nwith custom form responses
+
+A -> FE: Review registration details
+FE --> A: Show submitted form data:\n- T-Shirt Size: M\n- Dietary: Vegetarian\n- Emergency: Jane +60198765432
+
+alt Admin Approves
+    A -> FE: Click "Approve"
+    FE -> BE: POST /api/events/registrations/{reg_id}/approve/
+    
+    BE -> DB: UPDATE event_registrations\nSET status='confirmed'
+    DB --> BE: Approved
+    
+    BE -> EMAIL: Send approval notification
+    EMAIL --> T: "Registration Approved! ✓\nYou're confirmed for {event_title}.\nSee you there!"
+    
+    BE --> FE: 200 OK {status: "confirmed"}
+    FE --> A: "Registration approved"
+    
+else Admin Rejects
+    A -> FE: Click "Reject" + reason
+    FE -> BE: POST /api/events/registrations/{reg_id}/reject/\n{reason: "Capacity prioritized for local residents"}
+    
+    BE -> DB: UPDATE event_registrations\nSET status='rejected'
+    DB --> BE: Rejected
+    
+    BE -> EMAIL: Send rejection notification
+    EMAIL --> T: "Registration Not Approved\nWe're sorry, your registration for\n{event_title} was not approved.\nReason: {reason}"
+    
+    BE --> FE: 200 OK {status: "rejected"}
+    FE --> A: "Registration rejected"
+end
+
+== Cancel Registration ==
+
+T -> FE: View "My Registrations"
+FE -> BE: GET /api/events/my-registrations/?email={email}
+BE -> DB: Fetch user's registrations
+DB --> BE: Registrations list
+BE --> FE: User's event registrations
+FE --> T: Display registrations
+
+T -> FE: Click "Cancel Registration"
+FE -> BE: DELETE /api/events/registrations/{reg_id}/
+
+BE -> DB: DELETE FROM event_registrations\nWHERE id={reg_id}
+DB --> BE: Registration cancelled
+
+BE -> EMAIL: Send cancellation confirmation
+EMAIL --> T: "Registration Cancelled\nYour registration for {event_title}\nhas been cancelled."
+
+BE --> FE: 200 OK
+FE --> T: "Registration cancelled"
+
+@enduml
