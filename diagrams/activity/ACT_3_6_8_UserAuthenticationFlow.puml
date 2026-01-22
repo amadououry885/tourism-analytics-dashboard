@@ -1,0 +1,193 @@
+@startuml User Authentication Flow Activity
+
+title Figure 3.X: User Authentication Flow Activity Diagram
+
+skinparam backgroundColor #FEFEFE
+skinparam ActivityBackgroundColor #E3F2FD
+skinparam ActivityBorderColor #1976D2
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ActivityDiamondBorderColor #F57F17
+skinparam ArrowColor #333333
+
+|#LightBlue|User|
+|#E8F5E9|Frontend|
+|#E8F5E9|Backend|
+|#FFF9C4|JWT Service|
+|#FFF3E0|Database|
+
+|User|
+start
+:Access Application;
+
+|Frontend|
+:Check localStorage
+for Existing Tokens;
+
+if (Tokens Exist?) then (yes)
+    :Parse Stored Tokens;
+    :Check Access Token Expiry;
+    
+    if (Access Token Valid?) then (yes)
+        :Load User from Cache;
+        
+        |User|
+        :Show Authenticated UI;
+        :Access Dashboard;
+        stop
+    else (no)
+        :Attempt Token Refresh;
+        note right: Go to Refresh Flow
+    endif
+else (no)
+    |User|
+    :Display Login Page;
+    :Enter Credentials
+    - Username/Email
+    - Password;
+    
+    |Frontend|
+    :Validate Input Format;
+    
+    if (Valid Format?) then (yes)
+        |Backend|
+        :Receive Login Request;
+        
+        |Database|
+        :Search User by
+        Username or Email;
+        
+        |Backend|
+        if (User Found?) then (yes)
+            :Verify Password
+            (check_password);
+            
+            if (Password Valid?) then (yes)
+                :Check Account Status;
+                
+                if (Account Active?) then (yes)
+                    :Check Approval Status
+                    (for vendor/stay_owner);
+                    
+                    |JWT Service|
+                    :Generate Access Token
+                    (expires: +5 hours);
+                    :Generate Refresh Token
+                    (expires: +1 day);
+                    
+                    |Backend|
+                    :Return Tokens + User Data
+                    {access, refresh, user};
+                    
+                    |Frontend|
+                    :Store Tokens in localStorage;
+                    :Update Auth Context;
+                    :Determine Redirect by Role;
+                    
+                    switch (User Role?)
+                    case (admin)
+                        |User|
+                        :Redirect to
+                        /admin/dashboard;
+                    case (vendor)
+                        if (is_approved?) then (yes)
+                            |User|
+                            :Redirect to
+                            /vendor/dashboard;
+                        else (no)
+                            |User|
+                            :Show "Pending Approval"
+                            Page;
+                        endif
+                    case (stay_owner)
+                        if (is_approved?) then (yes)
+                            |User|
+                            :Redirect to
+                            /stays/dashboard;
+                        else (no)
+                            |User|
+                            :Show "Pending Approval"
+                            Page;
+                        endif
+                    case (place_owner)
+                        |User|
+                        :Redirect to
+                        /places/dashboard;
+                    endswitch
+                    
+                else (no - Inactive)
+                    |User|
+                    :Display "Account disabled.
+                    Contact support.";
+                    stop
+                endif
+            else (no)
+                |User|
+                :Display "Invalid username
+                or password";
+                stop
+            endif
+        else (no)
+            |User|
+            :Display "Invalid username
+            or password";
+            stop
+        endif
+    else (no)
+        |User|
+        :Display Validation Errors;
+        note right: Return to form
+    endif
+endif
+
+' === TOKEN REFRESH FLOW ===
+|Frontend|
+:Token Refresh Flow;
+:Get Refresh Token;
+
+|Backend|
+:Receive Refresh Request;
+
+|JWT Service|
+:Validate Refresh Token;
+
+if (Refresh Token Valid?) then (yes)
+    :Generate New Access Token;
+    
+    |Backend|
+    :Return New Access Token;
+    
+    |Frontend|
+    :Update Stored Token;
+    :Retry Original Request;
+    
+    |User|
+    :Continue Using App
+    (Seamless);
+    
+else (no)
+    |Frontend|
+    :Clear All Tokens;
+    :Clear User State;
+    
+    |User|
+    :Redirect to Login
+    "Session expired.
+    Please login again.";
+endif
+
+' === LOGOUT FLOW ===
+|User|
+:Click "Logout";
+
+|Frontend|
+:Clear localStorage Tokens;
+:Clear Auth Context;
+:Remove Authorization Header;
+
+|User|
+:Redirect to Login Page
+"Logged out successfully";
+
+stop
+
+@enduml

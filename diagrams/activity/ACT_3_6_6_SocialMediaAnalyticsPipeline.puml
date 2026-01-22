@@ -1,0 +1,156 @@
+@startuml Social Media Analytics Pipeline Activity
+
+title Figure 3.X: Social Media Analytics Pipeline Activity Diagram
+
+skinparam backgroundColor #FEFEFE
+skinparam ActivityBackgroundColor #E3F2FD
+skinparam ActivityBorderColor #1976D2
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ActivityDiamondBorderColor #F57F17
+skinparam ArrowColor #333333
+
+|#FFECB3|Scheduler|
+|#E8F5E9|Worker|
+|#E3F2FD|Social APIs|
+|#F3E5F5|NLP Service|
+|#FFF3E0|Database|
+|#FFCDD2|Cache|
+
+|Scheduler|
+start
+:Celery Beat Trigger
+(Every 2 Hours);
+
+|Worker|
+:Start Task:
+collect_and_process_social_posts();
+
+|Database|
+:Fetch Tourism Places
+for Search Keywords;
+
+|Worker|
+:Build Search Queries
+- Place Names
+- City Hashtags
+- Tourism Keywords;
+
+' === FETCH FROM MULTIPLE PLATFORMS ===
+fork
+    |Social APIs|
+    :Fetch Instagram Posts
+    #AlorSetar #Kedah #Langkawi;
+fork again
+    |Social APIs|
+    :Fetch Twitter Posts
+    "Alor Setar tourism";
+fork again
+    |Social APIs|
+    :Fetch Facebook Posts
+    from Tourism Pages;
+end fork
+
+|Worker|
+:Normalize Data Format
+{platform, post_id, content,
+likes, comments, shares};
+
+' === FILTER TOURISM CONTENT ===
+:Start Filtering Process;
+
+while (More Posts?) is (yes)
+    :Check Post Content;
+    
+    if (Tourism Related?) then (yes)
+        :Mark as is_tourism=True;
+        :Add to Processing Queue;
+    else (no)
+        :Skip Post
+        is_tourism=False;
+    endif
+endwhile (no)
+
+' === SENTIMENT ANALYSIS ===
+:Start Sentiment Analysis;
+
+while (More Posts to Analyze?) is (yes)
+    |NLP Service|
+    :Process Text:
+    1. Tokenization
+    2. Remove Stopwords
+    3. Feature Extraction
+    4. Classification;
+    
+    :Return Sentiment Result
+    {sentiment, score, confidence};
+    
+    |Worker|
+    :Store Sentiment Data;
+endwhile (no)
+
+' === LINK TO PLACES ===
+:Start Place Linking;
+
+while (More Posts to Link?) is (yes)
+    :Extract Location Mentions;
+    
+    |Database|
+    :Search Matching Place
+    by Name or City;
+    
+    |Worker|
+    if (Place Found?) then (yes)
+        :Associate Post with Place;
+    else (no)
+        :Leave place_id = null;
+    endif
+endwhile (no)
+
+' === STORE IN DATABASE ===
+:Start Database Storage;
+
+while (More Posts to Store?) is (yes)
+    |Database|
+    :Check for Duplicate
+    (platform + post_id);
+    
+    |Worker|
+    if (Duplicate?) then (yes)
+        |Database|
+        :UPDATE Engagement Metrics
+        (likes, comments, shares);
+    else (no)
+        |Database|
+        :INSERT New Social Post
+        with Sentiment Data;
+    endif
+endwhile (no)
+
+' === UPDATE CACHE ===
+|Worker|
+:Calculate Aggregations
+- Sentiment Distribution
+- Platform Breakdown
+- Trending Places;
+
+|Cache|
+fork
+    :Cache sentiment_summary
+    TTL: 7200s;
+fork again
+    :Cache social_platforms_stats
+    TTL: 7200s;
+fork again
+    :Cache trending_places
+    TTL: 7200s;
+end fork
+
+|Worker|
+:Task Complete;
+:Log Processing Summary
+{posts_fetched, posts_processed,
+posts_stored, errors};
+
+stop
+
+@enduml

@@ -1,0 +1,175 @@
+@startuml Admin Event Management Activity
+
+title Figure 3.X: Admin Event Management Activity Diagram
+
+skinparam backgroundColor #FEFEFE
+skinparam ActivityBackgroundColor #E3F2FD
+skinparam ActivityBorderColor #1976D2
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ActivityDiamondBorderColor #F57F17
+skinparam ArrowColor #333333
+
+|#FFE0B2|Admin|
+|#E8F5E9|System|
+|#FFF3E0|Database|
+|#FCE4EC|Email Service|
+
+|Admin|
+start
+:Login to Admin Portal;
+
+|System|
+:Validate Admin Credentials;
+:Check role='admin';
+:Generate JWT Tokens;
+
+|Admin|
+:Access Admin Dashboard;
+:Navigate to Events Section;
+
+fork
+    :Create New Event;
+    detach
+fork again
+    :Manage Registrations;
+    detach
+fork again
+    :Send Notifications;
+    detach
+fork again
+    :View Analytics;
+    detach
+end fork
+
+' === CREATE EVENT PATH ===
+|Admin|
+:Fill Event Details
+- Title, Description
+- Start/End Date
+- Location, City
+- Max Capacity
+- Custom Form Fields
+- Requires Approval;
+
+|System|
+:Validate Event Data;
+
+if (Valid Data?) then (yes)
+    |Database|
+    :INSERT INTO events
+    (created_by=admin_id);
+    
+    |Admin|
+    :Event Created Successfully;
+else (no)
+    |Admin|
+    :Display Validation Errors;
+endif
+
+' === MANAGE REGISTRATIONS PATH ===
+|Admin|
+:View Event Registrations;
+
+|System|
+:Fetch Registrations List;
+
+|Database|
+:SELECT FROM event_registrations
+WHERE event_id = {id};
+
+|Admin|
+:Filter by Status (Pending);
+
+while (More Pending Registrations?) is (yes)
+    :Review Registration Details
+    - Attendee Info
+    - Custom Form Data;
+    
+    if (Approve?) then (yes)
+        |System|
+        :Update Status = 'confirmed';
+        
+        |Database|
+        :UPDATE event_registrations;
+        
+        |Email Service|
+        :Send Approval Email
+        to Participant;
+        
+        |Admin|
+        :Registration Approved ✓;
+    else (no)
+        |Admin|
+        :Enter Rejection Reason;
+        
+        |System|
+        :Update Status = 'rejected';
+        
+        |Database|
+        :UPDATE event_registrations;
+        
+        |Email Service|
+        :Send Rejection Email
+        with Reason;
+        
+        |Admin|
+        :Registration Rejected;
+    endif
+endwhile (no)
+
+' === SEND NOTIFICATIONS PATH ===
+|Admin|
+:Click "Notify All Participants";
+:Compose Notification
+- Subject
+- Message Body;
+
+|System|
+:Fetch Confirmed Registrations;
+
+|Database|
+:SELECT email FROM registrations
+WHERE status='confirmed';
+
+|System|
+:Build Email List;
+
+|Email Service|
+fork
+    :Send Email to Participant 1;
+fork again
+    :Send Email to Participant 2;
+fork again
+    :Send Email to Participant N;
+end fork
+
+|Admin|
+:Display "Notification sent to N participants";
+
+' === CANCEL EVENT PATH ===
+|Admin|
+:Select Event to Cancel;
+:Confirm Cancellation;
+:Enter Cancellation Reason;
+
+|System|
+:Update Event Status = 'cancelled';
+
+|Database|
+:UPDATE events
+SET is_published=False;
+
+|System|
+:Fetch All Confirmed Registrations;
+
+|Email Service|
+:Send Cancellation Notice
+to All Participants;
+
+|Admin|
+:Event Cancelled
+All participants notified;
+
+stop
+
+@enduml

@@ -1,0 +1,120 @@
+@startuml Vendor Registration & Approval Activity
+
+title Figure 3.X: Vendor Registration & Approval Activity Diagram
+
+skinparam backgroundColor #FEFEFE
+skinparam ActivityBackgroundColor #E3F2FD
+skinparam ActivityBorderColor #1976D2
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ActivityDiamondBorderColor #F57F17
+skinparam ArrowColor #333333
+
+|#E3F2FD|Vendor|
+|#E8F5E9|System|
+|#FFF3E0|Admin|
+|#FCE4EC|Email Service|
+
+|Vendor|
+start
+:Access Registration Page;
+:Fill Registration Form
+- Username
+- Email  
+- Password
+- Business Details
+- Phone Number
+- Claimed Business ID;
+
+|System|
+:Validate Input Data;
+
+if (Validation Passed?) then (yes)
+    :Check Username/Email Uniqueness;
+    
+    if (Already Exists?) then (yes)
+        |Vendor|
+        :Display Error
+        "User already exists";
+        stop
+    else (no)
+        |System|
+        :Create User Account
+        (role='vendor', is_approved=False);
+        :Store Business Claim Details;
+        :Generate Notification;
+        
+        |Email Service|
+        :Send Admin Notification
+        "New Vendor Registration Pending";
+        
+        |Vendor|
+        :Display Success Message
+        "Registration submitted!
+        Awaiting admin approval";
+        
+        |Admin|
+        :Receive Notification Email;
+        :Login to Admin Portal;
+        :Navigate to Pending Users;
+        
+        |System|
+        :Fetch Pending Vendors List;
+        
+        |Admin|
+        :Review Vendor Details
+        - Business Information
+        - Verification Documents
+        - Phone Number;
+        
+        if (Approve Vendor?) then (yes)
+            |System|
+            :Update User
+            (is_approved=True);
+            :Assign Business Ownership
+            (vendor.owner = user);
+            
+            |Email Service|
+            :Send Approval Email
+            "Your account has been approved!";
+            
+            |Admin|
+            :Display "Vendor Approved";
+            
+            |Vendor|
+            :Receive Approval Email;
+            :Login to Platform;
+            
+            |System|
+            :Validate Credentials;
+            :Check is_approved=True;
+            :Generate JWT Tokens;
+            
+            |Vendor|
+            :Access Vendor Dashboard;
+            stop
+            
+        else (no)
+            |Admin|
+            :Enter Rejection Reason;
+            
+            |System|
+            :Update User Notes
+            (admin_notes = reason);
+            
+            |Email Service|
+            :Send Rejection Email
+            "Registration rejected: {reason}";
+            
+            |Vendor|
+            :Receive Rejection Email;
+            stop
+        endif
+    endif
+else (no)
+    |Vendor|
+    :Display Validation Errors;
+    :Correct Form Inputs;
+    note right: Return to form
+endif
+
+@enduml

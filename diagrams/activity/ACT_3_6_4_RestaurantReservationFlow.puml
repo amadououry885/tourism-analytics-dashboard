@@ -1,0 +1,144 @@
+@startuml Restaurant Reservation Flow Activity
+
+title Figure 3.X: Restaurant Reservation Flow Activity Diagram
+
+skinparam backgroundColor #FEFEFE
+skinparam ActivityBackgroundColor #E3F2FD
+skinparam ActivityBorderColor #1976D2
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ActivityDiamondBorderColor #F57F17
+skinparam ArrowColor #333333
+
+|#LightBlue|Tourist|
+|#E8F5E9|System|
+|#FFE0B2|Vendor|
+|#FCE4EC|Email Service|
+
+|Tourist|
+start
+:Navigate to Restaurants Page;
+
+|System|
+:Fetch Active Restaurants;
+:Display Restaurant List;
+
+|Tourist|
+:Apply Filters
+- City
+- Cuisine Type
+- Price Range;
+
+|System|
+:Filter Restaurants;
+:Display Filtered Results;
+
+|Tourist|
+:Select Restaurant;
+
+|System|
+:Fetch Restaurant Details
+- Menu Items
+- Opening Hours
+- Reviews
+- Gallery;
+:Display Restaurant Profile;
+
+|Tourist|
+:Click "Make Reservation";
+:Fill Reservation Form
+- Date
+- Time
+- Party Size
+- Name, Phone, Email
+- Special Requests;
+
+|System|
+:Validate Form Inputs;
+
+if (Valid Inputs?) then (yes)
+    :Check Restaurant Availability;
+    
+    if (Time Slot Available?) then (yes)
+        :Create Reservation
+        (status='pending');
+        
+        |Email Service|
+        fork
+            :Send Notification to Vendor
+            "New Reservation Request";
+        fork again
+            :Send Confirmation to Tourist
+            "Reservation Submitted";
+        end fork
+        
+        |Tourist|
+        :Display "Reservation submitted!
+        Awaiting confirmation.";
+        
+        |Vendor|
+        :Receive Notification;
+        :Login to Vendor Portal;
+        :View Pending Reservations;
+        :Review Reservation Details;
+        
+        if (Accept Reservation?) then (yes)
+            |System|
+            :Update Status = 'confirmed';
+            
+            |Email Service|
+            :Send Confirmation to Tourist
+            "Reservation Confirmed! ✓";
+            
+            |Tourist|
+            :Receive Confirmation Email;
+            :Reservation Complete;
+            
+        else (no)
+            |Vendor|
+            :Select Rejection Reason;
+            
+            |System|
+            :Update Status = 'rejected';
+            
+            |Email Service|
+            :Send Rejection to Tourist
+            "Reservation Not Confirmed
+            Reason: {reason}";
+            
+            |Tourist|
+            :Receive Rejection Email;
+            :Consider Alternative
+            Restaurant or Time;
+        endif
+        
+    else (no)
+        |Tourist|
+        :Display "Time slot fully booked.
+        Please select another time.";
+        note right: Return to form
+    endif
+else (no)
+    |Tourist|
+    :Display Validation Errors;
+    note right: Return to form
+endif
+
+' === TOURIST CANCELLATION ===
+|Tourist|
+:View My Reservations;
+:Select Reservation to Cancel;
+:Confirm Cancellation;
+
+|System|
+:Update Status = 'cancelled';
+
+|Email Service|
+:Notify Vendor
+"Reservation Cancelled by Guest";
+
+|Tourist|
+:Reservation Cancelled;
+
+stop
+
+@enduml
