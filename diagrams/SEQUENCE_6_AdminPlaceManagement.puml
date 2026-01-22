@@ -1,0 +1,47 @@
+@startuml Admin Place Management Sequence
+
+title Admin Creates Tourism Place
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor Admin as A #Red
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django)" as BE #E8F5E9
+database "Database" as DB #FFF3E0
+
+A -> FE: Navigate to Places
+FE -> BE: GET /api/places/
+BE -> DB: Query all places
+DB --> BE: Places list
+BE --> FE: Places data
+FE --> A: Display places table
+
+A -> FE: Click "Add New Place"
+FE --> A: Show create form
+
+A -> FE: Fill place details\n{name, category, city,\nlat, lon, description,\nimage, opening_hours}
+
+A -> FE: Upload image
+FE -> FE: Convert to base64
+
+A -> FE: Click "Save"
+FE -> FE: Validate form
+
+FE -> BE: POST /api/places/\n{place_data, image_base64}
+
+BE -> BE: Validate data
+BE -> BE: Process image
+
+BE -> DB: INSERT Place\n(created_by = admin.id)
+DB --> BE: Place created (id)
+
+BE --> FE: 201 Created\n{place}
+FE --> A: "Place created successfully"
+FE -> FE: Refresh places list
+
+== Public Access ==
+
+note over FE, DB: Place now visible on public portal
+
+@enduml

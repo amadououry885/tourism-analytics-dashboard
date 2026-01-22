@@ -1,0 +1,71 @@
+@startuml Restaurant Reservation Sequence
+
+title Restaurant Reservation Flow
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor Tourist as T #LightBlue
+actor Vendor as V #Orange
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django)" as BE #E8F5E9
+database "Database" as DB #FFF3E0
+participant "Email\nService" as ES #FFEBEE
+
+== Tourist Makes Reservation ==
+
+T -> FE: Browse restaurants
+FE -> BE: GET /api/vendors/
+BE -> DB: Query active vendors
+DB --> BE: Vendors list
+BE --> FE: Restaurant data
+FE --> T: Display restaurants
+
+T -> FE: Select restaurant
+FE -> BE: GET /api/vendors/{id}/
+BE --> FE: Restaurant details + hours
+FE --> T: Show details & booking form
+
+T -> FE: Fill reservation form\n{date, time, party_size, name, email}
+FE -> BE: POST /api/vendors/{id}/reservations/
+
+BE -> DB: Check opening hours
+DB --> BE: Hours for day
+
+alt Restaurant closed
+    BE --> FE: 400 "Closed on this day"
+    FE --> T: "Restaurant closed"
+else Restaurant open
+    BE -> DB: CREATE Reservation\n(status = 'pending')
+    DB --> BE: Reservation created
+    
+    BE -> ES: Notify vendor
+    ES --> V: Email: "New reservation"
+    
+    BE -> ES: Confirm to tourist
+    ES --> T: Email: "Reservation pending"
+    
+    BE --> FE: 201 Created
+    FE --> T: "Reservation submitted!"
+end
+
+== Vendor Confirms ==
+
+V -> FE: Login to Vendor Portal
+FE -> BE: GET /api/vendors/my/reservations/
+BE --> FE: Pending reservations
+FE --> V: Display reservations
+
+V -> FE: Click "Confirm"
+FE -> BE: PATCH /api/reservations/{id}/\n{status: 'confirmed'}
+
+BE -> DB: UPDATE status
+DB --> BE: Updated
+
+BE -> ES: Send confirmation
+ES --> T: Email: "Reservation confirmed!\nDate, Time, Party size"
+
+BE --> FE: 200 OK
+FE --> V: "Reservation confirmed"
+
+@enduml

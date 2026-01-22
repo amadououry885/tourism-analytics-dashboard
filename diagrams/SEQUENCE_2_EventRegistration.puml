@@ -1,0 +1,51 @@
+@startuml Event Registration Sequence
+
+title Event Registration Flow
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor Tourist as T #LightBlue
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django)" as BE #E8F5E9
+database "Database" as DB #FFF3E0
+participant "Email\nService" as ES #FFEBEE
+
+T -> FE: Click "Register for Event"
+FE -> BE: GET /api/events/{id}/
+BE -> DB: Query Event
+DB --> BE: Event details
+BE --> FE: Event data + form config
+
+FE --> T: Display registration form
+
+T -> FE: Fill form & submit
+FE -> FE: Validate form data
+FE -> BE: POST /api/events/{id}/register/\n{form_data}
+
+BE -> DB: Check event capacity
+DB --> BE: Current attendee count
+
+alt Event is full
+    BE --> FE: 400 Bad Request\n"Event at capacity"
+    FE --> T: Show "Event Full" message
+else Has capacity
+    BE -> DB: Create EventRegistration
+    DB --> BE: Registration created
+    
+    alt Requires approval
+        BE -> DB: Set status = 'pending'
+        BE -> ES: Send pending notification
+        ES --> T: Email: "Registration pending"
+        BE --> FE: 201 Created\n{status: pending}
+        FE --> T: "Awaiting admin approval"
+    else Auto-confirm
+        BE -> DB: Set status = 'confirmed'
+        BE -> ES: Send confirmation email
+        ES --> T: Email: "Registration confirmed"
+        BE --> FE: 201 Created\n{status: confirmed}
+        FE --> T: "Registration successful!"
+    end
+end
+
+@enduml

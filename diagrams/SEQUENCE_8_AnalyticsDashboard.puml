@@ -1,0 +1,52 @@
+@startuml Analytics Dashboard Sequence
+
+title Analytics Dashboard Data Flow
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+
+actor User as U #LightBlue
+participant "Frontend\n(React)" as FE #E3F2FD
+participant "Backend\n(Django)" as BE #E8F5E9
+database "Database" as DB #FFF3E0
+
+U -> FE: Open Analytics Dashboard
+FE -> FE: Show loading state
+
+par Parallel API Calls
+    FE -> BE: GET /api/analytics/overview-metrics/
+    BE -> DB: Aggregate visitor stats
+    DB --> BE: Metrics data
+    BE --> FE: {total_visitors, growth, etc}
+and
+    FE -> BE: GET /api/analytics/sentiment/summary/
+    BE -> DB: Query SocialPost sentiments
+    DB --> BE: Sentiment counts
+    BE --> FE: {positive, neutral, negative}
+and
+    FE -> BE: GET /api/analytics/places/popular/
+    BE -> DB: Query places by engagement
+    DB --> BE: Top places
+    BE --> FE: Popular places list
+and
+    FE -> BE: GET /api/analytics/social-platforms/
+    BE -> DB: Group posts by platform
+    DB --> BE: Platform stats
+    BE --> FE: {instagram, twitter, facebook}
+end
+
+FE -> FE: Merge all data
+FE -> FE: Render charts (Recharts)
+FE --> U: Display dashboard
+
+== User Applies Filter ==
+
+U -> FE: Select date range
+FE -> BE: GET /api/analytics/overview-metrics/\n?start_date=X&end_date=Y
+BE -> DB: Query with date filter
+DB --> BE: Filtered data
+BE --> FE: Updated metrics
+FE -> FE: Re-render charts
+FE --> U: Updated dashboard
+
+@enduml
