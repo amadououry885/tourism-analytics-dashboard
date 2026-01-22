@@ -1,0 +1,73 @@
+@startuml User Registration Activity
+
+title User Registration & Approval Workflow
+
+skinparam backgroundColor #FEFEFE
+skinparam activity {
+    BackgroundColor #F8F9FA
+    BorderColor #343A40
+    ArrowColor #495057
+}
+
+|#E3F2FD|User|
+|#FFEBEE|Admin|
+|#EEEEEE|System|
+
+start
+
+|User|
+:Select Registration Type;
+
+switch (Role?)
+    case (Vendor)
+        :Fill Vendor Registration Form;
+        :Provide Business Details;
+    case (Stay Owner)
+        :Fill Stay Owner Registration Form;
+        :Provide Property Details;
+    case (Place Owner)
+        :Fill Place Owner Registration Form;
+        :Provide Attraction Details;
+endswitch
+
+:Upload Verification Documents;
+:Submit Registration;
+
+|System|
+:Validate Form Data;
+
+if (Valid?) then (yes)
+    :Create User Account\n(is_approved = false);
+    :Send Confirmation Email;
+    :Notify Admin;
+    
+    |Admin|
+    :Review Registration;
+    :Verify Documents;
+    
+    if (Approve?) then (yes)
+        :Set is_approved = true;
+        
+        |System|
+        :Send Approval Email;
+        
+        |User|
+        :Login to Portal;
+    else (no)
+        |Admin|
+        :Reject Registration;
+        
+        |System|
+        :Send Rejection Email;
+    endif
+else (no)
+    |System|
+    :Show Validation Errors;
+    
+    |User|
+    :Correct Errors;
+endif
+
+stop
+
+@enduml

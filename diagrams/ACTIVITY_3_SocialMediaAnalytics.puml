@@ -1,0 +1,57 @@
+@startuml Social Media Analytics Activity
+
+title Social Media Analytics Pipeline
+
+skinparam backgroundColor #FEFEFE
+
+|#EEEEEE|Celery Worker|
+|#E8F5E9|AI Service|
+|#FFF3E0|Database|
+
+start
+
+|Celery Worker|
+:Trigger Scheduled Task\n(Every 2 hours);
+:Fetch Social Media Posts;
+
+fork
+    :Process Instagram;
+fork again
+    :Process Twitter;
+fork again
+    :Process Facebook;
+end fork
+
+:Filter Tourism Content;
+
+while (More Posts?) is (yes)
+    :Extract Post Data;
+    
+    |AI Service|
+    :Analyze Sentiment;
+    
+    if (Score > 0.3) then (Positive)
+        :Label = Positive;
+    elseif (Score < -0.3) then (Negative)
+        :Label = Negative;
+    else (Neutral)
+        :Label = Neutral;
+    endif
+    
+    :Extract Keywords;
+    :Link to Place/Vendor;
+    
+    |Database|
+    :Store SocialPost;
+    :Update Metrics;
+endwhile (no)
+
+|Celery Worker|
+:Aggregate Statistics;
+
+|Database|
+:Update Analytics;
+
+stop
+
+@enduml
