@@ -1,0 +1,723 @@
+@startuml Tourism Analytics Dashboard - Activity Diagrams
+
+title Tourism Analytics Dashboard - Activity Diagrams\nKedah State Tourism Platform
+
+' ==========================================
+'     ACTIVITY 1: USER REGISTRATION
+' ==========================================
+
+|#E3F2FD|User|
+|#FFEBEE|Admin|
+|#EEEEEE|System|
+
+start
+
+partition "User Registration & Approval Workflow" {
+    |User|
+    :Select Registration Type;
+    
+    switch (Role?)
+        case (Vendor)
+            :Fill Vendor Registration Form;
+            :Provide Business Details;
+            :Upload Verification Documents;
+        case (Stay Owner)
+            :Fill Stay Owner Registration Form;
+            :Provide Property Details;
+            :Upload Verification Documents;
+        case (Place Owner)
+            :Fill Place Owner Registration Form;
+            :Provide Attraction Details;
+            :Upload Verification Documents;
+    endswitch
+    
+    :Submit Registration;
+    
+    |System|
+    :Validate Form Data;
+    
+    if (Valid?) then (yes)
+        :Create User Account\n(is_approved = false);
+        :Send Confirmation Email;
+        :Notify Admin of\nPending Approval;
+        
+        |Admin|
+        :Review Registration;
+        :Verify Business Documents;
+        
+        if (Approve?) then (yes)
+            :Set is_approved = true;
+            :Add Admin Notes;
+            
+            |System|
+            :Send Approval Email;
+            
+            |User|
+            :Login to Portal;
+            :Access Dashboard;
+        else (no)
+            |Admin|
+            :Reject Registration;
+            :Provide Rejection Reason;
+            
+            |System|
+            :Send Rejection Email;
+            
+            |User|
+            :Registration Denied;
+        endif
+    else (no)
+        |System|
+        :Show Validation Errors;
+        
+        |User|
+        :Correct Form Errors;
+    endif
+}
+
+stop
+
+@enduml
+
+
+@startuml Tourism Analytics Dashboard - Event Registration Activity
+
+title Event Registration Workflow
+
+|#LightBlue|Tourist|
+|#FFEBEE|Admin|
+|#EEEEEE|System|
+
+start
+
+partition "Event Registration Workflow" {
+    |Tourist|
+    :Browse Events;
+    :Select Event;
+    :View Event Details;
+    
+    if (Already Registered?) then (yes)
+        :Show Registration Status;
+        stop
+    else (no)
+        :Click Register;
+    endif
+    
+    |System|
+    :Check Event Capacity;
+    
+    if (Event Full?) then (yes)
+        :Show "Event Full" Message;
+        :Offer Waitlist Option;
+        
+        |Tourist|
+        if (Join Waitlist?) then (yes)
+            :Add to Waitlist;
+        else (no)
+            stop
+        endif
+    else (no)
+        :Load Registration Form;
+        
+        |Tourist|
+        :Fill Registration Form;
+        
+        if (Custom Fields?) then (yes)
+            :Fill Custom Fields\n(Name, Email, Phone, etc.);
+        else (no)
+        endif
+        
+        :Submit Registration;
+        
+        |System|
+        :Validate Form Data;
+        
+        if (Valid?) then (yes)
+            :Check if Approval Required;
+            
+            if (Requires Approval?) then (yes)
+                :Create Registration\n(status = pending);
+                :Notify Admin;
+                
+                |Admin|
+                :Review Registration;
+                :Check Form Responses;
+                
+                if (Approve?) then (yes)
+                    :Set status = confirmed;
+                    :Add Admin Notes;
+                    
+                    |System|
+                    :Send Confirmation Email;
+                    :Update Attendee Count;
+                    
+                    |Tourist|
+                    :Registration Confirmed;
+                else (no)
+                    |Admin|
+                    :Set status = rejected;
+                    :Provide Reason;
+                    
+                    |System|
+                    :Send Rejection Email;
+                    
+                    |Tourist|
+                    :Registration Rejected;
+                endif
+            else (no)
+                :Create Registration\n(status = confirmed);
+                :Send Confirmation Email;
+                :Update Attendee Count;
+                
+                |Tourist|
+                :Registration Confirmed;
+            endif
+            
+            |Tourist|
+            if (Set Reminder?) then (yes)
+                :Select Reminder Time;
+                
+                |System|
+                :Schedule Reminder;
+            else (no)
+            endif
+        else (no)
+            |System|
+            :Show Validation Errors;
+            
+            |Tourist|
+            :Correct Errors;
+        endif
+    endif
+}
+
+stop
+
+@enduml
+
+
+@startuml Tourism Analytics Dashboard - Social Media Analytics Activity
+
+title Social Media Analytics Pipeline
+
+|#EEEEEE|Celery Worker|
+|#E8F5E9|AI Service|
+|#FFF3E0|Database|
+
+start
+
+partition "Social Media Data Collection & Analysis" {
+    |Celery Worker|
+    :Trigger Scheduled Task\n(Every 2 hours);
+    
+    :Fetch Posts from\nSocial Media APIs;
+    note right
+        - Instagram
+        - Twitter/X
+        - Facebook
+        - TripAdvisor
+    end note
+    
+    fork
+        :Process Instagram Posts;
+    fork again
+        :Process Twitter Posts;
+    fork again
+        :Process Facebook Posts;
+    end fork
+    
+    :Filter Tourism-Related Content;
+    
+    while (More Posts?) is (yes)
+        :Extract Post Data;
+        note right
+            - Content
+            - Likes
+            - Comments
+            - Shares
+            - Timestamp
+        end note
+        
+        |AI Service|
+        :Analyze Sentiment;
+        
+        switch (Sentiment Score?)
+            case (> 0.3)
+                :Classify as Positive;
+            case (-0.3 to 0.3)
+                :Classify as Neutral;
+            case (< -0.3)
+                :Classify as Negative;
+        endswitch
+        
+        :Extract Keywords;
+        :Identify Related Place/Vendor/Stay;
+        :Calculate Confidence Score;
+        
+        |Database|
+        :Store in SocialPost Table;
+        :Link to Place/Vendor/Stay;
+        :Update Engagement Metrics;
+    endwhile (no)
+    
+    |Celery Worker|
+    :Aggregate Daily Statistics;
+    
+    |Database|
+    :Update SentimentTopic Table;
+    :Update Analytics Cache;
+    
+    |Celery Worker|
+    :Log Processing Summary;
+}
+
+stop
+
+@enduml
+
+
+@startuml Tourism Analytics Dashboard - Vendor Management Activity
+
+title Vendor Restaurant Management Workflow
+
+|#FFF3E0|Vendor|
+|#EEEEEE|System|
+
+start
+
+partition "Vendor Portal - Restaurant Management" {
+    |Vendor|
+    :Login to Vendor Portal;
+    
+    |System|
+    :Verify Credentials;
+    :Check is_approved Status;
+    
+    if (Approved?) then (yes)
+        :Load Vendor Dashboard;
+        
+        |Vendor|
+        :View Dashboard Overview;
+        note right
+            - Total Views
+            - Reservations Today
+            - Reviews Count
+            - Rating Average
+        end note
+        
+        switch (Action?)
+            case (Update Profile)
+                :Edit Restaurant Details;
+                :Update Contact Info;
+                :Upload New Images;
+                :Save Changes;
+                
+                |System|
+                :Validate Data;
+                :Update Database;
+                :Show Success Message;
+                
+            case (Manage Menu)
+                |Vendor|
+                :View Menu Items;
+                
+                if (Add New Item?) then (yes)
+                    :Fill Item Details;
+                    :Set Price & Category;
+                    :Mark Dietary Info;
+                    :Save Item;
+                else (no)
+                    :Edit/Delete Existing Item;
+                endif
+                
+                |System|
+                :Update Menu in Database;
+                
+            case (Toggle Open/Closed)
+                |Vendor|
+                :Click Toggle Button;
+                
+                |System|
+                :Update is_open Status;
+                :Reflect on Public Portal;
+                
+            case (Manage Reservations)
+                |Vendor|
+                :View Pending Reservations;
+                
+                while (Has Reservations?) is (yes)
+                    :Select Reservation;
+                    
+                    switch (Action?)
+                        case (Confirm)
+                            :Set status = confirmed;
+                        case (Reject)
+                            :Set status = cancelled;
+                            :Provide Reason;
+                    endswitch
+                    
+                    |System|
+                    :Send Notification to Customer;
+                endwhile (no)
+                
+            case (Create Promotion)
+                |Vendor|
+                :Fill Promotion Details;
+                :Set Discount & Dates;
+                :Add Promo Code;
+                :Activate Promotion;
+                
+                |System|
+                :Save to Database;
+                :Display on Public Portal;
+                
+            case (View Analytics)
+                |Vendor|
+                :Select Date Range;
+                
+                |System|
+                :Query Analytics Data;
+                :Generate Charts;
+                
+                |Vendor|
+                :View Performance Metrics;
+                note right
+                    - Page Views
+                    - Reservation Trends
+                    - Review Sentiment
+                    - Popular Items
+                end note
+        endswitch
+        
+    else (no)
+        |System|
+        :Show Pending Approval Message;
+        :Display Contact Admin Info;
+    endif
+}
+
+stop
+
+@enduml
+
+
+@startuml Tourism Analytics Dashboard - Tourist Booking Flow
+
+title Tourist Accommodation Booking Flow
+
+|#LightBlue|Tourist|
+|#F3E5F5|Stay Owner|
+|#EEEEEE|System|
+
+start
+
+partition "Accommodation Search & Booking" {
+    |Tourist|
+    :Open Stays Page;
+    :Enter Search Criteria;
+    note right
+        - Location/District
+        - Check-in Date
+        - Check-out Date
+        - Guests
+        - Budget Range
+    end note
+    
+    |System|
+    :Query Available Stays;
+    :Apply Filters;
+    :Sort Results;
+    
+    |Tourist|
+    :Browse Results;
+    :Select Accommodation;
+    :View Property Details;
+    note right
+        - Photos Gallery
+        - Amenities
+        - Location Map
+        - Reviews
+        - Pricing
+    end note
+    
+    if (Internal Property?) then (yes)
+        :Show Direct Contact Options;
+        
+        |Tourist|
+        switch (Contact Method?)
+            case (WhatsApp)
+                :Open WhatsApp Chat;
+                :Send Inquiry Message;
+            case (Email)
+                :Open Email Client;
+                :Send Inquiry Email;
+            case (Phone)
+                :Show Phone Number;
+                :Make Call;
+        endswitch
+        
+        |Stay Owner|
+        :Receive Inquiry;
+        :Respond to Tourist;
+        :Confirm Availability;
+        
+        if (Available?) then (yes)
+            :Provide Booking Details;
+            :Confirm Reservation;
+            
+            |Tourist|
+            :Complete Booking\n(Direct with Owner);
+        else (no)
+            :Suggest Alternative Dates;
+            
+            |Tourist|
+            :Modify Search;
+        endif
+        
+    else (no)
+        :Show Affiliate Booking Options;
+        note right
+            - Booking.com
+            - Agoda
+            - Trip.com
+        end note
+        
+        |Tourist|
+        :Select Booking Platform;
+        
+        |System|
+        :Redirect to\nAffiliate Website;
+        
+        |Tourist|
+        :Complete Booking\non External Platform;
+    endif
+}
+
+stop
+
+@enduml
+
+
+@startuml Tourism Analytics Dashboard - Admin Event Management
+
+title Admin Event Management Workflow
+
+|#FFEBEE|Admin|
+|#EEEEEE|System|
+
+start
+
+partition "Admin Event Management" {
+    |Admin|
+    :Login to Admin Portal;
+    :Navigate to Events Section;
+    
+    switch (Action?)
+        case (Create Event)
+            :Click "Create New Event";
+            :Fill Event Details;
+            note right
+                - Title & Description
+                - Start/End Date
+                - Location
+                - Capacity
+                - Image
+            end note
+            
+            if (Recurring Event?) then (yes)
+                :Select Recurrence Type;
+                note right
+                    - Daily
+                    - Weekly
+                    - Monthly
+                    - Yearly
+                end note
+                :Set End Date for Recurrence;
+            else (no)
+            endif
+            
+            if (Custom Registration Form?) then (yes)
+                :Enable Custom Form;
+                :Add Form Fields;
+                
+                while (Add More Fields?) is (yes)
+                    :Select Field Type;
+                    note right
+                        - Text
+                        - Email
+                        - Phone
+                        - Dropdown
+                        - Checkbox
+                        - Date
+                    end note
+                    :Set Label & Placeholder;
+                    :Mark Required/Optional;
+                    :Add Options (if applicable);
+                endwhile (no)
+                
+                :Set Confirmation Message;
+            else (no)
+            endif
+            
+            if (Require Approval?) then (yes)
+                :Enable Approval Workflow;
+                :Set Approval Message;
+            else (no)
+            endif
+            
+            :Publish Event;
+            
+            |System|
+            :Save Event to Database;
+            
+            if (Recurring?) then (yes)
+                :Generate Future Instances;
+            else (no)
+            endif
+            
+            :Display on Public Portal;
+            
+        case (Manage Registrations)
+            |Admin|
+            :Select Event;
+            :View Registrations List;
+            
+            |System|
+            :Load Registrations;
+            :Show Statistics;
+            note right
+                - Total Registered
+                - Pending Approval
+                - Confirmed
+                - Cancelled
+                - Capacity Remaining
+            end note
+            
+            |Admin|
+            while (Has Pending?) is (yes)
+                :Select Registration;
+                :Review Form Data;
+                
+                if (Approve?) then (yes)
+                    :Click Approve;
+                    :Add Notes (optional);
+                    
+                    |System|
+                    :Update Status = confirmed;
+                    :Send Confirmation Email;
+                else (no)
+                    |Admin|
+                    :Click Reject;
+                    :Provide Reason;
+                    
+                    |System|
+                    :Update Status = rejected;
+                    :Send Rejection Email;
+                endif
+            endwhile (no)
+            
+            |Admin|
+            :Export Attendee List;
+            
+            |System|
+            :Generate CSV/Excel Export;
+            
+        case (Cancel Event)
+            |Admin|
+            :Select Event;
+            :Click Cancel;
+            :Confirm Cancellation;
+            :Provide Cancellation Reason;
+            
+            |System|
+            :Update Event Status;
+            :Notify All Registrants;
+            :Send Cancellation Emails;
+            :Refund Instructions (if applicable);
+    endswitch
+}
+
+stop
+
+@enduml
+
+
+@startuml Tourism Analytics Dashboard - Password Reset Flow
+
+title Password Reset Workflow
+
+|#LightBlue|User|
+|#EEEEEE|System|
+
+start
+
+partition "Password Reset Flow" {
+    |User|
+    :Click "Forgot Password";
+    :Enter Email Address;
+    :Submit Request;
+    
+    |System|
+    :Validate Email Format;
+    
+    if (Valid Email?) then (yes)
+        :Check if User Exists;
+        
+        if (User Found?) then (yes)
+            :Generate Reset Token;
+            :Store Token in Database;
+            :Set Expiry (1 hour);
+            :Send Reset Email;
+            
+            |User|
+            :Check Email Inbox;
+            :Click Reset Link;
+            
+            |System|
+            :Validate Token;
+            
+            if (Token Valid?) then (yes)
+                if (Token Expired?) then (no)
+                    :Show Password Reset Form;
+                    
+                    |User|
+                    :Enter New Password;
+                    :Confirm New Password;
+                    :Submit;
+                    
+                    |System|
+                    :Validate Password Strength;
+                    
+                    if (Passwords Match?) then (yes)
+                        :Update User Password;
+                        :Invalidate Token;
+                        :Send Confirmation Email;
+                        
+                        |User|
+                        :Password Reset Complete;
+                        :Redirect to Login;
+                    else (no)
+                        :Show Error Message;
+                    endif
+                else (yes)
+                    :Show Token Expired Message;
+                    :Offer Resend Option;
+                endif
+            else (no)
+                :Show Invalid Token Message;
+            endif
+        else (no)
+            :Show Generic Success Message;
+            note right
+                Security: Don't reveal
+                if email exists
+            end note
+        endif
+    else (no)
+        :Show Validation Error;
+    endif
+}
+
+stop
+
+@enduml
