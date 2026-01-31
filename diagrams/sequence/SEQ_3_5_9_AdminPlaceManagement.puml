@@ -1,0 +1,192 @@
+@startuml Admin Place Management Sequence
+
+title Figure 3.5.9: Admin Place Management Sequence Diagram
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 200
+skinparam sequenceParticipant underline
+
+skinparam participant {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+}
+
+actor "Admin" as Admin #FFE0B2
+participant "Admin Portal\n(React)" as Portal #E3F2FD
+participant "API Gateway\n(/api)" as API #C8E6C9
+participant "PlacesViewSet\n(DRF)" as PlacesView #FFF9C4
+participant "Place Model\n(Django ORM)" as PlaceModel #FFCCBC
+participant "SocialPost Model" as SocialModel #E1BEE7
+database "PostgreSQL\nDatabase" as DB #F5F5F5
+participant "Media Storage" as Media #B2EBF2
+
+== Authentication ==
+
+Admin -> Portal: Access Admin Dashboard
+Portal -> API: GET /api/auth/me/\n[Authorization: Bearer {token}]
+API -> API: Validate JWT Token
+API -> API: Check role == 'admin'
+API --> Portal: 200 OK {user, role: 'admin'}
+Portal --> Admin: Display Admin Dashboard
+
+== List Places ==
+
+Admin -> Portal: Navigate to "Places" Section
+Portal -> API: GET /api/places/
+API -> PlacesView: list()
+PlacesView -> PlaceModel: Place.objects.all()\n.order_by('-created_at')
+PlaceModel -> DB: SELECT * FROM places\nORDER BY created_at DESC
+DB --> PlaceModel: [places_list]
+PlaceModel --> PlacesView: QuerySet<Place>
+PlacesView --> API: Serialized places data
+API --> Portal: 200 OK [{id, name, category, city, is_open...}]
+Portal --> Admin: Display Places Table\nwith Search & Filters
+
+== Create New Place ==
+
+Admin -> Portal: Click "Add New Place"
+Portal --> Admin: Display Place Creation Form
+
+Admin -> Portal: Fill Place Details:\n- Name: "Batu Caves"\n- Category: "Heritage"\n- City: "Kuala Lumpur"\n- Latitude: 3.2378\n- Longitude: 101.6840\n- Price: 0 (Free)\n- Opening Hours: "6:00 AM - 9:00 PM"
+
+opt Image Upload
+    Admin -> Portal: Upload Place Image
+    Portal -> Media: POST /upload/\n[multipart/form-data]
+    Media -> Media: Save image file
+    Media --> Portal: {image_url: "/media/places/batu-caves.jpg"}
+end
+
+Admin -> Portal: Submit Form
+Portal -> Portal: Client-side Validation
+
+Portal -> API: POST /api/places/\n[Authorization: Bearer {token}]\n{name, category, city, latitude,\nlongitude, price, image_url...}
+
+API -> PlacesView: create(request)
+PlacesView -> PlacesView: Validate with PlaceSerializer
+
+alt Validation Success
+    PlacesView -> PlaceModel: Place.objects.create(\n  created_by=request.user,\n  **validated_data\n)
+    PlaceModel -> DB: INSERT INTO places\n(name, category, city, state,\ncountry, latitude, longitude,\nprice, is_free, opening_hours,\nimage_url, is_open, created_by_id)\nVALUES (...)
+    DB --> PlaceModel: place_id = 42
+    PlaceModel --> PlacesView: Place instance
+    PlacesView --> API: 201 Created\n{id: 42, name: "Batu Caves"...}
+    API --> Portal: 201 Created
+    Portal --> Admin: ✓ "Place created successfully!"
+    Portal -> Portal: Refresh Places List
+else Validation Failed
+    PlacesView --> API: 400 Bad Request\n{errors: {name: ["Required"]}}
+    API --> Portal: 400 Bad Request
+    Portal --> Admin: ✗ Display Validation Errors
+end
+
+== View Place Details ==
+
+Admin -> Portal: Click on Place Row
+Portal -> API: GET /api/places/{id}/
+API -> PlacesView: retrieve(pk=42)
+PlacesView -> PlaceModel: Place.objects.get(pk=42)
+PlaceModel -> DB: SELECT * FROM places\nWHERE id = 42
+DB --> PlaceModel: place_record
+PlaceModel --> PlacesView: Place instance
+PlacesView --> API: Serialized place
+API --> Portal: 200 OK {full place details}
+Portal --> Admin: Display Place Details Modal
+
+== Edit Place ==
+
+Admin -> Portal: Click "Edit" Button
+Portal --> Admin: Display Edit Form\n(pre-filled with current values)
+
+Admin -> Portal: Modify Fields:\n- Update opening_hours\n- Change is_open to False
+
+Admin -> Portal: Submit Changes
+Portal -> API: PUT /api/places/42/\n[Authorization: Bearer {token}]\n{updated fields}
+
+API -> PlacesView: update(request, pk=42)
+PlacesView -> PlacesView: Check permissions\n(IsAdmin)
+PlacesView -> PlaceModel: place.save()
+PlaceModel -> DB: UPDATE places\nSET opening_hours = '...',\n    is_open = false,\n    updated_at = NOW()\nWHERE id = 42
+DB --> PlaceModel: rows_affected = 1
+PlaceModel --> PlacesView: Updated Place
+PlacesView --> API: 200 OK {updated place}
+API --> Portal: 200 OK
+Portal --> Admin: ✓ "Place updated successfully!"
+
+== Toggle Place Status ==
+
+Admin -> Portal: Click Status Toggle\n(Open ↔ Closed)
+Portal -> API: PATCH /api/places/42/\n{is_open: false}
+API -> PlacesView: partial_update()
+PlacesView -> PlaceModel: place.is_open = False\nplace.save()
+PlaceModel -> DB: UPDATE places\nSET is_open = false\nWHERE id = 42
+DB --> PlaceModel: OK
+PlacesView --> API: 200 OK
+API --> Portal: 200 OK {is_open: false}
+Portal --> Admin: Status badge updated:\n"Closed"
+
+== View Place Analytics ==
+
+Admin -> Portal: Click "View Analytics"
+Portal -> API: GET /api/analytics/places/42/sentiment/
+API -> PlacesView: get_place_sentiment(pk=42)
+PlacesView -> SocialModel: SocialPost.objects.filter(place_id=42)\n.values('sentiment')\n.annotate(count=Count('id'))
+SocialModel -> DB: SELECT sentiment, COUNT(*)\nFROM social_posts\nWHERE place_id = 42\nGROUP BY sentiment
+DB --> SocialModel: [{sentiment: 'positive', count: 45},\n {sentiment: 'neutral', count: 23},\n {sentiment: 'negative', count: 8}]
+SocialModel --> PlacesView: Aggregated data
+PlacesView --> API: {total_posts: 76,\nsentiment_distribution: {...},\navg_engagement: 234}
+API --> Portal: 200 OK
+Portal --> Admin: Display Analytics Charts:\n- Sentiment Pie Chart\n- Engagement Over Time\n- Top Social Posts
+
+== Delete Place ==
+
+Admin -> Portal: Click "Delete" Button
+Portal --> Admin: Confirm Dialog:\n"Delete 'Batu Caves'?\nThis will affect 76 social posts."
+
+Admin -> Portal: Confirm Deletion
+Portal -> API: DELETE /api/places/42/\n[Authorization: Bearer {token}]
+
+API -> PlacesView: destroy(pk=42)
+PlacesView -> PlacesView: Check permissions (IsAdmin)
+
+PlacesView -> SocialModel: Handle related social posts
+SocialModel -> DB: UPDATE social_posts\nSET place_id = NULL\nWHERE place_id = 42
+DB --> SocialModel: rows_updated = 76
+
+PlacesView -> PlaceModel: place.delete()
+PlaceModel -> DB: DELETE FROM places\nWHERE id = 42
+DB --> PlaceModel: rows_deleted = 1
+
+PlacesView --> API: 204 No Content
+API --> Portal: 204 No Content
+Portal --> Admin: ✓ "Place deleted successfully!"
+Portal -> Portal: Remove from list\n(optimistic UI update)
+
+== Search & Filter Places ==
+
+Admin -> Portal: Enter search: "beach"\nFilter: category = "Beach"
+Portal -> API: GET /api/places/?search=beach&category=Beach
+API -> PlacesView: list(request)
+PlacesView -> PlaceModel: Place.objects.filter(\n  Q(name__icontains='beach') |\n  Q(description__icontains='beach'),\n  category='Beach'\n)
+PlaceModel -> DB: SELECT * FROM places\nWHERE (name ILIKE '%beach%'\n  OR description ILIKE '%beach%')\nAND category = 'Beach'
+DB --> PlaceModel: [filtered_places]
+PlaceModel --> PlacesView: QuerySet
+PlacesView --> API: Filtered results
+API --> Portal: 200 OK [{matching places}]
+Portal --> Admin: Display Filtered Results
+
+== Bulk Operations ==
+
+Admin -> Portal: Select Multiple Places\n[✓] Place A\n[✓] Place B\n[✓] Place C
+Admin -> Portal: Click "Bulk Close"
+Portal -> API: PATCH /api/places/bulk-update/\n{ids: [1, 2, 3], is_open: false}
+API -> PlacesView: bulk_update()
+PlacesView -> PlaceModel: Place.objects.filter(id__in=[1,2,3])\n.update(is_open=False)
+PlaceModel -> DB: UPDATE places\nSET is_open = false\nWHERE id IN (1, 2, 3)
+DB --> PlaceModel: rows_affected = 3
+PlacesView --> API: 200 OK {updated: 3}
+API --> Portal: 200 OK
+Portal --> Admin: ✓ "3 places updated"
+
+@enduml

@@ -400,9 +400,9 @@ def confirm_password_reset(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    if len(password) < 8:
+    if len(password) < 4:
         return Response(
-            {'error': 'Password must be at least 8 characters'},
+            {'error': 'Password must be at least 4 characters'},
             status=status.HTTP_400_BAD_REQUEST
         )
     

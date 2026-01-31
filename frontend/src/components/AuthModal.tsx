@@ -246,6 +246,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
                 <div className="text-right">
                   <button
                     type="button"
+                    onClick={() => {
+                      onClose();
+                      resetModal();
+                      navigate('/forgot-password');
+                    }}
                     className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
                   >
                     Forgot password?
