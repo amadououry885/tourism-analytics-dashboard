@@ -1,0 +1,73 @@
+/* Auth Pages Background Styles */
+
+.auth-bg-signin {
+  background-image: 
+    linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(168, 85, 247, 0.2) 100%),
+    url('/images/alor-setar-tower.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.auth-bg-register {
+  background-image: 
+    linear-gradient(135deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.55) 50%, rgba(99, 102, 241, 0.15) 100%),
+    url('/images/alor-setar-tower.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.auth-bg-forgot {
+  background-image: 
+    linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(59, 130, 246, 0.2) 100%),
+    url('/images/alor-setar-tower.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.auth-bg-reset {
+  background-image: 
+    linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(34, 197, 94, 0.2) 100%),
+    url('/images/alor-setar-tower.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* Ensure minimum height for full-screen backgrounds */
+.auth-page-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal overlay with background */
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+}
+
+/* Responsive backgrounds for mobile */
+@media (max-width: 768px) {
+  .auth-bg-signin,
+  .auth-bg-register,
+  .auth-bg-forgot,
+  .auth-bg-reset {
+    background-attachment: scroll;
+    background-size: cover;
+  }
+}

@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Lock, ArrowLeft, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import '../styles/auth-backgrounds.css';
 
 const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -82,7 +83,7 @@ const ResetPassword: React.FC = () => {
   // Loading state while verifying token
   if (isVerifying) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="auth-page-container auth-bg-reset">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="animate-spin w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">Verifying reset link...</p>
@@ -94,7 +95,7 @@ const ResetPassword: React.FC = () => {
   // Invalid or expired token
   if (!isTokenValid && !isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="auth-page-container auth-bg-reset">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <XCircle className="w-10 h-10 text-red-600" />
@@ -129,7 +130,7 @@ const ResetPassword: React.FC = () => {
   // Success state
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="auth-page-container auth-bg-reset">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-600" />
@@ -154,7 +155,7 @@ const ResetPassword: React.FC = () => {
 
   // Reset form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="auth-page-container auth-bg-reset">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         {/* Back Link */}
         <Link to="/sign-in" className="inline-flex items-center text-gray-600 hover:text-blue-600 mb-6">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../services/api';
+import '../styles/auth-backgrounds.css';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -38,7 +39,7 @@ const ForgotPassword: React.FC = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="auth-page-container auth-bg-forgot">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-600" />
@@ -79,7 +80,7 @@ const ForgotPassword: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="auth-page-container auth-bg-forgot">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         {/* Back Link */}
         <Link to="/sign-in" className="inline-flex items-center text-gray-600 hover:text-blue-600 mb-6">

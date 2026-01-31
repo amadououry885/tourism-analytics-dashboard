@@ -4,6 +4,7 @@ import { X, Eye, EyeOff, LogIn, Sparkles, Lock, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import '../styles/auth-backgrounds.css';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -105,19 +106,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
   if (!isOpen) return null;
 
   const modalContent = (
-    // Overlay - Dark with subtle blur
+    // Overlay - Dark with subtle blur and background image
     <div 
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ 
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 999999,
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0
-      }}
+      className="auth-modal-overlay auth-bg-signin"
       onClick={() => { onClose(); resetModal(); }}
     >
       {/* Modal Card - Dark theme with purple accent */}
@@ -129,6 +120,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
           position: 'relative',
           zIndex: 1000000
         }}
+        className="flex items-center justify-center p-4"
       >
         {/* Gradient glow effect behind card */}
         <div 
