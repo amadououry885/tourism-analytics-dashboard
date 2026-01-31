@@ -414,10 +414,9 @@ class OverviewMetricsView(APIView):
         
         # Filter by city if specified
         if city and city != 'all':
-            place = Place.objects.filter(name__iexact=city).first()
-            if place:
-                posts_qs = posts_qs.filter(place=place)
-                prev_posts_qs = prev_posts_qs.filter(place=place)
+            # Filter by place.city instead of place.name
+            posts_qs = posts_qs.filter(place__city__icontains=city)
+            prev_posts_qs = prev_posts_qs.filter(place__city__icontains=city)
         
         # === 1. BASIC METRICS ===
         metrics = posts_qs.aggregate(
