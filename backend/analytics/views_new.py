@@ -217,6 +217,7 @@ class SocialEngagementView(APIView):
         
         return Response(list(hourly))
 
+@method_decorator(cache_page(60), name='dispatch')
 class PopularPlacesView(APIView):
     """Get most popular places by social engagement with calculated metrics"""
     def get(self, request):
@@ -384,6 +385,7 @@ class NearbyPlacesView(APIView):
         return Response(PlaceSerializer(places, many=True).data)
 
 
+@method_decorator(cache_page(60), name='dispatch')
 class OverviewMetricsView(APIView):
     """Get comprehensive overview metrics with all social media analytics"""
     def get(self, request):

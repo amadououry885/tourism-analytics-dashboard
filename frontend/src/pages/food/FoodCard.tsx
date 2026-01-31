@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { Search, Utensils, Star, DollarSign, Check, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
-import api from '../../services/api';
+import api, { getCachedData, cachedGet } from '../../services/api';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 import Pagination from '../../components/Pagination';
@@ -41,32 +41,61 @@ export default function FoodExplore() {
 
   // --- Fetch Data Logic ---
   useEffect(() => {
+    const key = '/vendors/?page_size=100';
     const fetchRestaurants = async () => {
       try {
-        setLoading(true);
-        const response = await api.get('/vendors/?page_size=100');
-        const data = response.data.results || response.data || [];
-        
-        const transformedRestaurants: Restaurant[] = data.map((vendor: any, index: number) => ({
-          id: vendor.id || index + 1,
-          name: vendor.name || `Restaurant ${index + 1}`,
-          city: vendor.city || 'Kedah',
-          cuisine: vendor.cuisines?.[0] || vendor.cuisine || 'Local',
-          image_url: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0],
-          rating: vendor.rating_average || vendor.rating || 4.0,
-          reviews: vendor.total_reviews || vendor.reviews || 0,
-          price_range: vendor.price_range || '$$',
-          is_open: vendor.is_open !== undefined ? vendor.is_open : true,
-          specialty: vendor.description || vendor.cuisines?.join(', ') || 'Local cuisine',
-          is_halal: vendor.is_halal !== undefined ? vendor.is_halal : true,
-        }));
-        
-        setRestaurants(transformedRestaurants);
         setError(null);
+
+        // Try synchronous cached read
+        const cached = getCachedData(key, 120);
+        if (cached) {
+          const data = cached;
+          const transformedRestaurants: Restaurant[] = data.map((vendor: any, index: number) => ({
+            id: vendor.id || index + 1,
+            name: vendor.name || `Restaurant ${index + 1}`,
+            city: vendor.city || 'Kedah',
+            cuisine: vendor.cuisines?.[0] || vendor.cuisine || 'Local',
+            image_url: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0],
+            rating: vendor.rating_average || vendor.rating || 4.0,
+            reviews: vendor.total_reviews || vendor.reviews || 0,
+            price_range: vendor.price_range || '$$',
+            is_open: vendor.is_open !== undefined ? vendor.is_open : true,
+            specialty: vendor.description || vendor.cuisines?.join(', ') || 'Local cuisine',
+            is_halal: vendor.is_halal !== undefined ? vendor.is_halal : true,
+          }));
+          setRestaurants(transformedRestaurants);
+          setLoading(false);
+        }
+
+        // Background revalidation
+        cachedGet(key, 120).then(response => {
+          const data = response.data.results || response.data || [];
+          const transformedRestaurants: Restaurant[] = data.map((vendor: any, index: number) => ({
+            id: vendor.id || index + 1,
+            name: vendor.name || `Restaurant ${index + 1}`,
+            city: vendor.city || 'Kedah',
+            cuisine: vendor.cuisines?.[0] || vendor.cuisine || 'Local',
+            image_url: vendor.cover_image_url || vendor.logo_url || vendor.gallery_images?.[0],
+            rating: vendor.rating_average || vendor.rating || 4.0,
+            reviews: vendor.total_reviews || vendor.reviews || 0,
+            price_range: vendor.price_range || '$$',
+            is_open: vendor.is_open !== undefined ? vendor.is_open : true,
+            specialty: vendor.description || vendor.cuisines?.join(', ') || 'Local cuisine',
+            is_halal: vendor.is_halal !== undefined ? vendor.is_halal : true,
+          }));
+          setRestaurants(transformedRestaurants);
+          setError(null);
+          setLoading(false);
+        }).catch(err => {
+          if (!cached) {
+            console.error('Error fetching restaurants:', err);
+            setError('Failed to load restaurants.');
+            setLoading(false);
+          }
+        });
       } catch (err) {
         console.error('Error fetching restaurants:', err);
         setError('Failed to load restaurants.');
-      } finally {
         setLoading(false);
       }
     };

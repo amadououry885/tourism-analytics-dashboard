@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { getCachedData, cachedGet } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Eye, Heart, Share2, MessageCircle, TrendingUp, Smile, Meh, Frown } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -44,7 +44,6 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        setLoading(true);
         setError(null);
 
         // Build query parameters for filtering
@@ -63,13 +62,33 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
         queryParams.append('period', period);
 
         const url = `/analytics/overview-metrics/?${queryParams.toString()}`;
-        
-        console.log('📊 Fetching comprehensive metrics from:', url);
 
-        const response = await api.get(url);
+        // Try synchronous cached data first (fast perceived load)
+        const cached = getCachedData(url, 60); // 60s TTL for metrics
+        if (cached) {
+          const c = cached;
+          const fetchedMetrics: Metrics = {
+            totalVisitors: c.total_visitors || 0,
+            socialEngagement: c.social_engagement || 0,
+            totalPosts: c.total_posts || 0,
+            shares: c.shares || 0,
+            pageViews: c.page_views || 0,
+            totalLikes: c.total_likes || 0,
+            totalComments: c.total_comments || 0,
+            trendingPct: c.trending_pct || 0,
+            sentiment: c.sentiment,
+            platforms: c.platforms || [],
+          };
+          setMetrics(fetchedMetrics);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
+
+        // Always revalidate in background
+        const response = await cachedGet(url, 60);
         const data = response.data;
 
-        // Transform backend data to match component structure
         const fetchedMetrics: Metrics = {
           totalVisitors: data.total_visitors || 0,
           socialEngagement: data.social_engagement || 0,
@@ -83,7 +102,6 @@ export function OverviewMetrics({ selectedCity, timeRange }: OverviewMetricsProp
           platforms: data.platforms || [],
         };
 
-        console.log('✅ Comprehensive metrics loaded:', fetchedMetrics);
         setMetrics(fetchedMetrics);
       } catch (error) {
         console.error('❌ Error fetching metrics:', error);

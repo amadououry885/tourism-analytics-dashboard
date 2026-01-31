@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Grid, MapPin, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
-import api from '../../services/api';
+import api, { getCachedData, cachedGet } from '../../services/api';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 import Pagination from '../../components/Pagination';
 import { PlaceCard, Place } from './PlaceCard'; // Ensure this path is correct!
@@ -41,29 +41,58 @@ export default function PlacesExplore() {
   // --- Fetch Data Logic ---
   useEffect(() => {
     const fetchPlaces = async () => {
+      const key = '/places/?page_size=100&public=true';
       try {
-        setLoading(true);
-        const response = await api.get('/places/?page_size=100&public=true');
-        const data = response.data.results || response.data || [];
-        
-        const transformedPlaces: Place[] = data.map((place: any, index: number) => ({
-          id: place.id || index + 1,
-          name: place.name || place.place_name || `Place ${index + 1}`,
-          city: place.city || 'Kedah',
-          category: place.category || 'Attraction',
-          image_url: place.image_url || place.image,
-          rating: place.rating || place.avg_rating || 4.0,
-          posts: place.posts || place.total_posts || place.mentions || 0,
-          is_open: place.is_open !== undefined ? place.is_open : true,
-          is_free: place.is_free !== undefined ? place.is_free : false,
-          description: place.description || `Discover the beauty of ${place.city || 'Kedah'}.`,
-        }));
-        
-        setPlaces(transformedPlaces);
+        setError(null);
+
+        // Load cached data synchronously
+        const cached = getCachedData(key, 120);
+        if (cached) {
+          const data = cached;
+          const transformedPlaces: Place[] = data.map((place: any, index: number) => ({
+            id: place.id || index + 1,
+            name: place.name || place.place_name || `Place ${index + 1}`,
+            city: place.city || 'Kedah',
+            category: place.category || 'Attraction',
+            image_url: place.image_url || place.image,
+            rating: place.rating || place.avg_rating || 4.0,
+            posts: place.posts || place.total_posts || place.mentions || 0,
+            is_open: place.is_open !== undefined ? place.is_open : true,
+            is_free: place.is_free !== undefined ? place.is_free : false,
+            description: place.description || `Discover the beauty of ${place.city || 'Kedah'}.`,
+          }));
+          setPlaces(transformedPlaces);
+          setLoading(false);
+        }
+
+        // Background revalidation
+        cachedGet(key, 120).then(response => {
+          const data = response.data.results || response.data || [];
+          const transformedPlaces: Place[] = data.map((place: any, index: number) => ({
+            id: place.id || index + 1,
+            name: place.name || place.place_name || `Place ${index + 1}`,
+            city: place.city || 'Kedah',
+            category: place.category || 'Attraction',
+            image_url: place.image_url || place.image,
+            rating: place.rating || place.avg_rating || 4.0,
+            posts: place.posts || place.total_posts || place.mentions || 0,
+            is_open: place.is_open !== undefined ? place.is_open : true,
+            is_free: place.is_free !== undefined ? place.is_free : false,
+            description: place.description || `Discover the beauty of ${place.city || 'Kedah'}.`,
+          }));
+          setPlaces(transformedPlaces);
+          setError(null);
+          setLoading(false);
+        }).catch(err => {
+          if (!cached) {
+            console.error('Error fetching places:', err);
+            setError('Failed to load places.');
+            setLoading(false);
+          }
+        });
       } catch (err) {
         console.error('Error fetching places:', err);
         setError('Failed to load places.');
-      } finally {
         setLoading(false);
       }
     };

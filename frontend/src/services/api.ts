@@ -98,6 +98,63 @@ api.interceptors.response.use(
   }
 );
 
+// --- Simple SWR-like cache (in-memory + localStorage fallback) ---
+type CacheEntry = { ts: number; data: any };
+const swrCache = new Map<string, CacheEntry>();
+const LOCALSTORAGE_PREFIX = 'swr_cache:';
+
+function loadFromLocalStorage(key: string): CacheEntry | null {
+  try {
+    const raw = localStorage.getItem(LOCALSTORAGE_PREFIX + key);
+    if (!raw) return null;
+    return JSON.parse(raw) as CacheEntry;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveToLocalStorage(key: string, entry: CacheEntry) {
+  try {
+    localStorage.setItem(LOCALSTORAGE_PREFIX + key, JSON.stringify(entry));
+  } catch (e) {
+    // ignore
+  }
+}
+
+/**
+ * Get cached data synchronously if it exists and is fresh.
+ * @param url request key
+ * @param ttl seconds
+ */
+export function getCachedData(url: string, ttl = 60) {
+  const now = Date.now();
+  let entry = swrCache.get(url) || null;
+  if (!entry) {
+    entry = loadFromLocalStorage(url);
+    if (entry) swrCache.set(url, entry);
+  }
+  if (entry && now - entry.ts < ttl * 1000) {
+    return entry.data;
+  }
+  return null;
+}
+
+/**
+ * Fetch with cache: returns a Promise for the axios response and updates cache.
+ * Caller can call `getCachedData(url)` to get immediate cached copy.
+ */
+export async function cachedGet(url: string, ttl = 60, config = {}) {
+  const resp = await api.get(url, config as any);
+  try {
+    const entry: CacheEntry = { ts: Date.now(), data: resp.data };
+    swrCache.set(url, entry);
+    saveToLocalStorage(url, entry);
+  } catch (e) {
+    // ignore cache errors
+  }
+  return resp;
+}
+
 // API helper functions
 export const authAPI = {
   login: (username: string, password: string) =>

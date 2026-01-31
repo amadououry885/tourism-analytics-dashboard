@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Filter, Calendar } from 'lucide-react';
-import api from '../../services/api';
+import api, { getCachedData, cachedGet } from '../../services/api';
 import { SharedHeader } from '../../components/SharedLayout';
 import { FilterDropdown, SortDropdown } from '../../components/FilterDropdown';
 import { 
@@ -147,12 +147,33 @@ export default function AnalyticsPage() {
         
         const queryString = params.toString();
 
+        // Try to use cached metrics for perceived speed, revalidate in background
+        const metricsUrl = `/analytics/overview-metrics/?${queryString}`;
+        const cachedMetrics = getCachedData(metricsUrl, 60);
+        let metricsResPromise = cachedMetrics ? Promise.resolve({ data: cachedMetrics }) : cachedGet(metricsUrl, 60).catch(() => ({ data: null }));
+
+        const placesUrl = `/analytics/places/popular/?${queryString}`;
+        const cachedPlaces = getCachedData(placesUrl, 120);
+        let placesResPromise = cachedPlaces ? Promise.resolve({ data: cachedPlaces }) : api.get(placesUrl).catch(() => ({ data: [] }));
+
+        const sentimentUrl = `/analytics/sentiment/summary/?${queryString}`;
+        const cachedSentiment = getCachedData(sentimentUrl, 60);
+        let sentimentPromise = cachedSentiment ? Promise.resolve({ data: cachedSentiment }) : api.get(sentimentUrl).catch(() => ({ data: null }));
+
+        const mostVisitedUrl = `/analytics/places/by-visit-level/?level=most&${queryString}`;
+        const cachedMost = getCachedData(mostVisitedUrl, 120);
+        let mostVisitedPromise = cachedMost ? Promise.resolve({ data: cachedMost }) : api.get(mostVisitedUrl).catch(() => ({ data: [] }));
+
+        const leastVisitedUrl = `/analytics/places/by-visit-level/?level=least&${queryString}`;
+        const cachedLeast = getCachedData(leastVisitedUrl, 120);
+        let leastVisitedPromise = cachedLeast ? Promise.resolve({ data: cachedLeast }) : api.get(leastVisitedUrl).catch(() => ({ data: [] }));
+
         const [metricsRes, placesRes, sentimentRes, mostVisitedRes, leastVisitedRes] = await Promise.all([
-          api.get(`/analytics/overview-metrics/?${queryString}`).catch(() => ({ data: null })),
-          api.get(`/analytics/places/popular/?${queryString}`).catch(() => ({ data: [] })),
-          api.get(`/analytics/sentiment/summary/?${queryString}`).catch(() => ({ data: null })),
-          api.get(`/analytics/places/by-visit-level/?level=most&${queryString}`).catch(() => ({ data: [] })),
-          api.get(`/analytics/places/by-visit-level/?level=least&${queryString}`).catch(() => ({ data: [] })),
+          metricsResPromise,
+          placesResPromise,
+          sentimentPromise,
+          mostVisitedPromise,
+          leastVisitedPromise,
         ]);
 
         // Helper to check if array has data

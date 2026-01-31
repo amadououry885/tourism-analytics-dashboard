@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { getCachedData, cachedGet } from '../services/api';
 import { 
   TrendingUp, TrendingDown, Users, MessageCircle, Heart, Share2, Eye, 
   Smile, Meh, Frown, MapPin, Building2, Calendar, Activity, BarChart3,
@@ -114,26 +114,26 @@ export function AnalyticsOverview({ selectedCity, timeRange }: AnalyticsOverview
 
   useEffect(() => {
     const fetchAllData = async () => {
+      const params = new URLSearchParams();
+      if (selectedCity && selectedCity !== 'all') {
+        params.append('city', selectedCity);
+      }
+      params.append('period', timeRange);
+
+      const metricsKey = `/analytics/overview-metrics/?${params.toString()}`;
+      const placesKey = `/analytics/places/popular/?${params.toString()}`;
+      const sentimentKey = `/analytics/sentiment/summary/?${params.toString()}`;
+
       try {
-        setLoading(true);
         setError(null);
 
-        const params = new URLSearchParams();
-        if (selectedCity && selectedCity !== 'all') {
-          params.append('city', selectedCity);
-        }
-        params.append('period', timeRange);
+        // Try to load cached values synchronously for instant UI
+        const cachedMetrics = getCachedData(metricsKey, 60);
+        const cachedPlaces = getCachedData(placesKey, 120);
+        const cachedSentiment = getCachedData(sentimentKey, 60);
 
-        // Fetch overview metrics
-        const [metricsRes, placesRes, sentimentRes] = await Promise.all([
-          api.get(`/analytics/overview-metrics/?${params.toString()}`).catch(() => ({ data: null })),
-          api.get(`/analytics/places/popular/?${params.toString()}`).catch(() => ({ data: [] })),
-          api.get(`/analytics/sentiment/summary/?${params.toString()}`).catch(() => ({ data: null }))
-        ]);
-
-        // Transform metrics
-        if (metricsRes.data) {
-          const data = metricsRes.data;
+        if (cachedMetrics) {
+          const data = cachedMetrics;
           setMetrics({
             totalPosts: data.total_posts || defaultMetrics.totalPosts,
             totalLikes: data.total_likes || defaultMetrics.totalLikes,
@@ -141,32 +141,83 @@ export function AnalyticsOverview({ selectedCity, timeRange }: AnalyticsOverview
             totalShares: data.shares || defaultMetrics.totalShares,
             pageViews: data.page_views || defaultMetrics.pageViews,
             trendingPct: data.trending_pct || defaultMetrics.trendingPct,
-            sentiment: sentimentRes.data ? {
-              positive: sentimentRes.data.positive || 0,
-              neutral: sentimentRes.data.neutral || 0,
-              negative: sentimentRes.data.negative || 0,
-              positivePct: sentimentRes.data.positive_pct || 60,
-              neutralPct: sentimentRes.data.neutral_pct || 30,
-              negativePct: sentimentRes.data.negative_pct || 10
+            sentiment: cachedSentiment ? {
+              positive: cachedSentiment.positive || 0,
+              neutral: cachedSentiment.neutral || 0,
+              negative: cachedSentiment.negative || 0,
+              positivePct: cachedSentiment.positive_pct || 60,
+              neutralPct: cachedSentiment.neutral_pct || 30,
+              negativePct: cachedSentiment.negative_pct || 10
             } : defaultMetrics.sentiment,
             platforms: data.platforms || defaultMetrics.platforms,
             dailyTrends: data.daily_trends || defaultMetrics.dailyTrends
           });
         }
 
-        // Transform places
-        if (placesRes.data && Array.isArray(placesRes.data) && placesRes.data.length > 0) {
-          setTopPlaces(placesRes.data.slice(0, 5).map((p: any) => ({
+        if (cachedPlaces && Array.isArray(cachedPlaces) && cachedPlaces.length > 0) {
+          setTopPlaces(cachedPlaces.slice(0, 5).map((p: any) => ({
             name: p.name || p.place_name,
             visitors: p.total_engagement || p.visitors || p.posts || 0,
             rating: p.rating || p.avg_rating || 4.0,
             trend: Math.floor(Math.random() * 20) - 5
           })));
         }
+
+        // If we had any cached content, avoid showing the full loading skeleton
+        if (cachedMetrics || cachedPlaces) setLoading(false);
+
+        // Background revalidation - always fetch fresh data and update cache/UI
+        cachedGet(metricsKey, 60).then(res => {
+          const data = res.data;
+          setMetrics({
+            totalPosts: data.total_posts || defaultMetrics.totalPosts,
+            totalLikes: data.total_likes || defaultMetrics.totalLikes,
+            totalComments: data.total_comments || defaultMetrics.totalComments,
+            totalShares: data.shares || defaultMetrics.totalShares,
+            pageViews: data.page_views || defaultMetrics.pageViews,
+            trendingPct: data.trending_pct || defaultMetrics.trendingPct,
+            sentiment: defaultMetrics.sentiment,
+            platforms: data.platforms || defaultMetrics.platforms,
+            dailyTrends: data.daily_trends || defaultMetrics.dailyTrends
+          });
+          setError(null);
+          setLoading(false);
+        }).catch(() => {
+          // ignore - keep cached or demo
+          if (!cachedMetrics && !cachedPlaces) {
+            setError('Using demo data');
+            setLoading(false);
+          }
+        });
+
+        // Revalidate places and sentiment concurrently
+        cachedGet(placesKey, 120).then(res => {
+          if (res.data && Array.isArray(res.data)) {
+            setTopPlaces(res.data.slice(0, 5).map((p: any) => ({
+              name: p.name || p.place_name,
+              visitors: p.total_engagement || p.visitors || p.posts || 0,
+              rating: p.rating || p.avg_rating || 4.0,
+              trend: Math.floor(Math.random() * 20) - 5
+            })));
+          }
+        }).catch(() => {});
+
+        cachedGet(sentimentKey, 60).then(res => {
+          if (res.data) {
+            setMetrics(prev => ({ ...prev, sentiment: {
+              positive: res.data.positive || 0,
+              neutral: res.data.neutral || 0,
+              negative: res.data.negative || 0,
+              positivePct: res.data.positive_pct || prev.sentiment.positivePct,
+              neutralPct: res.data.neutral_pct || prev.sentiment.neutralPct,
+              negativePct: res.data.negative_pct || prev.sentiment.negativePct
+            }}));
+          }
+        }).catch(() => {});
+
       } catch (err) {
         console.error('Error fetching analytics:', err);
         setError('Using demo data');
-      } finally {
         setLoading(false);
       }
     };

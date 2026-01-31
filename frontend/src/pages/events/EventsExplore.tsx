@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Clock, Calendar, ArrowRight, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import api from '../../services/api';
+import api, { getCachedData, cachedGet } from '../../services/api';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 import Pagination from '../../components/Pagination';
 
@@ -195,37 +195,69 @@ export default function EventsExplore() {
 
   // --- Fetch Data Logic ---
   useEffect(() => {
+    const key = '/events/?page_size=100';
     const fetchEvents = async () => {
       try {
-        setLoading(true);
-        const response = await api.get('/events/?page_size=100');
-        const data = response.data.results || response.data || [];
-        
-        if (data.length > 0) {
-          const transformedEvents: Event[] = data.map((event: any, index: number) => ({
-            id: event.id || index + 1,
-            title: event.title || event.name || `Event ${index + 1}`,
-            start_date: event.start_date || event.date || new Date().toISOString(),
-            end_date: event.end_date,
-            location_name: event.location_name || event.venue || 'Kedah',
-            city: event.city || 'Kedah',
-            image_url: event.image_url || event.image,
-            tags: event.tags || event.categories || ['Event'],
-            expected_attendance: event.expected_attendance || 100,
-            attendee_count: event.attendee_count || 0,
-            max_capacity: event.max_capacity || 100,
-            spots_remaining: event.spots_remaining || 100,
-            is_full: event.is_full || false,
-            is_happening_now: event.is_happening_now || false,
-            description: event.description || '',
-            user_registered: event.user_registered || false,
-          }));
-          setEvents(transformedEvents);
+        setError(null);
+
+        // Try synchronous cached read
+        const cached = getCachedData(key, 120);
+        if (cached) {
+          const data = cached;
+          if (Array.isArray(data) && data.length > 0) {
+            const transformedEvents: Event[] = data.map((event: any, index: number) => ({
+              id: event.id || index + 1,
+              title: event.title || event.name || `Event ${index + 1}`,
+              start_date: event.start_date || event.date || new Date().toISOString(),
+              end_date: event.end_date,
+              location_name: event.location_name || event.venue || 'Kedah',
+              city: event.city || 'Kedah',
+              image_url: event.image_url || event.image,
+              tags: event.tags || event.categories || ['Event'],
+              expected_attendance: event.expected_attendance || 100,
+              attendee_count: event.attendee_count || 0,
+              max_capacity: event.max_capacity || 100,
+              spots_remaining: event.spots_remaining || 100,
+              is_full: event.is_full || false,
+              is_happening_now: event.is_happening_now || false,
+              description: event.description || '',
+              user_registered: event.user_registered || false,
+            }));
+            setEvents(transformedEvents);
+            setLoading(false);
+          }
         }
+
+        // Background revalidation
+        cachedGet(key, 120).then(response => {
+          const data = response.data.results || response.data || [];
+          if (Array.isArray(data) && data.length > 0) {
+            const transformedEvents: Event[] = data.map((event: any, index: number) => ({
+              id: event.id || index + 1,
+              title: event.title || event.name || `Event ${index + 1}`,
+              start_date: event.start_date || event.date || new Date().toISOString(),
+              end_date: event.end_date,
+              location_name: event.location_name || event.venue || 'Kedah',
+              city: event.city || 'Kedah',
+              image_url: event.image_url || event.image,
+              tags: event.tags || event.categories || ['Event'],
+              expected_attendance: event.expected_attendance || 100,
+              attendee_count: event.attendee_count || 0,
+              max_capacity: event.max_capacity || 100,
+              spots_remaining: event.spots_remaining || 100,
+              is_full: event.is_full || false,
+              is_happening_now: event.is_happening_now || false,
+              description: event.description || '',
+              user_registered: event.user_registered || false,
+            }));
+            setEvents(transformedEvents);
+            setLoading(false);
+          }
+        }).catch(() => {
+          if (!cached) setLoading(false);
+        });
       } catch (err) {
         console.error('Error fetching events:', err);
-        // Keep demo data on error
-      } finally {
         setLoading(false);
       }
     };

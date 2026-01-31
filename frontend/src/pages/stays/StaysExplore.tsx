@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Star, Wifi, Coffee, Car, ArrowRight, Search, Grid, ChevronLeft, ChevronRight, Home } from 'lucide-react';
-import api from '../../services/api';
+import api, { getCachedData, cachedGet } from '../../services/api';
 import { SharedHeader, SharedFooter } from '../../components/SharedLayout';
 import Pagination from '../../components/Pagination';
 
@@ -174,32 +174,59 @@ export default function StaysExplore() {
 
   // --- Fetch Data Logic ---
   useEffect(() => {
+    const key = '/stays/?page_size=100';
     const fetchStays = async () => {
       try {
-        setLoading(true);
-        const response = await api.get('/stays/?page_size=100');
-        const data = response.data.results || response.data || [];
-        
-        if (data.length > 0) {
-          const transformedStays: Stay[] = data.map((stay: any, index: number) => ({
-            id: stay.id || index + 1,
-            name: stay.name || `Stay ${index + 1}`,
-            district: stay.district || stay.location || 'Kedah',
-            type: stay.type || stay.stay_type || 'Hotel',
-            image_url: stay.image_url || stay.image,
-            rating: stay.rating || stay.avg_rating || 4.0,
-            reviews: stay.reviews || stay.review_count || 0,
-            price_per_night: stay.price_per_night || stay.price || 200,
-            amenities: stay.amenities || ['WiFi', 'Parking'],
-            is_available: stay.is_available !== undefined ? stay.is_available : true,
-            landmark: stay.landmark,
-          }));
-          setStays(transformedStays);
+        setError(null);
+
+        // Synchronous cached read
+        const cached = getCachedData(key, 120);
+        if (cached) {
+          const data = cached;
+          if (Array.isArray(data) && data.length > 0) {
+            const transformedStays: Stay[] = data.map((stay: any, index: number) => ({
+              id: stay.id || index + 1,
+              name: stay.name || `Stay ${index + 1}`,
+              district: stay.district || stay.location || 'Kedah',
+              type: stay.type || stay.stay_type || 'Hotel',
+              image_url: stay.image_url || stay.image,
+              rating: stay.rating || stay.avg_rating || 4.0,
+              reviews: stay.reviews || stay.review_count || 0,
+              price_per_night: stay.price_per_night || stay.price || 200,
+              amenities: stay.amenities || ['WiFi', 'Parking'],
+              is_available: stay.is_available !== undefined ? stay.is_available : true,
+              landmark: stay.landmark,
+            }));
+            setStays(transformedStays);
+            setLoading(false);
+          }
         }
+
+        // Background revalidation
+        cachedGet(key, 120).then(response => {
+          const data = response.data.results || response.data || [];
+          if (Array.isArray(data) && data.length > 0) {
+            const transformedStays: Stay[] = data.map((stay: any, index: number) => ({
+              id: stay.id || index + 1,
+              name: stay.name || `Stay ${index + 1}`,
+              district: stay.district || stay.location || 'Kedah',
+              type: stay.type || stay.stay_type || 'Hotel',
+              image_url: stay.image_url || stay.image,
+              rating: stay.rating || stay.avg_rating || 4.0,
+              reviews: stay.reviews || stay.review_count || 0,
+              price_per_night: stay.price_per_night || stay.price || 200,
+              amenities: stay.amenities || ['WiFi', 'Parking'],
+              is_available: stay.is_available !== undefined ? stay.is_available : true,
+              landmark: stay.landmark,
+            }));
+            setStays(transformedStays);
+            setLoading(false);
+          }
+        }).catch(() => {
+          if (!cached) setLoading(false);
+        });
       } catch (err) {
         console.error('Error fetching stays:', err);
-        // Keep demo data on error
-      } finally {
         setLoading(false);
       }
     };
