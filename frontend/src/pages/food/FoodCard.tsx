@@ -49,8 +49,8 @@ export default function FoodExplore() {
         // Try synchronous cached read
         const cached = getCachedData(key, 120);
         if (cached) {
-          const data = cached;
-          const transformedRestaurants: Restaurant[] = data.map((vendor: any, index: number) => ({
+          const data = cached.results || cached;
+          const transformedRestaurants: Restaurant[] = (Array.isArray(data) ? data : []).map((vendor: any, index: number) => ({
             id: vendor.id || index + 1,
             name: vendor.name || `Restaurant ${index + 1}`,
             city: vendor.city || 'Kedah',
@@ -70,7 +70,7 @@ export default function FoodExplore() {
         // Background revalidation
         cachedGet(key, 120).then(response => {
           const data = response.data.results || response.data || [];
-          const transformedRestaurants: Restaurant[] = data.map((vendor: any, index: number) => ({
+          const transformedRestaurants: Restaurant[] = (Array.isArray(data) ? data : []).map((vendor: any, index: number) => ({
             id: vendor.id || index + 1,
             name: vendor.name || `Restaurant ${index + 1}`,
             city: vendor.city || 'Kedah',

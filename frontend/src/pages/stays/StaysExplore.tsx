@@ -182,7 +182,7 @@ export default function StaysExplore() {
         // Synchronous cached read
         const cached = getCachedData(key, 120);
         if (cached) {
-          const data = cached;
+          const data = cached.results || cached;
           if (Array.isArray(data) && data.length > 0) {
             const transformedStays: Stay[] = data.map((stay: any, index: number) => ({
               id: stay.id || index + 1,

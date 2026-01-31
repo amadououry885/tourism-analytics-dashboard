@@ -48,8 +48,9 @@ export default function PlacesExplore() {
         // Load cached data synchronously
         const cached = getCachedData(key, 120);
         if (cached) {
-          const data = cached;
-          const transformedPlaces: Place[] = data.map((place: any, index: number) => ({
+          // Handle paginated response: { count, next, previous, results: [...] }
+          const data = cached.results || cached;
+          const transformedPlaces: Place[] = (Array.isArray(data) ? data : []).map((place: any, index: number) => ({
             id: place.id || index + 1,
             name: place.name || place.place_name || `Place ${index + 1}`,
             city: place.city || 'Kedah',
@@ -68,7 +69,7 @@ export default function PlacesExplore() {
         // Background revalidation
         cachedGet(key, 120).then(response => {
           const data = response.data.results || response.data || [];
-          const transformedPlaces: Place[] = data.map((place: any, index: number) => ({
+          const transformedPlaces: Place[] = (Array.isArray(data) ? data : []).map((place: any, index: number) => ({
             id: place.id || index + 1,
             name: place.name || place.place_name || `Place ${index + 1}`,
             city: place.city || 'Kedah',
