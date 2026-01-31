@@ -414,9 +414,10 @@ class OverviewMetricsView(APIView):
         
         # Filter by city if specified
         if city and city != 'all':
-            # Filter by place.city instead of place.name
-            posts_qs = posts_qs.filter(place__city__icontains=city)
-            prev_posts_qs = prev_posts_qs.filter(place__city__icontains=city)
+            # Convert dash to space for city name matching (e.g., 'alor-setar' → 'alor setar')
+            city_search = city.replace('-', ' ')
+            posts_qs = posts_qs.filter(place__city__icontains=city_search)
+            prev_posts_qs = prev_posts_qs.filter(place__city__icontains=city_search)
         
         # === 1. BASIC METRICS ===
         metrics = posts_qs.aggregate(
