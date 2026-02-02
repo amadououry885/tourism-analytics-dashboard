@@ -1,0 +1,87 @@
+@startuml Admin_Creating_Tourism_Places_Activity_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityBackgroundColor #E8F4F8
+skinparam ActivityBorderColor #0066B2
+skinparam ArrowColor #333333
+skinparam fontSize 11
+
+title Admin Creating Tourism Places (UML Activity Diagram)
+
+(*) --> "Admin navigates to\nPlaces Management"
+--> "Click \"Add New Place\""
+--> "Enter place details:\nName, Description, Category"
+--> "Enter location info:\nCity, State, Country"
+--> "Set coordinates:\nLatitude, Longitude"
+--> ===S1===
+partition System {
+  === S1 ===
+  --> "Validate all required fields"
+  --> <<decision>>
+  if "All Fields Valid?" then
+    --> [Yes] "Check for duplicate places\n(same name + city)"
+  else
+    --> [No] "Return validation errors"
+    --> "Show error messages to admin"
+    --> (*)
+  endif
+}
+--> <<decision>>
+if "Duplicate Exists?" then
+  --> [Yes] "Alert admin:\nPlace already exists"
+  --> (*)
+else
+  --> [No] "Continue to add details"
+endif
+--> "Upload place image\n(URL or Base64)"
+--> "Add contact info:\nPhone, Email, Address"
+--> "Set operating hours"
+--> "Add amenities:\nParking, WiFi, etc."
+--> "Add external links:\nWikipedia, TripAdvisor, etc."
+--> "Set pricing info:\nFree or Paid, Price"
+--> ===S2===
+partition System {
+  === S2 ===
+  --> "Validate image format\nand size"
+  --> <<decision>>
+  if "Image Valid?" then
+    --> [Yes] "Store image in media\nfolder or CDN"
+  else
+    --> [No] "Return error:\nInvalid image format"
+    --> (*)
+  endif
+}
+--> "Admin sets:\nis_council_managed = True"
+--> "Admin sets:\nis_active = True"
+--> ===S3===
+partition System {
+  === S3 ===
+  --> "Create Place record\nin database"
+  --> "Set created_by = Admin\nUser ID"
+  --> "Generate unique place ID"
+  --> "Set created_at timestamp"
+  --> "Set is_open = True"
+}
+--> "Admin reviews place\npreview"
+--> "Click \"Publish Place\""
+--> ===S4===
+partition System {
+  === S4 ===
+  --> "Verify all data saved\ncorrectly"
+  --> <<decision>>
+  if "Save Successful?" then
+    --> [Yes] "Log place creation\nto audit trail"
+    --> "Notify admin:\nPlace published"
+    --> "Add to Places index"
+  else
+    --> [No] "Return database error"
+    --> (*)
+  endif
+}
+--> "Display place on\nanalytics dashboard"
+--> "Show confirmation:\nPlace ID + Details"
+--> "Redirect to place\ndetail page"
+--> (*)
+
+@enduml

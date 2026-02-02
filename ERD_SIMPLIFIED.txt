@@ -1,0 +1,206 @@
+@startuml Tourism_Analytics_Dashboard_Simplified_ERD
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #E8F4F8
+skinparam classBorderColor #0066B2
+skinparam arrowColor #333333
+skinparam classArrowColor #333333
+skinparam fontSize 11
+
+' ============================================================================
+' USERS TABLE
+' ============================================================================
+entity "users" as Users {
+  *user_id : PK, Integer
+  --
+  username : Varchar(15)
+  email : Varchar(254)
+  password : Varchar(40)
+  first_name : Varchar(30)
+  last_name : Varchar(150)
+  role : Varchar(12)
+  is_approved : Boolean
+  is_active : Boolean
+  is_staff : Boolean
+  phone_number : Varchar
+  business_registration_number : Varchar
+  verification_document : File
+  admin_notes : Text
+  claimed_vendor_id : Integer, Nullable
+  claimed_stay_id : Integer, Nullable
+  claimed_place_id : Integer, Nullable
+  created_at : DateTime
+  updated_at : DateTime
+}
+
+' ============================================================================
+' PLACES TABLE
+' ============================================================================
+entity "analytics_place" as Place {
+  *id : PK, Integer
+  --
+  name : Varchar(200)
+  description : Text
+  category : Varchar(100)
+  city : Varchar(100)
+  state : Varchar(100)
+  country : Varchar(100)
+  latitude : Float, Nullable
+  longitude : Float, Nullable
+  is_free : Boolean
+  price : Decimal(8,2), Nullable
+  currency : Varchar(10)
+  image_url : Text
+  contact_phone : Varchar(20)
+  contact_email : Email
+  address : Text
+  opening_hours : Text
+  is_open : Boolean
+  amenities : JSON
+  is_council_managed : Boolean
+  is_active : Boolean
+  created_by_id : FK, Integer, Nullable
+  owner_id : FK, Integer, Nullable
+}
+
+' ============================================================================
+' VENDORS TABLE (Foods/Restaurants)
+' ============================================================================
+entity "vendors_vendor" as Vendor {
+  *id : PK, Integer
+  --
+  name : Varchar(200)
+  city : Varchar(120)
+  cuisines : JSON
+  description : Text
+  established_year : Integer, Nullable
+  latitude : Float, Nullable
+  longitude : Float, Nullable
+  address : Text
+  price_range : Varchar(10)
+  contact_phone : Varchar(20)
+  contact_email : Email
+  official_website : URL
+  facebook_url : URL
+  instagram_url : URL
+  logo_url : URL
+  cover_image_url : URL
+  gallery_images : JSON
+  amenities : JSON
+  delivery_available : Boolean
+  takeaway_available : Boolean
+  is_halal : Boolean
+  is_open : Boolean
+  is_active : Boolean
+  created_at : DateTime
+  updated_at : DateTime
+  owner_id : FK, Integer, Nullable
+}
+
+' ============================================================================
+' EVENTS TABLE
+' ============================================================================
+entity "events_event" as Event {
+  *id : PK, Integer
+  --
+  title : Varchar(200)
+  description : Text
+  tags : JSON
+  start_date : DateTime
+  end_date : DateTime, Nullable
+  location_name : Varchar(200)
+  city : Varchar(120)
+  latitude : Float, Nullable
+  longitude : Float, Nullable
+  expected_attendance : Integer, Nullable
+  actual_attendance : Integer, Nullable
+  max_capacity : Integer, Nullable
+  image_url : Text
+  is_published : Boolean
+  recurrence_type : Varchar(20)
+  recurrence_end_date : Date, Nullable
+  is_recurring_instance : Boolean
+  requires_approval : Boolean
+  approval_message : Text
+  created_by_id : FK, Integer, Nullable
+  parent_event_id : FK, Integer, Nullable (Self)
+}
+
+' ============================================================================
+' STAYS TABLE (Accommodations)
+' ============================================================================
+entity "stays_stay" as Stay {
+  *id : PK, Integer
+  --
+  name : Varchar(200)
+  type : Varchar(20)
+  district : Varchar(120)
+  rating : Decimal(3,1), Nullable
+  priceNight : Decimal(8,2)
+  amenities : JSON
+  images : JSON
+  landmark : Varchar(200)
+  latitude : Float, Nullable
+  longitude : Float, Nullable
+  is_active : Boolean
+  is_open : Boolean
+  is_internal : Boolean
+  contact_email : Email, Nullable
+  contact_phone : Varchar(20), Nullable
+  contact_whatsapp : Varchar(20), Nullable
+  booking_com_url : URL, Nullable
+  agoda_url : URL, Nullable
+  booking_provider : Varchar(50)
+  owner_id : FK, Integer, Nullable
+}
+
+' ============================================================================
+' ANALYTICS TABLE (Social Posts)
+' ============================================================================
+entity "analytics_socialpost" as SocialPost {
+  *id : PK, Integer
+  --
+  platform : Varchar(50)
+  post_id : Varchar(100)
+  url : URL
+  content : Text
+  created_at : DateTime
+  fetched_at : DateTime
+  likes : Integer
+  comments : Integer
+  shares : Integer
+  views : Integer
+  sentiment : Varchar(20)
+  sentiment_score : Float
+  confidence : Float
+  is_tourism : Boolean
+  extra : JSON
+  place_id : FK, Integer, Nullable
+  vendor_id : FK, Integer, Nullable
+  stay_id : FK, Integer, Nullable
+}
+
+' ============================================================================
+' RELATIONSHIPS
+' ============================================================================
+
+' User relationships (1 to Many)
+Users ||--o{ Place: "creates/owns"
+Users ||--o{ Event: "creates"
+Users ||--o{ Stay: "owns"
+Users ||--o{ Vendor: "owns"
+
+' Place relationships (1 to Many)
+Place ||--o{ SocialPost: "linked in posts"
+
+' Event relationships (1 to Many)
+Event ||--o{ Event: "generates instances\n(parent_event)"
+
+' Vendor relationships (1 to Many)
+Vendor ||--o{ SocialPost: "mentioned in posts"
+
+' Stay relationships (1 to Many)
+Stay ||--o{ SocialPost: "mentioned in posts"
+
+@enduml

@@ -1,0 +1,412 @@
+@startuml Tourism_Analytics_Dashboard_Professional_ERD
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #E8F4F8
+skinparam classBorderColor #0066B2
+skinparam arrowColor #333333
+skinparam classArrowColor #333333
+skinparam fontSize 11
+
+' ============================================================================
+' USERS APP
+' ============================================================================
+entity "users" as Users {
+  *user_id : PK, Integer
+  --
+  username : Varchar(15)
+  email : Varchar(254)
+  password : Varchar(40)
+  first_name : Varchar(30)
+  last_name : Varchar(150)
+  role : Varchar(12)
+  is_approved : Boolean
+  is_active : Boolean
+  is_staff : Boolean
+  phone_number : Varchar
+  business_registration_number : Varchar
+  verification_document : File
+  admin_notes : Text
+  business_verification_notes : Text
+  claimed_vendor_id : Integer, Nullable
+  claimed_stay_id : Integer, Nullable
+  claimed_place_id : Integer, Nullable
+  created_at : DateTime
+  updated_at : DateTime
+}
+
+' ============================================================================
+' ANALYTICS APP
+' ============================================================================
+entity "analytics_place" as Place {
+  *id : PK, Integer
+  --
+  name : Varchar(200)
+  description : Text
+  category : Varchar(100)
+  city : Varchar(100)
+  state : Varchar(100)
+  country : Varchar(100)
+  latitude : Float, Nullable
+  longitude : Float, Nullable
+  is_free : Boolean
+  price : Decimal(8,2), Nullable
+  currency : Varchar(10)
+  image_url : Text
+  wikipedia_url : URL
+  official_website : URL
+  tripadvisor_url : URL
+  google_maps_url : URL
+  contact_phone : Varchar(20)
+  contact_email : Email
+  address : Text
+  opening_hours : Text
+  best_time_to_visit : Varchar(200)
+  is_open : Boolean
+  amenities : JSON
+  is_council_managed : Boolean
+  is_active : Boolean
+  created_by_id : FK, Integer, Nullable
+  owner_id : FK, Integer, Nullable
+}
+
+entity "analytics_socialpost" as SocialPost {
+  *id : PK, Integer
+  --
+  platform : Varchar(50)
+  post_id : Varchar(100)
+  url : URL
+  content : Text
+  created_at : DateTime
+  fetched_at : DateTime
+  likes : Integer
+  comments : Integer
+  shares : Integer
+  views : Integer
+  sentiment : Varchar(20)
+  sentiment_score : Float
+  confidence : Float
+  is_tourism : Boolean
+  extra : JSON
+  place_id : FK, Integer, Nullable
+  vendor_id : FK, Integer, Nullable
+  stay_id : FK, Integer, Nullable
+}
+
+entity "analytics_postraw" as PostRaw {
+  *id : PK, Integer
+  --
+  content : Text
+  metadata : JSON
+  created_at : DateTime
+  post_id : FK, Integer
+}
+
+entity "analytics_postclean" as PostClean {
+  *id : PK, Integer
+  --
+  content : Text
+  sentiment : Varchar(20)
+  keywords : JSON
+  created_at : DateTime
+  raw_post_id : FK, Integer (1-1)
+  poi_id : FK, Integer, Nullable
+}
+
+entity "analytics_sentimenttopic" as SentimentTopic {
+  *id : PK, Integer
+  --
+  topic : Varchar(100)
+  sentiment : Varchar(20)
+  count : Integer
+  category : Varchar(100)
+  date : Date
+}
+
+' ============================================================================
+' EVENTS APP
+' ============================================================================
+entity "events_event" as Event {
+  *id : PK, Integer
+  --
+  title : Varchar(200)
+  description : Text
+  tags : JSON
+  start_date : DateTime
+  end_date : DateTime, Nullable
+  location_name : Varchar(200)
+  city : Varchar(120)
+  lat : Float, Nullable
+  lon : Float, Nullable
+  expected_attendance : Integer, Nullable
+  actual_attendance : Integer, Nullable
+  max_capacity : Integer, Nullable
+  image_url : Text
+  is_published : Boolean
+  recurrence_type : Varchar(20)
+  recurrence_end_date : Date, Nullable
+  is_recurring_instance : Boolean
+  requires_approval : Boolean
+  approval_message : Text
+  registration_form_config : JSON
+  created_by_id : FK, Integer, Nullable
+  parent_event_id : FK, Integer, Nullable
+}
+
+entity "events_eventregistration" as EventRegistration {
+  *id : PK, Integer
+  --
+  status : Varchar(20)
+  form_data : JSON
+  admin_notes : Text
+  contact_name : Varchar(200)
+  contact_email : Varchar(254)
+  contact_phone : Varchar(20)
+  registered_at : DateTime
+  updated_at : DateTime
+  reviewed_at : DateTime, Nullable
+  user_id : FK, Integer, Nullable
+  event_id : FK, Integer
+  reviewed_by_id : FK, Integer, Nullable
+}
+
+entity "events_eventregistrationform" as EventRegistrationForm {
+  *id : PK, Integer
+  --
+  title : Varchar(200)
+  description : Text
+  confirmation_message : Text
+  allow_guest_registration : Boolean
+  created_at : DateTime
+  updated_at : DateTime
+  event_id : FK, Integer (1-1)
+}
+
+entity "events_eventregistrationfield" as EventRegistrationField {
+  *id : PK, Integer
+  --
+  label : Varchar(200)
+  field_type : Varchar(20)
+  is_required : Boolean
+  placeholder : Varchar(200)
+  help_text : Varchar(500)
+  options : JSON
+  order : Integer
+  min_length : Integer, Nullable
+  max_length : Integer, Nullable
+  pattern : Varchar(500), Nullable
+  created_at : DateTime
+  form_id : FK, Integer
+}
+
+entity "events_eventreminder" as EventReminder {
+  *id : PK, Integer
+  --
+  reminder_time : Varchar(20)
+  is_sent : Boolean
+  sent_at : DateTime, Nullable
+  created_at : DateTime
+  user_id : FK, Integer
+  event_id : FK, Integer
+}
+
+' ============================================================================
+' STAYS APP
+' ============================================================================
+entity "stays_stay" as Stay {
+  *id : PK, Integer
+  --
+  name : Varchar(200)
+  type : Varchar(20)
+  district : Varchar(120)
+  rating : Decimal(3,1), Nullable
+  priceNight : Decimal(8,2)
+  amenities : JSON
+  images : JSON
+  landmark : Varchar(200)
+  distanceKm : Decimal(5,2), Nullable
+  lat : Float, Nullable
+  lon : Float, Nullable
+  is_active : Boolean
+  is_open : Boolean
+  is_internal : Boolean
+  contact_email : Email, Nullable
+  contact_phone : Varchar(20), Nullable
+  contact_whatsapp : Varchar(20), Nullable
+  booking_com_url : URL, Nullable
+  agoda_url : URL, Nullable
+  booking_provider : Varchar(50)
+  main_image_id : Integer, Nullable
+  owner_id : FK, Integer, Nullable
+}
+
+entity "stays_stayimage" as StayImage {
+  *id : PK, Integer
+  --
+  image : ImageField
+  caption : Varchar(200)
+  is_primary : Boolean
+  order : Integer
+  uploaded_at : DateTime
+  stay_id : FK, Integer
+}
+
+' ============================================================================
+' VENDORS APP
+' ============================================================================
+entity "vendors_vendor" as Vendor {
+  *id : PK, Integer
+  --
+  name : Varchar(200)
+  city : Varchar(120)
+  cuisines : JSON
+  description : Text
+  established_year : Integer, Nullable
+  lat : Float, Nullable
+  lon : Float, Nullable
+  address : Text
+  price_range : Varchar(10)
+  contact_phone : Varchar(20)
+  contact_email : Email
+  official_website : URL
+  facebook_url : URL
+  instagram_url : URL
+  tripadvisor_url : URL
+  google_maps_url : URL
+  logo_url : URL
+  cover_image_url : URL
+  gallery_images : JSON
+  amenities : JSON
+  delivery_available : Boolean
+  takeaway_available : Boolean
+  reservation_required : Boolean
+  dress_code : Varchar(100)
+  is_halal : Boolean
+  is_open : Boolean
+  is_active : Boolean
+  created_at : DateTime
+  updated_at : DateTime
+  owner_id : FK, Integer, Nullable
+}
+
+entity "vendors_menuitem" as MenuItem {
+  *id : PK, Integer
+  --
+  name : Varchar(200)
+  description : Text
+  category : Varchar(100)
+  price : Decimal(10,2)
+  currency : Varchar(3)
+  is_available : Boolean
+  is_vegetarian : Boolean
+  is_halal : Boolean
+  spiciness_level : Integer
+  allergens : JSON
+  image_url : URL
+  vendor_id : FK, Integer
+}
+
+entity "vendors_openinghours" as OpeningHours {
+  *id : PK, Integer
+  --
+  day_of_week : Integer
+  open_time : Time
+  close_time : Time
+  is_closed : Boolean
+  vendor_id : FK, Integer
+}
+
+entity "vendors_review" as Review {
+  *id : PK, Integer
+  --
+  rating : Integer
+  comment : Text
+  author_name : Varchar(100)
+  date : DateTime
+  verified_visit : Boolean
+  food_rating : Integer, Nullable
+  service_rating : Integer, Nullable
+  ambience_rating : Integer, Nullable
+  value_rating : Integer, Nullable
+  vendor_id : FK, Integer
+}
+
+entity "vendors_promotion" as Promotion {
+  *id : PK, Integer
+  --
+  title : Varchar(200)
+  description : Text
+  start_date : Date
+  end_date : Date
+  discount_percentage : Integer, Nullable
+  discount_amount : Decimal(10,2), Nullable
+  promo_code : Varchar(50)
+  is_active : Boolean
+  vendor_id : FK, Integer
+}
+
+entity "vendors_reservation" as Reservation {
+  *id : PK, Integer
+  --
+  customer_name : Varchar(100)
+  customer_email : Email
+  customer_phone : Varchar(20)
+  date : Date
+  time : Time
+  party_size : Integer
+  special_requests : Text
+  status : Varchar(20)
+  vendor_id : FK, Integer
+}
+
+' ============================================================================
+' RELATIONSHIPS: ONE-TO-MANY (1:N)
+' ============================================================================
+
+Users ||--o{ Place: "creates\n(created_by)"
+Users ||--o{ Place: "owns\n(owner)"
+Users ||--o{ Event: "creates"
+Users ||--o{ EventRegistration: "registers as"
+Users ||--o{ EventReminder: "sets"
+Users ||--o{ Stay: "owns"
+Users ||--o{ Vendor: "owns"
+
+' ============================================================================
+' RELATIONSHIPS: ONE-TO-ONE (1:1)
+' ============================================================================
+
+Event ||--|| EventRegistrationForm: "defines"
+PostRaw ||--|| PostClean: "becomes"
+
+' ============================================================================
+' RELATIONSHIPS: ONE-TO-MANY (1:N) - Continued
+' ============================================================================
+
+Place ||--o{ SocialPost: "linked in"
+
+Event ||--o{ EventRegistration: "receives"
+Event ||--o{ EventReminder: "triggers"
+Event ||--o{ Event: "generates\ninstances\n(parent_event)"
+
+EventRegistrationForm ||--o{ EventRegistrationField: "contains"
+
+SocialPost ||--o{ PostRaw: "has raw"
+SocialPost }o--|| Vendor: "mentions"
+SocialPost }o--|| Stay: "mentions"
+
+Stay ||--o{ StayImage: "contains"
+
+Vendor ||--o{ MenuItem: "offers"
+Vendor ||--o{ OpeningHours: "has"
+Vendor ||--o{ Review: "receives"
+Vendor ||--o{ Promotion: "runs"
+Vendor ||--o{ Reservation: "receives"
+Vendor ||--o{ SocialPost: "mentioned in"
+
+' ============================================================================
+' RELATIONSHIPS: MANY-TO-ONE (N:1) - Admin Review
+' ============================================================================
+
+EventRegistration }o--|| Users: "reviewed by\n(reviewed_by)"
+
+@enduml

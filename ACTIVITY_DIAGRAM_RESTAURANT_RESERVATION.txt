@@ -1,0 +1,84 @@
+@startuml Restaurant_Reservation_Activity_Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityBackgroundColor #E8F4F8
+skinparam ActivityBorderColor #0066B2
+skinparam ArrowColor #333333
+skinparam fontSize 11
+
+title Restaurant Reservation Flow (UML Activity Diagram)
+
+(*) --> "Customer browses\nRestaurants"
+--> "Select restaurant"
+--> "Click \"Make Reservation\""
+--> "Enter reservation date"
+--> "Select reservation time"
+--> "Enter party size\n(number of guests)"
+--> ===S1===
+partition System {
+  === S1 ===
+  --> "Check restaurant\navailability"
+  --> <<decision>>
+  if "Table Available?" then
+    --> [Yes] "Proceed to booking"
+  else
+    --> [No] "Show alternative times"
+    --> (*)
+  endif
+}
+--> "Display table options\n(if available)"
+--> "Add special requests:\nSeating, Dietary needs"
+--> "Enter customer info:\nName, Email, Phone"
+--> ===S2===
+partition System {
+  === S2 ===
+  --> "Validate customer\ninformation"
+  --> <<decision>>
+  if "Info Valid?" then
+    --> [Yes] "Format phone number"
+    --> "Validate email format"
+  else
+    --> [No] "Return validation error"
+    --> (*)
+  endif
+}
+--> "Customer reviews\nreservation details"
+--> "Click \"Confirm\nReservation\""
+--> ===S3===
+partition System {
+  === S3 ===
+  --> "Create Reservation\nrecord"
+  --> "Set status =\n\"PENDING\""
+  --> "Generate reservation\nconfirmation code"
+  --> "Calculate estimated\nconfirmation time"
+}
+--> "Send confirmation\nemail to customer"
+--> "Send SMS notification\n(if opted in)"
+--> ===S4===
+partition System {
+  === S4 ===
+  --> "Send reservation alert\nto restaurant manager"
+  --> "Update restaurant\navailability calendar"
+  --> "Log reservation event\nin audit trail"
+}
+--> "Display confirmation\nnumber to customer"
+--> "Show \"View My\nReservations\" option"
+--> "Customer receives\nemail confirmation"
+--> <<decision>>
+if "Reservation Date\nApproached?" then
+  --> [Yes] "Send reminder email\n(24 hours before)"
+else
+  --> [No] "Wait for reservation"
+endif
+--> "Customer arrives\nat restaurant"
+--> ===S5===
+partition System {
+  === S5 ===
+  --> "Manager checks\nin customer"
+  --> "Mark status =\n\"CONFIRMED\""
+  --> "Seat customer"
+}
+--> (*)
+
+@enduml

@@ -1,0 +1,496 @@
+@startuml Tourism_Analytics_Dashboard_Complete_ERD
+
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+skinparam classArrowColor #333333
+skinparam noteBkgColor #FFFACD
+skinparam noteBorderColor #DAA520
+skinparam noteFontSize 11
+
+' ============================================================================
+' CORE: User (Authentication & Authorization)
+' ============================================================================
+entity User {
+  *id: PK
+  --
+  email: String (Unique)
+  username: String
+  password_hash: String
+  first_name: String
+  last_name: String
+  **role: admin | vendor | stay_owner | place_owner
+  is_approved: Boolean
+  is_active: Boolean
+  is_staff: Boolean
+  --
+  claimed_vendor_id: Integer (nullable)
+  claimed_stay_id: Integer (nullable)
+  claimed_place_id: Integer (nullable)
+  phone_number: String
+  business_registration_number: String
+  verification_document: File
+  admin_notes: Text
+  business_verification_notes: Text
+  created_at: DateTime
+  updated_at: DateTime
+}
+
+' ============================================================================
+' ANALYTICS APP: Places (Tourism Destinations)
+' ============================================================================
+entity Place {
+  *id: PK
+  --
+  name: String
+  description: Text
+  category: String
+  city: String
+  state: String
+  country: String
+  latitude: Float (nullable)
+  longitude: Float (nullable)
+  is_free: Boolean
+  price: Decimal (nullable)
+  currency: String
+  image_url: Text (Base64 or URL)
+  wikipedia_url: URL
+  official_website: URL
+  tripadvisor_url: URL
+  google_maps_url: URL
+  contact_phone: String
+  contact_email: Email
+  address: Text
+  opening_hours: Text
+  best_time_to_visit: String
+  is_open: Boolean
+  amenities: JSONField {parking, wifi, wheelchair...}
+  --
+  created_by_id: FK (User, nullable)
+  owner_id: FK (User, nullable)
+  is_council_managed: Boolean
+  is_active: Boolean
+}
+
+' ============================================================================
+' ANALYTICS APP: Social Posts (Social Media Monitoring)
+' ============================================================================
+entity SocialPost {
+  *id: PK
+  --
+  platform: String
+  post_id: String (Unique with platform)
+  url: URL
+  content: Text
+  created_at: DateTime
+  fetched_at: DateTime
+  likes: Integer
+  comments: Integer
+  shares: Integer
+  views: Integer
+  **sentiment: positive | negative | neutral
+  sentiment_score: Float (-1.0 to +1.0)
+  confidence: Float (0-100%)
+  is_tourism: Boolean
+  extra: JSONField {hashtags, language, keywords}
+  --
+  place_id: FK (Place, nullable)
+  vendor_id: FK (Vendor, nullable)
+  stay_id: FK (Stay, nullable)
+  --
+  ⚠ Unique(platform, post_id)
+}
+
+' ============================================================================
+' ANALYTICS APP: Post Processing Pipeline
+' ============================================================================
+entity PostRaw {
+  *id: PK
+  --
+  content: Text
+  metadata: JSONField
+  created_at: DateTime
+  --
+  post_id: FK (SocialPost)
+}
+
+entity PostClean {
+  *id: PK
+  --
+  content: Text
+  **sentiment: positive | neutral | negative
+  keywords: JSONField (List)
+  created_at: DateTime
+  --
+  raw_post_id: FK (PostRaw, 1-1)
+  poi_id: FK (Place, nullable)
+}
+
+entity SentimentTopic {
+  *id: PK
+  --
+  topic: String
+  **sentiment: positive | neutral | negative
+  count: Integer
+  category: String (Attractions, Food, Transport)
+  date: Date
+}
+
+' ============================================================================
+' EVENTS APP: Core Event & Registrations
+' ============================================================================
+entity Event {
+  *id: PK
+  --
+  title: String
+  description: Text
+  tags: JSONField (List)
+  start_date: DateTime
+  end_date: DateTime (nullable)
+  location_name: String
+  city: String
+  lat: Float (nullable)
+  lon: Float (nullable)
+  expected_attendance: Integer (nullable)
+  actual_attendance: Integer (nullable)
+  max_capacity: Integer (nullable)
+  image_url: Text (Base64 or URL)
+  is_published: Boolean
+  --
+  **recurrence_type: none | daily | weekly | monthly | yearly
+  recurrence_end_date: Date (nullable)
+  is_recurring_instance: Boolean
+  requires_approval: Boolean
+  approval_message: Text
+  registration_form_config: JSONField
+  --
+  created_by_id: FK (User, nullable)
+  parent_event_id: FK (Self, nullable)
+}
+
+entity EventRegistration {
+  *id: PK
+  --
+  **status: pending | confirmed | rejected | cancelled | waitlist
+  form_data: JSONField (user responses)
+  admin_notes: Text
+  contact_name: String
+  contact_email: String
+  contact_phone: String
+  registered_at: DateTime
+  updated_at: DateTime
+  reviewed_at: DateTime (nullable)
+  --
+  user_id: FK (User, nullable - guests)
+  event_id: FK (Event)
+  reviewed_by_id: FK (User, nullable)
+}
+
+entity EventRegistrationForm {
+  *id: PK
+  --
+  title: String
+  description: Text
+  confirmation_message: Text
+  allow_guest_registration: Boolean
+  created_at: DateTime
+  updated_at: DateTime
+  --
+  event_id: FK (Event, 1-1)
+}
+
+entity EventRegistrationField {
+  *id: PK
+  --
+  label: String
+  **field_type: text | textarea | email | phone | number | date | dropdown | checkbox | radio
+  is_required: Boolean
+  placeholder: String
+  help_text: String
+  options: JSONField (for dropdowns)
+  order: Integer
+  min_length: Integer (nullable)
+  max_length: Integer (nullable)
+  pattern: RegEx (nullable)
+  created_at: DateTime
+  --
+  form_id: FK (EventRegistrationForm)
+}
+
+entity EventReminder {
+  *id: PK
+  --
+  **reminder_time: 1_week | 1_day | 1_hour
+  is_sent: Boolean
+  sent_at: DateTime (nullable)
+  created_at: DateTime
+  --
+  user_id: FK (User)
+  event_id: FK (Event)
+  --
+  ⚠ Unique(user_id, event_id, reminder_time)
+}
+
+' ============================================================================
+' STAYS APP: Accommodations
+' ============================================================================
+entity Stay {
+  *id: PK
+  --
+  name: String
+  **type: Hotel | Apartment | Guest House | Homestay
+  district: String
+  rating: Decimal (0-10, nullable)
+  priceNight: Decimal (MYR)
+  amenities: JSONField (List)
+  images: JSONField (List of URLs)
+  landmark: String
+  distanceKm: Decimal (nullable)
+  lat: Float (nullable)
+  lon: Float (nullable)
+  is_active: Boolean
+  is_open: Boolean
+  is_internal: Boolean
+  --
+  contact_email: Email (nullable)
+  contact_phone: String (nullable)
+  contact_whatsapp: String (nullable)
+  booking_com_url: URL (nullable)
+  agoda_url: URL (nullable)
+  **booking_provider: booking.com | agoda | both | direct
+  --
+  main_image_id: ImageField (nullable)
+  owner_id: FK (User, nullable)
+}
+
+entity StayImage {
+  *id: PK
+  --
+  image: ImageField
+  caption: String
+  is_primary: Boolean
+  order: Integer
+  uploaded_at: DateTime
+  --
+  stay_id: FK (Stay)
+}
+
+' ============================================================================
+' VENDORS APP: Restaurants & Food Businesses
+' ============================================================================
+entity Vendor {
+  *id: PK
+  --
+  name: String
+  city: String
+  cuisines: JSONField (List)
+  description: Text
+  established_year: Integer (nullable)
+  lat: Float (nullable)
+  lon: Float (nullable)
+  address: Text
+  **price_range: $ | $$ | $$$ | $$$$
+  contact_phone: String
+  contact_email: Email
+  official_website: URL
+  facebook_url: URL
+  instagram_url: URL
+  tripadvisor_url: URL
+  google_maps_url: URL
+  logo_url: URL
+  cover_image_url: URL
+  gallery_images: JSONField (List of URLs)
+  amenities: JSONField {parking, wifi, wheelchair...}
+  delivery_available: Boolean
+  takeaway_available: Boolean
+  reservation_required: Boolean
+  dress_code: String
+  is_halal: Boolean
+  is_open: Boolean
+  is_active: Boolean
+  created_at: DateTime
+  updated_at: DateTime
+  --
+  owner_id: FK (User, nullable)
+}
+
+entity MenuItem {
+  *id: PK
+  --
+  name: String
+  description: Text
+  category: String
+  price: Decimal
+  currency: String
+  is_available: Boolean
+  is_vegetarian: Boolean
+  is_halal: Boolean
+  spiciness_level: Integer (0-5)
+  allergens: JSONField (List)
+  image_url: URL
+  --
+  vendor_id: FK (Vendor)
+}
+
+entity OpeningHours {
+  *id: PK
+  --
+  day_of_week: Integer (0=Mon, 6=Sun)
+  open_time: Time
+  close_time: Time
+  is_closed: Boolean
+  --
+  vendor_id: FK (Vendor)
+}
+
+entity Review {
+  *id: PK
+  --
+  rating: Integer (1-5)
+  comment: Text
+  author_name: String
+  date: DateTime
+  verified_visit: Boolean
+  food_rating: Integer (nullable)
+  service_rating: Integer (nullable)
+  ambience_rating: Integer (nullable)
+  value_rating: Integer (nullable)
+  --
+  vendor_id: FK (Vendor)
+}
+
+entity Promotion {
+  *id: PK
+  --
+  title: String
+  description: Text
+  start_date: Date
+  end_date: Date
+  discount_percentage: Integer (nullable)
+  discount_amount: Decimal (nullable)
+  promo_code: String
+  is_active: Boolean
+  --
+  vendor_id: FK (Vendor)
+}
+
+entity Reservation {
+  *id: PK
+  --
+  customer_name: String
+  customer_email: Email
+  customer_phone: String
+  date: Date
+  time: Time
+  party_size: Integer
+  special_requests: Text
+  **status: pending | confirmed | cancelled | completed
+  --
+  vendor_id: FK (Vendor)
+}
+
+' ============================================================================
+' RELATIONSHIPS (User is the central hub)
+' ============================================================================
+
+User ||--o{ Place: "creates (created_by)"
+User ||--o{ Place: "owns (owner)"
+User ||--o{ Event: "creates"
+User ||--o{ EventRegistration: "registers as"
+User ||--o{ EventRegistration: "reviews as (reviewed_by)"
+User ||--o{ EventReminder: "sets"
+User ||--o{ Stay: "owns"
+User ||--o{ Vendor: "owns"
+
+' Place relationships
+Place ||--o{ SocialPost: "linked in"
+
+' Event relationships
+Event ||--o{ EventRegistration: "has"
+Event ||--|| EventRegistrationForm: "defines"
+Event ||--o{ EventReminder: "triggers"
+Event ||--o{ Event: "generates instances (parent_event)"
+
+' EventRegistrationForm relationships
+EventRegistrationForm ||--o{ EventRegistrationField: "contains"
+
+' SocialPost relationships
+SocialPost ||--o{ PostRaw: "has raw"
+PostRaw ||--|| PostClean: "becomes"
+SocialPost }o--|| Vendor: "mentions"
+SocialPost }o--|| Stay: "mentions"
+
+' Stay relationships
+Stay ||--o{ StayImage: "contains"
+
+' Vendor relationships
+Vendor ||--o{ MenuItem: "offers"
+Vendor ||--o{ OpeningHours: "has"
+Vendor ||--o{ Review: "receives"
+Vendor ||--o{ Promotion: "runs"
+Vendor ||--o{ Reservation: "receives"
+Vendor ||--o{ SocialPost: "mentioned in"
+
+' ============================================================================
+' ANNOTATIONS & NOTES
+' ============================================================================
+
+note right of User
+  **Authorization System**
+  ✓ Role-based access control
+  ✓ Admin approval workflow
+  ✓ Business claiming fields
+  ✓ Verification documents
+  ✓ Custom user model
+end note
+
+note right of Place
+  **Tourism Destinations**
+  ✓ Council vs private ownership
+  ✓ External resource links
+  ✓ Amenities JSONField
+  ✓ Linked to social posts
+  ✓ Geo-tagged locations
+end note
+
+note right of Event
+  **Event Management**
+  ✓ Recurring events support
+  ✓ Custom registration forms
+  ✓ Approval workflow
+  ✓ Capacity management
+  ✓ Attendee reminders
+  ✓ Guest registrations
+end note
+
+note right of Stay
+  **Accommodations**
+  ✓ Hybrid: internal + affiliate
+  ✓ Multi-image support
+  ✓ External booking links
+  ✓ Direct contact options
+  ✓ Multiple types
+end note
+
+note right of Vendor
+  **Food & Dining**
+  ✓ Menu management
+  ✓ Operating hours
+  ✓ Customer reviews
+  ✓ Promotions & offers
+  ✓ Table reservations
+  ✓ Gallery images
+end note
+
+note right of SocialPost
+  **Social Media Analysis**
+  ✓ Multi-platform support
+  ✓ AI sentiment analysis
+  ✓ Multi-entity linkage
+  ✓ Engagement metrics
+  ✓ Two-stage processing
+end note
+
+@enduml

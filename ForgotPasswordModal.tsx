@@ -16,7 +16,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
-    setMessage('');
+    setMessage(''); s
 
     try {
       await api.post('/auth/password-reset/', { email, frontend_url: window.location.origin });
