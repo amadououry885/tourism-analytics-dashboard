@@ -1,0 +1,149 @@
+@startuml Agile_Methodology_Workflow
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityBackgroundColor #E8F4F8
+skinparam ActivityBorderColor #0066B2
+skinparam ArrowColor #333333
+skinparam fontSize 11
+
+title Agile Methodology Workflow (UML Activity Diagram)
+
+(*) --> "Product Owner\nDefines Requirements"
+--> "Create Product\nBacklog"
+--> "Prioritize User Stories\nby Business Value"
+--> ===S1===
+partition "Sprint Planning" {
+  === S1 ===
+  --> "Team attends\nSprint Planning"
+  --> "Select User Stories\nfrom Backlog"
+  --> "Define Sprint Goal"
+  --> "Estimate Story Points\n(Planning Poker)"
+  --> <<decision>>
+  if "Capacity\nMet?" then
+    --> [Yes] "Create Sprint\nBacklog"
+  else
+    --> [No] "Remove Story\nfrom Sprint"
+  endif
+}
+--> "Sprint Starts\n(1-2 weeks)"
+--> ===S2===
+partition "Daily Standup" {
+  === S2 ===
+  --> "Team meets daily\n(15 min max)"
+  --> "What did I complete\nyesterday?"
+  --> "What will I do\ntoday?"
+  --> "Any blockers\nor impediments?"
+  --> <<decision>>
+  if "Blockers\nIdentified?" then
+    --> [Yes] "Scrum Master\nresolves issues"
+  else
+    --> [No] "Continue sprint work"
+  endif
+}
+--> "Developers work on\nUser Stories"
+--> ===S3===
+partition "Development" {
+  === S3 ===
+  --> "Code implementation"
+  --> "Unit testing"
+  --> <<decision>>
+  if "Tests\nPass?" then
+    --> [Yes] "Code review\nby peers"
+  else
+    --> [No] "Fix code issues"
+  endif
+}
+--> <<decision>>
+if "Review\nApproved?" then
+  --> [Yes] "Merge to main\nbranch"
+else
+  --> [No] "Request changes"
+endif
+--> "Continuous Integration\nPipeline"
+--> <<decision>>
+if "Build\nSuccessful?" then
+  --> [Yes] "Deploy to\nStaging"
+else
+  --> [No] "Fix build issues"
+endif
+--> "QA Testing\nof Features"
+--> <<decision>>
+if "All Tests\nPass?" then
+  --> [Yes] "Feature ready"
+else
+  --> [No] "Log bugs\nfor fixes"
+endif
+--> ===S4===
+partition "Sprint Retrospective" {
+  === S4 ===
+  --> "Sprint ends\nafter 1-2 weeks"
+  --> "Team demos completed\nfeatures to stakeholders"
+  --> <<decision>>
+  if "Stakeholder\nApproved?" then
+    --> [Yes] "Feature moves\nto Production"
+  else
+    --> [No] "Incorporate feedback\nin next sprint"
+  endif
+}
+--> ===S5===
+partition "Sprint Review" {
+  === S5 ===
+  --> "Team reflects\non what went well"
+  --> "What could be\nimproved?"
+  --> "Action items for\nnext sprint"
+  --> "Update Definition\nof Done"
+}
+--> <<decision>>
+if "More Features\nto Build?" then
+  --> [Yes] "Move completed\nstories to Done"
+  --> "Return to Sprint\nPlanning"
+else
+  --> [No] "Project complete\nor on hold"
+endif
+--> "Release to Production"
+--> "Monitor & Gather\nUser Feedback"
+--> "Update Product Backlog\nwith feedback"
+--> (*)
+
+note right of "Sprint Planning"
+  **Sprint Planning (4 hours max for 2-week sprint)**
+  - Team commits to sprint goal
+  - User stories broken into tasks
+  - Each task estimated in hours
+  - Capacity = Velocity from previous sprints
+end note
+
+note right of "Daily Standup"
+  **Daily Standup (15 minutes)**
+  - Same time, same place
+  - Standing format (promotes brevity)
+  - Impediment resolution offline
+  - Keeps team aligned & focused
+end note
+
+note right of "Development"
+  **Development Standards**
+  - Code follows style guide
+  - Unit test coverage > 80%
+  - Peer review mandatory
+  - No direct commits to main
+end note
+
+note right of "Sprint Retrospective"
+  **Sprint Review & Demo (2 hours)**
+  - Show working increment
+  - Gather stakeholder feedback
+  - Discuss acceptance criteria
+  - Plan adjustments
+end note
+
+note right of "Sprint Review"
+  **Sprint Retrospective (1.5 hours)**
+  - What went well (keep doing)
+  - What went poorly (improve)
+  - Team velocity tracking
+  - Process improvements
+end note
+
+@enduml
